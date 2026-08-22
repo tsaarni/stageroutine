@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "stageroutine",
+    "baseUrl": ".",
+    "paths": {
+      "stageroutine": ["./src/index.ts"],
+      "stageroutine/styles.css": ["./src/dom/styles.css"],
+      "stageroutine/jsx-runtime": ["./src/dom/jsx-runtime.ts"],
+      "stageroutine/jsx-dev-runtime": ["./src/dom/jsx-dev-runtime.ts"],
+      "stageroutine/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "demo"]
+}

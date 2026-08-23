@@ -7,17 +7,19 @@ import type { ElementAnchor, ReactiveElementBase, ReactiveProp } from "../core/t
 
 let nextId = 1;
 
+export type ElementDecorator = (element: DOMElement) => void;
+
 export interface ElementOptions {
   id?: string;
   anchor?: ElementAnchor;
-  x?: number | string;
-  y?: number | string;
-  scale?: number;
-  rotation?: number;
-  opacity?: number;
-  blur?: number;
-  brightness?: number;
-  color?: string;
+  x?: ReactiveProp<number | string>;
+  y?: ReactiveProp<number | string>;
+  scale?: ReactiveProp<number>;
+  rotation?: ReactiveProp<number>;
+  opacity?: ReactiveProp<number>;
+  blur?: ReactiveProp<number>;
+  brightness?: ReactiveProp<number>;
+  color?: ReactiveProp<string>;
   className?: string;
   style?: Partial<CSSStyleDeclaration>;
 }
@@ -98,5 +100,13 @@ export class DOMElement implements ReactiveElementBase {
     if (options.style) {
       Object.assign(this.domElement.style, options.style);
     }
+  }
+
+  /**
+   * Applies a decorator function to enhance this element with custom styles, animations, or behaviors.
+   */
+  decorate(decorator: ElementDecorator): this {
+    decorator(this);
+    return this;
   }
 }

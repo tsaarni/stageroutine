@@ -1,16 +1,20 @@
-/*
+/**
  * Global CSS stylesheet defining design tokens, component classes (.sr-*), and animations.
+ *
+ * All visual styles are driven by the semantic tokens in `:root`.
+ * To customize the theme:
+ * 1. In CSS: Override `--sr-*` variables in `:root` or on the stage container.
+ * 2. In TypeScript: Call `stage.theme({ surface: "#...", background: "#..." })`.
  */
 
 :root {
-  /* Typographic Hierarchy (Punchy High-Legibility Presentation Scale for 1080p) */
+  /* Typographic Hierarchy (1080p Scale) */
   --sr-font-hero: 7.5rem;
   --sr-font-title: 4.5rem;
   --sr-font-lead: 2.75rem;
   --sr-font-body: 2.15rem;
   --sr-font-code: 1.65rem;
   --sr-font-kicker: 1.35rem;
-  --sr-font-bullet: 2.15rem;
 
   /* Font Families */
   --sr-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -25,20 +29,29 @@
   --sr-space-xl: 5rem;
   --sr-radius: 0.5rem;
 
-  /* Palette: Warm Obsidian Charcoal & Pure Titanium / Subtle Neutral Accents */
+  /* Canvas & Palette */
   --sr-background: #09090b;
   --sr-text: #ffffff;
   --sr-text-muted: #a1a1aa;
   --sr-text-dim: #71717a;
   --sr-primary: #f97316;
   --sr-accent: #f97316;
-  --sr-surface-bg: #121215;
-  --sr-border: 1px solid rgba(255, 255, 255, 0.08);
-  --sr-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.8);
+
+  /* Surface Container Tokens (Semantic) */
+  --sr-surface: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  --sr-surface-border: 1px solid rgba(255, 255, 255, 0.1);
+  --sr-surface-highlight: rgba(255, 255, 255, 0.2);
+  --sr-surface-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0
+    rgba(255, 255, 255, 0.1);
+  --sr-surface-backdrop: blur(16px);
 }
 
 /* ==========================================================================
-   Unboxed Typography — Swiss Editorial Keynote
+   Typography Primitives
    ========================================================================== */
 
 .sr-hero {
@@ -67,7 +80,7 @@
   font-style: italic;
   font-family: var(--sr-font-serif);
   font-weight: 300;
-  color: #e4e4e7;
+  color: var(--sr-text-muted);
 }
 
 .sr-serif-lead {
@@ -78,7 +91,7 @@
   letter-spacing: -0.015em;
   line-height: 1.25;
   margin: 0;
-  color: #d4d4d8;
+  color: var(--sr-text-muted);
 }
 
 .sr-serif-lead em,
@@ -108,88 +121,46 @@
 }
 
 /* ==========================================================================
-   Micro-Badge (Minimalist Pill)
+   Surface & Container Components
    ========================================================================== */
 
 .sr-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.4rem 1.1rem;
+  padding: 0.35rem 1.1rem;
   border-radius: 9999px;
   font-family: var(--sr-font-mono);
-  font-size: 1.05rem;
+  font-size: var(--sr-font-kicker);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  background-color: rgba(255, 255, 255, 0.04);
-  color: #e4e4e7;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sr-badge::before {
-  content: "";
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background-color: var(--sr-primary);
-}
-
-/* ==========================================================================
-   Unboxed Metric Block
-   ========================================================================== */
-
-.sr-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-family: var(--sr-font-sans);
-  box-sizing: border-box;
-}
-
-.sr-metric-label {
-  font-family: var(--sr-font-mono);
-  font-size: 1.05rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--sr-text-dim);
-}
-
-.sr-metric-value {
-  font-family: var(--sr-font-sans);
-  font-size: 5.5rem;
-  font-weight: 700;
-  letter-spacing: -0.045em;
-  color: var(--sr-text);
-  margin: 0;
-  line-height: 0.95;
-}
-
-.sr-metric-trend {
-  font-size: 1.25rem;
-  font-weight: 400;
+  background: var(--sr-surface);
+  backdrop-filter: var(--sr-surface-backdrop);
+  -webkit-backdrop-filter: var(--sr-surface-backdrop);
   color: var(--sr-text-muted);
-  margin-top: 0.25rem;
+  border: var(--sr-surface-border);
+  border-top-color: var(--sr-surface-highlight);
+  box-shadow: var(--sr-surface-shadow);
 }
-
-/* ==========================================================================
-   Bento Container (Only for Technical Code / Terminal Modules)
-   ========================================================================== */
 
 .sr-card {
-  background-color: var(--sr-surface-bg);
-  border: var(--sr-border);
+  background: var(--sr-surface);
+  backdrop-filter: var(--sr-surface-backdrop);
+  -webkit-backdrop-filter: var(--sr-surface-backdrop);
+  border: var(--sr-surface-border);
+  border-top-color: var(--sr-surface-highlight);
   border-radius: var(--sr-radius);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: var(--sr-space-md) var(--sr-space-lg);
-  box-shadow: var(--sr-shadow);
-  color: var(--sr-text);
+  gap: var(--sr-space-xs);
+  padding: var(--sr-space-sm) var(--sr-space-md);
+  box-shadow: var(--sr-surface-shadow);
+  color: var(--sr-text-muted);
   font-family: var(--sr-font-sans);
+  font-size: var(--sr-font-body);
+  line-height: 1.5;
   text-align: left;
   position: relative;
   box-sizing: border-box;
@@ -198,13 +169,13 @@
 .sr-code-block {
   background-color: transparent;
   border: none;
-  border-left: 3px solid rgba(255, 255, 255, 0.18);
+  border-left: 3px solid var(--sr-surface-highlight);
   border-radius: 0;
   padding: 0.5rem 0 0.5rem 1.75rem;
   font-family: var(--sr-font-mono);
   font-size: var(--sr-font-code);
   line-height: 1.7;
-  color: #e4e4e7;
+  color: var(--sr-text);
   box-shadow: none;
   margin: 0;
   box-sizing: border-box;
@@ -216,37 +187,40 @@
 .sr-terminal-window {
   width: 100%;
   max-width: 44cqw;
-  background-color: #0d0d10;
-  border: var(--sr-border);
+  background: var(--sr-surface);
+  backdrop-filter: var(--sr-surface-backdrop);
+  -webkit-backdrop-filter: var(--sr-surface-backdrop);
+  border: var(--sr-surface-border);
+  border-top-color: var(--sr-surface-highlight);
   border-radius: var(--sr-radius);
   overflow: hidden;
-  box-shadow: var(--sr-shadow);
+  box-shadow: var(--sr-surface-shadow);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
 .sr-terminal-header {
-  background-color: #141418;
-  padding: 0.85rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.9rem 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 0.65rem;
+  border-bottom: var(--sr-surface-border);
 }
 
 .sr-terminal-dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
-  background-color: #3f3f46;
+  background-color: var(--sr-surface-highlight);
 }
 
 .sr-terminal-title {
-  margin-left: 0.5rem;
+  margin-left: 0.6rem;
   font-family: var(--sr-font-mono);
-  font-size: 1.05rem;
-  color: #71717a;
+  font-size: var(--sr-font-kicker);
+  color: var(--sr-text-muted);
   letter-spacing: 0.05em;
 }
 
@@ -255,11 +229,11 @@
   font-family: var(--sr-font-mono);
   font-size: var(--sr-font-code);
   line-height: 1.7;
-  color: #f4f4f5;
+  color: var(--sr-text);
 }
 
 /* ==========================================================================
-   Unboxed Feature List (Disciplined Swiss Editorial)
+   List Primitives
    ========================================================================== */
 
 .sr-bullet-list {
@@ -286,46 +260,4 @@
   background-color: var(--sr-text-dim);
   flex-shrink: 0;
   transform: translateY(-0.25rem);
-}
-
-/* ==========================================================================
-   Ambient Sci-Fi Effects & Animations
-   ========================================================================== */
-
-@keyframes sr-neon-sweep {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes sr-neon-bloom {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
-      drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
-  }
-  50% {
-    filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.85))
-      drop-shadow(0 0 32px rgba(167, 139, 250, 0.6)) drop-shadow(0 0 65px rgba(147, 51, 234, 0.35));
-  }
-}
-
-.sr-neon-sweep {
-  background: linear-gradient(
-    90deg,
-    #a78bfa 0%,
-    #e0e7ff 22%,
-    #ffffff 35%,
-    #bae6fd 48%,
-    #c4b5fd 65%,
-    #a78bfa 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: sr-neon-sweep 7s linear infinite, sr-neon-bloom 4s ease-in-out infinite;
-  display: inline-block;
 }

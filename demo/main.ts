@@ -3,26 +3,41 @@
  */
 
 import {
+  AsciiFluid,
+  Badge,
   BulletList,
+  Card,
   CodeBlock,
+  GradientFluid,
   Kicker,
+  Starfield,
   TerminalWindow,
   Text,
   Title,
   createStage,
+  glow,
+  gradient,
   to,
+  typewriter,
 } from "../src/index";
 
-// Initialize the presentation stage (defaults to 1920x1080 virtual canvas).
+// Initialize presentation stage with the ASCII Fluid background
 const stage = createStage({
-  defaultDuration: 0.8,
+  background: AsciiFluid({
+    characters: " .:-=+*#%@",
+    cellSize: 14,
+    color: "#38bdf8",
+    backgroundColor: "#09090b",
+    opacity: 0.35,
+    waveSpeed: 0.22,
+  }),
 });
 
 // Positioning components:
 // - x, y: The spot on the stage (percentage from top-left, or "center").
 // - anchor: Which part of the component sits on that spot (e.g. "top-left" corner or "center").
 
-// --- Step 1: Introduction (Center Stage Hero) ---
+// --- Scene: Introduction ---
 
 // Create visual elements. Setting opacity to 0 keeps them hidden until animated.
 const brandTitle = Title("StageRoutine", {
@@ -41,11 +56,12 @@ const sectionKicker = Kicker("00 / Core Runtime", {
 
 const editorialLead = Title("State mutation is motion.", {
   serif: true,
-  className: "sr-neon-sweep",
   x: "center",
   y: 52,
   opacity: 0,
-});
+})
+  .decorate(gradient())
+  .decorate(glow());
 
 const heroBody = Text(
   "A minimalist presentation framework where variable mutation drives smooth animation.",
@@ -60,21 +76,21 @@ const heroBody = Text(
 // Declare which elements are active in this scene.
 stage.scene("Introduction").with(brandTitle, sectionKicker, editorialLead, heroBody);
 
-// Speaker notes displayed in the presenter console for this step.
-stage.setNotes(
-  "Welcome to StageRoutine.\n- State mutation drives animation.\n- Pauses define presenter steps.",
-);
+// Speaker notes for this scene.
+stage.setNotes([
+  "Welcome to StageRoutine.",
+  "- State mutation drives animation.",
+  "- Canvas acts as a continuous reactive space.",
+]);
 
-// Animate elements into view using property assignments with custom duration and easing.
-sectionKicker.opacity = to(1).duration(0.5).ease("quartOut");
-brandTitle.opacity = to(1).duration(0.6).ease("quartOut");
-editorialLead.opacity = to(1).duration(0.7).ease("quartOut");
-heroBody.opacity = to(1).duration(0.8).ease("quartOut");
-
-// Pause marks a presenter step boundary. All animations above run together as one step.
+// Animate elements into view using direct property assignments.
+sectionKicker.opacity = 1;
+brandTitle.opacity = 1;
+editorialLead.opacity = 1;
+heroBody.opacity = 1;
 stage.pause();
 
-// --- Step 2: Continuous Plane (Pan to Header & Reveal Code Panel) ---
+// --- Scene: Continuous Plane ---
 
 // Create elements that enter in this scene.
 const leftHeading = Title("Continuous Plane", {
@@ -88,7 +104,7 @@ const leftHeading = Title("Continuous Plane", {
 const leftBody = Text(
   "Discrete slides swap entire frames with jarring cuts. StageRoutine preserves spatial continuity across transitions by treating the canvas as a persistent reactive state space.",
   {
-    x: 6,
+    x: leftHeading.x,
     y: 38,
     opacity: 0,
     style: { width: "42cqw" },
@@ -96,7 +112,14 @@ const leftBody = Text(
 );
 
 const codePanel = CodeBlock(
-  `// Mutating a reactive property schedules transition\nnode.x = to(52).duration(0.8).ease("quartOut");\nnode.opacity = to(1).duration(0.6);\n\n// Pause defines presenter step boundary\nstage.pause();`,
+  [
+    "// Direct mutation schedules smooth transition",
+    "node.x = 52;",
+    "node.opacity = 1;",
+    "",
+    "// Pause defines presenter step boundary",
+    "stage.pause();",
+  ],
   {
     x: 110,
     y: 28,
@@ -107,33 +130,35 @@ const codePanel = CodeBlock(
 
 // brandTitle remains in this scene, so it smoothly glides to its new position instead of recreating.
 stage.scene("Continuous Plane").with(brandTitle, leftHeading, leftBody, codePanel);
-stage.setNotes(
-  "Notice the continuous camera pan:\n- The brand title glides smoothly into the top-left corner.\n- The code block slides in from the right edge.",
-);
+stage.setNotes([
+  "Notice the continuous camera pan:",
+  "- The brand title glides smoothly into the top-left corner.",
+  "- The code block slides in from the right edge.",
+]);
 
 // Reposition brandTitle to the top-left corner.
-brandTitle.x = to(6).duration(0.85).ease("cubicInOut");
-brandTitle.y = to(6).duration(0.85).ease("cubicInOut");
-brandTitle.scale = to(0.6).duration(0.85).ease("cubicInOut");
+brandTitle.x = to(6).ease("cubicInOut");
+brandTitle.y = to(6).ease("cubicInOut");
+brandTitle.scale = to(0.6).ease("cubicInOut");
 
 // Fade out intro elements that are leaving this scene.
-sectionKicker.opacity = to(0).duration(0.3);
-editorialLead.y = to(62).duration(0.4);
-editorialLead.opacity = to(0).duration(0.3);
-heroBody.opacity = to(0).duration(0.3);
+sectionKicker.opacity = 0;
+editorialLead.y = 62;
+editorialLead.opacity = 0;
+heroBody.opacity = 0;
 
 // Milestone triggers (.when): chain animations to start after another element completes ("end") or reaches "halfway".
-leftHeading.x = to(6).when(brandTitle, "end").duration(0.6).ease("quartOut");
-leftHeading.opacity = to(1).when(brandTitle, "end").duration(0.6).ease("quartOut");
-leftBody.x = to(6).when(leftHeading, "halfway").duration(0.6).ease("quartOut");
-leftBody.opacity = to(1).when(leftHeading, "halfway").duration(0.6).ease("quartOut");
+leftHeading.x = to(leftHeading.x).when(brandTitle, "end");
+leftHeading.opacity = to(1).when(brandTitle, "end");
+leftBody.x = to(leftHeading.x).when(leftHeading, "halfway");
+leftBody.opacity = to(1).when(leftHeading, "halfway");
 
 // Slide code panel into the right column.
-codePanel.x = to(52).duration(0.85).ease("quartOut");
-codePanel.opacity = to(1).duration(0.8);
+codePanel.x = 52;
+codePanel.opacity = 1;
 stage.pause();
 
-// --- Step 3: Snapshot Engine (Code Glides Left, Mechanics Reveal on Right) ---
+// --- Scene: Snapshot Engine ---
 
 const rightHeading = Title("Snapshot Engine", {
   kicker: "02 / Mechanics",
@@ -146,7 +171,7 @@ const rightHeading = Title("Snapshot Engine", {
 const rightBody = Text(
   "Every pause records an immutable state snapshot. The runtime computes dynamic property diffs for forward transitions and instant backward rewinds.",
   {
-    x: 52,
+    x: rightHeading.x,
     y: 36,
     opacity: 0,
     style: { width: "42cqw" },
@@ -161,7 +186,7 @@ const featureChecklist = BulletList(
     "Interpolates spatial coordinates, scale, opacity, blur, and colors",
   ],
   {
-    x: 52,
+    x: rightHeading.x,
     y: 56,
     opacity: 0,
     style: { width: "44cqw" },
@@ -176,36 +201,38 @@ for (const item of featureChecklist.items) {
 stage
   .scene("Snapshot Engine")
   .with(brandTitle, codePanel, rightHeading, rightBody, featureChecklist);
-stage.setNotes(
-  "Watch the horizontal spatial balance:\n- Code panel glides across to the left column.\n- Mechanics & staggered checklist glide in on the right.",
-);
+stage.setNotes([
+  "Watch the horizontal spatial balance:",
+  "- Code panel glides across to the left column.",
+  "- Mechanics & staggered checklist glide in on the right.",
+]);
 
 // Slide left column off-screen.
-leftHeading.opacity = to(0).duration(0.3);
-leftHeading.x = to(-50).duration(0.5);
-leftBody.opacity = to(0).duration(0.3);
-leftBody.x = to(-50).duration(0.5);
+leftHeading.opacity = 0;
+leftHeading.x = -50;
+leftBody.opacity = 0;
+leftBody.x = -50;
 
 // Move code panel from the right column over to the left column.
-codePanel.x = to(6).duration(0.9).ease("cubicInOut");
+codePanel.x = to(brandTitle.x).ease("cubicInOut");
 
 // Reveal right column after the code panel passes halfway.
-rightHeading.x = to(52).when(codePanel, "halfway").duration(0.6).ease("quartOut");
-rightHeading.opacity = to(1).when(codePanel, "halfway").duration(0.6).ease("quartOut");
-rightBody.x = to(52).when(rightHeading, "halfway").duration(0.6).ease("quartOut");
-rightBody.opacity = to(1).when(rightHeading, "halfway").duration(0.6).ease("quartOut");
+rightHeading.x = to(rightHeading.x).when(codePanel, "halfway");
+rightHeading.opacity = to(1).when(codePanel, "halfway");
+rightBody.x = to(rightHeading.x).when(rightHeading, "halfway");
+rightBody.opacity = to(1).when(rightHeading, "halfway");
 
 // Cascade individual bullet items sequentially.
-featureChecklist.opacity = to(1).when(rightBody, "halfway").duration(0.3);
+featureChecklist.opacity = to(1).when(rightBody, "halfway");
 featureChecklist.items.forEach((item, index) => {
   const prev = index > 0 ? featureChecklist.items[index - 1] : undefined;
   const trigger = prev ?? rightBody;
-  item.opacity = to(1).when(trigger, "halfway").duration(0.45).ease("quartOut");
-  item.x = to(0).when(trigger, "halfway").duration(0.45).ease("quartOut");
+  item.opacity = to(1).when(trigger, "halfway");
+  item.x = to(0).when(trigger, "halfway");
 });
 stage.pause();
 
-// --- Step 4: Presenter Telemetry (Code Exits Up, Terminal Enters from Below) ---
+// --- Scene: Presenter Telemetry ---
 
 // TerminalWindow renders a styled macOS terminal component.
 const terminalPanel = TerminalWindow({
@@ -216,7 +243,7 @@ const terminalPanel = TerminalWindow({
     "✔ Presenter console synced on /presenter.html",
     "⚡ BroadcastChannel channel: stageroutine-channel",
   ],
-  x: 6,
+  x: brandTitle.x,
   y: 120,
   opacity: 0,
   style: { width: "44cqw" },
@@ -225,51 +252,285 @@ const terminalPanel = TerminalWindow({
 stage
   .scene("Presenter Telemetry")
   .with(brandTitle, terminalPanel, rightHeading, rightBody, featureChecklist);
-stage.setNotes(
-  "Vertical camera glide:\n- Code block lifts off the screen.\n- Live dev terminal rises from below.",
-);
+stage.setNotes([
+  "Vertical camera glide:",
+  "- Code block lifts off the screen.",
+  "- Live dev terminal rises from below.",
+]);
 
 // Slide code block upward off-screen and lift terminal up from below.
-codePanel.y = to(-50).duration(0.7).ease("cubicInOut");
-codePanel.opacity = to(0).duration(0.4);
+codePanel.y = to(-50).ease("cubicInOut");
+codePanel.opacity = 0;
 
-terminalPanel.y = to(19).when(codePanel, "halfway").duration(0.75).ease("quartOut");
-terminalPanel.opacity = to(1).when(codePanel, "halfway").duration(0.75).ease("quartOut");
+terminalPanel.y = to(19).when(codePanel, "halfway");
+terminalPanel.opacity = to(1).when(codePanel, "halfway");
 
 // Keep right column in place.
-rightHeading.opacity = to(1).duration(0.5);
-rightBody.opacity = to(1).duration(0.5);
-featureChecklist.opacity = to(1).duration(0.5);
+rightHeading.opacity = 1;
+rightBody.opacity = 1;
+featureChecklist.opacity = 1;
 stage.pause();
 
-// --- Step 5: Conclusion (Camera Dollies Back to Center Stage) ---
+// --- Scene: Component Showcase ---
 
-stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
-stage.setNotes(
-  "Concluding overview:\n- The title glides back to center stage.\n- Press Left Arrow anytime to smoothly rewind.",
+const showcaseKicker = Kicker("03 / Design System", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const showcaseBadge = Badge("v1.0.0", {
+  x: 26,
+  y: 17.5,
+  opacity: 0,
+});
+
+const customBadge = Badge("Reactive", {
+  x: 35,
+  y: showcaseBadge.y,
+  color: "#38bdf8",
+  background: "rgba(56, 189, 248, 0.1)",
+  borderColor: "rgba(56, 189, 248, 0.25)",
+  opacity: 0,
+});
+
+const showcaseTitle = Title("Component Primitives", {
+  x: showcaseKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+const showcaseText = Text(
+  "Minimalist, typography-first building blocks styled for high-contrast dark canvases.",
+  {
+    x: showcaseKicker.x,
+    y: 39,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
 );
 
-// Dismiss terminal and right column.
-terminalPanel.y = to(120).duration(0.5).ease("cubicInOut");
-terminalPanel.opacity = to(0).duration(0.3);
-rightHeading.opacity = to(0).duration(0.3);
-rightBody.opacity = to(0).duration(0.3);
-featureChecklist.x = to(110).duration(0.5).ease("cubicInOut");
-featureChecklist.opacity = to(0).duration(0.3);
+const showcaseCard = Card(
+  Text("A pure surface container for grouping slide elements with frosted glass styling."),
+  {
+    x: showcaseKicker.x,
+    y: 52,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+const showcaseList = BulletList(
+  ["Direct-to-DOM zero Virtual DOM architecture", "High-precision numerical cubic curve solvers"],
+  {
+    x: showcaseKicker.x,
+    y: 73,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+const showcaseCode = CodeBlock(
+  [
+    "// Type-safe UI components",
+    "const badge = Badge('v1.0');",
+    "const custom = Badge('Live', { color: '#38bdf8' });",
+    "const card = Card('Frosted surface');",
+  ],
+  {
+    x: rightHeading.x,
+    y: 18,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+const showcaseTerminal = TerminalWindow({
+  title: "stageroutine-cli",
+  lines: ["$ pnpm build", "✔ Bundled all components", "⚡ Ready for presentation"],
+  x: showcaseCode.x,
+  y: 52,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+stage
+  .scene("Component Showcase")
+  .with(
+    brandTitle,
+    showcaseKicker,
+    showcaseBadge,
+    customBadge,
+    showcaseTitle,
+    showcaseText,
+    showcaseCard,
+    showcaseList,
+    showcaseCode,
+    showcaseTerminal,
+  );
+stage.setNotes([
+  "Component Showcase:",
+  "- Displays Title, Text, Kicker, Badges, Card, BulletList, CodeBlock, and TerminalWindow together.",
+]);
+
+// Dismiss previous telemetry scene elements
+terminalPanel.y = to(120).ease("cubicInOut");
+terminalPanel.opacity = 0;
+rightHeading.opacity = 0;
+rightBody.opacity = 0;
+featureChecklist.opacity = 0;
+
+// Reveal showcase elements
+showcaseKicker.opacity = 1;
+showcaseBadge.opacity = 1;
+customBadge.opacity = 1;
+showcaseTitle.opacity = 1;
+showcaseText.opacity = 1;
+showcaseCard.opacity = 1;
+showcaseList.opacity = 1;
+showcaseCode.opacity = 1;
+showcaseTerminal.opacity = 1;
+stage.pause();
+
+// --- Scene: Element Decorators ---
+
+const decoratorKicker = Kicker("04 / Decorators & Extensibility", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const decoratorHeading = Title("Element Decorators", {
+  x: decoratorKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+const decoratorGradientDemo = Title("Gradient Flow in Action", {
+  serif: true,
+  x: decoratorKicker.x,
+  y: 36,
+  opacity: 0,
+  style: { width: "42cqw" },
+}).decorate(
+  gradient({
+    colors: ["#ec4899", "#f43f5e", "#fb923c", "#facc15", "#ec4899"],
+    duration: 5,
+  }),
+);
+
+const decoratorTypewriterDemo = Text(
+  "Decorators can simulatte<del:2>e realistic typing, including typos, backspaces, and corrections...",
+  {
+    x: decoratorKicker.x,
+    y: 48,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+).decorate(
+  typewriter({
+    speed: 38,
+    jitter: 0.4,
+    punctuationPause: 280,
+    mistakePause: 320,
+    delay: 0.6,
+  }),
+);
+
+const decoratorCode = CodeBlock(
+  [
+    "// Isolated flowing gradient",
+    "title.decorate(gradient({",
+    "  colors: ['#ec4899', '#facc15'],",
+    "  duration: 5,",
+    "}));",
+    "",
+    "// Realistic typing with typos and backspaces",
+    "text.decorate(typewriter({",
+    "  speed: 38,",
+    "  mistakePause: 320,",
+    "  script: [",
+    "    'Decorators simulatte',",
+    "    { delete: 2 }, // Backspaces 'te'",
+    "    'e realistic typing!',",
+    "  ],",
+    "}));",
+  ],
+  {
+    x: rightHeading.x,
+    y: 18,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+stage
+  .scene("Element Decorators")
+  .with(
+    brandTitle,
+    decoratorKicker,
+    decoratorHeading,
+    decoratorGradientDemo,
+    decoratorTypewriterDemo,
+    decoratorCode,
+  );
+stage.setNotes([
+  "Element Decorators Scene:",
+  "- Shows how decorators cleanly extend elements without coupling styles or stylesheets.",
+  "- Demonstrates gradient with custom warm palette.",
+  "- Demonstrates typewriter with realistic cadence and blinking cursor.",
+]);
+
+// Dismiss showcase elements
+showcaseKicker.opacity = 0;
+showcaseBadge.opacity = 0;
+customBadge.opacity = 0;
+showcaseTitle.opacity = 0;
+showcaseText.opacity = 0;
+showcaseCard.opacity = 0;
+showcaseList.opacity = 0;
+showcaseCode.opacity = 0;
+showcaseTerminal.opacity = 0;
+
+// Reveal decorator elements
+decoratorKicker.opacity = 1;
+decoratorHeading.opacity = 1;
+decoratorGradientDemo.opacity = 1;
+decoratorTypewriterDemo.opacity = 1;
+decoratorCode.opacity = 1;
+stage.pause();
+
+// --- Scene: Conclusion ---
+
+stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
+stage.setNotes([
+  "Concluding overview:",
+  "- The title glides back to center stage.",
+  "- Press Left Arrow anytime to smoothly rewind.",
+]);
+
+// Dismiss decorator elements
+decoratorKicker.opacity = 0;
+decoratorHeading.opacity = 0;
+decoratorGradientDemo.opacity = 0;
+decoratorTypewriterDemo.opacity = 0;
+decoratorCode.opacity = 0;
 
 // Return title, lead, and body to hero center positions.
-brandTitle.x = to("center").duration(0.9).ease("cubicInOut");
-brandTitle.y = to(38).duration(0.9).ease("cubicInOut");
-brandTitle.scale = to(1).duration(0.9).ease("cubicInOut");
-brandTitle.opacity = to(1).duration(0.7);
+brandTitle.x = to("center").ease("cubicInOut");
+brandTitle.y = to(38).ease("cubicInOut");
+brandTitle.scale = to(1).ease("cubicInOut");
+brandTitle.opacity = 1;
 
-editorialLead.x = to("center").when(brandTitle, "halfway").duration(0.7).ease("quartOut");
-editorialLead.y = to(52).when(brandTitle, "halfway").duration(0.7).ease("quartOut");
-editorialLead.opacity = to(1).when(brandTitle, "halfway").duration(0.7).ease("quartOut");
+editorialLead.x = to(brandTitle.x).when(brandTitle, "halfway");
+editorialLead.y = to(52).when(brandTitle, "halfway");
+editorialLead.opacity = to(1).when(brandTitle, "halfway");
 
-heroBody.x = to("center").when(editorialLead, "halfway").duration(0.7).ease("quartOut");
-heroBody.y = to(64).when(editorialLead, "halfway").duration(0.7).ease("quartOut");
-heroBody.opacity = to(1).when(editorialLead, "halfway").duration(0.7).ease("quartOut");
+heroBody.x = to(brandTitle.x).when(editorialLead, "halfway");
+heroBody.y = to(64).when(editorialLead, "halfway");
+heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 
 // Mount the stage into the DOM and begin keyboard/hash navigation listeners.

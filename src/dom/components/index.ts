@@ -7,7 +7,6 @@ export { Text, type TextOptions } from "./Text";
 export { Card, type CardOptions } from "./Card";
 export { Badge, type BadgeOptions } from "./Badge";
 export { Kicker, type KickerOptions } from "./Kicker";
-export { Metric, type MetricProps } from "./Metric";
 export { CodeBlock, type CodeBlockOptions } from "./CodeBlock";
 export { TerminalWindow, type TerminalWindowProps } from "./TerminalWindow";
 export { BulletList, type BulletListOptions } from "./BulletList";

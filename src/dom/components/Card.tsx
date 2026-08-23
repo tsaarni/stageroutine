@@ -1,12 +1,10 @@
 /**
- * Container card component with border, surface styling, and optional title/subtitle.
+ * Container card component providing a surfaced glass box for slide content.
  */
 
 import type { ElementOptions } from "../element";
 
 export interface CardOptions extends ElementOptions {
-  title?: string;
-  subtitle?: string;
   width?: number | string;
   height?: number | string;
   borderColor?: string;
@@ -16,10 +14,20 @@ export interface CardOptions extends ElementOptions {
   children?: unknown;
 }
 
-export function Card(labelOrOptions: string | CardOptions, maybeOptions: CardOptions = {}) {
-  const isString = typeof labelOrOptions === "string";
-  const options: CardOptions = isString ? maybeOptions : labelOrOptions;
-  const label = isString ? labelOrOptions : undefined;
+export function Card(childrenOrOptions?: unknown, maybeOptions: CardOptions = {}) {
+  let children: unknown = childrenOrOptions;
+  let options: CardOptions = maybeOptions;
+
+  if (
+    childrenOrOptions &&
+    typeof childrenOrOptions === "object" &&
+    !("nodeType" in childrenOrOptions) &&
+    !("domElement" in childrenOrOptions) &&
+    !Array.isArray(childrenOrOptions)
+  ) {
+    options = childrenOrOptions as CardOptions;
+    children = options.children;
+  }
 
   const classes = ["sr-card", options.className].filter(Boolean).join(" ");
   const customStyles: Record<string, string> = {};
@@ -37,31 +45,7 @@ export function Card(labelOrOptions: string | CardOptions, maybeOptions: CardOpt
 
   return (
     <div className={classes} style={customStyles} {...options}>
-      {options.title && (
-        <div
-          style={{
-            fontWeight: "600",
-            fontSize: "1.25rem",
-            marginBottom: "0.4rem",
-            color: "#f8fafc",
-          }}
-        >
-          {options.title}
-        </div>
-      )}
-      {options.subtitle && (
-        <div
-          style={{
-            fontSize: "0.95rem",
-            color: "#94a3b8",
-            marginBottom: "0.75rem",
-          }}
-        >
-          {options.subtitle}
-        </div>
-      )}
-      {label}
-      {options.children as unknown as Node}
+      {children as unknown as Node}
     </div>
   );
 }

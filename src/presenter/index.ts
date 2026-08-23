@@ -4,8 +4,8 @@
 
 import { getActiveStage } from "../core/index";
 
-export function notes(content: string): void {
-  getActiveStage().setNotes(content.trim());
+export function notes(content: string | string[]): void {
+  getActiveStage().setNotes(content);
 }
 
 export interface PresenterStepInfo {

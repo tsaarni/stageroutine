@@ -2,14 +2,22 @@
  * Exports DOM components, the zero-VDOM JSX runtime, and layout helpers.
  */
 
-export { DOMElement, type ElementOptions } from "./element";
+export { DOMElement, type ElementOptions, type ElementDecorator } from "./element";
+export {
+  gradient,
+  type GradientOptions,
+  glow,
+  type GlowOptions,
+  typewriter,
+  type TypewriterOptions,
+  type TypewriterStep,
+} from "./decorators/index";
 export {
   Title,
   Text,
   Card,
   Badge,
   Kicker,
-  Metric,
   CodeBlock,
   TerminalWindow,
   BulletList,
@@ -18,7 +26,6 @@ export {
   type CardOptions,
   type BadgeOptions,
   type KickerOptions,
-  type MetricProps,
   type CodeBlockOptions,
   type TerminalWindowProps,
   type BulletListOptions,

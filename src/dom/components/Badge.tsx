@@ -7,6 +7,7 @@ import type { ElementOptions } from "../element";
 export interface BadgeOptions extends ElementOptions {
   background?: string;
   color?: string;
+  borderColor?: string;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export function Badge(label: string, options: BadgeOptions = {}) {
 
   if (options.background) customStyles.backgroundColor = options.background;
   if (options.color) customStyles.color = options.color;
+  if (options.borderColor) customStyles.borderColor = options.borderColor;
 
   return (
     <span className={classes} style={customStyles} {...options}>

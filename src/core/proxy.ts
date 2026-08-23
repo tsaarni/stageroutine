@@ -27,6 +27,13 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
   host: ElementHost,
 ): T {
   return new Proxy(element, {
+    has(target, prop) {
+      if (typeof prop === "string" && host.getCurrentPropertyValue(target.id, prop) !== undefined) {
+        return true;
+      }
+      return Reflect.has(target, prop);
+    },
+
     get(target, prop, receiver) {
       if (typeof prop === "symbol") {
         return Reflect.get(target, prop, receiver);

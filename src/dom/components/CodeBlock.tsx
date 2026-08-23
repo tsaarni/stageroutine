@@ -12,12 +12,16 @@ export interface CodeBlockOptions extends ElementOptions {
   className?: string;
 }
 
-export function CodeBlock(snippet: string, options: CodeBlockOptions = {}): ReactiveElementBase {
+export function CodeBlock(
+  snippet: string | string[],
+  options: CodeBlockOptions = {},
+): ReactiveElementBase {
   const lang = options.lang || "typescript";
   const theme = options.theme || "vitesse-dark";
   const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
 
-  const trimmed = snippet.trim();
+  const rawSnippet = Array.isArray(snippet) ? snippet.join("\n") : snippet;
+  const trimmed = rawSnippet.trim();
   const el = (
     <pre className={classes} {...options}>
       <code>{trimmed}</code>

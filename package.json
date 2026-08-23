@@ -8,8 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./jsx-runtime": "./src/dom/jsx-runtime.ts",
-    "./jsx-dev-runtime": "./src/dom/jsx-dev-runtime.ts",
-    "./styles.css": "./src/dom/styles.css"
+    "./style.css": "./src/dom/style.css",
+    "./styles.css": "./src/dom/style.css"
   },
   "scripts": {
     "dev": "vite",
@@ -23,11 +23,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/three": "^0.185.4",
     "typescript": "^5.7.3",
     "vite": "^6.2.0"
   },
   "packageManager": "pnpm@11.7.0",
   "dependencies": {
-    "shiki": "^4.4.3"
+    "shiki": "^4.4.3",
+    "three": "^0.185.1"
   }
 }

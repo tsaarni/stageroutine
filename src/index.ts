@@ -28,7 +28,23 @@ export type {
   ThemeConfig,
   ReactiveProp,
   ReactiveElementBase,
+  Background,
+  StageContext,
+  StageEventMap,
+  SceneChangeEvent,
+  ResizeEvent,
 } from "./core/types";
+
+// Backgrounds (WebGL, Three.js, Shaders & Canvas)
+export {
+  Starfield,
+  type StarfieldOptions,
+  AsciiFluid,
+  type AsciiFluidOptions,
+  GradientFluid,
+  type GradientFluidOptions,
+  type BaseFluidOptions,
+} from "./backgrounds/index";
 
 // DOM Components
 export {
@@ -37,11 +53,13 @@ export {
   Card,
   Badge,
   Kicker,
-  Metric,
   CodeBlock,
   TerminalWindow,
   BulletList,
   DOMElement,
+  gradient,
+  glow,
+  typewriter,
   stagger,
   jsx,
   jsxs,
@@ -53,11 +71,15 @@ export {
   type CardOptions,
   type BadgeOptions,
   type KickerOptions,
-  type MetricProps,
   type CodeBlockOptions,
   type TerminalWindowProps,
   type BulletListOptions,
   type ElementOptions,
+  type ElementDecorator,
+  type GradientOptions,
+  type GlowOptions,
+  type TypewriterOptions,
+  type TypewriterStep,
   type JSX,
 } from "./dom/index";
 

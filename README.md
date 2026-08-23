@@ -23,6 +23,7 @@ pnpm dev
 
 See [demo/main.ts](demo/main.ts) for an example presentation.
 
+
 ## Presenter Console
 
 The presenter console (`/presenter`) opens in a separate window or screen and synchronizes with the main presentation over `BroadcastChannel` without needing a server.

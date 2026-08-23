@@ -17,7 +17,8 @@
     "baseUrl": ".",
     "paths": {
       "stageroutine": ["./src/index.ts"],
-      "stageroutine/styles.css": ["./src/dom/styles.css"],
+      "stageroutine/style.css": ["./src/dom/style.css"],
+      "stageroutine/styles.css": ["./src/dom/style.css"],
       "stageroutine/jsx-runtime": ["./src/dom/jsx-runtime.ts"],
       "stageroutine/jsx-dev-runtime": ["./src/dom/jsx-dev-runtime.ts"],
       "stageroutine/*": ["./src/*"]

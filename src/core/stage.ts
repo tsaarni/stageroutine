@@ -6,9 +6,14 @@ import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { type ElementHost, createReactiveProxy } from "./proxy";
 import type {
   AnimationMilestone,
+  Background,
   EaseCurve,
   ElementAnchor,
   ReactiveElementBase,
+  ResizeEvent,
+  SceneChangeEvent,
+  StageContext,
+  StageEventMap,
   StageOptions,
   StepData,
   StepSnapshot,
@@ -73,6 +78,36 @@ export class Stage implements ElementHost {
   private isAnimating = false;
   private animFrameId: number | null = null;
   private broadcastChannel: BroadcastChannel | null = null;
+  private activeSceneName = "";
+  private listeners = new Map<string, Set<(data: unknown) => void>>();
+
+  on<K extends keyof StageEventMap>(
+    event: K,
+    handler: (data: StageEventMap[K]) => void,
+  ): () => void {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+    const genericHandler = handler as (data: unknown) => void;
+    set.add(genericHandler);
+    return () => {
+      set?.delete(genericHandler);
+    };
+  }
+
+  emit<K extends keyof StageEventMap>(event: K, data: StageEventMap[K]): void {
+    const set = this.listeners.get(event);
+    if (!set) return;
+    for (const handler of set) {
+      try {
+        handler(data);
+      } catch (err) {
+        console.error(`Error in stage event handler for "${event}":`, err);
+      }
+    }
+  }
 
   constructor(options: StageOptions = {}) {
     this.options = {
@@ -170,6 +205,20 @@ export class Stage implements ElementHost {
     return new SceneBuilder(this, name);
   }
 
+  /**
+   * Apply global or per-scene theme variable overrides.
+   * Updates CSS custom properties on the stage container and preserves them across step snapshots.
+   *
+   * @example
+   * ```ts
+   * stage.theme({
+   *   background: "#0f172a",
+   *   surface: "#1e293b",
+   *   surfaceBorder: "1px solid #334155",
+   *   text: "#f8fafc",
+   * });
+   * ```
+   */
   theme(config: ThemeConfig): this {
     this.currentTheme = { ...this.currentTheme, ...config };
     if (this.container) {
@@ -201,11 +250,21 @@ export class Stage implements ElementHost {
 
   _setActiveScene(name: string, elements: ReactiveElementBase[]): void {
     this.currentSceneName = name;
-    this.activeElementIds = new Set(elements.map((e) => e.id));
+    const ids = new Set<string>();
+    for (const e of elements) {
+      ids.add(e.id);
+      const items = (e as unknown as { items?: ReactiveElementBase[] }).items;
+      if (Array.isArray(items)) {
+        for (const child of items) {
+          ids.add(child.id);
+        }
+      }
+    }
+    this.activeElementIds = ids;
   }
 
-  setNotes(text: string): void {
-    this.currentStepNotes = text;
+  setNotes(text: string | string[]): void {
+    this.currentStepNotes = Array.isArray(text) ? text.join("\n") : text;
   }
 
   pause(): void {
@@ -299,6 +358,16 @@ export class Stage implements ElementHost {
       }
     }
 
+    // Attach background if provided
+    if (this.options.background) {
+      this.options.background.attach({
+        container: this.container,
+        width: this.options.width || 1920,
+        height: this.options.height || 1080,
+        on: this.on.bind(this),
+      });
+    }
+
     // Responsive scaling resize handler
     const updateScale = () => {
       if (!this.viewport) return;
@@ -306,6 +375,7 @@ export class Stage implements ElementHost {
       const sh = window.innerHeight / (this.options.height || 1080);
       const scale = Math.min(sw, sh);
       this.viewport.style.transform = `scale(${scale})`;
+      this.emit("resize", { width: window.innerWidth, height: window.innerHeight });
     };
 
     window.addEventListener("resize", updateScale);
@@ -365,6 +435,12 @@ export class Stage implements ElementHost {
     const snap = this.snapshots[stepIdx];
     if (!snap) return;
 
+    if (snap.sceneName !== this.activeSceneName) {
+      const from = this.activeSceneName;
+      this.activeSceneName = snap.sceneName;
+      this.emit("sceneChange", { from, to: snap.sceneName, stepIndex: stepIdx });
+    }
+
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
@@ -411,6 +487,12 @@ export class Stage implements ElementHost {
   private _playStepTransition(stepIdx: number): void {
     const step = this.steps[stepIdx];
     if (!step) return;
+
+    if (step.sceneName !== this.activeSceneName) {
+      const from = this.activeSceneName;
+      this.activeSceneName = step.sceneName;
+      this.emit("sceneChange", { from, to: step.sceneName, stepIndex: stepIdx });
+    }
 
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
@@ -581,8 +663,12 @@ export class Stage implements ElementHost {
     node.style.transformOrigin = transformOrigin;
     node.style.opacity = `${opacity}`;
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
-    node.style.pointerEvents = opacity === 0 ? "none" : "auto";
-    node.style.filter = `blur(${blur}px) brightness(${brightness})`;
+    if (blur > 0 || brightness !== 1) {
+      const filters: string[] = [];
+      if (blur > 0) filters.push(`blur(${blur}px)`);
+      if (brightness !== 1) filters.push(`brightness(${brightness})`);
+      node.style.filter = filters.join(" ");
+    }
     if (color && color !== "inherit") {
       node.style.color = color;
     }

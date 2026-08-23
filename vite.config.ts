@@ -28,7 +28,8 @@ export default defineConfig({
   plugins: [presenterPlugin()],
   resolve: {
     alias: {
-      "stageroutine/styles.css": resolve(__dirname, "src/dom/styles.css"),
+      "stageroutine/style.css": resolve(__dirname, "src/dom/style.css"),
+      "stageroutine/styles.css": resolve(__dirname, "src/dom/style.css"),
       "stageroutine/jsx-runtime": resolve(__dirname, "src/dom/jsx-runtime.ts"),
       "stageroutine/jsx-dev-runtime": resolve(__dirname, "src/dom/jsx-dev-runtime.ts"),
       stageroutine: resolve(__dirname, "src/index.ts"),

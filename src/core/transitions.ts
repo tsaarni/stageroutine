@@ -8,6 +8,7 @@ import type {
   EaseCurve,
   ReactiveElementBase,
   TransitionDescriptor,
+  UnwrapTransition,
 } from "./types";
 
 /**
@@ -116,16 +117,24 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
     this.target = target;
   }
 
+  /** Sets animation duration in seconds. */
   duration(seconds: number): this {
     this.durationMs = Math.max(0, seconds * 1000);
     return this;
   }
 
+  /** Adds a delay in seconds before animation begins. */
   delay(seconds: number): this {
     this.delayMs = Math.max(0, seconds * 1000);
     return this;
   }
 
+  /**
+   * Synchronizes this transition to start when another element reaches an animation milestone.
+   * @param elementOrId Target element or element ID to listen to.
+   * @param milestone Progress milestone: `"start"`, `"halfway"`, `"end"` (default), or a fraction (0..1).
+   * @param property Optional specific property on the target element to track.
+   */
   when(
     elementOrId: ReactiveElementBase | string,
     milestone: AnimationMilestone = "end",
@@ -137,10 +146,16 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
     return this;
   }
 
+  /**
+   * Chains this transition to start after another element completes its animation (alias for `.when(element, "end")`).
+   * @param elementOrId Target element or element ID to wait for.
+   * @param property Optional specific property on the target element to wait for.
+   */
   after(elementOrId: ReactiveElementBase | string, property?: string): this {
     return this.when(elementOrId, "end", property);
   }
 
+  /** Sets the easing curve (e.g. `"quartOut"`, `"cubicInOut"`, `"smooth"`). */
   ease(curve: BuiltinEase | EaseCurve): this {
     if (typeof curve === "string") {
       this.curve = builtinEasings[curve] ?? builtinEasings.quartOut;
@@ -155,8 +170,8 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
  * Creates a fluent transition modifier.
  * e.g. `to(200).duration(1.5).ease("outExpo")`
  */
-export function to<T>(target: T): TransitionDescriptor<T> {
-  return new TransitionBuilder(target);
+export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>> {
+  return new TransitionBuilder(target) as unknown as TransitionDescriptor<UnwrapTransition<T>>;
 }
 
 export function isTransitionDescriptor(value: unknown): value is TransitionDescriptor {

@@ -55,6 +55,7 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
   }
 
   const parentDOM = new DOMElement("BulletList", container, options) as BulletListElement;
+  parentDOM.items = childElements;
   const proxyParent = stage.registerElement(parentDOM) as BulletListElement;
   proxyParent.items = childElements;
   return proxyParent;

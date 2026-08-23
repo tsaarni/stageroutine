@@ -7,6 +7,7 @@ StageRoutine is a presentation framework for building animated slides in TypeScr
 - **Stage**: The presentation engine and canvas. It manages the virtual viewport and runs all animations during playback.
 - **Components**: Reusable functions or TSX templates (like `Title`, `Card`, or `CodeBlock`) that define markup, styles, and default properties.
 - **Elements**: Instantiated components. Each element wraps a native DOM node (`HTMLElement`) with reactive properties like `x`, `y`, `scale`, and `opacity`. Assigning to these properties (e.g. `title.x = 50`) tells the stage to animate the underlying DOM node.
+- **Decorators**: Composable enhancer functions (like `gradient`, `glow`, or `typewriter`) attached via `.decorate()` to add visual styling, animations, or dynamic behaviors to elements without altering their component markup.
 - **Scenes**: Declarations of which elements are visible on the stage. Elements kept across consecutive scenes stay on screen and smoothly transition to their new positions.
 - **Pauses**: Stopping points created with `stage.pause()`. When presenting, playback stops at each pause to wait for user input, animating all property changes made up to that point.
 - **Script**: The top-to-bottom TypeScript file where you orchestrate your stage, elements, scenes, and pauses into a complete presentation.

@@ -8,32 +8,20 @@ import {
   BulletList,
   Card,
   CodeBlock,
-  GradientFluid,
   Kicker,
-  Starfield,
+  Stage,
   TerminalWindow,
   Text,
   Title,
-  Stage,
   glow,
   gradient,
-  grain,
   to,
   typewriter,
   vignette,
 } from "../src/index";
 
 // Initialize presentation stage with the ASCII Fluid background
-const stage = new Stage().background(
-  AsciiFluid({
-    characters: " .:-=+*#%@",
-    cellSize: 14,
-    color: "#38bdf8",
-    backgroundColor: "#09090b",
-    opacity: 0.35,
-    waveSpeed: 0.22,
-  }).decorate(vignette({ opacity: 0.95 })),
-);
+const stage = new Stage().background(AsciiFluid().decorate(vignette()));
 
 // Positioning components:
 // - x, y: The spot on the stage (percentage from top-left, or "center").
@@ -46,7 +34,6 @@ const brandTitle = Title("StageRoutine", {
   hero: true,
   x: "center",
   y: 38,
-  scale: 1,
   opacity: 0,
 });
 
@@ -150,9 +137,7 @@ editorialLead.opacity = 0;
 heroBody.opacity = 0;
 
 // Milestone triggers (.when): chain animations to start after another element completes ("end") or reaches "halfway".
-leftHeading.x = to(leftHeading.x).when(brandTitle, "end");
 leftHeading.opacity = to(1).when(brandTitle, "end");
-leftBody.x = to(leftHeading.x).when(leftHeading, "halfway");
 leftBody.opacity = to(1).when(leftHeading, "halfway");
 
 // Slide code panel into the right column.
@@ -219,9 +204,7 @@ leftBody.x = -50;
 codePanel.x = to(brandTitle.x).ease("cubicInOut");
 
 // Reveal right column after the code panel passes halfway.
-rightHeading.x = to(rightHeading.x).when(codePanel, "halfway");
 rightHeading.opacity = to(1).when(codePanel, "halfway");
-rightBody.x = to(rightHeading.x).when(rightHeading, "halfway");
 rightBody.opacity = to(1).when(rightHeading, "halfway");
 
 // Cascade individual bullet items sequentially.
@@ -266,11 +249,6 @@ codePanel.opacity = 0;
 
 terminalPanel.y = to(19).when(codePanel, "halfway");
 terminalPanel.opacity = to(1).when(codePanel, "halfway");
-
-// Keep right column in place.
-rightHeading.opacity = 1;
-rightBody.opacity = 1;
-featureChecklist.opacity = 1;
 stage.pause();
 
 // --- Scene: Component Showcase ---
@@ -431,15 +409,7 @@ const decoratorTypewriterDemo = Text(
     opacity: 0,
     style: { width: "42cqw" },
   },
-).decorate(
-  typewriter({
-    speed: 38,
-    jitter: 0.4,
-    punctuationPause: 280,
-    mistakePause: 320,
-    delay: 0.6,
-  }),
-);
+).decorate(typewriter({ delay: 0.6 }));
 
 const decoratorCode = CodeBlock(
   [
@@ -450,15 +420,7 @@ const decoratorCode = CodeBlock(
     "}));",
     "",
     "// Realistic typing with typos and backspaces",
-    "text.decorate(typewriter({",
-    "  speed: 38,",
-    "  mistakePause: 320,",
-    "  script: [",
-    "    'Decorators simulatte',",
-    "    { delete: 2 }, // Backspaces 'te'",
-    "    'e realistic typing!',",
-    "  ],",
-    "}));",
+    "text.decorate(typewriter({ delay: 0.6 }));",
   ],
   {
     x: rightHeading.x,
@@ -524,14 +486,10 @@ decoratorCode.opacity = 0;
 brandTitle.x = to("center").ease("cubicInOut");
 brandTitle.y = to(38).ease("cubicInOut");
 brandTitle.scale = to(1).ease("cubicInOut");
-brandTitle.opacity = 1;
 
-editorialLead.x = to(brandTitle.x).when(brandTitle, "halfway");
 editorialLead.y = to(52).when(brandTitle, "halfway");
 editorialLead.opacity = to(1).when(brandTitle, "halfway");
 
-heroBody.x = to(brandTitle.x).when(editorialLead, "halfway");
-heroBody.y = to(64).when(editorialLead, "halfway");
 heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 

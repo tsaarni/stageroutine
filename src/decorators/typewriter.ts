@@ -1,36 +1,88 @@
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
-export type TypewriterStep = string | { delete: number; pause?: number } | { pause: number };
+/**
+ * Represents an individual action in a structured typewriter script:
+ * - `string`: Types out the text at default speed.
+ * - `{ text: string; speed?: number }`: Types out text at an optional custom per-character speed in seconds.
+ * - `{ delete: number; pause?: number; speed?: number }`: Backspaces `delete` count of characters after an optional `pause` in seconds, with optional backspace `speed` in seconds.
+ * - `{ pause: number }`: Pauses typing for a given duration in seconds.
+ *
+ * All time durations across typewriter steps are expressed in **seconds** (float).
+ */
+export type TypewriterStep =
+  | string
+  | { text: string; speed?: number }
+  | { delete: number; pause?: number; speed?: number }
+  | { pause: number };
 
+/**
+ * Configuration options for the `typewriter` element decorator.
+ * All time durations are expressed in **seconds** (float).
+ */
 export interface TypewriterOptions {
-  /** Average speed per character in milliseconds (default: 45). */
+  /** Default typing speed per character in seconds (default: `0.045`). */
   speed?: number;
-  /** Backspace deletion speed per character in milliseconds (default: 28). */
+  /** Default backspace deletion speed per character in seconds (default: `0.028`). */
   deleteSpeed?: number;
-  /** Jitter/randomness factor from 0 to 1 for humanized typing cadence (default: 0.35). */
+  /** Jitter/randomness factor from 0 to 1 for humanized typing cadence (default: `0.35`). */
   jitter?: number;
-  /** Extra pause in milliseconds on punctuation like .,!? (default: 250). */
+  /** Extra pause in seconds on punctuation characters like `.,!?` (default: `0.25`). */
   punctuationPause?: number;
-  /** Pause in milliseconds after noticing a mistake before backspacing (default: 300). */
+  /** Pause in seconds after noticing a mistake before backspacing (default: `0.3`). */
   mistakePause?: number;
-  /** Initial delay in seconds before typing begins once visible (default: 0). */
+  /** Initial delay in seconds before typing begins once the element becomes visible (default: `0`). */
   delay?: number;
-  /** Cursor symbol to display while typing (default: "▋", pass false to disable). */
+  /** Cursor symbol to display while typing (default: `"▋"`, pass `false` to disable). */
   cursor?: string | false;
-  /** Custom typing and deletion script. */
+  /**
+   * Custom typing, backspacing, and pause steps.
+   * All time values in script steps are in **seconds** (float).
+   */
   script?: TypewriterStep[];
 }
 
 /**
  * Decorates an element with human-like, realistic typing cadence, typo corrections, and blinking cursor.
+ *
+ * All duration and timing values are expressed in **seconds** (float).
+ *
+ * @example
+ * ```ts
+ * // 1. Typing initial element text with entrance delay
+ * heading.decorate(typewriter({ delay: 0.5 }));
+ *
+ * // 2. Custom script with simulated typos, pauses, and backspacing
+ * text.decorate(typewriter({
+ *   delay: 0.6,
+ *   script: [
+ *     "Decorators can simulatte",
+ *     { delete: 2 },
+ *     "e realistic typing...",
+ *   ],
+ * }));
+ *
+ * // 3. Passing a script array directly
+ * label.decorate(typewriter([
+ *   "Loading...",
+ *   { pause: 0.5 },
+ *   { delete: 10 },
+ *   "Ready!",
+ * ]));
+ * ```
  */
-export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
+export function typewriter(
+  optionsOrScript: TypewriterOptions | TypewriterStep[] = {},
+): ElementDecorator {
+  const options: TypewriterOptions = Array.isArray(optionsOrScript)
+    ? { script: optionsOrScript }
+    : optionsOrScript;
+
   const {
-    speed = 45,
-    deleteSpeed = 28,
+    speed = 0.045,
+    deleteSpeed = 0.028,
     jitter = 0.35,
-    punctuationPause = 250,
-    mistakePause = 300,
+    punctuationPause = 0.25,
+    mistakePause = 0.3,
     delay = 0,
     cursor = "▋",
     script,
@@ -59,48 +111,55 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
       el.appendChild(cursorSpan);
     }
 
-    const steps: TypewriterStep[] = script || parseTextWithDeletes(initialText);
+    const steps: TypewriterStep[] = script || [initialText];
 
     let stepIndex = 0;
     let charIndex = 0;
     let activeTimer: ReturnType<typeof setTimeout> | null = null;
-    let isPlaying = false;
+    let _isPlaying = false;
 
-    function getNextCharDelay(char: string): number {
-      const randomJitter = (Math.random() * 2 - 1) * jitter * speed;
-      let charDelay = Math.max(15, speed + randomJitter);
+    function getNextCharDelay(char: string, baseSpeedSec: number): number {
+      const randomJitter = (Math.random() * 2 - 1) * jitter * baseSpeedSec;
+      let charDelay = Math.max(0.015, baseSpeedSec + randomJitter);
 
       if (/[.,!?;:]/.test(char)) {
         charDelay += punctuationPause;
       }
-      return charDelay;
+      return charDelay * 1000;
     }
 
     function executeStep() {
       if (stepIndex >= steps.length) {
-        isPlaying = false;
+        _isPlaying = false;
         return;
       }
 
       const currentStep = steps[stepIndex];
 
-      if (typeof currentStep === "string") {
-        if (charIndex < currentStep.length) {
-          const char = currentStep[charIndex];
+      if (
+        typeof currentStep === "string" ||
+        ("text" in currentStep && typeof currentStep.text === "string")
+      ) {
+        const text = typeof currentStep === "string" ? currentStep : currentStep.text;
+        const charSpeed = (typeof currentStep === "object" && currentStep.speed) || speed;
+
+        if (charIndex < text.length) {
+          const char = text[charIndex];
           textSpan.textContent += char;
           charIndex++;
-          activeTimer = setTimeout(executeStep, getNextCharDelay(char));
+          activeTimer = setTimeout(executeStep, getNextCharDelay(char, charSpeed));
         } else {
           stepIndex++;
           charIndex = 0;
-          activeTimer = setTimeout(executeStep, speed);
+          activeTimer = setTimeout(executeStep, charSpeed * 1000);
         }
       } else if ("pause" in currentStep && !("delete" in currentStep)) {
         stepIndex++;
-        activeTimer = setTimeout(executeStep, currentStep.pause);
+        activeTimer = setTimeout(executeStep, currentStep.pause * 1000);
       } else if ("delete" in currentStep) {
         const countToDelete = currentStep.delete;
         const pauseBefore = currentStep.pause ?? mistakePause;
+        const stepDeleteSpeed = currentStep.speed ?? deleteSpeed;
 
         activeTimer = setTimeout(() => {
           let deleted = 0;
@@ -112,14 +171,14 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
             ) {
               textSpan.textContent = textSpan.textContent.slice(0, -1);
               deleted++;
-              activeTimer = setTimeout(backspaceChar, deleteSpeed);
+              activeTimer = setTimeout(backspaceChar, stepDeleteSpeed * 1000);
             } else {
               stepIndex++;
-              activeTimer = setTimeout(executeStep, speed + 50);
+              activeTimer = setTimeout(executeStep, (speed + 0.05) * 1000);
             }
           }
           backspaceChar();
-        }, pauseBefore);
+        }, pauseBefore * 1000);
       }
     }
 
@@ -131,7 +190,7 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
       textSpan.textContent = "";
       stepIndex = 0;
       charIndex = 0;
-      isPlaying = true;
+      _isPlaying = true;
 
       if (delay > 0) {
         activeTimer = setTimeout(executeStep, delay * 1000);
@@ -139,6 +198,23 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
         executeStep();
       }
     }
+
+    function stopTyping() {
+      if (activeTimer) {
+        clearTimeout(activeTimer);
+        activeTimer = null;
+      }
+      _isPlaying = false;
+    }
+
+    element.onPlay(() => {
+      startTyping();
+    });
+
+    element.onPause(() => {
+      stopTyping();
+      textSpan.textContent = "";
+    });
 
     // Auto-trigger and replay whenever element transitions into view
     const isCurrentlyVisible = () => {
@@ -159,11 +235,7 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
       if (currentlyVisible && !wasVisible) {
         startTyping();
       } else if (!currentlyVisible && wasVisible) {
-        if (activeTimer) {
-          clearTimeout(activeTimer);
-          activeTimer = null;
-        }
-        isPlaying = false;
+        stopTyping();
         textSpan.textContent = "";
       }
 
@@ -172,30 +244,4 @@ export function typewriter(options: TypewriterOptions = {}): ElementDecorator {
 
     observer.observe(el, { attributes: true, attributeFilter: ["style"] });
   };
-}
-
-/**
- * Helper that parses inline `<del:N>` tokens into structured typing steps.
- * E.g. "simulatte<del:2>e" -> ["simulatte", { delete: 2 }, "e"]
- */
-function parseTextWithDeletes(text: string): TypewriterStep[] {
-  const steps: TypewriterStep[] = [];
-  const regex = /<del:(\d+)>/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null = regex.exec(text);
-
-  while (match !== null) {
-    if (match.index > lastIndex) {
-      steps.push(text.substring(lastIndex, match.index));
-    }
-    steps.push({ delete: Number.parseInt(match[1], 10) });
-    lastIndex = regex.lastIndex;
-    match = regex.exec(text);
-  }
-
-  if (lastIndex < text.length) {
-    steps.push(text.substring(lastIndex));
-  }
-
-  return steps;
 }

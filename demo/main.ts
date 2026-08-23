@@ -401,15 +401,21 @@ const decoratorGradientDemo = Title("Gradient Flow in Action", {
   }),
 );
 
-const decoratorTypewriterDemo = Text(
-  "Decorators can simulatte<del:2>e realistic typing, including typos, backspaces, and corrections...",
-  {
-    x: decoratorKicker.x,
-    y: 48,
-    opacity: 0,
-    style: { width: "42cqw" },
-  },
-).decorate(typewriter({ delay: 0.6 }));
+const decoratorTypewriterDemo = Text("", {
+  x: decoratorKicker.x,
+  y: 48,
+  opacity: 0,
+  style: { width: "42cqw" },
+}).decorate(
+  typewriter({
+    delay: 0.6,
+    script: [
+      "Decorators can simulatte",
+      { delete: 2 },
+      "e realistic typing, including typos, backspaces, and corrections...",
+    ],
+  }),
+);
 
 const decoratorCode = CodeBlock(
   [
@@ -419,8 +425,15 @@ const decoratorCode = CodeBlock(
     "  duration: 5,",
     "}));",
     "",
-    "// Realistic typing with typos and backspaces",
-    "text.decorate(typewriter({ delay: 0.6 }));",
+    "// Realistic typing with structured script",
+    "text.decorate(typewriter({",
+    "  delay: 0.6,",
+    "  script: [",
+    "    'Decorators can simulatte',",
+    "    { delete: 2 },",
+    "    'e realistic typing...',",
+    "  ],",
+    "}));",
   ],
   {
     x: rightHeading.x,

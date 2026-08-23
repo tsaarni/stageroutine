@@ -74,8 +74,16 @@ export abstract class BackgroundElement extends DOMElement {
   /** Starts or resumes the continuous WebGL render loop */
   abstract resume(): void;
 
+  /** Resumes both CSS animations and the WebGL render loop */
+  override play(): void {
+    super.play();
+    this.resume();
+  }
+
   /** Pauses the continuous WebGL render loop to save 100% GPU/CPU when hidden */
-  abstract pause(): void;
+  override pause(): void {
+    super.pause();
+  }
 
   /** Clean up WebGL resources, geometries, textures, and observers */
   abstract dispose(): void;

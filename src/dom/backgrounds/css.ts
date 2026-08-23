@@ -43,7 +43,6 @@ export class CSSBackgroundElement extends DOMElement {
 export function CSSBackground(
   cssOrOptions: string | CSSBackgroundOptions = {},
 ): CSSBackgroundElement {
-  const options =
-    typeof cssOrOptions === "string" ? { background: cssOrOptions } : cssOrOptions;
+  const options = typeof cssOrOptions === "string" ? { background: cssOrOptions } : cssOrOptions;
   return new CSSBackgroundElement(options);
 }

@@ -157,6 +157,8 @@ export interface Background {
   attach(stage: StageContext): void;
   dispose?(): void;
   decorate?(decorator: BackgroundDecorator): this;
+  play?(): void;
+  pause?(): void;
 }
 
 export interface StageOptions {
@@ -195,4 +197,6 @@ export interface ReactiveElementBase {
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color?: ReactiveProp<string>;
+  play?(): void;
+  pause?(): void;
 }

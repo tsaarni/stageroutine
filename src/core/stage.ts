@@ -10,9 +10,6 @@ import type {
   EaseCurve,
   ElementAnchor,
   ReactiveElementBase,
-  ResizeEvent,
-  SceneChangeEvent,
-  StageContext,
   StageEventMap,
   StageOptions,
   StepData,
@@ -508,6 +505,7 @@ export class Stage implements ElementHost {
 
       const props = snap.properties.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
+      el.play?.();
     }
 
     this.visibleElementIds = new Set(snap.activeElementIds);
@@ -587,6 +585,7 @@ export class Stage implements ElementHost {
       if (!el) continue;
       const props = this.propertyState.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
+      el.play?.();
     }
 
     for (let pass = 0; pass < 6; pass++) {
@@ -675,6 +674,7 @@ export class Stage implements ElementHost {
     node.style.opacity = "0";
     node.style.visibility = "hidden";
     node.style.pointerEvents = "none";
+    element.pause?.();
   }
 
   private _applyStyles(element: ReactiveElementBase, props: Record<string, unknown>): void {

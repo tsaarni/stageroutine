@@ -39,6 +39,10 @@ export class DOMElement implements ReactiveElementBase {
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
 
+  private isPlaying = true;
+  private playListeners = new Set<() => void>();
+  private pauseListeners = new Set<() => void>();
+
   constructor(
     kind: string,
     html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string,
@@ -100,6 +104,56 @@ export class DOMElement implements ReactiveElementBase {
 
     if (options.style) {
       Object.assign(this.domElement.style, options.style);
+    }
+  }
+
+  /**
+   * Registers a callback triggered whenever this element enters active playback state.
+   */
+  onPlay(fn: () => void): () => void {
+    this.playListeners.add(fn);
+    return () => this.playListeners.delete(fn);
+  }
+
+  /**
+   * Registers a callback triggered whenever this element enters paused state.
+   */
+  onPause(fn: () => void): () => void {
+    this.pauseListeners.add(fn);
+    return () => this.pauseListeners.delete(fn);
+  }
+
+  /**
+   * Resumes all CSS and Web Animations running on this element and its subtree.
+   */
+  play(): void {
+    if (this.isPlaying) return;
+    this.isPlaying = true;
+    this.domElement.style.animationPlayState = "running";
+    if (typeof this.domElement.getAnimations === "function") {
+      for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        anim.play();
+      }
+    }
+    for (const listener of this.playListeners) {
+      listener();
+    }
+  }
+
+  /**
+   * Pauses all CSS and Web Animations running on this element and its subtree to save CPU/GPU cycles.
+   */
+  pause(): void {
+    if (!this.isPlaying) return;
+    this.isPlaying = false;
+    this.domElement.style.animationPlayState = "paused";
+    if (typeof this.domElement.getAnimations === "function") {
+      for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        anim.pause();
+      }
+    }
+    for (const listener of this.pauseListeners) {
+      listener();
     }
   }
 

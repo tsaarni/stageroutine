@@ -35,16 +35,40 @@ export type {
   ResizeEvent,
 } from "./core/types";
 
-// Backgrounds (WebGL, Three.js, Shaders & Canvas)
+// Backgrounds (WebGL, Three.js, Shaders, Canvas & CSS)
 export {
+  BackgroundElement,
+  type BackgroundOptions,
+  CSSBackground,
+  CSSBackgroundElement,
+  type CSSBackgroundOptions,
   Starfield,
+  StarfieldElement,
   type StarfieldOptions,
   AsciiFluid,
-  type AsciiFluidOptions,
   GradientFluid,
+  FluidBackgroundElement,
   type GradientFluidOptions,
+  type AsciiFluidOptions,
   type BaseFluidOptions,
-} from "./backgrounds/index";
+} from "./dom/backgrounds/index";
+
+// Universal Decorators (Elements, Cards, Terminal & Backgrounds)
+export {
+  gradient,
+  glow,
+  vignette,
+  grain,
+  scrim,
+  typewriter,
+  type GradientOptions,
+  type GlowOptions,
+  type VignetteOptions,
+  type GrainOptions,
+  type ScrimOptions,
+  type TypewriterOptions,
+  type TypewriterStep,
+} from "./decorators/index";
 
 // DOM Components
 export {
@@ -57,9 +81,6 @@ export {
   TerminalWindow,
   BulletList,
   DOMElement,
-  gradient,
-  glow,
-  typewriter,
   stagger,
   jsx,
   jsxs,
@@ -76,10 +97,6 @@ export {
   type BulletListOptions,
   type ElementOptions,
   type ElementDecorator,
-  type GradientOptions,
-  type GlowOptions,
-  type TypewriterOptions,
-  type TypewriterStep,
   type JSX,
 } from "./dom/index";
 

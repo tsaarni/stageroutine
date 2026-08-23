@@ -77,6 +77,7 @@ export class DOMElement implements ReactiveElementBase {
     this.domElement.style.top = "0px";
     this.domElement.style.willChange = "transform, opacity, filter";
     this.domElement.style.pointerEvents = "auto";
+    this.domElement.style.zIndex = "1";
 
     const { transform, transformOrigin } = computeTransformAndOrigin(
       this.x as number | string,

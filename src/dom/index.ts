@@ -8,10 +8,16 @@ export {
   type GradientOptions,
   glow,
   type GlowOptions,
+  vignette,
+  type VignetteOptions,
+  grain,
+  type GrainOptions,
+  scrim,
+  type ScrimOptions,
   typewriter,
   type TypewriterOptions,
   type TypewriterStep,
-} from "./decorators/index";
+} from "../decorators/index";
 export {
   Title,
   Text,
@@ -30,5 +36,18 @@ export {
   type TerminalWindowProps,
   type BulletListOptions,
 } from "./components/index";
+export {
+  BackgroundElement,
+  type BackgroundOptions,
+  Starfield,
+  StarfieldElement,
+  type StarfieldOptions,
+  AsciiFluid,
+  GradientFluid,
+  FluidBackgroundElement,
+  type BaseFluidOptions,
+  type AsciiFluidOptions,
+  type GradientFluidOptions,
+} from "./backgrounds/index";
 export { stagger } from "./stagger";
 export { jsx, jsxs, jsxDEV, Fragment, createElement, type JSX } from "./jsx-runtime";

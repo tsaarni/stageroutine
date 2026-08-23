@@ -1,4 +1,4 @@
-import type { DOMElement, ElementDecorator } from "../element";
+import type { DOMElement, ElementDecorator } from "../dom/element";
 import { appendAnimation } from "./gradient";
 
 export interface GlowOptions {

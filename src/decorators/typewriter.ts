@@ -1,4 +1,4 @@
-import type { DOMElement, ElementDecorator } from "../element";
+import type { DOMElement, ElementDecorator } from "../dom/element";
 
 export type TypewriterStep = string | { delete: number; pause?: number } | { pause: number };
 

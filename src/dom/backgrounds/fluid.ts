@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import type { Background, StageContext } from "../core/types";
+import { BackgroundElement, type BackgroundOptions } from "./base";
 
 // ---------------------------------------------------------------------------
 // Configuration Interfaces
 // ---------------------------------------------------------------------------
 
-export interface BaseFluidOptions {
+export interface BaseFluidOptions extends BackgroundOptions {
   /** Background color behind the fluid (default: "#09090b") */
   backgroundColor?: string;
   /** Overall opacity / brightness factor (default: 0.28) */
@@ -234,7 +234,7 @@ const gradientFragmentShader = `
 `;
 
 // ---------------------------------------------------------------------------
-// Fluid Engine Factory
+// Fluid Background Reactive Element
 // ---------------------------------------------------------------------------
 
 interface FluidEngineConfig {
@@ -244,90 +244,102 @@ interface FluidEngineConfig {
   atlasTexture?: THREE.CanvasTexture;
 }
 
-function createFluidEngine(config: FluidEngineConfig): Background {
-  let animFrameId: number | null = null;
-  let renderer: THREE.WebGLRenderer | null = null;
-  let scene: THREE.Scene | null = null;
-  let camera: THREE.OrthographicCamera | null = null;
-  let material: THREE.ShaderMaterial | null = null;
-  let unbindResize: (() => void) | null = null;
+export class FluidBackgroundElement extends BackgroundElement {
+  private renderer: THREE.WebGLRenderer | null = null;
+  private scene: THREE.Scene | null = null;
+  private camera: THREE.OrthographicCamera | null = null;
+  private material: THREE.ShaderMaterial | null = null;
+  private animFrameId: number | null = null;
+  private clock: THREE.Clock = new THREE.Clock();
+  private config: FluidEngineConfig;
 
-  return {
-    attach(stage: StageContext) {
-      scene = new THREE.Scene();
-      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  constructor(kind: string, config: FluidEngineConfig, options: BaseFluidOptions = {}) {
+    super(kind, options);
+    this.config = config;
 
-      const allUniforms = {
-        ...config.uniforms,
-        u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        u_time: { value: 0 },
-      };
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-      material = new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader: config.fragmentShader,
-        uniforms: allUniforms,
-        depthWrite: false,
-        depthTest: false,
-      });
+    const allUniforms = {
+      ...config.uniforms,
+      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      u_time: { value: 0 },
+    };
 
-      const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-      scene.add(quad);
+    this.material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader: config.fragmentShader,
+      uniforms: allUniforms,
+      depthWrite: false,
+      depthTest: false,
+    });
 
-      renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material);
+    this.scene.add(quad);
 
-      const canvas = renderer.domElement;
-      canvas.style.position = "absolute";
-      canvas.style.inset = "0";
-      canvas.style.width = "100%";
-      canvas.style.height = "100%";
-      canvas.style.pointerEvents = "none";
-      canvas.style.zIndex = "0";
-      stage.container.prepend(canvas);
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: "high-performance",
+    });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-      unbindResize = stage.on("resize", ({ width, height }) => {
-        if (!renderer || !material) return;
-        renderer.setSize(width, height);
-        material.uniforms.u_resolution.value.set(width, height);
-      });
+    const canvas = this.renderer.domElement;
+    canvas.style.position = "absolute";
+    canvas.style.inset = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "0";
+    this.domElement.appendChild(canvas);
 
-      const clock = new THREE.Clock();
+    this.resume();
+  }
 
-      const animate = () => {
-        if (!renderer || !scene || !camera || !material) return;
+  onResize(width: number, height: number): void {
+    if (!this.renderer || !this.material) return;
+    this.renderer.setSize(width, height);
+    this.material.uniforms.u_resolution.value.set(width, height);
+  }
 
-        const time = clock.getElapsedTime() * (config.waveSpeed / 0.24);
-        material.uniforms.u_time.value = time;
-        renderer.render(scene, camera);
+  resume(): void {
+    if (this.isRunning) return;
+    this.isRunning = true;
 
-        animFrameId = requestAnimationFrame(animate);
-      };
+    const animate = () => {
+      if (!this.isRunning || !this.renderer || !this.scene || !this.camera || !this.material)
+        return;
 
-      animate();
-    },
+      const time = this.clock.getElapsedTime() * (this.config.waveSpeed / 0.24);
+      this.material.uniforms.u_time.value = time;
+      this.renderer.render(this.scene, this.camera);
 
-    dispose() {
-      if (animFrameId) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
-      }
-      if (unbindResize) {
-        unbindResize();
-        unbindResize = null;
-      }
-      if (config.atlasTexture) config.atlasTexture.dispose();
-      if (material) material.dispose();
-      if (renderer) {
-        renderer.dispose();
-        renderer.domElement.remove();
-        renderer = null;
-      }
-      scene = null;
-      camera = null;
-    },
-  };
+      this.animFrameId = requestAnimationFrame(animate);
+    };
+
+    this.animFrameId = requestAnimationFrame(animate);
+  }
+
+  pause(): void {
+    this.isRunning = false;
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+  }
+
+  dispose(): void {
+    this.pause();
+    if (this.config.atlasTexture) this.config.atlasTexture.dispose();
+    if (this.material) this.material.dispose();
+    if (this.renderer) {
+      this.renderer.dispose();
+      this.renderer.domElement.remove();
+      this.renderer = null;
+    }
+    this.scene = null;
+    this.camera = null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -335,9 +347,9 @@ function createFluidEngine(config: FluidEngineConfig): Background {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a procedural ASCII Fluid background.
+ * Creates a procedural ASCII Fluid background element.
  */
-export function AsciiFluid(options: AsciiFluidOptions = {}): Background {
+export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElement {
   const characters = options.characters ?? " .:-=+*#%@";
   const cellSize = options.cellSize ?? 13;
   const charColor = new THREE.Color(options.color ?? "#38bdf8");
@@ -347,25 +359,29 @@ export function AsciiFluid(options: AsciiFluidOptions = {}): Background {
 
   const { texture: atlasTexture, charCount } = createGlyphAtlas(characters);
 
-  return createFluidEngine({
-    fragmentShader: asciiFragmentShader,
-    atlasTexture,
-    waveSpeed,
-    uniforms: {
-      u_atlas: { value: atlasTexture },
-      u_cellSize: { value: cellSize },
-      u_charCount: { value: charCount },
-      u_opacity: { value: opacity },
-      u_charColor: { value: charColor },
-      u_bgColor: { value: bgColor },
+  return new FluidBackgroundElement(
+    "AsciiFluid",
+    {
+      fragmentShader: asciiFragmentShader,
+      atlasTexture,
+      waveSpeed,
+      uniforms: {
+        u_atlas: { value: atlasTexture },
+        u_cellSize: { value: cellSize },
+        u_charCount: { value: charCount },
+        u_opacity: { value: opacity },
+        u_charColor: { value: charColor },
+        u_bgColor: { value: bgColor },
+      },
     },
-  });
+    options,
+  );
 }
 
 /**
- * Creates a procedural continuous Chromatic Gradient Fluid background.
+ * Creates a procedural continuous Chromatic Gradient Fluid background element.
  */
-export function GradientFluid(options: GradientFluidOptions = {}): Background {
+export function GradientFluid(options: GradientFluidOptions = {}): FluidBackgroundElement {
   const rawColors = options.colors ?? ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"];
   const color0 = new THREE.Color(options.backgroundColor ?? rawColors[0] ?? "#09090b");
   const color1 = new THREE.Color(rawColors[1] ?? "#0284c7");
@@ -376,16 +392,20 @@ export function GradientFluid(options: GradientFluidOptions = {}): Background {
   const waveSpeed = options.waveSpeed ?? 0.24;
   const gloss = options.gloss ?? 1.0;
 
-  return createFluidEngine({
-    fragmentShader: gradientFragmentShader,
-    waveSpeed,
-    uniforms: {
-      u_opacity: { value: opacity },
-      u_gloss: { value: gloss },
-      u_color0: { value: color0 },
-      u_color1: { value: color1 },
-      u_color2: { value: color2 },
-      u_color3: { value: color3 },
+  return new FluidBackgroundElement(
+    "GradientFluid",
+    {
+      fragmentShader: gradientFragmentShader,
+      waveSpeed,
+      uniforms: {
+        u_opacity: { value: opacity },
+        u_gloss: { value: gloss },
+        u_color0: { value: color0 },
+        u_color1: { value: color1 },
+        u_color2: { value: color2 },
+        u_color3: { value: color3 },
+      },
     },
-  });
+    options,
+  );
 }

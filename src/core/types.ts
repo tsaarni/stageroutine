@@ -151,9 +151,12 @@ export interface StageContext {
   ): () => void;
 }
 
+export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void;
+
 export interface Background {
   attach(stage: StageContext): void;
   dispose?(): void;
+  decorate?(decorator: BackgroundDecorator): this;
 }
 
 export interface StageOptions {
@@ -162,7 +165,6 @@ export interface StageOptions {
   height?: number;
   defaultDuration?: number;
   theme?: ThemeConfig;
-  background?: Background;
 }
 
 export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T;

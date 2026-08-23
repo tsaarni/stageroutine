@@ -52,6 +52,11 @@ class SceneBuilder {
     this.stage.theme(config);
     return this;
   }
+
+  background(bg: Background | ReactiveElementBase | string): this {
+    this.stage.background(bg);
+    return this;
+  }
 }
 
 export class Stage implements ElementHost {
@@ -66,6 +71,7 @@ export class Stage implements ElementHost {
   private initialProperties = new Map<string, Record<string, unknown>>();
   private propertyState = new Map<string, Record<string, unknown>>();
   private currentTheme: ThemeConfig = {};
+  private backgroundSource: string | Background | ReactiveElementBase | null = null;
 
   private steps: StepData[] = [];
   private snapshots: StepSnapshot[] = [];
@@ -110,6 +116,7 @@ export class Stage implements ElementHost {
   }
 
   constructor(options: StageOptions = {}) {
+    activeStage = this;
     this.options = {
       width: 1920,
       height: 1080,
@@ -227,6 +234,41 @@ export class Stage implements ElementHost {
     return this;
   }
 
+  /**
+   * Sets the stage background (color string, gradient, or procedural element).
+   *
+   * @example
+   * ```ts
+   * stage.background("#0f172a");
+   * stage.background(new Starfield());
+   * ```
+   */
+  background(bg: string | Background | ReactiveElementBase): this {
+    this.backgroundSource = bg;
+    if (this.container) {
+      this._attachBackground(bg);
+    }
+    return this;
+  }
+
+  private _attachBackground(bg: string | Background | ReactiveElementBase): void {
+    if (!this.container) return;
+    if (typeof bg === "string") {
+      this.container.style.background = bg;
+    } else if ("attach" in bg && typeof bg.attach === "function") {
+      bg.attach({
+        container: this.container,
+        width: this.options.width || 1920,
+        height: this.options.height || 1080,
+        on: this.on.bind(this),
+      });
+    } else if ("domElement" in bg && bg.domElement instanceof HTMLElement) {
+      if (!bg.domElement.parentElement) {
+        this.container.prepend(bg.domElement);
+      }
+    }
+  }
+
   private _applyTheme(theme: ThemeConfig): void {
     if (!this.container) return;
     const bg = theme.background || theme["--sr-background"] || theme["--stage-background"];
@@ -338,6 +380,7 @@ export class Stage implements ElementHost {
     this.viewport.style.flexShrink = "0";
     this.viewport.style.containerType = "size";
     this.viewport.style.transformOrigin = "center center";
+    this.viewport.style.zIndex = "1";
 
     this.container.appendChild(this.viewport);
 
@@ -359,13 +402,8 @@ export class Stage implements ElementHost {
     }
 
     // Attach background if provided
-    if (this.options.background) {
-      this.options.background.attach({
-        container: this.container,
-        width: this.options.width || 1920,
-        height: this.options.height || 1080,
-        on: this.on.bind(this),
-      });
+    if (this.backgroundSource) {
+      this._attachBackground(this.backgroundSource);
     }
 
     // Responsive scaling resize handler

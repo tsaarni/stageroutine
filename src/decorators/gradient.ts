@@ -1,4 +1,4 @@
-import type { DOMElement, ElementDecorator } from "../element";
+import type { DOMElement, ElementDecorator } from "../dom/element";
 
 export interface GradientOptions {
   /** Array of CSS color stops for the gradient. */

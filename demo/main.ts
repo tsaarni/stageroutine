@@ -14,24 +14,26 @@ import {
   TerminalWindow,
   Text,
   Title,
-  createStage,
+  Stage,
   glow,
   gradient,
+  grain,
   to,
   typewriter,
+  vignette,
 } from "../src/index";
 
 // Initialize presentation stage with the ASCII Fluid background
-const stage = createStage({
-  background: AsciiFluid({
+const stage = new Stage().background(
+  AsciiFluid({
     characters: " .:-=+*#%@",
     cellSize: 14,
     color: "#38bdf8",
     backgroundColor: "#09090b",
     opacity: 0.35,
     waveSpeed: 0.22,
-  }),
-});
+  }).decorate(vignette({ opacity: 0.95 })),
+);
 
 // Positioning components:
 // - x, y: The spot on the stage (percentage from top-left, or "center").

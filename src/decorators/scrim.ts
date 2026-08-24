@@ -1,3 +1,7 @@
+/**
+ * Places a soft dark underlay behind text or elements to keep them readable over busy backgrounds.
+ */
+
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 export interface ScrimOptions {

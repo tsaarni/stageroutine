@@ -1,3 +1,7 @@
+/**
+ * Base class for full-screen backgrounds with automatic resizing and render loop management.
+ */
+
 import type { StageContext } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 

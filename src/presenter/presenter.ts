@@ -1,6 +1,15 @@
 /**
- * Controller for the presenter console UI, managing live notes, timers, jump menus, and screen recording.
+ * Controller for the presenter console, managing speaker notes, timers, scene navigation, and screen recording.
  */
+
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/jetbrains-mono/700.css";
+import "@fontsource/material-symbols-outlined/400.css";
 
 import { PresenterRecorder, createPresenterClient } from "./index";
 
@@ -30,6 +39,7 @@ const btnNext = document.getElementById("btn-next") as HTMLButtonElement | null;
 const btnPrev = document.getElementById("btn-prev") as HTMLButtonElement | null;
 const btnFontInc = document.getElementById("btn-font-inc");
 const btnFontDec = document.getElementById("btn-font-dec");
+const btnFontReset = document.getElementById("btn-font-reset");
 
 // ============================================================================
 // 0. GPU Screen Recorder Integration
@@ -112,10 +122,11 @@ window.addEventListener("click", (e) => {
 });
 
 // ============================================================================
-// 1. Presentation Timer with Pause & Reset
+// 1. Presentation Timer with Pause, Reset & Inline Edit
 // ============================================================================
 let elapsedSec = 0;
 let isTimerRunning = true;
+let isEditingTimer = false;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 
 function formatTime(seconds: number): string {
@@ -126,8 +137,29 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
+function parseTimeString(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.includes(":")) {
+    const parts = trimmed.split(":");
+    const min = Number.parseInt(parts[0] || "0", 10);
+    const sec = Number.parseInt(parts[1] || "0", 10);
+    if (!Number.isNaN(min) && !Number.isNaN(sec) && min >= 0 && sec >= 0 && sec < 60) {
+      return min * 60 + sec;
+    }
+  } else {
+    // Plain number treated as minutes (e.g. "15" -> 15 min)
+    const min = Number.parseInt(trimmed, 10);
+    if (!Number.isNaN(min) && min >= 0) {
+      return min * 60;
+    }
+  }
+  return null;
+}
+
 function updateTimerDisplay(): void {
-  if (timer) {
+  if (timer && !isEditingTimer) {
     timer.textContent = formatTime(elapsedSec);
     if (isTimerRunning) {
       timer.classList.remove("paused");
@@ -172,6 +204,73 @@ function resetTimer(): void {
   updateTimerDisplay();
 }
 
+function startEditingTimer(): void {
+  if (!timer || isEditingTimer) return;
+  isEditingTimer = true;
+
+  const wasRunning = isTimerRunning;
+  if (isTimerRunning && timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  const currentVal = formatTime(elapsedSec);
+  timer.innerHTML = "";
+  timer.classList.add("editing");
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "timer-input";
+  input.value = currentVal;
+  input.placeholder = "MM:SS";
+  input.maxLength = 7;
+  input.spellcheck = false;
+
+  timer.appendChild(input);
+  input.focus();
+  input.select();
+
+  let committed = false;
+
+  const finishEdit = (commit: boolean) => {
+    if (!isEditingTimer) return;
+    isEditingTimer = false;
+    timer.classList.remove("editing");
+
+    if (commit) {
+      const parsed = parseTimeString(input.value);
+      if (parsed !== null) {
+        elapsedSec = parsed;
+      }
+    }
+
+    if (wasRunning) {
+      startTimer();
+    } else {
+      updateTimerDisplay();
+    }
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      committed = true;
+      finishEdit(true);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      committed = true;
+      finishEdit(false);
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    if (!committed) {
+      finishEdit(true);
+    }
+  });
+}
+
+timer?.addEventListener("click", startEditingTimer);
 btnTimerToggle?.addEventListener("click", toggleTimer);
 btnTimerReset?.addEventListener("click", resetTimer);
 
@@ -187,7 +286,6 @@ function updateWallClock(): void {
     wallClock.textContent = now.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
     });
   }
 }
@@ -227,12 +325,10 @@ function renderNotesContent(notesRaw: string | undefined): void {
   }
 }
 
-// ============================================================================
-// 4. Font Size Zooming
-// ============================================================================
-let currentFontSize = 20; // px
+const DEFAULT_FONT_SIZE = 15;
+let currentFontSize = DEFAULT_FONT_SIZE; // px
 function setFontSize(size: number): void {
-  currentFontSize = Math.min(36, Math.max(14, size));
+  currentFontSize = Math.min(36, Math.max(10, size));
   if (currentNotes) {
     currentNotes.style.fontSize = `${currentFontSize}px`;
   }
@@ -240,6 +336,7 @@ function setFontSize(size: number): void {
 
 btnFontInc?.addEventListener("click", () => setFontSize(currentFontSize + 2));
 btnFontDec?.addEventListener("click", () => setFontSize(currentFontSize - 2));
+btnFontReset?.addEventListener("click", () => setFontSize(DEFAULT_FONT_SIZE));
 
 // ============================================================================
 // 5. Presenter Client State Sync
@@ -247,7 +344,7 @@ btnFontDec?.addEventListener("click", () => setFontSize(currentFontSize - 2));
 client.onUpdate((msg) => {
   currentStepIndex = msg.currentStep;
   if (stepText) {
-    stepText.textContent = `Step ${msg.currentStep + 1} of ${msg.totalSteps}${
+    stepText.textContent = `Scene ${msg.currentStep + 1} of ${msg.totalSteps}${
       msg.sceneName ? ` · ${msg.sceneName}` : ""
     }`;
   }

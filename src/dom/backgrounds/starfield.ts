@@ -1,3 +1,7 @@
+/**
+ * 3D starfield particle background using Three.js with smooth forward motion.
+ */
+
 import * as THREE from "three";
 import type { StageContext } from "../../core/types";
 import { BackgroundElement, type BackgroundOptions } from "./base";

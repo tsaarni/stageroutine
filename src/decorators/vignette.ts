@@ -1,3 +1,7 @@
+/**
+ * Darkens the edges of the slide to draw viewer attention toward the center.
+ */
+
 import type { DOMElement } from "../dom/element";
 
 export interface VignetteOptions {

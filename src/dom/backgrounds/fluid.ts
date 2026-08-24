@@ -1,3 +1,7 @@
+/**
+ * WebGL fluid simulation background with animated wave motion and ASCII art rendering modes.
+ */
+
 import * as THREE from "three";
 import { BackgroundElement, type BackgroundOptions } from "./base";
 

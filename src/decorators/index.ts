@@ -1,3 +1,7 @@
+/**
+ * Visual effects (glow, gradient, grain, scrim, typewriter, and vignette) that can be chained onto elements.
+ */
+
 export { gradient, type GradientOptions } from "./gradient";
 export { glow, type GlowOptions } from "./glow";
 export { vignette, type VignetteOptions } from "./vignette";

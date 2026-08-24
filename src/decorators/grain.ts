@@ -1,3 +1,7 @@
+/**
+ * Adds an animated film grain texture overlay to give slides a tactile, cinematic look.
+ */
+
 import type { DOMElement } from "../dom/element";
 
 export interface GrainOptions {

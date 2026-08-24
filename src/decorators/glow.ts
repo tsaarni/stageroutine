@@ -1,3 +1,7 @@
+/**
+ * Adds a soft glowing light effect behind an element, with an optional pulsing animation.
+ */
+
 import type { DOMElement, ElementDecorator } from "../dom/element";
 import { appendAnimation } from "./gradient";
 

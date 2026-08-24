@@ -1,3 +1,7 @@
+/**
+ * Applies a smooth color gradient to text or elements, with optional flowing animation.
+ */
+
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 export interface GradientOptions {

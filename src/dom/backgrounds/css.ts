@@ -1,3 +1,7 @@
+/**
+ * Full-screen background styled with standard CSS colors, gradients, or patterns.
+ */
+
 import { DOMElement, type ElementOptions } from "../element";
 
 export interface CSSBackgroundOptions extends ElementOptions {

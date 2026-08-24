@@ -1,3 +1,7 @@
+/**
+ * Animates text letter-by-letter with realistic typing, backspaces, pauses, and a blinking cursor.
+ */
+
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 /**

@@ -1,3 +1,7 @@
+/**
+ * Full-screen background elements including WebGL fluid simulations, starfields, and CSS patterns.
+ */
+
 export { BackgroundElement, type BackgroundOptions } from "./base";
 export { CSSBackground, CSSBackgroundElement, type CSSBackgroundOptions } from "./css";
 export { Starfield, StarfieldElement, type StarfieldOptions } from "./starfield";

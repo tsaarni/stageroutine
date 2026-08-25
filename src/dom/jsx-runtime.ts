@@ -129,17 +129,31 @@ export function jsx(
 
     const result = type(componentProps);
 
-    // Double-wrapping guard
+    // Direct DOM element or already-wrapped element guard
     if (
+      result instanceof HTMLElement ||
+      result instanceof SVGElement ||
       result instanceof DOMElement ||
       (typeof result === "object" && result !== null && "domElement" in result)
     ) {
+      if (hasMotionProps) {
+        const kind = typeof type === "function" && type.name ? type.name.toLowerCase() : "custom";
+        const domEl =
+          result instanceof DOMElement
+            ? result
+            : new DOMElement(kind, result as HTMLElement | SVGElement, stageOptions);
+        return getActiveStage().registerElement(domEl);
+      }
       return result;
     }
 
-    const kind = typeof type === "function" && type.name ? type.name.toLowerCase() : "custom";
-    const domEl = new DOMElement(kind, result, stageOptions);
-    return getActiveStage().registerElement(domEl);
+    if (hasMotionProps) {
+      const kind = typeof type === "function" && type.name ? type.name.toLowerCase() : "custom";
+      const domEl = new DOMElement(kind, result, stageOptions);
+      return getActiveStage().registerElement(domEl);
+    }
+
+    return result;
   }
 
   const isSvg = SVG_TAGS.has(type.toLowerCase());
@@ -240,7 +254,7 @@ export function createElement(
 
 // Global JSX namespace for TypeScript
 export namespace JSX {
-  export type Element = DOMElement;
+  export type Element = DOMElement & HTMLElement & { [key: string]: unknown };
   export type LibraryManagedAttributes<_C, P> = P & ElementOptions;
   export interface IntrinsicElements {
     // biome-ignore lint/suspicious/noExplicitAny: Required for universal JSX attribute support

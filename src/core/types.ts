@@ -125,6 +125,12 @@ export interface StepData {
   theme?: ThemeConfig;
 }
 
+export interface StepChangeEvent {
+  stepIndex: number;
+  totalSteps: number;
+  sceneName: string;
+}
+
 export interface SceneChangeEvent {
   from: string;
   to: string;
@@ -138,6 +144,7 @@ export interface ResizeEvent {
 
 export interface StageEventMap {
   sceneChange: SceneChangeEvent;
+  stepChange: StepChangeEvent;
   resize: ResizeEvent;
 }
 

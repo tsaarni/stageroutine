@@ -5,34 +5,34 @@
   --md-font-icon: "Material Symbols Outlined";
 
   /* Material Design 3 Palette */
-  --md-sys-color-background: #0f131a;
-  --md-sys-color-surface: #0f131a;
-  --md-sys-color-surface-dim: #0b0e14;
-  --md-sys-color-surface-container-lowest: #080b0f;
-  --md-sys-color-surface-container-low: #151921;
-  --md-sys-color-surface-container: #1b202a;
-  --md-sys-color-surface-container-high: #242a37;
-  --md-sys-color-surface-container-highest: #2e3545;
+  --md-sys-color-background: #0f0f11;
+  --md-sys-color-surface: #0f0f11;
+  --md-sys-color-surface-dim: #09090b;
+  --md-sys-color-surface-container-lowest: #050507;
+  --md-sys-color-surface-container-low: #18181b;
+  --md-sys-color-surface-container: #222226;
+  --md-sys-color-surface-container-high: #2b2b30;
+  --md-sys-color-surface-container-highest: #36363d;
 
-  --md-sys-color-primary: #a8c7fa;
-  --md-sys-color-on-primary: #042e6f;
-  --md-sys-color-primary-container: #0842a0;
-  --md-sys-color-on-primary-container: #d3e3fd;
+  --md-sys-color-primary: #f4f4f5;
+  --md-sys-color-on-primary: #09090b;
+  --md-sys-color-primary-container: #36363d;
+  --md-sys-color-on-primary-container: #ffffff;
 
-  --md-sys-color-secondary: #bec6dc;
-  --md-sys-color-on-secondary: #283141;
-  --md-sys-color-secondary-container: #394254;
-  --md-sys-color-on-secondary-container: #dae2f9;
+  --md-sys-color-secondary: #d4d4d8;
+  --md-sys-color-on-secondary: #09090b;
+  --md-sys-color-secondary-container: #27272a;
+  --md-sys-color-on-secondary-container: #f4f4f5;
 
-  --md-sys-color-tertiary: #67e8f9;
-  --md-sys-color-tertiary-container: #004e59;
-  --md-sys-color-on-tertiary-container: #a5f3fc;
+  --md-sys-color-tertiary: #a1a1aa;
+  --md-sys-color-tertiary-container: #27272a;
+  --md-sys-color-on-tertiary-container: #f4f4f5;
 
-  --md-sys-color-error: #f2b8b5;
-  --md-sys-color-on-surface: #e2e2e8;
-  --md-sys-color-on-surface-variant: #c4c6d0;
-  --md-sys-color-outline: #8e919a;
-  --md-sys-color-outline-variant: #3a4150;
+  --md-sys-color-error: #f87171;
+  --md-sys-color-on-surface: #f4f4f5;
+  --md-sys-color-on-surface-variant: #a1a1aa;
+  --md-sys-color-outline: #52525b;
+  --md-sys-color-outline-variant: #27272a;
 
   --md-sys-color-timer-active: #4ade80;
   --md-sys-color-timer-paused: #fbbf24;
@@ -183,26 +183,47 @@ header {
   transition: transform var(--md-motion-short) ease;
   margin-left: -2px;
 }
+.scene-dropdown-btn.open .dropdown-arrow,
 .step-dropdown-btn.open .dropdown-arrow {
   transform: rotate(180deg);
 }
 
-/* Record Button */
-.record-btn {
+/* Unified Record Pill with Embedded Mic */
+.record-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  border-radius: var(--md-shape-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  transition: background-color var(--md-motion-short) ease, border-color var(--md-motion-short) ease;
+}
+.record-pill:hover {
+  border-color: var(--md-sys-color-outline);
+}
+
+.record-main-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 14px;
-  border-radius: var(--md-shape-full);
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
+  padding: 0 10px 0 14px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--md-motion-short) ease, border-color var(--md-motion-short) ease;
+  border-top-left-radius: var(--md-shape-full);
+  border-bottom-left-radius: var(--md-shape-full);
+  transition: background-color var(--md-motion-short) ease;
 }
-.record-btn:hover {
-  background-color: var(--md-sys-color-surface-container-highest);
-  border-color: rgba(239, 68, 68, 0.4);
+.record-main-btn:hover {
+  background-color: var(--md-sys-hover-overlay);
 }
+
 .rec-dot {
   width: 8px;
   height: 8px;
@@ -210,12 +231,7 @@ header {
   background-color: var(--md-sys-color-record);
   transition: transform var(--md-motion-medium) ease;
 }
-.record-btn.recording {
-  background-color: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.6);
-  color: var(--md-sys-color-error);
-}
-.record-btn.recording .rec-dot {
+.record-pill.recording .rec-dot {
   animation: rec-pulse 1.2s infinite ease-in-out;
 }
 @keyframes rec-pulse {
@@ -230,6 +246,37 @@ header {
     opacity: 0.8;
     box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
   }
+}
+
+.record-divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--md-sys-color-outline-variant);
+}
+
+.record-mic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px 0 8px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-outline);
+  cursor: pointer;
+  border-top-right-radius: var(--md-shape-full);
+  border-bottom-right-radius: var(--md-shape-full);
+  transition: background-color var(--md-motion-short) ease, color var(--md-motion-short) ease;
+}
+.record-mic-btn:hover {
+  background-color: var(--md-sys-hover-overlay);
+  color: var(--md-sys-color-on-surface);
+}
+.record-mic-btn.active {
+  color: var(--md-sys-color-timer-active);
+}
+.record-mic-btn .material-symbols-outlined {
+  font-size: 18px;
 }
 
 /* Wall Clock & Timer Widgets */
@@ -534,6 +581,7 @@ footer {
 
 /* Badges & Jump Dropdown Menu */
 .kbd,
+.dropdown-scene-num,
 .dropdown-step-num {
   font-family: var(--md-font-mono);
   font-size: 12px;
@@ -600,9 +648,11 @@ footer {
   color: var(--md-sys-color-on-primary-container);
   font-weight: 600;
 }
+.dropdown-scene-num,
 .dropdown-step-num {
   color: var(--md-sys-color-outline);
 }
+.m3-dropdown-item.active .dropdown-scene-num,
 .m3-dropdown-item.active .dropdown-step-num {
   color: var(--md-sys-color-primary);
 }

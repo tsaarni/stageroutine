@@ -1,16 +1,16 @@
 # StageRoutine
 
-StageRoutine is a presentation framework for building animated slides in TypeScript and TSX, where elements animate smoothly on screen as you advance.
+StageRoutine is a presentation framework in TypeScript and TSX for building continuous presentations, where elements animate smoothly on screen as you advance without discrete slide boundaries.
 
 **Core Concepts**
 
-- **Stage**: The presentation engine and canvas. It manages the virtual viewport and runs all animations during playback.
-- **Components**: Reusable functions or TSX templates (like `Title`, `Card`, or `CodeBlock`) that define markup, styles, and default properties.
-- **Elements**: Instantiated components. Each element wraps a native DOM node (`HTMLElement`) with reactive properties like `x`, `y`, `scale`, and `opacity`. Assigning to these properties (e.g. `title.x = 50`) tells the stage to animate the underlying DOM node.
-- **Decorators**: Composable enhancer functions (like `gradient`, `glow`, or `typewriter`) attached via `.decorate()` to add visual styling, animations, or dynamic behaviors to elements without altering their component markup.
-- **Scenes**: Declarations of which elements are visible on the stage. Elements kept across consecutive scenes stay on screen and smoothly transition to their new positions.
-- **Pauses**: Stopping points created with `stage.pause()`. When presenting, playback stops at each pause to wait for user input, animating all property changes made up to that point.
-- **Script**: The top-to-bottom TypeScript file where you orchestrate your stage, elements, scenes, and pauses into a complete presentation.
+- **Stage**: The presentation engine and canvas. It manages the viewport, runs animations, and captures state snapshots.
+- **Components**: Functions or templates (like `Title`, `Card`, or `CodeBlock`) that define markup, styles, and default properties.
+- **Elements**: Component instances. Each element wraps a DOM node with reactive properties (`x`, `y`, `scale`, `opacity`). Changing a property (e.g. `title.x = 50`) animates the element.
+- **Scenes**: Sections of the presentation (analogous to slides). Declared with `stage.scene("Name").with(...)` to set which elements are visible. Elements included in consecutive scenes stay on screen and animate to their new positions instead of disappearing.
+- **Steps & Pauses**: Click boundaries (analogous to slide builds). Calling `stage.pause()` groups property changes into a step and saves a state snapshot, defining where playback pauses for presenter clicks.
+- **Decorators**: Helper functions (`gradient`, `glow`, `typewriter`) attached via `.decorate()` to add visual styles or effects to elements.
+- **Script**: The TypeScript file where you create elements, place them into scenes, and sequence steps from top to bottom.
 
 ## Quick Start
 
@@ -24,14 +24,13 @@ pnpm dev
 
 See [demo/main.ts](demo/main.ts) for an example presentation.
 
-
 ## Presenter Console
 
-The presenter console (`/presenter`) opens in a separate window or screen and synchronizes with the main presentation over `BroadcastChannel` without needing a server.
+The presenter console (`/presenter`) is a separate page which synchronizes with the main presentation window over `BroadcastChannel`.
 
 Features:
-- **Speaker Notes**: Live notes for the current scene with markdown bullet formatting and font size adjustment.
-- **Upcoming Scene**: Displays the title and notes for the next scene.
-- **Scene Navigation**: Dropdown menu to jump directly to any scene and next/previous buttons to advance the presentation.
+- **Speaker Notes**: Live notes for the presenter.
+- **Upcoming Preview**: Displays the title and notes for the next upcoming step/scene.
+- **Scene Navigation**: Dropdown menu to jump directly to any scene, with next/previous controls to step through animations.
 - **Timers**: Presentation elapsed timer with pause/reset controls and a local wall clock.
 - **Screen Recording**: In-browser video recording, saved directly as WebM.

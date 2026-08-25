@@ -5,10 +5,13 @@ export class PresenterRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
   private isRecording = false;
+  private isMicEnabled = true;
+  private micTrack: MediaStreamTrack | null = null;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private seconds = 0;
   private onStateChange?: (state: {
     isRecording: boolean;
+    isMicEnabled: boolean;
     seconds: number;
     formattedTime: string;
   }) => void;
@@ -16,6 +19,7 @@ export class PresenterRecorder {
   onUpdate(
     callback: (state: {
       isRecording: boolean;
+      isMicEnabled: boolean;
       seconds: number;
       formattedTime: string;
     }) => void,
@@ -23,11 +27,19 @@ export class PresenterRecorder {
     this.onStateChange = callback;
   }
 
+  toggleMic(): void {
+    this.isMicEnabled = !this.isMicEnabled;
+    if (this.micTrack) {
+      this.micTrack.enabled = this.isMicEnabled;
+    }
+    this._emit();
+  }
+
   async start(): Promise<void> {
     if (this.isRecording) return;
 
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           frameRate: { ideal: 60, max: 60 },
           displaySurface: "browser",
@@ -35,10 +47,32 @@ export class PresenterRecorder {
         audio: false,
       });
 
+      // Optionally capture microphone
+      let micStream: MediaStream | null = null;
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.micTrack = micStream.getAudioTracks()[0] ?? null;
+        if (this.micTrack) {
+          this.micTrack.enabled = this.isMicEnabled;
+        }
+      } catch (micErr) {
+        console.warn("Microphone access not granted or unavailable:", micErr);
+        this.micTrack = null;
+      }
+
+      // Combine display video and optional mic audio into one stream
+      const combinedTracks: MediaStreamTrack[] = [
+        ...displayStream.getVideoTracks(),
+        ...(this.micTrack ? [this.micTrack] : []),
+      ];
+      const stream = new MediaStream(combinedTracks);
+
       this.recordedChunks = [];
-      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-        ? "video/webm;codecs=vp9"
-        : "video/webm";
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : "video/webm";
 
       this.mediaRecorder = new MediaRecorder(stream, {
         mimeType,
@@ -56,6 +90,7 @@ export class PresenterRecorder {
         for (const track of stream.getTracks()) {
           track.stop();
         }
+        this.micTrack = null;
       };
 
       stream.getVideoTracks()[0].onended = () => {
@@ -99,11 +134,17 @@ export class PresenterRecorder {
     }
   }
 
-  getRecordingState(): { isRecording: boolean; seconds: number; formattedTime: string } {
+  getRecordingState(): {
+    isRecording: boolean;
+    isMicEnabled: boolean;
+    seconds: number;
+    formattedTime: string;
+  } {
     const mins = String(Math.floor(this.seconds / 60)).padStart(2, "0");
     const secs = String(this.seconds % 60).padStart(2, "0");
     return {
       isRecording: this.isRecording,
+      isMicEnabled: this.isMicEnabled,
       seconds: this.seconds,
       formattedTime: `${mins}:${secs}`,
     };

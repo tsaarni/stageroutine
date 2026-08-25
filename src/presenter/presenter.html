@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/src/presenter/presenter.css" />
   </head>
   <body>
-    <!-- Top Step Progress Bar -->
+    <!-- Top Scene Progress Bar -->
     <div class="progress-bar-container">
       <div class="progress-bar-fill" id="progress-bar"></div>
     </div>
@@ -19,41 +19,28 @@
           <span class="material-symbols-outlined">slideshow</span>
           <span>Presenter View</span>
         </div>
-        <!-- Step / Scene Dropdown Jump Menu -->
+        <!-- Scene Dropdown Jump Menu -->
         <div class="m3-dropdown-container">
-          <button class="m3-chip step-dropdown-btn" id="step-badge" title="Jump to Scene / Step">
+          <button class="m3-chip scene-dropdown-btn" id="scene-badge" title="Jump to Scene">
             <span class="material-symbols-outlined" style="font-size: 16px;">format_list_numbered</span>
-            <span id="step-text">Scene 1 of 1</span>
+            <span id="scene-text">Scene 1 of 1</span>
             <span class="material-symbols-outlined dropdown-arrow">arrow_drop_down</span>
           </button>
-          <div class="m3-dropdown-menu" id="step-menu"></div>
+          <div class="m3-dropdown-menu" id="scene-menu"></div>
         </div>
       </div>
 
-      <div class="header-right">
-        <!-- GPU Recorder Control -->
-        <button class="m3-btn m3-btn-tonal record-btn" id="btn-record" title="Record Presentation directly via GPU (Key: Alt+R)">
-          <span class="rec-dot" id="rec-dot"></span>
-          <span id="rec-label">Record</span>
-        </button>
-
-        <!-- Wall Clock -->
-        <div class="wall-clock" title="Current Local Time">
-          <span class="material-symbols-outlined">schedule</span>
-          <span id="wall-clock">--:--</span>
-        </div>
-
-        <!-- Big Presentation Timer Widget -->
-        <div class="timer-widget">
-          <div class="timer-display" id="timer" title="Elapsed Presentation Timer (Click to edit)">00:00</div>
-          <div class="timer-actions">
-            <button class="m3-icon-btn tonal" id="btn-timer-toggle" title="Pause / Resume Timer (Key: P)">
-              <span class="material-symbols-outlined" id="timer-toggle-icon">pause</span>
-            </button>
-            <button class="m3-icon-btn tonal" id="btn-timer-reset" title="Reset Timer (Key: R)">
-              <span class="material-symbols-outlined">replay</span>
-            </button>
-          </div>
+      <div class="header-right" id="header-right">
+        <!-- Unified Record Pill with Embedded Mic Control -->
+        <div class="record-pill" id="record-pill">
+          <button class="record-main-btn" id="btn-record" title="Record Presentation directly via GPU (Key: Alt+R)">
+            <span class="rec-dot" id="rec-dot"></span>
+            <span id="rec-label">Record</span>
+          </button>
+          <span class="record-divider"></span>
+          <button class="record-mic-btn" id="btn-mic" title="Microphone enabled (Click to mute)">
+            <span class="material-symbols-outlined" id="mic-icon">mic</span>
+          </button>
         </div>
       </div>
     </header>
@@ -64,7 +51,7 @@
         <div class="notes-card-header">
           <div class="notes-label">
             <span class="material-symbols-outlined">sticky_note_2</span>
-            <span>Current Speaker Notes</span>
+            <span>Speaker Notes</span>
           </div>
           <div class="font-size-controls">
             <button class="m3-icon-btn" id="btn-font-dec" title="Decrease Font Size">
@@ -80,7 +67,7 @@
         </div>
         <div class="notes-scroll-body">
           <div class="notes-content" id="current-notes">
-            <span class="notes-empty-state">Waiting for presentation state...</span>
+            <span class="notes-empty-state">Waiting for presentation scene...</span>
           </div>
         </div>
       </div>
@@ -100,12 +87,12 @@
       </div>
 
       <div class="nav-controls">
-        <button class="m3-btn m3-btn-tonal" id="btn-prev" title="Go to previous step (←)">
+        <button class="m3-btn m3-btn-tonal" id="btn-prev" title="Go to previous scene (←)">
           <span class="material-symbols-outlined">arrow_back</span>
           <span>Previous</span>
           <span class="kbd">←</span>
         </button>
-        <button class="m3-btn m3-btn-filled" id="btn-next" title="Advance to next step (Space or →)">
+        <button class="m3-btn m3-btn-filled" id="btn-next" title="Advance to next scene (Space or →)">
           <span>Next</span>
           <span class="material-symbols-outlined">arrow_forward</span>
           <span class="kbd">Space</span>
@@ -113,6 +100,6 @@
       </div>
     </footer>
 
-    <script type="module" src="/src/presenter/presenter.ts"></script>
+    <script type="module" src="/src/presenter/presenter.tsx"></script>
   </body>
 </html>

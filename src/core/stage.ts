@@ -77,7 +77,6 @@ export class Stage implements ElementHost {
 
   // Playback State
   private currentStepIndex = 0;
-  private visibleElementIds = new Set<string>();
   private isAnimating = false;
   private animFrameId: number | null = null;
   private broadcastChannel: BroadcastChannel | null = null;
@@ -132,9 +131,10 @@ export class Stage implements ElementHost {
       try {
         this.broadcastChannel = new BroadcastChannel("stageroutine-channel");
         this.broadcastChannel.onmessage = (event) => {
+          if (this.steps.length === 0) return;
           if (event.data?.action === "next") this.next();
           if (event.data?.action === "prev") this.prev();
-          if (event.data?.action === "goto") this.goto(event.data.stepIndex);
+          if (event.data?.action === "gotoScene") this.gotoScene(event.data.sceneIndex);
           if (event.data?.action === "requestState") this._broadcast();
         };
       } catch {
@@ -429,12 +429,14 @@ export class Stage implements ElementHost {
 
     // Check URL Hash for live HMR positioning
     const initialIndex = this._parseHashStep();
-    this.goto(initialIndex, false);
+    this.currentStepIndex = initialIndex;
+    this._applySnapshot(initialIndex);
 
     window.addEventListener("hashchange", () => {
       const idx = this._parseHashStep();
       if (idx !== this.currentStepIndex) {
-        this.goto(idx, false);
+        this.currentStepIndex = idx;
+        this._applySnapshot(idx);
       }
     });
 
@@ -451,24 +453,42 @@ export class Stage implements ElementHost {
   prev(): void {
     if (this.currentStepIndex > 0) {
       this.currentStepIndex--;
-      this.goto(this.currentStepIndex, false);
+      this._applySnapshot(this.currentStepIndex);
     }
   }
 
-  goto(stepIndex: number, animate = false): void {
-    const clamped = Math.max(0, Math.min(stepIndex, this.steps.length - 1));
-    this.currentStepIndex = clamped;
-
-    if (animate) {
-      this._playStepTransition(clamped);
-    } else {
-      this._applySnapshot(clamped);
+  /**
+   * Jump to a specific scene by 0-indexed scene number.
+   * Restores the recorded state of the first step of that scene.
+   */
+  gotoScene(sceneIndex: number): void {
+    let currentIdx = 0;
+    let lastSceneName: string | null = null;
+    for (let i = 0; i < this.steps.length; i++) {
+      const name = this.steps[i].sceneName || "";
+      if (name !== lastSceneName) {
+        if (currentIdx === sceneIndex) {
+          this.currentStepIndex = i;
+          this._applySnapshot(i);
+          return;
+        }
+        currentIdx++;
+        lastSceneName = name;
+      }
     }
   }
 
   private _applySnapshot(stepIdx: number): void {
     const snap = this.snapshots[stepIdx];
     if (!snap) return;
+
+    this.currentStepIndex = stepIdx;
+
+    this.emit("stepChange", {
+      stepIndex: stepIdx,
+      totalSteps: this.steps.length,
+      sceneName: snap.sceneName,
+    });
 
     if (snap.sceneName !== this.activeSceneName) {
       const from = this.activeSceneName;
@@ -488,13 +508,10 @@ export class Stage implements ElementHost {
       this.propertyState.set(id, { ...props });
     }
 
-    // 2. Hide elements that are currently visible but not in the target step
-    for (const id of this.visibleElementIds) {
+    // 2. Hide elements that are not in the target step snapshot
+    for (const [id, el] of this.elementRegistry.entries()) {
       if (!snap.activeElementIds.has(id)) {
-        const el = this.elementRegistry.get(id);
-        if (el) {
-          this._hideElement(el);
-        }
+        this._hideElement(el);
       }
     }
 
@@ -507,8 +524,6 @@ export class Stage implements ElementHost {
       this._applyStyles(el, props);
       el.play?.();
     }
-
-    this.visibleElementIds = new Set(snap.activeElementIds);
 
     // Apply snapshot theme if present
     if (snap.theme) {
@@ -523,6 +538,12 @@ export class Stage implements ElementHost {
   private _playStepTransition(stepIdx: number): void {
     const step = this.steps[stepIdx];
     if (!step) return;
+
+    this.emit("stepChange", {
+      stepIndex: stepIdx,
+      totalSteps: this.steps.length,
+      sceneName: step.sceneName,
+    });
 
     if (step.sceneName !== this.activeSceneName) {
       const from = this.activeSceneName;
@@ -568,18 +589,16 @@ export class Stage implements ElementHost {
       };
     });
 
-    // Only hide elements that are neither active in the new step nor transitioning out
-    for (const id of this.visibleElementIds) {
-      if (!step.activeElementIds.has(id) && !transitioningIds.has(id)) {
-        const el = this.elementRegistry.get(id);
-        if (el) {
-          this._hideElement(el);
-        }
+    const participatingIds = new Set([...step.activeElementIds, ...transitioningIds]);
+
+    // Hide any element in registry that is neither active in the new step nor transitioning
+    for (const [id, el] of this.elementRegistry.entries()) {
+      if (!participatingIds.has(id)) {
+        this._hideElement(el);
       }
     }
 
     // Ensure all elements participating in this step (active or transitioning) are visible and styled with starting state
-    const participatingIds = new Set([...step.activeElementIds, ...transitioningIds]);
     for (const id of participatingIds) {
       const el = this.elementRegistry.get(id);
       if (!el) continue;
@@ -662,7 +681,6 @@ export class Stage implements ElementHost {
       }
     };
 
-    this.visibleElementIds = new Set(step.activeElementIds);
     this.animFrameId = requestAnimationFrame(frame);
     this._updateHash();
     this._broadcast();
@@ -730,17 +748,58 @@ export class Stage implements ElementHost {
   }
 
   private _broadcast(): void {
-    if (!this.broadcastChannel) return;
+    if (!this.broadcastChannel || this.steps.length === 0) return;
     const step = this.steps[this.currentStepIndex];
     const nextStep = this.steps[this.currentStepIndex + 1];
+
+    // Compute distinct scenes from steps
+    const scenes: {
+      sceneIndex: number;
+      sceneName: string;
+      startStepIndex: number;
+      stepCount: number;
+    }[] = [];
+
+    let currentScene: {
+      sceneIndex: number;
+      sceneName: string;
+      startStepIndex: number;
+      stepCount: number;
+    } | null = null;
+
+    for (let i = 0; i < this.steps.length; i++) {
+      const s = this.steps[i];
+      const sceneName: string = s.sceneName || (currentScene ? currentScene.sceneName : "Scene 1");
+      if (!currentScene || currentScene.sceneName !== sceneName) {
+        currentScene = {
+          sceneIndex: scenes.length,
+          sceneName,
+          startStepIndex: i,
+          stepCount: 1,
+        };
+        scenes.push(currentScene);
+      } else {
+        currentScene.stepCount++;
+      }
+    }
+
+    const currentStepIdx = this.currentStepIndex;
+    const activeScene = scenes.find(
+      (sc) =>
+        currentStepIdx >= sc.startStepIndex && currentStepIdx < sc.startStepIndex + sc.stepCount,
+    ) ||
+      scenes[0] || { sceneIndex: 0, sceneName: "", startStepIndex: 0, stepCount: 1 };
 
     this.broadcastChannel.postMessage({
       currentStep: this.currentStepIndex,
       totalSteps: this.steps.length,
-      sceneName: step?.sceneName ?? "",
+      currentSceneIndex: activeScene.sceneIndex,
+      totalScenes: scenes.length,
+      sceneName: activeScene.sceneName,
       notes: step?.notes ?? "",
       nextSceneName: nextStep?.sceneName ?? "",
       nextNotes: nextStep?.notes ?? "",
+      scenes,
       steps: this.steps.map((s) => ({
         stepIndex: s.stepIndex,
         sceneName: s.sceneName,

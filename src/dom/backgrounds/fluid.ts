@@ -356,7 +356,7 @@ export class FluidBackgroundElement extends BackgroundElement {
  */
 export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElement {
   const characters = options.characters ?? " .:-=+*#%@";
-  const cellSize = options.cellSize ?? 13;
+  const cellSize = options.cellSize ?? 18;
   const charColor = new THREE.Color(options.color ?? "#38bdf8");
   const bgColor = new THREE.Color(options.backgroundColor ?? "#09090b");
   const opacity = options.opacity ?? 0.28;

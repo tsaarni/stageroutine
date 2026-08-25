@@ -8,18 +8,33 @@ export function notes(content: string | string[]): void {
   getActiveStage().setNotes(content);
 }
 
+export interface PresenterSceneInfo {
+  sceneIndex: number;
+  sceneName: string;
+  startStepIndex: number;
+  stepCount: number;
+}
+
 export interface PresenterStepInfo {
   stepIndex: number;
   sceneName: string;
 }
 
 export interface PresenterMessage {
+  // Step-level linear state
   currentStep: number;
   totalSteps: number;
-  sceneName: string;
   notes: string;
+
+  // Scene-level structural state
+  currentSceneIndex: number;
+  totalScenes: number;
+  sceneName: string;
   nextSceneName: string;
   nextNotes: string;
+
+  // Jump outlines
+  scenes?: PresenterSceneInfo[];
   steps?: PresenterStepInfo[];
 }
 
@@ -30,7 +45,11 @@ export class PresenterClient {
   constructor() {
     this.channel = new BroadcastChannel("stageroutine-channel");
     this.channel.onmessage = (event) => {
-      if (this.onUpdateCallback && event.data?.totalSteps !== undefined) {
+      if (
+        this.onUpdateCallback &&
+        event.data?.totalSteps !== undefined &&
+        event.data.totalSteps > 0
+      ) {
         this.onUpdateCallback(event.data as PresenterMessage);
       }
     };
@@ -50,8 +69,8 @@ export class PresenterClient {
     this.channel.postMessage({ action: "prev" });
   }
 
-  goto(stepIndex: number): void {
-    this.channel.postMessage({ action: "goto", stepIndex });
+  gotoScene(sceneIndex: number): void {
+    this.channel.postMessage({ action: "gotoScene", sceneIndex });
   }
 }
 

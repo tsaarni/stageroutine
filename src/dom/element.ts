@@ -102,7 +102,7 @@ export class DOMElement implements ReactiveElementBase {
         .join(" ");
     }
 
-    if (options.style) {
+    if (options.style && typeof options.style === "object") {
       Object.assign(this.domElement.style, options.style);
     }
   }
@@ -127,7 +127,6 @@ export class DOMElement implements ReactiveElementBase {
    * Resumes all CSS and Web Animations running on this element and its subtree.
    */
   play(): void {
-    if (this.isPlaying) return;
     this.isPlaying = true;
     this.domElement.style.animationPlayState = "running";
     if (typeof this.domElement.getAnimations === "function") {

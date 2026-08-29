@@ -120,6 +120,7 @@ export interface StepData {
   sceneName: string;
   stepIndex: number;
   transitions: TransitionRecord[];
+  actions?: (() => void)[];
   activeElementIds: Set<string>;
   notes?: string;
   theme?: ThemeConfig;

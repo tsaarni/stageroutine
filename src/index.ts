@@ -70,17 +70,37 @@ export {
   type TypewriterStep,
 } from "./decorators/index";
 
-// DOM Components
+// Layout Engine
+export { arrange, type LayoutOptions } from "./dom/layout";
+
+// Geometry Solvers
+export {
+  getPerimeterPoint,
+  getTransformedPerimeterPoint,
+  computeOrthogonalPath,
+  computeBezierPath,
+  type Point,
+  type Box,
+} from "./dom/geometry";
+
+// DOM Components & Diagram Primitives
 export {
   Title,
   Text,
-  Card,
+  Shape,
+  ShapeElement,
   Badge,
   Kicker,
   CodeBlock,
   TerminalWindow,
   BulletList,
   Table,
+  Connector,
+  ConnectorElement,
+  Lifeline,
+  LifelineElement,
+  Activation,
+  ActivationElement,
   DOMElement,
   stagger,
   attachRangeSelection,
@@ -90,8 +110,12 @@ export {
   Fragment,
   createElement,
   type TitleOptions,
+  type TitleVariant,
   type TextOptions,
-  type CardOptions,
+  type ShapeOptions,
+  type ShapeKind,
+  type ShapeVariant,
+  type NoteSide,
   type BadgeOptions,
   type KickerOptions,
   type CodeBlockOptions,
@@ -102,6 +126,11 @@ export {
   type BulletListElement,
   type TableOptions,
   type TableElement,
+  type ConnectorOptions,
+  type ConnectorTarget,
+  type PulseOptions,
+  type LifelineOptions,
+  type ActivationOptions,
   type RangeSelectionOptions,
   type RangeSelectionController,
   type ElementOptions,

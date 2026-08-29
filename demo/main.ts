@@ -6,14 +6,17 @@ import {
   AsciiFluid,
   Badge,
   BulletList,
-  Card,
   CodeBlock,
+  Connector,
   Kicker,
+  Lifeline,
+  Shape,
   Stage,
   Table,
   TerminalWindow,
   Text,
   Title,
+  arrange,
   glow,
   gradient,
   to,
@@ -32,7 +35,7 @@ const stage = new Stage().background(AsciiFluid().decorate(vignette()));
 
 // Create visual elements. Setting opacity to 0 keeps them hidden until animated.
 const brandTitle = Title("StageRoutine", {
-  hero: true,
+  variant: "hero",
   x: "center",
   y: 38,
   opacity: 0,
@@ -45,7 +48,7 @@ const sectionKicker = Kicker("00 / Core Runtime", {
 });
 
 const editorialLead = Title("State mutation is motion.", {
-  serif: true,
+  variant: "serif",
   x: "center",
   y: 52,
   opacity: 0,
@@ -292,7 +295,7 @@ const showcaseText = Text(
   },
 );
 
-const showcaseCard = Card(
+const showcaseCard = Shape(
   Text("A pure surface container for grouping slide elements with frosted glass styling."),
   {
     x: showcaseKicker.x,
@@ -317,7 +320,7 @@ const showcaseCode = CodeBlock(
     "// Type-safe UI components",
     "const badge = Badge('v1.0');",
     "const custom = Badge('Live', { color: '#38bdf8' });",
-    "const card = Card('Frosted surface');",
+    "const card = Shape('Frosted surface');",
   ],
   {
     x: rightHeading.x,
@@ -352,7 +355,7 @@ stage
   );
 stage.setNotes([
   "Component Showcase:",
-  "- Displays Title, Text, Kicker, Badges, Card, BulletList, CodeBlock, and TerminalWindow together.",
+  "- Displays Title, Text, Kicker, Badges, Shape, BulletList, CodeBlock, and TerminalWindow together.",
 ]);
 
 // Dismiss previous telemetry scene elements
@@ -587,6 +590,461 @@ serviceMetricsTable.rows.forEach((row, index) => {
 // Glide code panel in from the right edge
 tableCode.x = to(52).ease("cubicOut").when(tableText, "halfway");
 tableCode.opacity = to(1).when(tableText, "halfway");
+stage.pause();
+
+// --- Scene: Component Topology ---
+
+const topologyKicker = Kicker("06 / Architecture Topology", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const topologyHeading = Title("Reactive Component Graphs", {
+  x: topologyKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+// Component Diagram Nodes
+const clientCard = Shape("Client App", {
+  x: 8,
+  y: 36,
+  opacity: 0,
+  width: 200,
+  align: "center",
+});
+const apiGateway = Shape(Text("API Gateway"), {
+  x: 40,
+  y: 36,
+  opacity: 0,
+  width: 220,
+});
+const authService = Shape(Text("Auth Service"), {
+  x: 40,
+  y: 66,
+  opacity: 0,
+  width: 220,
+});
+const databaseCard = Shape(Text("PostgreSQL DB"), {
+  x: 72,
+  y: 66,
+  opacity: 0,
+  width: 220,
+});
+const redisCache = Shape(Text("Redis Cache"), {
+  x: 72,
+  y: 36,
+  opacity: 0,
+  width: 220,
+});
+
+const connClientGateway = Connector(clientCard, apiGateway, {
+  label: "HTTPS REST",
+  routing: "bezier",
+  color: "#38bdf8",
+  end: 0,
+});
+
+const connGatewayAuth = Connector(apiGateway, authService, {
+  label: "gRPC",
+  routing: "corner",
+  color: "#a855f7",
+  end: 0,
+});
+
+const connAuthDb = Connector(authService, databaseCard, {
+  label: "SQL Pool",
+  routing: "straight",
+  color: "#f59e0b",
+  end: 0,
+});
+
+const connGatewayRedis = Connector(apiGateway, redisCache, {
+  label: "Session Cache",
+  routing: "bezier",
+  color: "#10b981",
+  end: 0,
+});
+
+const topologyNote = Shape(
+  [Kicker("ARCHITECTURE NOTE"), Text("Perimeter routing with dynamic card boundary tracking.")],
+  {
+    variant: "note",
+    side: "right",
+    align: "right",
+    width: "24cqw",
+    x: 8,
+    y: 66,
+    opacity: 0,
+  },
+);
+
+const noteConnector = Connector(topologyNote, authService, {
+  dotted: true,
+  traveling: true,
+  arrow: false,
+  color: "rgba(255, 255, 255, 0.25)",
+  fromAnchor: "right",
+  opacity: 0,
+});
+
+stage
+  .scene("Component Topology")
+  .with(
+    brandTitle,
+    topologyKicker,
+    topologyHeading,
+    clientCard,
+    apiGateway,
+    authService,
+    databaseCard,
+    redisCache,
+    topologyNote,
+    noteConnector,
+    connClientGateway,
+    connGatewayAuth,
+    connAuthDb,
+    connGatewayRedis,
+  );
+
+stage.setNotes([
+  "Component Architecture Request Flow:",
+  "- Step 1: Ingress traffic enters through API Gateway via HTTPS.",
+  "- Step 2: Gateway queries Redis cache for session token.",
+  "- Step 3: Gateway routes to Auth Service over gRPC, querying PostgreSQL.",
+  "- Step 4: Live callout annotates active perimeter-tracked service.",
+]);
+
+// Dismiss table elements
+tableKicker.opacity = 0;
+tableHeading.opacity = 0;
+tableText.opacity = 0;
+serviceMetricsTable.opacity = 0;
+tableCode.opacity = 0;
+tableCode.x = 110;
+
+// Reveal Topology layout nodes
+topologyKicker.opacity = 1;
+topologyHeading.opacity = 1;
+clientCard.opacity = 1;
+apiGateway.opacity = 1;
+authService.opacity = 1;
+databaseCard.opacity = 1;
+redisCache.opacity = 1;
+stage.pause();
+
+// --- Step 1: Ingress Traffic (Client -> API Gateway) ---
+connClientGateway.end = to(1).duration(0.4);
+connClientGateway.pulse({ color: "#38bdf8", duration: 0.6 });
+stage.pause();
+
+// --- Step 2: Cache Inspection (API Gateway -> Redis) ---
+connGatewayRedis.end = to(1).duration(0.4);
+connGatewayRedis.pulse({ color: "#10b981", duration: 0.5 });
+stage.pause();
+
+// --- Step 3: Microservice Routing & DB Query (Gateway -> Auth -> PostgreSQL) ---
+connGatewayAuth.end = to(1).duration(0.35);
+connGatewayAuth.pulse({ color: "#a855f7", duration: 0.5 });
+
+connAuthDb.end = to(1).duration(0.4).delay(0.2);
+connAuthDb.pulse({ color: "#f59e0b", duration: 0.6 });
+stage.pause();
+
+// --- Step 4: Topology Annotation & Observability Callout ---
+topologyNote.opacity = to(1).duration(0.35);
+noteConnector.opacity = to(1).duration(0.35);
+stage.pause();
+
+clientCard.y = to(46).ease("cubicInOut");
+stage.pause();
+connClientGateway.pulse({ color: "#38bdf8", duration: 0.5 });
+stage.pause();
+
+// --- Scene: Sequence Protocol Flow ---
+
+const sequenceKicker = Kicker("07 / Protocol Choreography", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const sequenceHeading = Title("Sequence Diagram & Protocols", {
+  x: sequenceKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+// 3 Participants across the stage
+const seqClient = Shape("Client App", {
+  opacity: 0,
+  width: 180,
+  align: "center",
+});
+const seqGateway = Shape("API Gateway", {
+  opacity: 0,
+  width: 180,
+  align: "center",
+});
+const seqAuth = Shape("Auth Server", {
+  opacity: 0,
+  width: 180,
+  align: "center",
+});
+arrange.row([seqClient, seqGateway, seqAuth], { x: 16, y: 22, gap: 14 });
+
+const seqClientLine = Lifeline(seqClient, { length: 440, color: "#475569" });
+const seqGatewayLine = Lifeline(seqGateway, { length: 440, color: "#475569" });
+const seqAuthLine = Lifeline(seqAuth, { length: 440, color: "#475569" });
+
+const gatewayActive = seqGatewayLine.activation({
+  y: 70,
+  height: 280,
+  color: "#38bdf8",
+  opacity: 0,
+});
+const authActive = seqAuthLine.activation({ y: 130, height: 160, color: "#a855f7", opacity: 0 });
+
+// Multiple protocol messages back and forth
+const msg1 = Connector(
+  { x: 21, y: 35 },
+  { x: 53, y: 35 },
+  { label: "1. POST /api/v1/auth/login", color: "#38bdf8", end: 0 },
+);
+
+const msg2 = Connector(
+  { x: 53, y: 43 },
+  { x: 85, y: 43 },
+  { label: "2. Verify Password Hash", color: "#a855f7", end: 0 },
+);
+
+const msg3 = Connector(
+  { x: 85, y: 51 },
+  { x: 53, y: 51 },
+  { label: "3. User Roles & Identity", color: "#a855f7", dashed: true, end: 0 },
+);
+
+const msg4 = Connector(
+  { x: 85, y: 59 },
+  { x: 53, y: 59 },
+  { label: "4. Issue Signed JWT Token", color: "#10b981", dashed: true, end: 0 },
+);
+
+const msg5 = Connector(
+  { x: 53, y: 67 },
+  { x: 21, y: 67 },
+  { label: "5. 200 OK (Bearer Session)", color: "#10b981", dashed: true, end: 0 },
+);
+
+stage
+  .scene("Sequence Protocol Flow")
+  .with(
+    brandTitle,
+    sequenceKicker,
+    sequenceHeading,
+    seqClient,
+    seqGateway,
+    seqAuth,
+    seqClientLine,
+    seqGatewayLine,
+    seqAuthLine,
+    gatewayActive,
+    authActive,
+    msg1,
+    msg2,
+    msg3,
+    msg4,
+    msg5,
+  );
+
+stage.setNotes([
+  "Sequence Protocol Flow Scene:",
+  "- Step 1: Client sends login request to API Gateway.",
+  "- Step 2: Gateway validates credentials against Auth Server.",
+  "- Step 3: Auth Server returns claims and signed JWT to Gateway.",
+  "- Step 4: Gateway returns 200 OK Bearer session to Client.",
+]);
+
+// Dismiss topology elements
+topologyKicker.opacity = 0;
+topologyHeading.opacity = 0;
+clientCard.opacity = 0;
+apiGateway.opacity = 0;
+authService.opacity = 0;
+databaseCard.opacity = 0;
+redisCache.opacity = 0;
+topologyNote.opacity = 0;
+noteConnector.opacity = 0;
+
+// Reveal Sequence participants
+sequenceKicker.opacity = 1;
+sequenceHeading.opacity = 1;
+seqClient.opacity = 1;
+seqGateway.opacity = 1;
+seqAuth.opacity = 1;
+seqClientLine.opacity = 1;
+seqGatewayLine.opacity = 1;
+seqAuthLine.opacity = 1;
+
+// Step 1: Client -> Gateway
+msg1.end = to(1).duration(0.4);
+gatewayActive.opacity = to(1).duration(0.3);
+msg1.pulse({ color: "#38bdf8" });
+stage.pause();
+
+// Step 2: Gateway -> Auth Server (Back & Forth)
+msg2.end = to(1).duration(0.35);
+authActive.opacity = to(1).duration(0.3);
+msg3.end = to(1).duration(0.35).delay(0.2);
+msg4.end = to(1).duration(0.35).delay(0.4);
+stage.pause();
+
+// Step 3: Gateway -> Client response
+msg5.end = to(1).duration(0.4);
+msg5.pulse({ color: "#10b981" });
+stage.pause();
+
+// --- Scene: State Machine Transitions ---
+
+const stateKicker = Kicker("08 / State Machine Topologies", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const stateHeading = Title("Interactive State Transitions", {
+  x: stateKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+// State Machine Nodes in a circuit layout using geometric Shape primitives
+const stateIdle = Shape("IDLE", {
+  shape: "circle",
+  active: true,
+  size: 90,
+  x: 18,
+  y: 52,
+  opacity: 0,
+});
+const stateAuthenticating = Shape("AUTH?", {
+  shape: "diamond",
+  size: 100,
+  x: 48,
+  y: 36,
+  opacity: 0,
+});
+const stateActive = Shape("ACTIVE", {
+  shape: "circle",
+  doubleBorder: true,
+  size: 90,
+  x: 78,
+  y: 52,
+  opacity: 0,
+});
+const stateRejected = Shape("REJECTED", {
+  shape: "pill",
+  height: 48,
+  x: 48,
+  y: 68,
+  opacity: 0,
+  color: "#f43f5e",
+  borderColor: "#f43f5e",
+});
+
+const tSubmit = Connector(stateIdle, stateAuthenticating, {
+  label: "login()",
+  routing: "bezier",
+  color: "#38bdf8",
+  end: 0,
+});
+
+const tSuccess = Connector(stateAuthenticating, stateActive, {
+  label: "validToken",
+  routing: "bezier",
+  color: "#10b981",
+  end: 0,
+});
+
+const tFail = Connector(stateAuthenticating, stateRejected, {
+  label: "invalidCredentials",
+  routing: "straight",
+  color: "#f43f5e",
+  end: 0,
+});
+
+const tRetry = Connector(stateRejected, stateIdle, {
+  label: "retry()",
+  routing: "corner",
+  color: "#f59e0b",
+  dashed: true,
+  end: 0,
+});
+
+const tLogout = Connector(stateActive, stateIdle, {
+  label: "logout()",
+  routing: "bezier",
+  color: "#64748b",
+  dashed: true,
+  end: 0,
+});
+
+stage
+  .scene("State Machine Transitions")
+  .with(
+    brandTitle,
+    stateKicker,
+    stateHeading,
+    stateIdle,
+    stateAuthenticating,
+    stateActive,
+    stateRejected,
+    tSubmit,
+    tSuccess,
+    tFail,
+    tRetry,
+    tLogout,
+  );
+
+stage.setNotes([
+  "State Machine Scene:",
+  "- Step 1: IDLE state active.",
+  "- Step 2: Transition from IDLE to AUTHENTICATING.",
+  "- Step 3: Transition from AUTHENTICATING to ACTIVE.",
+]);
+
+// Dismiss sequence elements
+sequenceKicker.opacity = 0;
+sequenceHeading.opacity = 0;
+seqClient.opacity = 0;
+seqGateway.opacity = 0;
+seqAuth.opacity = 0;
+seqClientLine.opacity = 0;
+seqGatewayLine.opacity = 0;
+seqAuthLine.opacity = 0;
+gatewayActive.opacity = 0;
+authActive.opacity = 0;
+
+// Reveal State Machine nodes
+stateKicker.opacity = 1;
+stateHeading.opacity = 1;
+stateIdle.opacity = 1;
+stateAuthenticating.opacity = 1;
+stateActive.opacity = 1;
+stateRejected.opacity = 1;
+
+// Draw state edges
+tSubmit.end = to(1).duration(0.4);
+tSuccess.end = to(1).duration(0.4);
+tFail.end = to(1).duration(0.4);
+tRetry.end = to(1).duration(0.4);
+tLogout.end = to(1).duration(0.4);
+
+tSubmit.pulse({ color: "#38bdf8" });
 stage.pause();
 
 // --- Scene: Conclusion ---

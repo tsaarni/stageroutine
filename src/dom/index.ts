@@ -2,7 +2,11 @@
  * Exports DOM components, the zero-VDOM JSX runtime, and layout helpers.
  */
 
-export { DOMElement, type ElementOptions, type ElementDecorator } from "./element";
+export {
+  DOMElement,
+  type ElementOptions,
+  type ElementDecorator,
+} from "./element";
 export {
   gradient,
   type GradientOptions,
@@ -21,16 +25,27 @@ export {
 export {
   Title,
   Text,
-  Card,
+  Shape,
+  ShapeElement,
   Badge,
   Kicker,
   CodeBlock,
   TerminalWindow,
   BulletList,
   Table,
+  Connector,
+  ConnectorElement,
+  Lifeline,
+  LifelineElement,
+  Activation,
+  ActivationElement,
   type TitleOptions,
+  type TitleVariant,
   type TextOptions,
-  type CardOptions,
+  type ShapeOptions,
+  type ShapeKind,
+  type ShapeVariant,
+  type NoteSide,
   type BadgeOptions,
   type KickerOptions,
   type CodeBlockOptions,
@@ -41,6 +56,11 @@ export {
   type BulletListElement,
   type TableOptions,
   type TableElement,
+  type ConnectorOptions,
+  type ConnectorTarget,
+  type PulseOptions,
+  type LifelineOptions,
+  type ActivationOptions,
 } from "./components/index";
 export {
   BackgroundElement,
@@ -55,10 +75,26 @@ export {
   type AsciiFluidOptions,
   type GradientFluidOptions,
 } from "./backgrounds/index";
+export { arrange, type LayoutOptions } from "./layout";
+export {
+  getPerimeterPoint,
+  getTransformedPerimeterPoint,
+  computeOrthogonalPath,
+  computeBezierPath,
+  type Point,
+  type Box,
+} from "./geometry";
 export { stagger } from "./stagger";
 export {
   attachRangeSelection,
   type RangeSelectionOptions,
   type RangeSelectionController,
 } from "./interaction";
-export { jsx, jsxs, jsxDEV, Fragment, createElement, type JSX } from "./jsx-runtime";
+export {
+  jsx,
+  jsxs,
+  jsxDEV,
+  Fragment,
+  createElement,
+  type JSX,
+} from "./jsx-runtime";

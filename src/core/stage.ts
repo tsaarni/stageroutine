@@ -81,7 +81,9 @@ export class Stage implements ElementHost {
   private steps: StepData[] = [];
   private snapshots: StepSnapshot[] = [];
   private currentStepTransitions: TransitionRecord[] = [];
+  private currentStepActions: (() => void)[] = [];
   private currentStepNotes: string | undefined = undefined;
+  private isMountedState = false;
 
   // Playback State
   private currentStepIndex = 0;
@@ -90,6 +92,14 @@ export class Stage implements ElementHost {
   private broadcastChannel: BroadcastChannel | null = null;
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
+
+  isMounted(): boolean {
+    return this.isMountedState;
+  }
+
+  recordAction(action: () => void): void {
+    this.currentStepActions.push(action);
+  }
 
   // Presenter Tools & Pointer State
   private activePointer: PointerPlugin | null = null;
@@ -274,6 +284,19 @@ export class Stage implements ElementHost {
       brightness: element.brightness,
       color: element.color,
     };
+
+    for (const key of Object.keys(element)) {
+      if (
+        key !== "id" &&
+        key !== "kind" &&
+        key !== "domElement" &&
+        !(key in initialProps) &&
+        typeof (element as Record<string, unknown>)[key] !== "function"
+      ) {
+        initialProps[key] = (element as Record<string, unknown>)[key];
+      }
+    }
+
     this.initialProperties.set(element.id, { ...initialProps });
     this.propertyState.set(element.id, initialProps);
 
@@ -390,6 +413,7 @@ export class Stage implements ElementHost {
       sceneName: this.currentSceneName,
       stepIndex: stepIdx,
       transitions: [...this.currentStepTransitions],
+      actions: [...this.currentStepActions],
       activeElementIds: new Set(this.activeElementIds),
       notes: this.currentStepNotes,
       theme: { ...this.currentTheme },
@@ -411,6 +435,7 @@ export class Stage implements ElementHost {
 
     // Reset step records for next step
     this.currentStepTransitions = [];
+    this.currentStepActions = [];
     this.currentStepNotes = undefined;
   }
 
@@ -583,6 +608,8 @@ export class Stage implements ElementHost {
       }
     });
 
+    this.isMountedState = true;
+
     return this;
   }
 
@@ -700,6 +727,12 @@ export class Stage implements ElementHost {
 
     this.isAnimating = true;
     const startTime = performance.now();
+
+    if (step.actions) {
+      for (const action of step.actions) {
+        action();
+      }
+    }
 
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
 
@@ -863,6 +896,11 @@ export class Stage implements ElementHost {
     node.style.opacity = `${opacity}`;
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
     node.style.pointerEvents = opacity === 0 ? "none" : "auto";
+    if (opacity > 0) {
+      element.play?.();
+    } else {
+      element.pause?.();
+    }
     if (blur > 0 || brightness !== 1) {
       const filters: string[] = [];
       if (blur > 0) filters.push(`blur(${blur}px)`);
@@ -871,6 +909,27 @@ export class Stage implements ElementHost {
     }
     if (color && color !== "inherit") {
       node.style.color = color;
+    }
+
+    for (const [key, value] of Object.entries(props)) {
+      if (
+        key !== "x" &&
+        key !== "y" &&
+        key !== "scale" &&
+        key !== "rotation" &&
+        key !== "anchor" &&
+        key !== "opacity" &&
+        key !== "blur" &&
+        key !== "brightness" &&
+        key !== "color" &&
+        key in element
+      ) {
+        try {
+          (element as unknown as Record<string, unknown>)[key] = value;
+        } catch {
+          // ignore read-only properties
+        }
+      }
     }
   }
 

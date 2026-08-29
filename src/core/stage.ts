@@ -2,6 +2,7 @@
  * The main presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  */
 
+import { type PointerPlugin, laserPointer } from "../pointers/index";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { type ElementHost, createReactiveProxy } from "./proxy";
 import type {
@@ -83,6 +84,70 @@ export class Stage implements ElementHost {
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
 
+  // Presenter Tools & Pointer State
+  private activePointer: PointerPlugin | null = null;
+  private isPointerActive = false;
+  private cursorIdleTimer: number | null = null;
+
+  get laserActive(): boolean {
+    return this.isPointerActive;
+  }
+
+  set laserActive(active: boolean) {
+    this.isPointerActive = active;
+    this.activePointer?.setActive(active);
+    this._updateCursorVisibility();
+  }
+
+  get pointerActive(): boolean {
+    return this.isPointerActive;
+  }
+
+  set pointerActive(active: boolean) {
+    this.isPointerActive = active;
+    this.activePointer?.setActive(active);
+    this._updateCursorVisibility();
+  }
+
+  private _updateCursorVisibility(): void {
+    if (!this.container) return;
+    if (this.isPointerActive) {
+      this.container.style.cursor = "none";
+      if (this.cursorIdleTimer !== null) {
+        window.clearTimeout(this.cursorIdleTimer);
+        this.cursorIdleTimer = null;
+      }
+      return;
+    }
+
+    this.container.style.cursor = "default";
+    if (this.cursorIdleTimer !== null) {
+      window.clearTimeout(this.cursorIdleTimer);
+    }
+    this.cursorIdleTimer = window.setTimeout(() => {
+      if (this.container && !this.isPointerActive) {
+        this.container.style.cursor = "none";
+      }
+    }, 2000);
+  }
+
+  usePointer(pointer: PointerPlugin): this {
+    if (this.activePointer) {
+      this.activePointer.destroy();
+    }
+    this.activePointer = pointer;
+    if (this.container && this.viewport) {
+      this.activePointer.mount({
+        container: this.container,
+        viewport: this.viewport,
+        width: this.options.width || 1920,
+        height: this.options.height || 1080,
+      });
+      this.activePointer.setActive(this.isPointerActive);
+    }
+    return this;
+  }
+
   on<K extends keyof StageEventMap>(
     event: K,
     handler: (data: StageEventMap[K]) => void,
@@ -126,6 +191,8 @@ export class Stage implements ElementHost {
       text: "#ffffff",
       ...(this.options.theme || {}),
     };
+
+    this.activePointer = laserPointer();
 
     if (typeof window !== "undefined") {
       try {
@@ -365,6 +432,10 @@ export class Stage implements ElementHost {
     this.container.style.alignItems = "center";
     this.container.style.justifyContent = "center";
     this.container.style.fontFamily = "system-ui, -apple-system, sans-serif";
+    this.container.style.userSelect = "none";
+    this.container.style.webkitUserSelect = "none";
+
+    this.container.addEventListener("selectstart", (e) => e.preventDefault());
 
     this._applyTheme(this.currentTheme);
 
@@ -378,6 +449,8 @@ export class Stage implements ElementHost {
     this.viewport.style.containerType = "size";
     this.viewport.style.transformOrigin = "center center";
     this.viewport.style.zIndex = "1";
+    this.viewport.style.userSelect = "none";
+    this.viewport.style.webkitUserSelect = "none";
 
     this.container.appendChild(this.viewport);
 
@@ -416,6 +489,65 @@ export class Stage implements ElementHost {
     window.addEventListener("resize", updateScale);
     updateScale();
 
+    // Mount and bind active pointer plugin
+    if (this.activePointer) {
+      this.activePointer.mount({
+        container: this.container,
+        viewport: this.viewport,
+        width: this.options.width || 1920,
+        height: this.options.height || 1080,
+      });
+      this.activePointer.setActive(this.isPointerActive);
+    }
+
+    const toPointerCoords = (e: MouseEvent | PointerEvent) => {
+      const screenX = e.clientX;
+      const screenY = e.clientY;
+      if (!this.viewport) {
+        return { screenX, screenY, virtualX: screenX, virtualY: screenY };
+      }
+      const rect = this.viewport.getBoundingClientRect();
+      const scale = rect.width / (this.options.width || 1920);
+      const virtualX = (e.clientX - rect.left) / scale;
+      const virtualY = (e.clientY - rect.top) / scale;
+      return { screenX, screenY, virtualX, virtualY };
+    };
+
+    this._updateCursorVisibility();
+
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        this._updateCursorVisibility();
+        if (!this.activePointer) return;
+        if (typeof e.getCoalescedEvents === "function") {
+          const events = e.getCoalescedEvents();
+          if (events && events.length > 0) {
+            for (const ce of events) {
+              this.activePointer.moveTo(toPointerCoords(ce));
+            }
+            return;
+          }
+        }
+        const coords = toPointerCoords(e);
+        this.activePointer.moveTo(coords);
+      },
+      { passive: true },
+    );
+
+    window.addEventListener("pointerdown", (e) => {
+      if (!this.activePointer || !this.isPointerActive) return;
+      const coords = toPointerCoords(e);
+      this.activePointer.setDown?.(true, coords);
+      this.activePointer.ping?.(coords);
+    });
+
+    window.addEventListener("pointerup", (e) => {
+      if (!this.activePointer || !this.isPointerActive) return;
+      const coords = toPointerCoords(e);
+      this.activePointer.setDown?.(false, coords);
+    });
+
     // Keyboard controls
     window.addEventListener("keydown", (e) => {
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
@@ -424,6 +556,8 @@ export class Stage implements ElementHost {
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
         this.prev();
+      } else if (e.key === "l" || e.key === "L") {
+        this.laserActive = !this.laserActive;
       }
     });
 

@@ -108,3 +108,11 @@ export {
   PresenterRecorder,
   type PresenterMessage,
 } from "./presenter/index";
+
+// Presenter Pointer Plugins
+export {
+  laserPointer,
+  type LaserPointerOptions,
+  type PointerPlugin,
+  type PointerContext,
+} from "./pointers/index";

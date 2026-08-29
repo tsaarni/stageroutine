@@ -206,4 +206,5 @@ export interface ReactiveElementBase {
   color?: ReactiveProp<string>;
   play?(): void;
   pause?(): void;
+  onClick?(handler: (event: MouseEvent) => void): this;
 }

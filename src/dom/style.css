@@ -20,6 +20,9 @@
 @import "@fontsource/newsreader/400-italic.css";
 
 :root {
+  user-select: none;
+  -webkit-user-select: none;
+
   /* Typographic Hierarchy (1080p Scale) */
   --sr-font-hero: 7.5rem;
   --sr-font-title: 4.5rem;

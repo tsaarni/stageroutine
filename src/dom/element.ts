@@ -158,6 +158,15 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
+   * Registers a click interaction handler on this element.
+   */
+  onClick(handler: (event: MouseEvent) => void): this {
+    this.domElement.style.cursor = "pointer";
+    this.domElement.addEventListener("click", handler);
+    return this;
+  }
+
+  /**
    * Applies a decorator function to enhance this element with custom styles, animations, or behaviors.
    */
   decorate(decorator: ElementDecorator): this {

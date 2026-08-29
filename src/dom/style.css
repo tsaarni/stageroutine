@@ -24,12 +24,12 @@
   -webkit-user-select: none;
 
   /* Typographic Hierarchy (1080p Scale) */
-  --sr-font-hero: 7.5rem;
-  --sr-font-title: 4.5rem;
-  --sr-font-lead: 2.75rem;
-  --sr-font-body: 2.15rem;
-  --sr-font-code: 1.65rem;
-  --sr-font-kicker: 1.35rem;
+  --sr-font-hero: 6.5rem;
+  --sr-font-title: 3.85rem;
+  --sr-font-lead: 2.45rem;
+  --sr-font-body: 1.85rem;
+  --sr-font-code: 1.45rem;
+  --sr-font-kicker: 1.2rem;
 
   /* Font Families */
   --sr-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -181,6 +181,10 @@
   box-sizing: border-box;
 }
 
+.sr-clickable {
+  cursor: pointer;
+}
+
 .sr-code-block {
   background-color: transparent;
   border: none;
@@ -189,14 +193,49 @@
   padding: 0.5rem 0 0.5rem 1.75rem;
   font-family: var(--sr-font-mono);
   font-size: var(--sr-font-code);
-  line-height: 1.7;
+  line-height: 1.5;
   color: var(--sr-text);
   box-shadow: none;
   margin: 0;
   box-sizing: border-box;
   width: 100%;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
+  word-break: normal;
+}
+
+.sr-code-block code {
+  display: block;
+}
+
+.sr-code-line {
+  display: block;
+  min-height: 1.5em;
+  line-height: 1.5;
+  padding: 0 0.6rem;
+  margin: 0 -0.6rem;
+  border-radius: 0;
+  transition: opacity 0.2s ease-out, background-color 0.15s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-code-line.is-focused {
+  background-color: rgba(255, 255, 255, 0.08);
+  opacity: 1 !important;
+}
+
+.sr-code-line.is-focused.is-range-start {
+  border-top-left-radius: var(--sr-radius);
+  border-top-right-radius: var(--sr-radius);
+}
+
+.sr-code-line.is-focused.is-range-end {
+  border-bottom-left-radius: var(--sr-radius);
+  border-bottom-right-radius: var(--sr-radius);
+}
+
+.sr-code-block.has-focus .sr-code-line:not(.is-focused) {
+  opacity: 0.35;
 }
 
 .sr-terminal-window {
@@ -247,6 +286,99 @@
   color: var(--sr-text);
 }
 
+.sr-terminal-line {
+  display: block;
+  min-height: 1.7em;
+  line-height: 1.7;
+  padding: 0 0.6rem;
+  margin: 0 -0.6rem;
+  border-radius: 0;
+  transition: opacity 0.2s ease-out, background-color 0.15s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-terminal-line.is-focused {
+  background-color: rgba(255, 255, 255, 0.08);
+  opacity: 1 !important;
+}
+
+.sr-terminal-line.is-focused.is-range-start {
+  border-top-left-radius: var(--sr-radius);
+  border-top-right-radius: var(--sr-radius);
+}
+
+.sr-terminal-line.is-focused.is-range-end {
+  border-bottom-left-radius: var(--sr-radius);
+  border-bottom-right-radius: var(--sr-radius);
+}
+
+.sr-terminal-body.has-focus .sr-terminal-line:not(.is-focused) {
+  opacity: 0.35;
+}
+
+/* ==========================================================================
+   Table Primitives
+   ========================================================================== */
+
+.sr-table-container {
+  background: var(--sr-surface);
+  backdrop-filter: var(--sr-surface-backdrop);
+  -webkit-backdrop-filter: var(--sr-surface-backdrop);
+  border: var(--sr-surface-border);
+  border-top-color: var(--sr-surface-highlight);
+  border-radius: var(--sr-radius);
+  box-shadow: var(--sr-surface-shadow);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.sr-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: var(--sr-font-sans);
+  font-size: var(--sr-font-body);
+  color: var(--sr-text-muted);
+}
+
+.sr-table th {
+  font-family: var(--sr-font-mono);
+  font-size: var(--sr-font-kicker);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sr-text-dim);
+  padding: 0.85rem 1.35rem;
+  border-bottom: var(--sr-surface-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sr-table td {
+  padding: 0.85rem 1.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sr-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sr-table-row {
+  transition: opacity 0.2s ease-out, background-color 0.15s ease-out, color 0.15s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-table-row.is-focused {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--sr-text);
+  opacity: 1 !important;
+}
+
+.sr-table-container.has-focus .sr-table-row:not(.is-focused) {
+  opacity: 0.35;
+}
+
 /* ==========================================================================
    List Primitives
    ========================================================================== */
@@ -266,6 +398,25 @@
   color: var(--sr-text-muted);
   line-height: 1.55;
   letter-spacing: -0.01em;
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out, color 0.25s ease-out;
+  border-radius: var(--sr-radius);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-bullet-item.is-focused {
+  color: var(--sr-text);
+  opacity: 1 !important;
+  transform: translateX(8px);
+}
+
+.sr-bullet-item.is-focused .sr-bullet-dot {
+  background-color: var(--sr-primary);
+  box-shadow: 0 0 10px var(--sr-primary);
+}
+
+.sr-bullet-list.has-focus .sr-bullet-item:not(.is-focused) {
+  opacity: 0.35;
 }
 
 .sr-bullet-dot {
@@ -275,4 +426,16 @@
   background-color: var(--sr-text-dim);
   flex-shrink: 0;
   transform: translateY(-0.25rem);
+  transition: background-color 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+
+/* ==========================================================================
+   Presenter Cursor Suppression
+   ========================================================================== */
+
+.sr-pointer-mode,
+.sr-pointer-mode *,
+.sr-cursor-hidden,
+.sr-cursor-hidden * {
+  cursor: none !important;
 }

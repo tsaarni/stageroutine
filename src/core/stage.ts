@@ -41,6 +41,13 @@ class SceneBuilder {
           }
         }
       }
+      if ("rows" in el && Array.isArray((el as { rows?: ReactiveElementBase[] }).rows)) {
+        for (const row of (el as { rows: ReactiveElementBase[] }).rows) {
+          if ("id" in row && "domElement" in row) {
+            flattened.push(row);
+          }
+        }
+      }
     }
     this.stage._setActiveScene(this.name, flattened);
     return this;
@@ -112,7 +119,8 @@ export class Stage implements ElementHost {
   private _updateCursorVisibility(): void {
     if (!this.container) return;
     if (this.isPointerActive) {
-      this.container.style.cursor = "none";
+      this.container.classList.add("sr-pointer-mode");
+      this.container.classList.remove("sr-cursor-hidden");
       if (this.cursorIdleTimer !== null) {
         window.clearTimeout(this.cursorIdleTimer);
         this.cursorIdleTimer = null;
@@ -120,13 +128,14 @@ export class Stage implements ElementHost {
       return;
     }
 
-    this.container.style.cursor = "default";
+    this.container.classList.remove("sr-pointer-mode");
+    this.container.classList.remove("sr-cursor-hidden");
     if (this.cursorIdleTimer !== null) {
       window.clearTimeout(this.cursorIdleTimer);
     }
     this.cursorIdleTimer = window.setTimeout(() => {
       if (this.container && !this.isPointerActive) {
-        this.container.style.cursor = "none";
+        this.container.classList.add("sr-cursor-hidden");
       }
     }, 2000);
   }
@@ -853,6 +862,7 @@ export class Stage implements ElementHost {
     node.style.transformOrigin = transformOrigin;
     node.style.opacity = `${opacity}`;
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
+    node.style.pointerEvents = opacity === 0 ? "none" : "auto";
     if (blur > 0 || brightness !== 1) {
       const filters: string[] = [];
       if (blur > 0) filters.push(`blur(${blur}px)`);

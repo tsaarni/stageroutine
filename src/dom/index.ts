@@ -27,14 +27,20 @@ export {
   CodeBlock,
   TerminalWindow,
   BulletList,
+  Table,
   type TitleOptions,
   type TextOptions,
   type CardOptions,
   type BadgeOptions,
   type KickerOptions,
   type CodeBlockOptions,
+  type CodeBlockElement,
   type TerminalWindowProps,
+  type TerminalWindowElement,
   type BulletListOptions,
+  type BulletListElement,
+  type TableOptions,
+  type TableElement,
 } from "./components/index";
 export {
   BackgroundElement,
@@ -50,4 +56,9 @@ export {
   type GradientFluidOptions,
 } from "./backgrounds/index";
 export { stagger } from "./stagger";
+export {
+  attachRangeSelection,
+  type RangeSelectionOptions,
+  type RangeSelectionController,
+} from "./interaction";
 export { jsx, jsxs, jsxDEV, Fragment, createElement, type JSX } from "./jsx-runtime";

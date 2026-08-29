@@ -10,6 +10,7 @@ import {
   CodeBlock,
   Kicker,
   Stage,
+  Table,
   TerminalWindow,
   Text,
   Title,
@@ -207,13 +208,13 @@ codePanel.x = to(brandTitle.x).ease("cubicInOut");
 rightHeading.opacity = to(1).when(codePanel, "halfway");
 rightBody.opacity = to(1).when(rightHeading, "halfway");
 
-// Cascade individual bullet items sequentially.
+// Cascade individual bullet items sequentially with 200ms stagger.
 featureChecklist.opacity = to(1).when(rightBody, "halfway");
 featureChecklist.items.forEach((item, index) => {
   const prev = index > 0 ? featureChecklist.items[index - 1] : undefined;
   const trigger = prev ?? rightBody;
-  item.opacity = to(1).when(trigger, "halfway");
-  item.x = to(0).when(trigger, "halfway");
+  item.opacity = to(1).duration(0.4).when(trigger, 0.5);
+  item.x = to(0).duration(0.4).when(trigger, 0.5);
 });
 stage.pause();
 
@@ -479,6 +480,115 @@ decoratorTypewriterDemo.opacity = 1;
 decoratorCode.opacity = 1;
 stage.pause();
 
+// --- Scene: Structured Data & Metrics ---
+
+const tableKicker = Kicker("05 / Structured Data & Focus", {
+  x: 6,
+  y: 18,
+  opacity: 0,
+});
+
+const tableHeading = Title("Glassmorphic DataGrid", {
+  x: tableKicker.x,
+  y: 25,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+const tableText = Text(
+  "Interactive tables with column alignment and presenter click-and-drag range focus across metric rows.",
+  {
+    x: tableKicker.x,
+    y: 36,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+const serviceMetricsTable = Table({
+  headers: ["Service Cluster", "p99 Latency", "Error Rate", "Uptime"],
+  rows: [
+    ["Auth Gateway", "12ms", "0.01%", "99.99%"],
+    ["Payment Engine", "145ms", "1.20%", "98.80%"],
+    ["Vector Search", "24ms", "0.00%", "99.95%"],
+    ["Edge Cache", "3ms", "0.00%", "100.00%"],
+  ],
+  align: ["left", "right", "right", "center"],
+  x: tableKicker.x,
+  y: 60,
+  opacity: 0,
+  style: { width: "42cqw" },
+});
+
+for (const row of serviceMetricsTable.rows) {
+  row.opacity = 0;
+  row.x = 2;
+}
+
+const tableCode = CodeBlock(
+  [
+    "// Declarative glassmorphic table",
+    "const metrics = Table({",
+    "  headers: ['Service', 'p99', 'Error', 'Uptime'],",
+    "  rows: [",
+    "    ['Auth Gateway', '12ms', '0.01%', '99.99%'],",
+    "    ['Payment Engine', '145ms', '1.20%', '98.80%'],",
+    "    ['Vector Search', '24ms', '0.00%', '99.95%'],",
+    "    ['Edge Cache', '3ms', '0.00%', '100.00%'],",
+    "  ],",
+    "  align: ['left', 'right', 'right', 'center'],",
+    "});",
+    "",
+    "// Programmatic or click/drag focus",
+    "metrics.focusRows(1); // highlights degraded service",
+  ],
+  {
+    x: 110,
+    y: 18,
+    opacity: 0,
+    style: { width: "42cqw" },
+  },
+);
+
+stage
+  .scene("Structured Data & Metrics")
+  .with(brandTitle, tableKicker, tableHeading, tableText, serviceMetricsTable, tableCode);
+stage.setNotes([
+  "Structured Data & Interactive Metrics Scene:",
+  "- Displays the glassmorphic Table component with metric column alignments.",
+  "- Demonstrates click-and-drag multi-row selection for focusing audience attention during talks.",
+]);
+
+// Dismiss decorator elements
+decoratorKicker.opacity = 0;
+decoratorHeading.opacity = 0;
+decoratorGradientDemo.opacity = 0;
+decoratorTypewriterDemo.opacity = 0;
+decoratorCode.opacity = 0;
+decoratorCode.x = to(-50);
+
+// Reveal table elements with staggered spatial entrance
+tableKicker.opacity = to(1).when(brandTitle, "start");
+tableHeading.opacity = to(1).when(tableKicker, "halfway");
+tableText.opacity = to(1).when(tableHeading, "halfway");
+
+// Glide Table container into place
+serviceMetricsTable.y = to(48).ease("cubicOut").when(tableText, "start");
+serviceMetricsTable.opacity = to(1).when(tableText, "start");
+
+// 200ms staggered cascade across table rows
+serviceMetricsTable.rows.forEach((row, index) => {
+  const prev = index > 0 ? serviceMetricsTable.rows[index - 1] : undefined;
+  const trigger = prev ?? serviceMetricsTable;
+  row.opacity = to(1).duration(0.4).when(trigger, 0.5);
+  row.x = to(0).duration(0.4).when(trigger, 0.5);
+});
+
+// Glide code panel in from the right edge
+tableCode.x = to(52).ease("cubicOut").when(tableText, "halfway");
+tableCode.opacity = to(1).when(tableText, "halfway");
+stage.pause();
+
 // --- Scene: Conclusion ---
 
 stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
@@ -488,12 +598,18 @@ stage.setNotes([
   "- Press Left Arrow anytime to smoothly rewind.",
 ]);
 
-// Dismiss decorator elements
-decoratorKicker.opacity = 0;
-decoratorHeading.opacity = 0;
-decoratorGradientDemo.opacity = 0;
-decoratorTypewriterDemo.opacity = 0;
-decoratorCode.opacity = 0;
+// Dismiss table elements
+tableKicker.opacity = 0;
+tableHeading.opacity = 0;
+tableText.opacity = 0;
+serviceMetricsTable.opacity = 0;
+serviceMetricsTable.y = 60;
+for (const row of serviceMetricsTable.rows) {
+  row.opacity = 0;
+  row.x = 2;
+}
+tableCode.opacity = 0;
+tableCode.x = 110;
 
 // Return title, lead, and body to hero center positions.
 brandTitle.x = to("center").ease("cubicInOut");

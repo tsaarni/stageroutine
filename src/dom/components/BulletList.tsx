@@ -1,18 +1,26 @@
 /**
- * Bullet list component where individual bullet points can be animated independently via .items.
+ * Bullet list component with individual bullet point animation and interactive click-and-drag focus.
  */
 
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
+import { attachRangeSelection } from "../interaction";
 
 export interface BulletListOptions extends ElementOptions {
   itemSpacing?: number;
   color?: string;
   className?: string;
+  /** Whether clicking or dragging bullet items focuses them interactively. Defaults to true. */
+  interactive?: boolean;
 }
 
 export interface BulletListElement extends DOMElement {
   items: DOMElement[];
+  readonly focusedRange: [number, number] | null;
+  readonly focusedIndex: number | null;
+  focus(index: number): this;
+  focusItems(start: number, end?: number): this;
+  unfocus(): this;
 }
 
 export function BulletList(items: string[], options: BulletListOptions = {}): BulletListElement {
@@ -22,12 +30,15 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
     container.style.gap = `${options.itemSpacing}px`;
   }
 
+  const isInteractive = options.interactive ?? true;
+  const rawItemElements: HTMLElement[] = [];
   const stage = getActiveStage();
   const childElements: DOMElement[] = [];
 
   for (const itemText of items) {
     const itemEl = document.createElement("div");
     itemEl.className = "sr-bullet-item";
+    rawItemElements.push(itemEl);
 
     const dot = document.createElement("span");
     dot.className = "sr-bullet-dot";
@@ -54,8 +65,44 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
     childElements.push(proxyItem);
   }
 
+  const controller = attachRangeSelection({
+    container,
+    getItems: () => rawItemElements,
+    interactive: isInteractive,
+  });
+
   const parentDOM = new DOMElement("BulletList", container, options) as BulletListElement;
   parentDOM.items = childElements;
+
+  parentDOM.focus = function (this: BulletListElement, index: number) {
+    controller.focus(index);
+    return this;
+  };
+
+  parentDOM.focusItems = function (this: BulletListElement, start: number, end: number = start) {
+    controller.focus(start, end);
+    return this;
+  };
+
+  parentDOM.unfocus = function (this: BulletListElement) {
+    controller.unfocus();
+    return this;
+  };
+
+  Object.defineProperty(parentDOM, "focusedRange", {
+    get() {
+      return controller.focusedRange;
+    },
+    enumerable: true,
+  });
+
+  Object.defineProperty(parentDOM, "focusedIndex", {
+    get() {
+      return controller.focusedIndex;
+    },
+    enumerable: true,
+  });
+
   const proxyParent = stage.registerElement(parentDOM) as BulletListElement;
   proxyParent.items = childElements;
   return proxyParent;

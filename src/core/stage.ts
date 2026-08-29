@@ -547,14 +547,14 @@ export class Stage implements ElementHost {
     window.addEventListener("pointerdown", (e) => {
       if (!this.activePointer || !this.isPointerActive) return;
       const coords = toPointerCoords(e);
-      this.activePointer.setDown?.(true, coords);
+      this.activePointer.onPointerDown?.(coords);
       this.activePointer.ping?.(coords);
     });
 
     window.addEventListener("pointerup", (e) => {
       if (!this.activePointer || !this.isPointerActive) return;
       const coords = toPointerCoords(e);
-      this.activePointer.setDown?.(false, coords);
+      this.activePointer.onPointerUp?.(coords);
     });
 
     // Keyboard controls

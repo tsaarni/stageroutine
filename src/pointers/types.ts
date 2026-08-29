@@ -33,8 +33,10 @@ export interface PointerPlugin {
   moveTo(coords: PointerCoordinates): void;
   /** Triggered on click / ping in pointer mode */
   ping?(coords: PointerCoordinates): void;
-  /** Triggered on mouse button down / up for continuous hold interactions */
-  setDown?(isDown: boolean, coords: PointerCoordinates): void;
+  /** Triggered on mouse/pointer button down */
+  onPointerDown?(coords: PointerCoordinates): void;
+  /** Triggered on mouse/pointer button up */
+  onPointerUp?(coords: PointerCoordinates): void;
   /** Cleans up DOM nodes and timers */
   destroy(): void;
 }

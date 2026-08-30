@@ -162,17 +162,21 @@
 .sr-card {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: var(--sr-space-xs);
-  padding: var(--sr-space-sm) var(--sr-space-md);
-  color: var(--sr-text-muted);
+  padding: 0.8rem 1.4rem;
+  color: var(--sr-text);
   font-family: var(--sr-font-sans);
-  font-size: var(--sr-font-body);
-  line-height: 1.5;
-  text-align: left;
+  font-size: var(--sr-font-code);
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
   position: relative;
   box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: normal;
+  contain: layout style;
   transition: border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
@@ -196,26 +200,13 @@
   -webkit-backdrop-filter: none;
 }
 
-/* Note variant (annotation with side accent bar) */
-.sr-shape-note {
-  background: transparent;
-  border: none;
-  box-shadow: none;
+/* Solid variant (opaque filled background) */
+.sr-shape-solid {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1rem 3rem -0.5rem rgba(0, 0, 0, 0.5);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-radius: 0;
-  border-left: 3px solid var(--sr-surface-highlight);
-  padding: 0.3rem 1.5rem;
-}
-
-.sr-shape-note.is-side-right {
-  border-left: none;
-  border-right: 3px solid var(--sr-surface-highlight);
-}
-
-.sr-shape-note.is-side-left {
-  border-right: none;
-  border-left: 3px solid var(--sr-surface-highlight);
 }
 
 .sr-shape-box {
@@ -224,10 +215,11 @@
 
 .sr-shape-circle {
   border-radius: 50%;
+  aspect-ratio: 1 / 1;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 0;
+  padding: 0 !important;
 }
 
 .sr-shape-pill {
@@ -239,13 +231,15 @@
 }
 
 .sr-shape-diamond {
+  aspect-ratio: 1 / 1;
   align-items: center;
   justify-content: center;
   text-align: center;
   position: relative;
   background: transparent !important;
-  border-color: transparent !important;
+  border: none !important;
   box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .sr-shape-diamond::before {
@@ -264,9 +258,36 @@
   transition: border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
-.sr-shape-diamond > * {
+.sr-shape-diamond > *,
+.sr-shape-circle > * {
   position: relative;
   z-index: 1;
+  max-width: 72%;
+  text-align: center;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Sequence Lifeline & Activation Elements */
+.sr-lifeline {
+  position: absolute;
+  width: 2px;
+  border-left: 2px dashed rgba(148, 163, 184, 0.65);
+  pointer-events: none;
+  z-index: 0;
+  box-sizing: border-box;
+}
+
+.sr-activation {
+  position: absolute;
+  width: 14px;
+  background: var(--sr-primary, #38bdf8);
+  border-radius: 4px;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+  border: none;
+  z-index: 2;
+  box-sizing: border-box;
 }
 
 .sr-shape.has-double-border:not(.sr-shape-diamond),
@@ -290,9 +311,8 @@
 .sr-code-block {
   background-color: transparent;
   border: none;
-  border-left: 3px solid var(--sr-surface-highlight);
   border-radius: 0;
-  padding: 0.5rem 0 0.5rem 1.75rem;
+  padding: 0.5rem 0 0.5rem 1.25rem;
   font-family: var(--sr-font-mono);
   font-size: var(--sr-font-code);
   line-height: 1.5;
@@ -316,7 +336,7 @@
   padding: 0 0.6rem;
   margin: 0 -0.6rem;
   border-radius: 0;
-  transition: opacity 0.2s ease-out, background-color 0.15s ease-out;
+  transition: background-color 0.15s ease-out;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -395,7 +415,7 @@
   padding: 0 0.6rem;
   margin: 0 -0.6rem;
   border-radius: 0;
-  transition: opacity 0.2s ease-out, background-color 0.15s ease-out;
+  transition: background-color 0.15s ease-out;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -466,7 +486,7 @@
 }
 
 .sr-table-row {
-  transition: opacity 0.2s ease-out, background-color 0.15s ease-out, color 0.15s ease-out;
+  transition: background-color 0.15s ease-out, color 0.15s ease-out;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -500,7 +520,7 @@
   color: var(--sr-text-muted);
   line-height: 1.55;
   letter-spacing: -0.01em;
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out, color 0.25s ease-out;
+  transition: color 0.25s ease-out;
   border-radius: var(--sr-radius);
   user-select: none;
   -webkit-user-select: none;

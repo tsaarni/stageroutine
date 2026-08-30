@@ -3,6 +3,7 @@
  */
 
 import { getActiveStage } from "../../core/stage";
+import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
@@ -21,9 +22,12 @@ export interface TableElement extends DOMElement {
   readonly focusedIndex: number | null;
   focusRows(start: number, end?: number): this;
   unfocus(): this;
+  reveal(options?: StaggerOptions): StaggerBuilder;
 }
 
 export function Table(options: TableOptions): TableElement {
+  const isHiddenInitially = options.opacity === 0;
+  const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;
   const container = document.createElement("div");
   container.className = ["sr-table-container", options.className].filter(Boolean).join(" ");
 
@@ -76,8 +80,8 @@ export function Table(options: TableOptions): TableElement {
     rawRowElements.push(tr);
 
     const rowDOM = new DOMElement("TableRow", tr, {
-      opacity: 1,
-      x: 0,
+      opacity: isHiddenInitially ? 0 : 1,
+      x: isHiddenInitially ? 2 : 0,
       y: 0,
       style: {
         position: "relative",
@@ -94,7 +98,7 @@ export function Table(options: TableOptions): TableElement {
     interactive: isInteractive,
   });
 
-  const parentDOM = new DOMElement("Table", container, options) as TableElement;
+  const parentDOM = new DOMElement("Table", container, containerOptions) as TableElement;
   parentDOM.rows = childRowElements;
 
   parentDOM.focusRows = function (this: TableElement, start: number, end: number = start) {
@@ -105,6 +109,10 @@ export function Table(options: TableOptions): TableElement {
   parentDOM.unfocus = function (this: TableElement) {
     controller.unfocus();
     return this;
+  };
+
+  parentDOM.reveal = function (this: TableElement, options?: StaggerOptions) {
+    return stagger(this.rows, options);
   };
 
   Object.defineProperty(parentDOM, "focusedRange", {

@@ -118,11 +118,16 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
     }
   };
 
+  const onStepChange = () => {
+    updateRange(null);
+  };
+
   if (interactive && typeof window !== "undefined") {
     container.addEventListener("pointerdown", onContainerPointerDown);
     container.addEventListener("pointerover", onContainerPointerOver);
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("click", onWindowClick);
+    window.addEventListener("stageroutine:stepchange", onStepChange);
   }
 
   markClickable();
@@ -155,6 +160,7 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
         container.removeEventListener("pointerover", onContainerPointerOver);
         window.removeEventListener("pointerup", onPointerUp);
         window.removeEventListener("click", onWindowClick);
+        window.removeEventListener("stageroutine:stepchange", onStepChange);
       }
     },
   };

@@ -2,16 +2,13 @@ import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 
 export type ShapeKind = "box" | "circle" | "pill" | "diamond";
-export type ShapeVariant = "surface" | "ghost" | "note";
-export type NoteSide = "left" | "right";
+export type ShapeVariant = "surface" | "ghost" | "solid";
 
 export interface ShapeOptions extends ElementOptions {
-  /** Geometric kind: "box" (default), "circle", "pill", or "diamond". */
-  shape?: ShapeKind;
-  /** Visual surface preset: "surface" (glass card, default), "ghost" (transparent), or "note" (accent side bar). */
+  /** Geometric silhouette: "box" (default), "circle", "pill", or "diamond". */
+  kind?: ShapeKind;
+  /** Surface material preset: "surface" (glass card, default), "ghost" (outline), or "solid" (opaque fill). */
   variant?: ShapeVariant;
-  /** Border side for note variant ("left" | "right", defaults to "left"). */
-  side?: NoteSide;
   /** Uniform width and height shorthand (ideal for circles and diamonds). */
   size?: number | string;
   /** Explicit width in pixels or container units. */
@@ -35,7 +32,7 @@ export interface ShapeOptions extends ElementOptions {
 }
 
 export class ShapeElement extends DOMElement {
-  readonly shape: ShapeKind;
+  readonly kind: ShapeKind;
   readonly variant: ShapeVariant;
   private _isActive = false;
   private _doubleBorder = false;
@@ -74,48 +71,25 @@ export class ShapeElement extends DOMElement {
       children = options.children;
     }
 
-    const shape = options.shape ?? "box";
+    const kind = options.kind ?? "box";
     const variant = options.variant ?? "surface";
-    const side = options.side ?? "left";
 
-    const classNames = [
-      "sr-shape",
-      `sr-shape-${shape}`,
-      `sr-shape-${variant}`,
-      variant === "note" ? `is-side-${side}` : undefined,
-      options.className,
-    ]
+    const classNames = ["sr-shape", `sr-shape-${kind}`, `sr-shape-${variant}`, options.className]
       .filter(Boolean)
       .join(" ");
 
     const el = document.createElement("div");
     el.className = classNames;
-    el.setAttribute("data-shape", shape);
+    el.setAttribute("data-shape", kind);
     el.setAttribute("data-variant", variant);
 
     const customStyles: Record<string, string> = {};
-
-    const resolvedWidth = options.width ?? options.size;
-    const resolvedHeight = options.height ?? options.size;
-
-    if (resolvedWidth !== undefined) {
-      customStyles.width = typeof resolvedWidth === "number" ? `${resolvedWidth}px` : resolvedWidth;
-    }
-    if (resolvedHeight !== undefined) {
-      if (shape === "circle" || shape === "diamond") {
-        customStyles.height =
-          typeof resolvedHeight === "number" ? `${resolvedHeight}px` : resolvedHeight;
-      } else {
-        customStyles.minHeight =
-          typeof resolvedHeight === "number" ? `${resolvedHeight}px` : resolvedHeight;
-      }
-    }
 
     if (options.borderColor) customStyles.borderColor = options.borderColor;
     if (options.background) customStyles.backgroundColor = options.background;
     if (options.color) customStyles.color = options.color;
 
-    if (options.align === "center" || shape === "circle" || shape === "diamond") {
+    if (options.align === "center" || kind === "circle" || kind === "diamond") {
       customStyles.alignItems = "center";
       customStyles.justifyContent = "center";
       customStyles.textAlign = "center";
@@ -148,6 +122,7 @@ export class ShapeElement extends DOMElement {
             el.appendChild(child.domElement);
           } else if (typeof child === "string" || typeof child === "number") {
             const span = document.createElement("span");
+            span.className = "sr-shape-text";
             span.textContent = String(child);
             el.appendChild(span);
           }
@@ -157,7 +132,7 @@ export class ShapeElement extends DOMElement {
 
     super("Shape", el, options);
 
-    this.shape = shape;
+    this.kind = kind;
     this.variant = variant;
     this.primaryColor = options.color ?? options.borderColor ?? "#38bdf8";
     this._isActive = !!options.active;
@@ -183,6 +158,9 @@ export class ShapeElement extends DOMElement {
   }
 }
 
+/**
+ * Universal shape container supporting multiple geometries and surface treatments.
+ */
 export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = {}): ShapeElement {
   const stage = getActiveStage();
   const el = new ShapeElement(childrenOrOptions, maybeOptions);
@@ -190,4 +168,32 @@ export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = 
     return stage.registerElement(el) as ShapeElement;
   }
   return el;
+}
+
+/**
+ * Rectangular card container.
+ */
+export function Card(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
+  return Shape(childrenOrOptions, { ...options, kind: "box" });
+}
+
+/**
+ * Circular geometric node.
+ */
+export function Circle(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
+  return Shape(childrenOrOptions, { ...options, kind: "circle" });
+}
+
+/**
+ * Capsule pill tag / status indicator.
+ */
+export function Pill(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
+  return Shape(childrenOrOptions, { ...options, kind: "pill" });
+}
+
+/**
+ * 45-degree rotated diamond decision node.
+ */
+export function Diamond(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
+  return Shape(childrenOrOptions, { ...options, kind: "diamond" });
 }

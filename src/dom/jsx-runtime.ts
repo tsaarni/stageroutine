@@ -32,6 +32,8 @@ const SVG_TAGS = new Set([
 const MOTION_PROP_KEYS = new Set([
   "x",
   "y",
+  "width",
+  "height",
   "scale",
   "rotation",
   "opacity",
@@ -44,6 +46,8 @@ const MOTION_PROP_KEYS = new Set([
 const ALL_STAGE_OPTION_KEYS = new Set([
   "x",
   "y",
+  "width",
+  "height",
   "scale",
   "rotation",
   "opacity",

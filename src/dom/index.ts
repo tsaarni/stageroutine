@@ -21,13 +21,21 @@ export {
   typewriter,
   type TypewriterOptions,
   type TypewriterStep,
+  rail,
+  type RailOptions,
+  bracket,
+  type BracketOptions,
+  type BracketStyle,
 } from "../decorators/index";
 export {
   Title,
   Text,
   Shape,
+  Card,
+  Circle,
+  Pill,
+  Diamond,
   ShapeElement,
-  Badge,
   Kicker,
   CodeBlock,
   TerminalWindow,
@@ -37,16 +45,19 @@ export {
   ConnectorElement,
   Lifeline,
   LifelineElement,
+  ActivationBar,
+  ActivationBarElement,
   Activation,
-  ActivationElement,
+  SequenceDiagram,
+  SequenceDiagramElement,
+  sequenceDiagram,
+  Sequence,
   type TitleOptions,
   type TitleVariant,
   type TextOptions,
   type ShapeOptions,
   type ShapeKind,
   type ShapeVariant,
-  type NoteSide,
-  type BadgeOptions,
   type KickerOptions,
   type CodeBlockOptions,
   type CodeBlockElement,
@@ -58,9 +69,14 @@ export {
   type TableElement,
   type ConnectorOptions,
   type ConnectorTarget,
+  type ConnectorHeadType,
   type PulseOptions,
   type LifelineOptions,
+  type ActivationBarOptions,
   type ActivationOptions,
+  type ActivationElement,
+  type SequenceDiagramOptions,
+  type SequenceOptions,
 } from "./components/index";
 export {
   BackgroundElement,
@@ -75,7 +91,16 @@ export {
   type AsciiFluidOptions,
   type GradientFluidOptions,
 } from "./backgrounds/index";
-export { arrange, type LayoutOptions } from "./layout";
+export {
+  arrange,
+  type LayoutOptions,
+  type SplitLayoutOptions,
+  type RelativeLayoutOptions,
+  type CircleLayoutOptions,
+  type GridSlot,
+  type LayoutElement,
+  type RuleOptions,
+} from "./layout";
 export {
   getPerimeterPoint,
   getTransformedPerimeterPoint,
@@ -84,7 +109,6 @@ export {
   type Point,
   type Box,
 } from "./geometry";
-export { stagger } from "./stagger";
 export {
   attachRangeSelection,
   type RangeSelectionOptions,

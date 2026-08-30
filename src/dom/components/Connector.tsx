@@ -5,6 +5,7 @@ import {
   type Box,
   type CardinalSide,
   type Point,
+  computeArcPath,
   computeBezierPath,
   computeOrthogonalPath,
   getBoxAnchorPoint,
@@ -63,6 +64,145 @@ function resolveOffset(val: number | string | undefined, baseDim: number): numbe
   return Number.parseFloat(s) || 0;
 }
 
+export type ConnectorHeadType =
+  | "none"
+  | "arrow"
+  | "open"
+  | "dot"
+  | "circle"
+  | "diamond"
+  | "diamond-open"
+  | "bar"
+  | "crow";
+
+interface HeadMarker {
+  type: ConnectorHeadType;
+  size: number;
+  node: SVGElement;
+  retract: number;
+}
+
+function createSvg<K extends keyof SVGElementTagNameMap>(
+  tag: K,
+  attrs: Record<string, string | number>,
+): SVGElementTagNameMap[K] {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    el.setAttribute(k, String(v));
+  }
+  return el;
+}
+
+function createHeadMarker(
+  type: ConnectorHeadType,
+  size: number,
+  color: string,
+  strokeWidth: number,
+): HeadMarker | null {
+  if (type === "none") return null;
+
+  const half = size * 0.45;
+
+  if (type === "arrow") {
+    const points = `-${size},-${half} 0,0 -${size},${half}`;
+    // Blot group: opaque background eraser + colored fill on top
+    const g = createSvg("g", {});
+    g.appendChild(createSvg("polygon", { points, fill: "#0f172a" }));
+    g.appendChild(createSvg("polygon", { points, fill: color }));
+    // Retract by full size so path ends at the arrowhead base (not midway through the narrow tip)
+    return { type, size, node: g, retract: size };
+  }
+
+  if (type === "open") {
+    const node = createSvg("polyline", {
+      points: `-${size},-${half} 0,0 -${size},${half}`,
+      fill: "none",
+      stroke: color,
+      "stroke-width": strokeWidth,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    });
+    return { type, size, node, retract: 2 };
+  }
+
+  if (type === "dot") {
+    const r = size * 0.35;
+    const node = createSvg("circle", { cx: -r, cy: 0, r, fill: color });
+    return { type, size, node, retract: r * 1.5 };
+  }
+
+  if (type === "circle") {
+    const r = size * 0.35;
+    const node = createSvg("circle", {
+      cx: -r,
+      cy: 0,
+      r,
+      fill: "#0f172a",
+      stroke: color,
+      "stroke-width": strokeWidth,
+    });
+    return { type, size, node, retract: r * 2 };
+  }
+
+  if (type === "diamond") {
+    const points = `0,0 -${half},-${half} -${size},0 -${half},${half}`;
+    const g = createSvg("g", {});
+    g.appendChild(createSvg("polygon", { points, fill: "#0f172a" }));
+    g.appendChild(createSvg("polygon", { points, fill: color }));
+    return { type, size, node: g, retract: size * 0.8 };
+  }
+
+  if (type === "diamond-open") {
+    const node = createSvg("polygon", {
+      points: `0,0 -${half},-${half} -${size},0 -${half},${half}`,
+      fill: "#0f172a",
+      stroke: color,
+      "stroke-width": strokeWidth,
+    });
+    return { type, size, node, retract: size * 0.9 };
+  }
+
+  if (type === "bar") {
+    const barHalf = size * 0.5;
+    const node = createSvg("line", {
+      x1: 0,
+      y1: -barHalf,
+      x2: 0,
+      y2: barHalf,
+      stroke: color,
+      "stroke-width": strokeWidth,
+      "stroke-linecap": "round",
+    });
+    return { type, size, node, retract: 0 };
+  }
+
+  if (type === "crow") {
+    const g = createSvg("g", {});
+    g.appendChild(
+      createSvg("polyline", {
+        points: `-${size},-${half} 0,0 -${size},${half}`,
+        fill: "none",
+        stroke: color,
+        "stroke-width": strokeWidth,
+        "stroke-linecap": "round",
+      }),
+    );
+    g.appendChild(
+      createSvg("line", {
+        x1: -size,
+        y1: 0,
+        x2: 0,
+        y2: 0,
+        stroke: color,
+        "stroke-width": strokeWidth,
+      }),
+    );
+    return { type, size, node: g, retract: size * 0.7 };
+  }
+
+  return null;
+}
+
 /**
  * Configuration options for creating a reactive Connector between two elements or points.
  */
@@ -77,10 +217,12 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   labelOffsetX?: ReactiveProp<number | string>;
   /** Vertical offset for the label in virtual pixels or container units. Reactive. */
   labelOffsetY?: ReactiveProp<number | string>;
-  /** Routing style: straight line, 90° orthogonal corners, or smooth cubic Bézier. */
-  routing?: "straight" | "corner" | "bezier";
+  /** Routing style: straight line, 90° orthogonal corners, smooth cubic Bézier, or single-curvature circular arc. */
+  routing?: "straight" | "corner" | "bezier" | "arc";
   /** CSS style declaration or routing shortcut. */
-  style?: "straight" | "corner" | "bezier" | Partial<CSSStyleDeclaration>;
+  style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
+  /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
+  curvature?: number;
   /** Cardinal attachment face on the origin target ("auto" | "top" | "bottom" | "left" | "right"). */
   fromAnchor?: "auto" | CardinalSide;
   /** Cardinal attachment face on the destination target ("auto" | "top" | "bottom" | "left" | "right"). */
@@ -97,10 +239,14 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   traveling?: boolean;
   /** Alias for traveling animation. */
   animated?: boolean;
-  /** Whether to draw an arrowhead at the destination end (defaults to true). */
-  arrow?: boolean;
-  /** Arrowhead length and scale in virtual canvas pixels (defaults to 18). */
-  arrowSize?: number;
+  /** Head marker at the start/origin endpoint (defaults to "none"). */
+  startHead?: ConnectorHeadType;
+  /** Head marker at the end/destination endpoint (defaults to "arrow"). */
+  endHead?: ConnectorHeadType;
+  /** Size of the start head marker in virtual canvas pixels (defaults to 16). */
+  startHeadSize?: number;
+  /** Size of the end head marker in virtual canvas pixels (defaults to 16). */
+  endHeadSize?: number;
   /** Trim-path start offset from 0.0 to 1.0 (useful for draw-in transitions). */
   start?: ReactiveProp<number>;
   /** Trim-path end offset from 0.0 to 1.0 (useful for draw-in transitions). */
@@ -117,6 +263,8 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   pulseInterval?: number | PeriodicPulseOptions;
   /** Alias for pulseInterval. */
   periodicPulse?: boolean | number | PeriodicPulseOptions;
+  /** Vertical alignment Y coordinate for sequence diagram horizontal messages. */
+  messageY?: ReactiveProp<number | string>;
 }
 
 export type ConnectorTarget =
@@ -127,13 +275,16 @@ export type ConnectorTarget =
 export class ConnectorElement extends DOMElement {
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
-  connectorStyle: "straight" | "corner" | "bezier";
+  connectorStyle: "straight" | "corner" | "bezier" | "arc";
+  curvature = 0.2;
   connectorColor: string;
   strokeWidth: number;
   isDashed: boolean;
   isDotted: boolean;
-  hasArrow: boolean;
-  arrowSize: number;
+  startHead: ConnectorHeadType;
+  endHead: ConnectorHeadType;
+  startHeadSize: number;
+  endHeadSize: number;
   radius: number;
   padding: number;
   labelPlacement: ReactiveProp<LabelPlacement> = "center";
@@ -146,18 +297,21 @@ export class ConnectorElement extends DOMElement {
 
   svgRoot: SVGSVGElement;
   pathNode: SVGPathElement;
-  arrowNode: SVGPolygonElement | null = null;
+  startHeadNode: SVGElement | null = null;
+  endHeadNode: SVGElement | null = null;
+  startRetract = 0;
+  endRetract = 0;
   labelGroup: SVGGElement | null = null;
   labelBg: SVGRectElement | null = null;
   labelText: SVGTextElement | null = null;
 
   start: ReactiveProp<number> = 0;
   end: ReactiveProp<number> = 1;
+  messageY?: ReactiveProp<number | string>;
   private animInterval: number | null = null;
   private periodicIntervalTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
   private activePulseDots = new Set<SVGElement>();
-
   constructor(from: ConnectorTarget, to: ConnectorTarget, options: ConnectorOptions = {}) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.style.position = "absolute";
@@ -166,8 +320,10 @@ export class ConnectorElement extends DOMElement {
     svg.style.width = "100%";
     svg.style.height = "100%";
     svg.style.pointerEvents = "none";
-    svg.style.zIndex = "0";
+    svg.style.zIndex = "10";
     svg.style.overflow = "visible";
+    svg.setAttribute("viewBox", "0 0 1920 1080");
+    svg.setAttribute("preserveAspectRatio", "none");
 
     if (options.traveling || options.animated) {
       svg.classList.add("sr-connector-traveling-dots");
@@ -175,10 +331,11 @@ export class ConnectorElement extends DOMElement {
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     const color = options.color || "#38bdf8";
+    const sWidth = options.strokeWidth || 3;
     path.setAttribute("stroke", color);
-    path.setAttribute("stroke-width", String(options.strokeWidth || 3));
+    path.setAttribute("stroke-width", String(sWidth));
     path.setAttribute("fill", "none");
-    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linecap", "butt");
     path.setAttribute("stroke-linejoin", "round");
     path.setAttribute("pathLength", "1000");
 
@@ -190,76 +347,103 @@ export class ConnectorElement extends DOMElement {
 
     svg.appendChild(path);
 
-    const aSize = options.arrowSize ?? 18;
-    const aHalf = aSize * 0.5;
+    const startType = options.startHead ?? "none";
+    const endType = options.endHead ?? "arrow";
+    const startSize = options.startHeadSize ?? 16;
+    const endSize = options.endHeadSize ?? 16;
 
-    let arrow: SVGPolygonElement | null = null;
-    if (options.arrow !== false) {
-      arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      arrow.setAttribute("points", `-${aSize},-${aHalf} 0,0 -${aSize},${aHalf}`);
-      arrow.setAttribute("fill", color);
-      svg.appendChild(arrow);
-    }
+    const startMarker = createHeadMarker(startType, startSize, color, sWidth);
+    const endMarker = createHeadMarker(endType, endSize, color, sWidth);
+
+    if (startMarker) svg.appendChild(startMarker.node);
+    if (endMarker) svg.appendChild(endMarker.node);
 
     let labelGroup: SVGGElement | null = null;
     let labelBg: SVGRectElement | null = null;
     let labelText: SVGTextElement | null = null;
 
     if (options.label) {
-      labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      labelGroup.setAttribute("class", "sr-connector-label-group");
+      labelGroup = createSvg("g", { class: "sr-connector-label-group" });
       labelGroup.style.pointerEvents = "none";
 
       const textLen = (options.label || "").length;
       const initW = textLen * 10 + 20;
       const initH = 26;
 
-      labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      labelBg.setAttribute("x", String(-initW / 2));
-      labelBg.setAttribute("y", String(-initH / 2));
-      labelBg.setAttribute("width", String(initW));
-      labelBg.setAttribute("height", String(initH));
-
-      labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      labelText.textContent = options.label;
-
+      labelBg = createSvg("rect", {
+        x: -initW / 2,
+        y: -initH / 2,
+        width: initW,
+        height: initH,
+        rx: 5,
+        fill: "rgba(15, 23, 42, 0.95)",
+        stroke: color,
+        "stroke-width": 1,
+        "stroke-opacity": 0.4,
+      });
       labelGroup.appendChild(labelBg);
+
+      labelText = createSvg("text", {
+        "text-anchor": "middle",
+        "dominant-baseline": "central",
+        fill: "#f8fafc",
+        "font-size": "13px",
+        "font-weight": "500",
+        "font-family": "system-ui, -apple-system, sans-serif",
+      });
+      labelText.textContent = options.label;
       labelGroup.appendChild(labelText);
+
       svg.appendChild(labelGroup);
     }
 
     const { style: optStyle, routing, ...domOpts } = options;
-    const resolvedRouting = typeof optStyle === "string" ? optStyle : routing || "straight";
+    const resolvedRouting = (typeof optStyle === "string" ? optStyle : routing || "straight") as
+      | "straight"
+      | "corner"
+      | "bezier"
+      | "arc";
     const resolvedCss = typeof optStyle === "object" ? optStyle : undefined;
 
-    super("Connector", svg, { ...domOpts, style: resolvedCss });
+    super("Connector", svg, { ...domOpts, x: 0, y: 0, style: resolvedCss });
 
-    this.labelGroup = labelGroup;
-    this.labelBg = labelBg;
-    this.labelText = labelText;
-
-    this.svgRoot = svg;
-    this.pathNode = path;
-    this.arrowNode = arrow;
+    this.domElement.style.pointerEvents = "none";
     this.fromTarget = from;
     this.toTarget = to;
     this.connectorStyle = resolvedRouting;
     this.connectorColor = color;
-    this.fromAnchor = options.fromAnchor || "auto";
-    this.toAnchor = options.toAnchor || "auto";
-    this.strokeWidth = options.strokeWidth || 3;
+    this.strokeWidth = sWidth;
     this.isDashed = !!options.dashed;
     this.isDotted = !!options.dotted;
-    this.hasArrow = options.arrow !== false;
-    this.arrowSize = aSize;
+    this.startHead = startType;
+    this.endHead = endType;
+    this.startHeadSize = startSize;
+    this.endHeadSize = endSize;
+    this.startHeadNode = startMarker?.node ?? null;
+    this.endHeadNode = endMarker?.node ?? null;
+    this.startRetract = startMarker?.retract ?? 0;
+    this.endRetract = endMarker?.retract ?? 0;
     this.radius = options.radius ?? 12;
     this.padding = options.padding ?? 6;
-    this.labelPlacement = options.labelPlacement ?? "center";
-    this.labelOffset = options.labelOffset ?? 0;
-    this.labelOffsetX = options.labelOffsetX ?? 0;
-    this.labelOffsetY = options.labelOffsetY ?? 0;
-    this.start = options.start ?? 0;
-    this.end = options.end ?? 1;
+    if (options.curvature !== undefined) this.curvature = options.curvature;
+
+    if (options.fromAnchor) this.fromAnchor = options.fromAnchor;
+    if (options.toAnchor) this.toAnchor = options.toAnchor;
+    if (options.labelPlacement !== undefined) this.labelPlacement = options.labelPlacement;
+    if (options.labelOffset !== undefined) this.labelOffset = options.labelOffset;
+    if (options.labelOffsetX !== undefined) this.labelOffsetX = options.labelOffsetX;
+    if (options.labelOffsetY !== undefined) this.labelOffsetY = options.labelOffsetY;
+
+    this.svgRoot = svg;
+    this.pathNode = path;
+    this.labelGroup = labelGroup;
+    this.labelBg = labelBg;
+    this.labelText = labelText;
+
+    if (options.start !== undefined) this.start = options.start;
+    if (options.end !== undefined) this.end = options.end;
+    if (options.messageY !== undefined) this.messageY = options.messageY;
+    if (options.y !== undefined) this.messageY = options.y;
 
     const periodic = options.pulseInterval ?? options.periodicPulse;
     if (periodic) {
@@ -281,7 +465,9 @@ export class ConnectorElement extends DOMElement {
     // Auto-track endpoints during continuous animations
     if (typeof window !== "undefined") {
       const tick = () => {
-        this.update();
+        if (this.domElement?.isConnected && this.domElement.style.display !== "none") {
+          this.update();
+        }
         this.animInterval = requestAnimationFrame(tick);
       };
       this.animInterval = requestAnimationFrame(tick);
@@ -350,8 +536,8 @@ export class ConnectorElement extends DOMElement {
       anchorPreference: "auto" | CardinalSide,
     ): { point: Point; side: CardinalSide } => {
       let shapeKind = "box";
-      if ("shape" in target && typeof (target as { shape?: string }).shape === "string") {
-        shapeKind = (target as { shape: string }).shape;
+      if ("kind" in target && typeof (target as { kind?: string }).kind === "string") {
+        shapeKind = (target as { kind: string }).kind;
       } else if (
         "domElement" in target &&
         (target as DOMElement).domElement instanceof HTMLElement
@@ -420,13 +606,108 @@ export class ConnectorElement extends DOMElement {
       endSide = res.side;
     }
 
-    let d = `M ${startPt.x} ${startPt.y} L ${endPt.x} ${endPt.y}`;
-    if (this.connectorStyle === "corner") {
-      d = computeOrthogonalPath(startPt, endPt, startSide, endSide);
-    } else if (this.connectorStyle === "bezier") {
-      d = computeBezierPath(startPt, endPt, startSide, endSide);
+    if (typeof this.messageY === "number" && this.messageY !== 0) {
+      const fixedY = this.messageY <= 100 ? (this.messageY / 100) * 1080 : this.messageY;
+      let x1 = fromResolved.point.x;
+      let x2 = toResolved.point.x;
+      const dir = x2 >= x1 ? 1 : -1;
+
+      const vRect =
+        this.domElement.parentElement?.getBoundingClientRect() ||
+        this.domElement.getBoundingClientRect();
+      const scale = vRect.width > 0 ? vRect.width / 1920 : 1;
+      const activationOffset = 7 / scale + 2;
+      const lifelineGap = 4 / scale;
+
+      const fromLifeline = (
+        this.fromTarget as {
+          lifeline?: { hasActivationAt?: (y: number) => boolean };
+        }
+      )?.lifeline;
+      const toLifeline = (
+        this.toTarget as {
+          lifeline?: { hasActivationAt?: (y: number) => boolean };
+        }
+      )?.lifeline;
+
+      if (fromLifeline?.hasActivationAt?.(fixedY)) {
+        x1 += dir * activationOffset;
+      } else {
+        x1 += dir * lifelineGap;
+      }
+
+      if (toLifeline?.hasActivationAt?.(fixedY)) {
+        x2 -= dir * activationOffset;
+      } else {
+        x2 -= dir * lifelineGap;
+      }
+
+      startPt = { x: x1, y: fixedY };
+      endPt = { x: x2, y: fixedY };
     }
 
+    const dx = endPt.x - startPt.x;
+    const dy = endPt.y - startPt.y;
+    const dist = Math.hypot(dx, dy);
+    const chordNx = dist > 0 ? dx / dist : 1;
+    const chordNy = dist > 0 ? dy / dist : 0;
+
+    const buildPath = (sp: Point, ep: Point): string => {
+      if (this.connectorStyle === "corner")
+        return computeOrthogonalPath(sp, ep, startSide, endSide);
+      if (this.connectorStyle === "bezier") return computeBezierPath(sp, ep, startSide, endSide);
+      if (this.connectorStyle === "arc") return computeArcPath(sp, ep, this.curvature);
+      return `M ${sp.x} ${sp.y} L ${ep.x} ${ep.y}`;
+    };
+
+    // Pass 1: write the full-length path so we can measure tangents via the DOM.
+    // For straight paths the chord IS the tangent, so no DOM read needed.
+    const dFull = buildPath(startPt, endPt);
+    this.pathNode.setAttribute("d", dFull);
+
+    // Measure end tangent from the path geometry.
+    let endTx = chordNx;
+    let endTy = chordNy;
+    let startTx = -chordNx;
+    let startTy = -chordNy;
+    if (this.connectorStyle === "arc" || this.connectorStyle === "bezier") {
+      try {
+        const len = this.pathNode.getTotalLength();
+        if (len > 2) {
+          const p1e = this.pathNode.getPointAtLength(len - 2);
+          const p2e = this.pathNode.getPointAtLength(len);
+          const dl = Math.hypot(p2e.x - p1e.x, p2e.y - p1e.y);
+          if (dl > 0) {
+            endTx = (p2e.x - p1e.x) / dl;
+            endTy = (p2e.y - p1e.y) / dl;
+          }
+
+          const p1s = this.pathNode.getPointAtLength(0);
+          const p2s = this.pathNode.getPointAtLength(Math.min(len, 2));
+          const dl2 = Math.hypot(p2s.x - p1s.x, p2s.y - p1s.y);
+          if (dl2 > 0) {
+            startTx = (p1s.x - p2s.x) / dl2;
+            startTy = (p1s.y - p2s.y) / dl2;
+          }
+        }
+      } catch {
+        /* keep chord direction */
+      }
+    }
+
+    // Pass 2: retract endpoints along the true curve tangent, then rebuild.
+    let pathStartPt = { ...startPt };
+    let pathEndPt = { ...endPt };
+    if (this.endHeadNode && this.endRetract > 0 && dist > 4) {
+      const r = dist > 20 ? this.endRetract : dist * 0.3;
+      pathEndPt = { x: endPt.x - endTx * r, y: endPt.y - endTy * r };
+    }
+    if (this.startHeadNode && this.startRetract > 0 && dist > 4) {
+      const r = dist > 20 ? this.startRetract : dist * 0.3;
+      pathStartPt = { x: startPt.x - startTx * r, y: startPt.y - startTy * r };
+    }
+
+    const d = buildPath(pathStartPt, pathEndPt);
     this.pathNode.setAttribute("d", d);
 
     if (this.activePulseDots.size > 0) {
@@ -436,65 +717,90 @@ export class ConnectorElement extends DOMElement {
       }
     }
 
-    // Apply trim paths (start..end)
+    // Apply trim paths (start..end) — preserve consistent dash spacing throughout animation
     const startVal = typeof this.start === "number" ? this.start : 0;
     const endVal = typeof this.end === "number" ? this.end : 1;
     const isTraveling = this.svgRoot.classList.contains("sr-connector-traveling-dots");
 
+    // Always work in actual path length units so dash spacing is identical
+    // during draw-in animation and at rest. Measure the path once per update.
+    let actualLen = 0;
+    try {
+      actualLen = this.pathNode.getTotalLength();
+    } catch {
+      // not yet mounted; skip
+    }
+
     if (endVal < 1 || startVal > 0) {
-      const len = 1000;
-      const visibleLength = (endVal - startVal) * len;
-      if (visibleLength <= 0.001) {
+      const visiblePx = (endVal - startVal) * actualLen;
+      if (visiblePx <= 0.1) {
         this.pathNode.style.opacity = "0";
       } else {
         this.pathNode.style.opacity = "1";
       }
-      this.pathNode.setAttribute("pathLength", "1000");
-      const offset = -startVal * len;
-      this.pathNode.style.strokeDasharray = `${Math.max(0, visibleLength)} ${len}`;
-      this.pathNode.style.strokeDashoffset = `${offset}`;
+      // Remove pathLength so all values below are in actual SVG user units
+      this.pathNode.removeAttribute("pathLength");
+      const offsetPx = -startVal * actualLen;
+
+      if (this.isDotted) {
+        this.pathNode.style.strokeDasharray = "4 10";
+        this.pathNode.style.strokeDashoffset = `${offsetPx}`;
+      } else if (this.isDashed) {
+        const dash = 8;
+        const gap = 6;
+        // Trim window: a long solid segment for the visible portion, then zero for the rest
+        // Achieved by: dash pattern repeated for the visible section, then huge gap
+        const tail = actualLen - visiblePx;
+        this.pathNode.style.strokeDasharray = `${`${dash} ${gap} `.repeat(Math.ceil(visiblePx / (dash + gap))).trimEnd()} 0 ${tail + dash + gap}`;
+        this.pathNode.style.strokeDashoffset = `${offsetPx}`;
+      } else {
+        this.pathNode.style.strokeDasharray = `${visiblePx} ${actualLen}`;
+        this.pathNode.style.strokeDashoffset = `${offsetPx}`;
+      }
     } else {
       this.pathNode.style.opacity = "1";
+      this.pathNode.removeAttribute("pathLength");
       if (isTraveling) {
-        this.pathNode.removeAttribute("pathLength");
         this.pathNode.style.strokeDasharray = "";
         this.pathNode.style.strokeDashoffset = "";
       } else if (this.isDotted) {
-        this.pathNode.removeAttribute("pathLength");
-        this.pathNode.style.strokeDasharray = "4px 10px";
+        this.pathNode.style.strokeDasharray = "4 10";
         this.pathNode.style.strokeDashoffset = "0";
       } else if (this.isDashed) {
-        this.pathNode.removeAttribute("pathLength");
-        this.pathNode.style.strokeDasharray = "8px 6px";
+        this.pathNode.style.strokeDasharray = "8 6";
         this.pathNode.style.strokeDashoffset = "0";
       } else {
-        this.pathNode.removeAttribute("pathLength");
         this.pathNode.style.strokeDasharray = "none";
         this.pathNode.style.strokeDashoffset = "0";
       }
     }
 
-    // Position Arrowhead
-    if (this.arrowNode) {
-      if (endVal - startVal <= 0.02 || endVal <= 0.02) {
-        this.arrowNode.style.opacity = "0";
+    // Arrowhead tips sit at node boundary (startPt / endPt).
+    // Angle comes from the measured tangent — correct for arcs and bezier curves.
+    if (this.startHeadNode) {
+      if (startVal >= 0.98) {
+        this.startHeadNode.style.opacity = "0";
       } else {
-        this.arrowNode.style.opacity = "1";
-        try {
-          const totalPathLength = this.pathNode.getTotalLength();
-          const targetLen = totalPathLength * endVal;
-          const pt = this.pathNode.getPointAtLength(targetLen);
-          const prevPt = this.pathNode.getPointAtLength(Math.max(0, targetLen - 2));
-          const angle = Math.atan2(pt.y - prevPt.y, pt.x - prevPt.x) * (180 / Math.PI);
+        this.startHeadNode.style.opacity = "1";
+        const angle = Math.atan2(startTy, startTx) * (180 / Math.PI);
+        this.startHeadNode.setAttribute(
+          "transform",
+          `translate(${startPt.x}, ${startPt.y}) rotate(${angle})`,
+        );
+      }
+    }
 
-          this.arrowNode.setAttribute("transform", `translate(${pt.x}, ${pt.y}) rotate(${angle})`);
-        } catch {
-          const angle = Math.atan2(endPt.y - startPt.y, endPt.x - startPt.x) * (180 / Math.PI);
-          this.arrowNode.setAttribute(
-            "transform",
-            `translate(${endPt.x}, ${endPt.y}) rotate(${angle})`,
-          );
-        }
+    // Position End Head Marker — tip always at endPt (node boundary), angle from path tangent
+    if (this.endHeadNode) {
+      if (endVal - startVal <= 0.02 || endVal <= 0.02) {
+        this.endHeadNode.style.opacity = "0";
+      } else {
+        this.endHeadNode.style.opacity = "1";
+        const angle = Math.atan2(endTy, endTx) * (180 / Math.PI);
+        this.endHeadNode.setAttribute(
+          "transform",
+          `translate(${endPt.x}, ${endPt.y}) rotate(${angle})`,
+        );
       }
     }
 

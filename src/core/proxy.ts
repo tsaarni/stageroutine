@@ -2,7 +2,7 @@
  * Reactive property proxy that intercepts element assignments (like el.x = 200) and schedules animations.
  */
 
-import { builtinEasings, isTransitionDescriptor } from "./transitions";
+import { builtinEasings, isTransitionDescriptor } from "../motion/transitions";
 import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
 
 export interface ElementHost {
@@ -39,6 +39,16 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return Reflect.get(target, prop, receiver);
       }
 
+      if (prop === "size") {
+        const w =
+          host.getCurrentPropertyValue(target.id, "width") ??
+          (target as Record<string, unknown>).width;
+        const h =
+          host.getCurrentPropertyValue(target.id, "height") ??
+          (target as Record<string, unknown>).height;
+        return w ?? h;
+      }
+
       // Check current staged property value first
       const val = host.getCurrentPropertyValue(target.id, prop as string);
       if (val !== undefined) {
@@ -54,8 +64,28 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       }
 
       const propName = prop as string;
-      const from =
+
+      if (propName === "size") {
+        (receiver as Record<string, unknown>).width = value;
+        (receiver as Record<string, unknown>).height = value;
+        return true;
+      }
+
+      let from: unknown =
         host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
+
+      if (
+        from === undefined &&
+        "domElement" in target &&
+        (target as { domElement?: HTMLElement }).domElement
+      ) {
+        const dom = (target as { domElement: HTMLElement }).domElement;
+        if (propName === "width") {
+          from = dom.offsetWidth || undefined;
+        } else if (propName === "height") {
+          from = dom.offsetHeight || undefined;
+        }
+      }
 
       let targetVal = value;
       let durationMs = 600;

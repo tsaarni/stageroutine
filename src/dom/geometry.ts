@@ -212,3 +212,36 @@ export function computeBezierPath(
 
   return `M ${start.x} ${start.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end.x} ${end.y}`;
 }
+
+/**
+ * Computes a single-curvature arc (quadratic Bézier) between two points with zero inflection.
+ * The control point bows to the RIGHT of the travel direction (outward for clockwise layouts).
+ * @param start Start point
+ * @param end End point
+ * @param curvature Bow factor relative to chord length (default 0.25). Negative bows left (inward).
+ */
+export function computeArcPath(start: Point, end: Point, curvature = 0.25): string {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist < 1e-4) {
+    return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  }
+
+  // Midpoint
+  const midX = (start.x + end.x) * 0.5;
+  const midY = (start.y + end.y) * 0.5;
+
+  // Right-perpendicular unit vector (90° clockwise from travel direction)
+  // This bows outward for nodes arranged clockwise around a circle
+  const perpX = dy / dist;
+  const perpY = -dx / dist;
+
+  // Offset control point along perpendicular vector
+  const offset = dist * curvature;
+  const cpX = midX + perpX * offset;
+  const cpY = midY + perpY * offset;
+
+  return `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`;
+}

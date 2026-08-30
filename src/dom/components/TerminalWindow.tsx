@@ -2,7 +2,6 @@
  * Terminal window component with macOS-style window controls and line-by-line interactive focus.
  */
 
-import type { ReactiveElementBase } from "../../core/index";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
@@ -15,7 +14,7 @@ export interface TerminalWindowProps extends ElementOptions {
   interactive?: boolean;
 }
 
-export interface TerminalWindowElement extends ReactiveElementBase {
+export interface TerminalWindowElement extends DOMElement {
   readonly focusedRange: [number, number] | null;
   focusLines(start: number, end?: number): this;
   unfocus(): this;

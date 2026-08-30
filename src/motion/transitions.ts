@@ -9,7 +9,7 @@ import type {
   ReactiveElementBase,
   TransitionDescriptor,
   UnwrapTransition,
-} from "./types";
+} from "../core/types";
 
 /**
  * High-precision Cubic Bézier curve solver.

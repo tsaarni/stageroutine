@@ -6,13 +6,15 @@ export { Title, type TitleOptions, type TitleVariant } from "./Title";
 export { Text, type TextOptions } from "./Text";
 export {
   Shape,
+  Card,
+  Circle,
+  Pill,
+  Diamond,
   ShapeElement,
   type ShapeOptions,
   type ShapeKind,
   type ShapeVariant,
-  type NoteSide,
 } from "./Shape";
-export { Badge, type BadgeOptions } from "./Badge";
 export { Kicker, type KickerOptions } from "./Kicker";
 export {
   CodeBlock,
@@ -35,13 +37,23 @@ export {
   ConnectorElement,
   type ConnectorOptions,
   type ConnectorTarget,
+  type ConnectorHeadType,
   type PulseOptions,
 } from "./Connector";
 export {
   Lifeline,
   LifelineElement,
+  ActivationBar,
+  ActivationBarElement,
   Activation,
-  ActivationElement,
+  SequenceDiagram,
+  SequenceDiagramElement,
+  sequenceDiagram,
+  Sequence,
   type LifelineOptions,
+  type ActivationBarOptions,
   type ActivationOptions,
-} from "./Sequence";
+  type ActivationElement,
+  type SequenceDiagramOptions,
+  type SequenceOptions,
+} from "./SequenceDiagram";

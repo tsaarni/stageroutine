@@ -4,7 +4,6 @@
  */
 
 import { codeToHtml } from "shiki";
-import type { ReactiveElementBase } from "../../core/index";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
@@ -17,7 +16,7 @@ export interface CodeBlockOptions extends ElementOptions {
   interactive?: boolean;
 }
 
-export interface CodeBlockElement extends ReactiveElementBase {
+export interface CodeBlockElement extends DOMElement {
   readonly focusedRange: [number, number] | null;
   focusLines(start: number, end?: number): this;
   unfocus(): this;

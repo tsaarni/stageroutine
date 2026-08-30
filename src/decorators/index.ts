@@ -8,3 +8,5 @@ export { vignette, type VignetteOptions } from "./vignette";
 export { grain, type GrainOptions } from "./grain";
 export { scrim, type ScrimOptions } from "./scrim";
 export { typewriter, type TypewriterOptions, type TypewriterStep } from "./typewriter";
+export { rail, type RailOptions } from "./rail";
+export { bracket, type BracketOptions, type BracketStyle } from "./bracket";

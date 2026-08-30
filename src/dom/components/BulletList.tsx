@@ -3,6 +3,7 @@
  */
 
 import { getActiveStage } from "../../core/stage";
+import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
@@ -21,9 +22,12 @@ export interface BulletListElement extends DOMElement {
   focus(index: number): this;
   focusItems(start: number, end?: number): this;
   unfocus(): this;
+  reveal(options?: StaggerOptions): StaggerBuilder;
 }
 
 export function BulletList(items: string[], options: BulletListOptions = {}): BulletListElement {
+  const isHiddenInitially = options.opacity === 0;
+  const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;
   const container = document.createElement("div");
   container.className = ["sr-bullet-list", options.className].filter(Boolean).join(" ");
   if (options.itemSpacing) {
@@ -53,8 +57,8 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
     container.appendChild(itemEl);
 
     const childDOM = new DOMElement("BulletItem", itemEl, {
-      opacity: 1,
-      x: 0,
+      opacity: isHiddenInitially ? 0 : 1,
+      x: isHiddenInitially ? 2 : 0,
       y: 0,
       style: {
         position: "relative",
@@ -71,7 +75,7 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
     interactive: isInteractive,
   });
 
-  const parentDOM = new DOMElement("BulletList", container, options) as BulletListElement;
+  const parentDOM = new DOMElement("BulletList", container, containerOptions) as BulletListElement;
   parentDOM.items = childElements;
 
   parentDOM.focus = function (this: BulletListElement, index: number) {
@@ -87,6 +91,10 @@ export function BulletList(items: string[], options: BulletListOptions = {}): Bu
   parentDOM.unfocus = function (this: BulletListElement) {
     controller.unfocus();
     return this;
+  };
+
+  parentDOM.reveal = function (this: BulletListElement, options?: StaggerOptions) {
+    return stagger(this.items, options);
   };
 
   Object.defineProperty(parentDOM, "focusedRange", {

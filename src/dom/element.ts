@@ -14,6 +14,9 @@ export interface ElementOptions {
   anchor?: ElementAnchor;
   x?: ReactiveProp<number | string>;
   y?: ReactiveProp<number | string>;
+  width?: ReactiveProp<number | string>;
+  height?: ReactiveProp<number | string>;
+  size?: ReactiveProp<number | string>;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;
@@ -32,6 +35,9 @@ export class DOMElement implements ReactiveElementBase {
 
   x: ReactiveProp<number | string> = 0;
   y: ReactiveProp<number | string> = 0;
+  width?: ReactiveProp<number | string>;
+  height?: ReactiveProp<number | string>;
+  size?: ReactiveProp<number | string>;
   scale: ReactiveProp<number> = 1;
   rotation: ReactiveProp<number> = 0;
   opacity: ReactiveProp<number> = 1;
@@ -68,6 +74,8 @@ export class DOMElement implements ReactiveElementBase {
 
     this.x = options.x ?? 0;
     this.y = options.y ?? 0;
+    this.width = options.width ?? options.size;
+    this.height = options.height ?? options.size;
     this.scale = options.scale ?? 1;
     this.rotation = options.rotation ?? 0;
     this.opacity = options.opacity ?? 1;
@@ -75,12 +83,23 @@ export class DOMElement implements ReactiveElementBase {
     this.brightness = options.brightness ?? 1;
     this.color = options.color;
 
+    if (this.width !== undefined) {
+      this.domElement.style.width =
+        typeof this.width === "number" ? `${this.width}px` : String(this.width);
+    }
+    if (this.height !== undefined) {
+      this.domElement.style.height =
+        typeof this.height === "number" ? `${this.height}px` : String(this.height);
+    }
+
     // Apply baseline stage positioning styles (Top-Left origin standard)
     this.domElement.style.position = "absolute";
     this.domElement.style.left = "0px";
     this.domElement.style.top = "0px";
     this.domElement.style.willChange = "transform, opacity, filter";
-    this.domElement.style.pointerEvents = "auto";
+    if (!this.domElement.style.pointerEvents) {
+      this.domElement.style.pointerEvents = "auto";
+    }
     this.domElement.style.zIndex = "1";
 
     const { transform, transformOrigin } = computeTransformAndOrigin(

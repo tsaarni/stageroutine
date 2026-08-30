@@ -83,7 +83,23 @@ export class Stage implements ElementHost {
   private currentStepTransitions: TransitionRecord[] = [];
   private currentStepActions: (() => void)[] = [];
   private currentStepNotes: string | undefined = undefined;
+  private pendingMotionFlushes = new Set<() => void>();
   private isMountedState = false;
+
+  isMounted(): boolean {
+    return this.isMountedState;
+  }
+
+  registerPendingFlush(flush: () => void): () => void {
+    this.pendingMotionFlushes.add(flush);
+    return () => {
+      this.pendingMotionFlushes.delete(flush);
+    };
+  }
+
+  recordAction(action: () => void): void {
+    this.currentStepActions.push(action);
+  }
 
   // Playback State
   private currentStepIndex = 0;
@@ -92,14 +108,6 @@ export class Stage implements ElementHost {
   private broadcastChannel: BroadcastChannel | null = null;
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
-
-  isMounted(): boolean {
-    return this.isMountedState;
-  }
-
-  recordAction(action: () => void): void {
-    this.currentStepActions.push(action);
-  }
 
   // Presenter Tools & Pointer State
   private activePointer: PointerPlugin | null = null;
@@ -277,6 +285,8 @@ export class Stage implements ElementHost {
       anchor: element.anchor,
       x: element.x,
       y: element.y,
+      width: (element as Record<string, unknown>).width,
+      height: (element as Record<string, unknown>).height,
       scale: element.scale,
       rotation: element.rotation,
       opacity: element.opacity,
@@ -406,6 +416,12 @@ export class Stage implements ElementHost {
   }
 
   pause(): void {
+    // Flush any pending motion builders (e.g. stagger without .when())
+    for (const flush of this.pendingMotionFlushes) {
+      flush();
+    }
+    this.pendingMotionFlushes.clear();
+
     const stepIdx = this.steps.length;
 
     // Save step transitions
@@ -734,6 +750,17 @@ export class Stage implements ElementHost {
       }
     }
 
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("stageroutine:stepchange", {
+          detail: {
+            stepIndex: stepIdx,
+            sceneName: step.sceneName,
+          },
+        }),
+      );
+    }
+
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
 
     // Reset local propertyState to the state right before this step
@@ -895,7 +922,11 @@ export class Stage implements ElementHost {
     node.style.transformOrigin = transformOrigin;
     node.style.opacity = `${opacity}`;
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
-    node.style.pointerEvents = opacity === 0 ? "none" : "auto";
+    if (element.kind === "Connector" || node.tagName.toLowerCase() === "svg") {
+      node.style.pointerEvents = "none";
+    } else {
+      node.style.pointerEvents = opacity === 0 ? "none" : "auto";
+    }
     if (opacity > 0) {
       element.play?.();
     } else {
@@ -910,11 +941,27 @@ export class Stage implements ElementHost {
     if (color && color !== "inherit") {
       node.style.color = color;
     }
+    if (props.width !== undefined) {
+      const formattedWidth =
+        typeof props.width === "number" ? `${props.width}px` : String(props.width);
+      if (node.style.width !== formattedWidth) {
+        node.style.width = formattedWidth;
+      }
+    }
+    if (props.height !== undefined) {
+      const formattedHeight =
+        typeof props.height === "number" ? `${props.height}px` : String(props.height);
+      if (node.style.height !== formattedHeight) {
+        node.style.height = formattedHeight;
+      }
+    }
 
     for (const [key, value] of Object.entries(props)) {
       if (
         key !== "x" &&
         key !== "y" &&
+        key !== "width" &&
+        key !== "height" &&
         key !== "scale" &&
         key !== "rotation" &&
         key !== "anchor" &&

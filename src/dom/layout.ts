@@ -57,13 +57,8 @@ export interface SplitLayoutOptions {
   rule?: boolean | RuleOptions;
 }
 
-export interface RelativeLayoutOptions {
-  placement?: "top" | "bottom" | "left" | "right";
-  align?: "start" | "center" | "end";
-  gap?: number;
-  animate?: boolean;
-  duration?: number;
-}
+export type RelativePlacement = "top" | "bottom" | "left" | "right";
+export type RelativeAlign = "start" | "center" | "end";
 
 export interface CircleLayoutOptions {
   /** Center X coordinate in stage cqw (default: 50). */
@@ -72,12 +67,10 @@ export interface CircleLayoutOptions {
   centerY?: number;
   /** Center anchor point as { x, y } or a center element. */
   center?: { x: number; y: number } | LayoutElement;
-  /** Orbit radius in stage units (default: 18). */
+  /** Horizontal orbit radius in cqw (default: 18). */
   radius?: number;
-  /** Horizontal radius in cqw (defaults to radius). */
-  radiusX?: number;
-  /** Vertical radius in cqh (defaults to radius). */
-  radiusY?: number;
+  /** Vertical squash factor, 0 = perfect circle, 1 = flat line (default: 0). */
+  flatten?: number;
   /** Starting angle in degrees (default: -90 for 12 o'clock top). */
   startAngle?: number;
   /** Angular span in degrees (default: 360 for full circle). */
@@ -189,6 +182,59 @@ function applyPosition(
     target.x = x;
     target.y = y;
   }
+}
+
+/**
+ * Shared engine for directional placement: positions `element` on the given side
+ * of `target`, separated by `gap`, with perpendicular `align` (start/center/end).
+ */
+function positionRelative(
+  element: LayoutElement,
+  target: LayoutElement,
+  placement: RelativePlacement,
+  gap: number,
+  align: RelativeAlign,
+): void {
+  const targetM = measureElement(target);
+  const elM = measureElement(element);
+
+  const targetX = typeof target.x === "number" ? target.x : 0;
+  const targetY = typeof target.y === "number" ? target.y : 0;
+
+  let computedX = targetX;
+  let computedY = targetY;
+
+  if (placement === "bottom") {
+    computedY = targetY + targetM.heightCqh + gap;
+    if (align === "center") {
+      computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+    } else if (align === "end") {
+      computedX = targetX + targetM.widthCqw - elM.widthCqw;
+    }
+  } else if (placement === "top") {
+    computedY = targetY - elM.heightCqh - gap;
+    if (align === "center") {
+      computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+    } else if (align === "end") {
+      computedX = targetX + targetM.widthCqw - elM.widthCqw;
+    }
+  } else if (placement === "right") {
+    computedX = targetX + targetM.widthCqw + gap;
+    if (align === "center") {
+      computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+    } else if (align === "end") {
+      computedY = targetY + targetM.heightCqh - elM.heightCqh;
+    }
+  } else if (placement === "left") {
+    computedX = targetX - elM.widthCqw - gap;
+    if (align === "center") {
+      computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+    } else if (align === "end") {
+      computedY = targetY + targetM.heightCqh - elM.heightCqh;
+    }
+  }
+
+  applyPosition(element, computedX, computedY);
 }
 
 export const arrange = {
@@ -455,57 +501,55 @@ export const arrange = {
   },
 
   /**
-   * Positions an element relative to another anchor element.
+   * Positions an element above a target element, separated by `gap`.
+   * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
    */
-  relativeTo(
+  above(
     element: LayoutElement,
     target: LayoutElement,
-    options: RelativeLayoutOptions = {},
+    gap = 2,
+    align: RelativeAlign = "start",
   ): void {
-    const placement = options.placement ?? "bottom";
-    const align = options.align ?? "start";
-    const gap = options.gap ?? 2;
+    positionRelative(element, target, "top", gap, align);
+  },
 
-    const targetM = measureElement(target);
-    const elM = measureElement(element);
+  /**
+   * Positions an element below a target element, separated by `gap`.
+   * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
+   */
+  below(
+    element: LayoutElement,
+    target: LayoutElement,
+    gap = 2,
+    align: RelativeAlign = "start",
+  ): void {
+    positionRelative(element, target, "bottom", gap, align);
+  },
 
-    const targetX = typeof target.x === "number" ? target.x : 0;
-    const targetY = typeof target.y === "number" ? target.y : 0;
+  /**
+   * Positions an element to the right of a target element, separated by `gap`.
+   * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
+   */
+  rightOf(
+    element: LayoutElement,
+    target: LayoutElement,
+    gap = 2,
+    align: RelativeAlign = "start",
+  ): void {
+    positionRelative(element, target, "right", gap, align);
+  },
 
-    let computedX = targetX;
-    let computedY = targetY;
-
-    if (placement === "bottom") {
-      computedY = targetY + targetM.heightCqh + gap;
-      if (align === "center") {
-        computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
-      } else if (align === "end") {
-        computedX = targetX + targetM.widthCqw - elM.widthCqw;
-      }
-    } else if (placement === "top") {
-      computedY = targetY - elM.heightCqh - gap;
-      if (align === "center") {
-        computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
-      } else if (align === "end") {
-        computedX = targetX + targetM.widthCqw - elM.widthCqw;
-      }
-    } else if (placement === "right") {
-      computedX = targetX + targetM.widthCqw + gap;
-      if (align === "center") {
-        computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
-      } else if (align === "end") {
-        computedY = targetY + targetM.heightCqh - elM.heightCqh;
-      }
-    } else if (placement === "left") {
-      computedX = targetX - elM.widthCqw - gap;
-      if (align === "center") {
-        computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
-      } else if (align === "end") {
-        computedY = targetY + targetM.heightCqh - elM.heightCqh;
-      }
-    }
-
-    applyPosition(element, computedX, computedY, options);
+  /**
+   * Positions an element to the left of a target element, separated by `gap`.
+   * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
+   */
+  leftOf(
+    element: LayoutElement,
+    target: LayoutElement,
+    gap = 2,
+    align: RelativeAlign = "start",
+  ): void {
+    positionRelative(element, target, "left", gap, align);
   },
 
   /**
@@ -533,8 +577,10 @@ export const arrange = {
     }
 
     const radius = options.radius ?? 18;
-    const rx = options.radiusX ?? radius;
-    const ry = options.radiusY ?? radius;
+    // cqw vs cqh scale differently (1920 vs 1080 per 100 units);
+    // flatten 0 keeps a true pixel circle, higher values squash vertically.
+    const rx = radius;
+    const ry = radius * (1920 / 1080) * (1 - (options.flatten ?? 0));
     const startAngleDeg = options.startAngle ?? -90; // Default 12 o'clock top
     const spanDeg = options.span ?? 360;
     const centerElements = options.centerElements ?? true;

@@ -300,6 +300,64 @@
   outline-color: inherit;
 }
 
+/* ==========================================================================
+   UML State Pseudostates (initial & final)
+   ========================================================================== */
+
+.sr-state-node {
+  --sr-orb-gradient: radial-gradient(
+    circle at 32% 30%,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.95) 32%,
+    rgba(214, 217, 223, 0.88) 68%,
+    rgba(139, 143, 151, 0.72) 100%
+  );
+}
+
+/* Initial pseudostate — a solid orb with a specular highlight, crisp edge, and layered bloom. */
+.sr-state-initial {
+  background: var(--sr-orb-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.35),
+    0 0 32px rgba(255, 255, 255, 0.16),
+    0 0 64px rgba(255, 255, 255, 0.07),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.28),
+    inset 0 1px 2px rgba(255, 255, 255, 0.55);
+}
+
+/* Final pseudostate — a hairline ring with a faint glass fill cradling a centered orb (UML bullseye). */
+.sr-state-final {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 58%,
+    transparent 100%
+  );
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.14),
+    0 0 30px rgba(255, 255, 255, 0.07),
+    inset 0 0 8px rgba(255, 255, 255, 0.06);
+}
+
+.sr-state-final::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--sr-orb-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.4),
+    0 0 22px rgba(255, 255, 255, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+}
+
 .sr-shape.is-active {
   color: #ffffff;
 }

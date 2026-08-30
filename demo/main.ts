@@ -899,33 +899,20 @@ arrange.column([stateKicker, stateHeading], {
   gap: 2,
 });
 
-/// UML Initial Pseudostate (subtle frosted glass disc with solid center dot)
-const stateInitial = Circle("●", {
-  size: 38,
+/// UML Initial Pseudostate (solid orb with specular highlight and soft bloom)
+const stateInitial = Circle(undefined, {
+  size: 34,
   opacity: 0,
-  variant: "surface",
-  style: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "1.1rem",
-    color: "var(--sr-text)",
-  },
+  variant: "ghost",
+  className: "sr-state-node sr-state-initial",
 });
 
-// UML Final Pseudostate (subtle frosted glass bullseye with double border)
-const stateFinal = Circle("●", {
-  size: 38,
+// UML Final Pseudostate (hairline ring cradling a centered orb)
+const stateFinal = Circle(undefined, {
+  size: 34,
   opacity: 0,
-  doubleBorder: true,
-  variant: "surface",
-  style: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "1.1rem",
-    color: "var(--sr-text)",
-  },
+  variant: "ghost",
+  className: "sr-state-node sr-state-final",
 });
 
 // Clean Glassmorphic UML State Cards (consistent with presentation design system)
@@ -959,21 +946,25 @@ const stateRejected = Card("Rejected", {
 
 // Arrange all nodes in a balanced circular topology
 arrange.circle(
-  [stateInitial, stateIdle, stateAuthenticating, stateActive, stateRejected, stateFinal],
+  [stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal],
   {
     centerX: 64,
-    centerY: 52,
-    radiusX: 25,
-    radiusY: 20,
+    centerY: 60,
+    radius: 20, // flatten 0 → true circle in pixels (cqw vs cqh auto-compensated)
     startAngle: -160,
-    span: 320,
+    flatten: 0.2,
   },
 );
+
+// Active sits directly above Authenticating (left edges aligned)
+arrange.above(stateActive, stateAuthenticating, 30);
 
 // Elegant Single-Curvature Arc Transitions
 const tStart = Connector(stateInitial, stateIdle, {
   color: "rgba(255, 255, 255, 0.4)",
   routing: "arc",
+  fromPadding: 2,
+  toAnchor: "left",
   end: 0,
 });
 
@@ -981,6 +972,8 @@ const tSubmit = Connector(stateIdle, stateAuthenticating, {
   label: "submit()",
   color: "#38bdf8",
   routing: "arc",
+  fromAnchor: "right",
+  toAnchor: "top",
   end: 0,
 });
 
@@ -988,13 +981,17 @@ const tSuccess = Connector(stateAuthenticating, stateActive, {
   label: "[valid]",
   color: "#10b981",
   routing: "arc",
+  fromAnchor: "right",
+  toAnchor: "right",
+  curvature: -0.45,
   end: 0,
 });
 
 const tFail = Connector(stateAuthenticating, stateRejected, {
   label: "[invalid]",
   color: "#f43f5e",
-  routing: "bezier",
+  routing: "arc",
+  toAnchor: "right",
   end: 0,
 });
 
@@ -1002,7 +999,9 @@ const tRetry = Connector(stateRejected, stateAuthenticating, {
   label: "retry()",
   color: "rgba(255, 255, 255, 0.35)",
   routing: "arc",
-  curvature: -0.25,
+  fromAnchor: "top",
+  toAnchor: "left",
+  curvature: 0.25,
   dashed: true,
   end: 0,
 });
@@ -1010,7 +1009,8 @@ const tRetry = Connector(stateRejected, stateAuthenticating, {
 const tLogout = Connector(stateActive, stateIdle, {
   label: "logout()",
   color: "rgba(255, 255, 255, 0.35)",
-  routing: "bezier",
+  routing: "arc",
+  fromAnchor: "left",
   curvature: -0.25,
   dashed: true,
   end: 0,
@@ -1020,6 +1020,7 @@ const tTerminate = Connector(stateRejected, stateFinal, {
   label: "terminate()",
   color: "rgba(255, 255, 255, 0.4)",
   routing: "arc",
+  toPadding: 2,
   end: 0,
 });
 

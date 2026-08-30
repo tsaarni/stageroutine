@@ -54,7 +54,7 @@ const brandTitle = Title("StageRoutine", {
   opacity: 0,
 });
 
-const editorialLead = Title("State mutation is motion.", {
+const editorialLead = Title("Program state. Watch motion.", {
   variant: "serif",
   x: "center",
   y: 52,
@@ -65,7 +65,7 @@ const editorialLead = Title("State mutation is motion.", {
   .decorate(glow());
 
 const heroBody = Text(
-  "A minimalist presentation framework where variable mutation drives smooth animation.",
+  "A framework for programmers to build seamless, animated presentations.",
   {
     x: "center",
     y: 65,

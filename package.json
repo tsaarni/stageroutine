@@ -19,7 +19,10 @@
     "preview": "vite preview",
     "check": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs:serve": "pnpm --filter stageroutine-docs start",
+    "docs:build": "pnpm --filter stageroutine-docs build",
+    "docs:version": "pnpm --filter stageroutine-docs docs:version"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

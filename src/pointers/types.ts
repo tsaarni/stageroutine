@@ -39,4 +39,6 @@ export interface PointerPlugin {
   onPointerUp?(coords: PointerCoordinates): void;
   /** Cleans up DOM nodes and timers */
   destroy(): void;
+  /** Optional diagnostics metrics provider */
+  getMetrics?(): Record<string, unknown>;
 }

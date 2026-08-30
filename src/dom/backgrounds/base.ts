@@ -99,5 +99,14 @@ export abstract class BackgroundElement extends DOMElement {
     }
     this.resume();
     this.onResize(window.innerWidth, window.innerHeight);
+
+    // Register background lifecycle metrics
+    if ("metrics" in stage && typeof (stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } }).metrics.register === "function") {
+      (stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } }).metrics.register(`background.${this.kind.toLowerCase()}`, () => ({
+        is_running: this.isRunning ? 1 : 0,
+        is_mounted: Boolean(this.domElement.isConnected),
+        opacity: Number.parseFloat(this.domElement.style.opacity) || 1,
+      }));
+    }
   }
 }

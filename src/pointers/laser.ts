@@ -348,5 +348,14 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
       gl = null;
       ctx = null;
     },
+
+    getMetrics() {
+      return {
+        is_active: isActive ? 1 : 0,
+        raf_loop_active: rafId !== null ? 1 : 0,
+        active_points_count: rawPoints.length,
+        has_canvas: canvas !== null ? 1 : 0,
+      };
+    },
   };
 }

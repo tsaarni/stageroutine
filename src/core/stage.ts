@@ -4,6 +4,7 @@
 
 import { type PointerPlugin, laserPointer } from "../pointers/index";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
+import { MetricRegistry } from "./metrics";
 import { type ElementHost, createReactiveProxy } from "./proxy";
 import type {
   AnimationMilestone,
@@ -108,6 +109,22 @@ export class Stage implements ElementHost {
   private broadcastChannel: BroadcastChannel | null = null;
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
+
+  // Metrics & Performance Tracking
+  readonly metrics = new MetricRegistry();
+  private lastFrameTime = 0;
+  private lastFrameDurationMs = 0;
+  private maxFrameDurationMs = 0;
+  private currentFps = 60;
+  private activeTransitionsSnapshot: {
+    elementId: string;
+    property: string;
+    startFrom: unknown;
+    to: unknown;
+    durationMs: number;
+    elapsedMs: number;
+    progress: number;
+  }[] = [];
 
   // Presenter Tools & Pointer State
   private activePointer: PointerPlugin | null = null;
@@ -221,6 +238,8 @@ export class Stage implements ElementHost {
 
     this.activePointer = laserPointer();
 
+    this._registerCoreMetrics();
+
     if (typeof window !== "undefined") {
       try {
         this.broadcastChannel = new BroadcastChannel("stageroutine-channel");
@@ -235,6 +254,118 @@ export class Stage implements ElementHost {
         // BroadcastChannel optional fallback
       }
     }
+  }
+
+  private _registerCoreMetrics(): void {
+    // Stage Aggregates
+    this.metrics.register("stage", () => {
+      const step = this.steps[this.currentStepIndex];
+      return {
+        scene_name: step?.sceneName ?? "Default",
+        step_index: this.currentStepIndex,
+        total_steps: this.steps.length,
+        is_animating: this.isAnimating ? 1 : 0,
+        active_raf_count: this.animFrameId !== null ? 1 : 0,
+        fps: Math.round(this.currentFps),
+        last_frame_duration_ms: Number(this.lastFrameDurationMs.toFixed(2)),
+        max_frame_duration_ms: Number(this.maxFrameDurationMs.toFixed(2)),
+      };
+    });
+
+    // Active Transitions Breakdown
+    this.metrics.register("stage.transitions", () => {
+      return this.activeTransitionsSnapshot.map((t) => ({
+        element_id: t.elementId,
+        property: t.property,
+        from: t.startFrom,
+        to: t.to,
+        duration_ms: t.durationMs,
+        elapsed_ms: Math.round(t.elapsedMs),
+        progress: Number(t.progress.toFixed(3)),
+      }));
+    });
+
+    // DOM Elements Overview & Active breakdown
+    this.metrics.register("dom", () => {
+      const step = this.steps[this.currentStepIndex];
+      const activeIds = step?.activeElementIds;
+      let totalRegistered = 0;
+      let activeInScene = 0;
+      let visibleCount = 0;
+
+      for (const [id] of this.elementRegistry.entries()) {
+        totalRegistered++;
+        const inActiveScene = activeIds ? activeIds.has(id) : false;
+        if (inActiveScene) {
+          activeInScene++;
+        }
+        const props = this.propertyState.get(id) || {};
+        const opacity = (props.opacity as number) ?? 1;
+        if (inActiveScene && opacity > 0) {
+          visibleCount++;
+        }
+      }
+
+      return {
+        total_registered: totalRegistered,
+        active_in_scene: activeInScene,
+        visible_in_scene: visibleCount,
+      };
+    });
+
+    // Browser Engine stats (strictly reads cached properties, only reports RUNNING animations)
+    this.metrics.register("browser", () => {
+      const result: Record<string, unknown> = {};
+      if (typeof document !== "undefined") {
+        const allAnimations = document.getAnimations();
+        let runningCount = 0;
+        let hiddenRunningCount = 0;
+        const runningList: Record<string, unknown>[] = [];
+
+        for (const anim of allAnimations) {
+          if (anim.playState !== "running") continue;
+          runningCount++;
+
+          const target = (anim.effect as { target?: Element } | null)?.target;
+          const isElement = target instanceof HTMLElement;
+          // Read directly from target style to avoid synchronous layout recalculation (getComputedStyle)
+          const inlineOpacity = isElement && target.style.opacity ? Number.parseFloat(target.style.opacity) : 1;
+          const isHidden = isElement && (inlineOpacity === 0 || target.style.display === "none" || target.style.visibility === "hidden");
+          if (isHidden) hiddenRunningCount++;
+
+          runningList.push({
+            name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
+            target_tag: target?.tagName,
+            target_class: typeof target?.className === "string" ? target.className : undefined,
+            is_hidden: isHidden ? 1 : 0,
+          });
+        }
+
+        result["animations.total_running"] = runningCount;
+        result["animations.hidden_running"] = hiddenRunningCount;
+        if (runningList.length > 0) {
+          result["animations.running"] = runningList;
+        }
+      }
+
+      if (typeof performance !== "undefined" && "memory" in performance) {
+        const mem = (performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
+        result["memory.js_heap_used_bytes"] = mem.usedJSHeapSize;
+        result["memory.js_heap_total_bytes"] = mem.totalJSHeapSize;
+      }
+
+      return result;
+    });
+
+    // Pointer Plugin Metrics
+    this.metrics.register("pointer", () => {
+      if (this.activePointer?.getMetrics) {
+        return this.activePointer.getMetrics();
+      }
+      return {
+        is_active: this.isPointerActive ? 1 : 0,
+      };
+    });
   }
 
   // --- ElementHost Implementation ---
@@ -626,6 +757,13 @@ export class Stage implements ElementHost {
 
     this.isMountedState = true;
 
+    // Attach global dev diagnostics hook
+    if (typeof window !== "undefined") {
+      (window as unknown as { __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> } }).__STAGEROUTINE_DEV__ = {
+        getMetrics: () => this.metrics.collect(),
+      };
+    }
+
     return this;
   }
 
@@ -848,8 +986,38 @@ export class Stage implements ElementHost {
       (this.options.defaultDuration || 0.6) * 1000,
     );
 
+    this.lastFrameTime = performance.now();
+    this.maxFrameDurationMs = 0;
+
     const frame = (now: number) => {
       const elapsed = now - startTime;
+      const frameDelta = now - this.lastFrameTime;
+      this.lastFrameTime = now;
+      this.lastFrameDurationMs = frameDelta;
+      if (frameDelta > this.maxFrameDurationMs) {
+        this.maxFrameDurationMs = frameDelta;
+      }
+      if (frameDelta > 0) {
+        this.currentFps = 1000 / frameDelta;
+      }
+
+      // Update active transitions snapshot for on-demand metric queries
+      this.activeTransitionsSnapshot = scheduledTransitions.map((t) => {
+        let progress = 0;
+        if (elapsed <= t.startOffsetMs) progress = 0;
+        else if (elapsed >= t.endOffsetMs) progress = 1;
+        else progress = (elapsed - t.startOffsetMs) / t.durationMs;
+
+        return {
+          elementId: t.elementId,
+          property: t.property,
+          startFrom: t.startFrom,
+          to: t.to,
+          durationMs: t.durationMs,
+          elapsedMs: elapsed,
+          progress,
+        };
+      });
 
       for (const t of scheduledTransitions) {
         const el = this.elementRegistry.get(t.elementId);
@@ -879,6 +1047,7 @@ export class Stage implements ElementHost {
       } else {
         this.isAnimating = false;
         this.animFrameId = null;
+        this.activeTransitionsSnapshot = [];
         // Snap to exact end snapshot
         this._applySnapshot(stepIdx);
       }

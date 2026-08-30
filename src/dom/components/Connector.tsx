@@ -457,21 +457,45 @@ export class ConnectorElement extends DOMElement {
       this._startPeriodicTimer();
     }
 
-    this.onPlay(() => this._resumePeriodicPulse());
-    this.onPause(() => this._pausePeriodicPulse());
-
     this.update();
 
-    // Auto-track endpoints during continuous animations
-    if (typeof window !== "undefined") {
+    const startRaf = () => {
+      if (typeof window === "undefined" || this.animInterval !== null) return;
       const tick = () => {
-        if (this.domElement?.isConnected && this.domElement.style.display !== "none") {
+        if (this.domElement?.isConnected && this.domElement.style.display !== "none" && this.domElement.style.visibility !== "hidden") {
           this.update();
+          this.animInterval = requestAnimationFrame(tick);
+        } else {
+          this.animInterval = null;
         }
-        this.animInterval = requestAnimationFrame(tick);
       };
       this.animInterval = requestAnimationFrame(tick);
-    }
+    };
+
+    const stopRaf = () => {
+      if (this.animInterval !== null) {
+        cancelAnimationFrame(this.animInterval);
+        this.animInterval = null;
+      }
+    };
+
+    this.onPlay(() => {
+      this._resumePeriodicPulse();
+      startRaf();
+    });
+
+    this.onPause(() => {
+      this._pausePeriodicPulse();
+      stopRaf();
+    });
+
+    // Register diagnostics metrics for background loop monitoring
+    const stage = getActiveStage();
+    stage.metrics.register(`connector.${this.id}`, () => ({
+      raf_loop_active: this.animInterval !== null ? 1 : 0,
+      periodic_pulse_active: this.periodicIntervalTimer !== null ? 1 : 0,
+      is_mounted: Boolean(this.domElement?.isConnected),
+    }));
   }
 
   private resolveBoxOrPoint(target: ConnectorTarget): { point: Point; box?: Box } {

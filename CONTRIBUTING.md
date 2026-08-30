@@ -12,15 +12,12 @@
 | `pnpm format` | Format files with Biome |
 | `pnpm chrome-dev` | Launch Chrome with remote debugging on port 9222 |
 
-## Remote Debugging and MCP
+## Troubleshooting with Chrome DevTools MCP
 
-To connect the presentation with MCP clients or developer tooling via Chrome DevTools:
+Inspect runtime performance and background tasks programmatically by querying the global diagnostics hook with the Chrome DevTools MCP `evaluate_script` tool:
 
-1. Start the dev server:
-   ```bash
-   pnpm dev
-   ```
-2. In a separate terminal, launch Chrome with remote debugging enabled on port 9222:
-   ```bash
-   pnpm chrome-dev
-   ```
+```js
+window.__STAGEROUTINE_DEV__.getMetrics()
+```
+
+This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `browser.animations.hidden_running` to spot CSS animations on hidden elements. Monitor component keys like `connector.<id>.raf_loop_active` and `pointer.raf_loop_active` to confirm background loops pause when inactive.

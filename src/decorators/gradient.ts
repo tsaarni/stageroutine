@@ -65,13 +65,21 @@ export function gradient(options: GradientOptions = {}): ElementDecorator {
   return (element: DOMElement) => {
     const el = element.domElement;
 
-    el.style.background = `linear-gradient(${angle}deg, ${colors.join(", ")})`;
-    el.style.webkitBackgroundClip = "text";
-    el.style.webkitTextFillColor = "transparent";
+    // Apply the text clip to an inner span: Firefox renders nothing when
+    // background-clip:text shares an element with filter (e.g. from glow()).
+    const inner = document.createElement("span");
+    inner.append(...el.childNodes);
+    el.appendChild(inner);
+
+    inner.style.background = `linear-gradient(${angle}deg, ${colors.join(", ")})`;
+    inner.style.backgroundClip = "text";
+    inner.style.webkitBackgroundClip = "text";
+    inner.style.webkitTextFillColor = "transparent";
+    inner.style.display = "inline-block";
     el.style.display = "inline-block";
 
     if (flow) {
-      el.style.backgroundSize = "200% auto";
+      inner.style.backgroundSize = "200% auto";
       const animName = `sr-neon-sweep-${flowCounter++}`;
       injectKeyframes(
         animName,
@@ -82,9 +90,9 @@ export function gradient(options: GradientOptions = {}): ElementDecorator {
     background-position: -200% 0;
   }`,
       );
-      appendAnimation(el, `${animName} ${duration}s linear infinite`);
+      appendAnimation(inner, `${animName} ${duration}s linear infinite`);
     } else {
-      el.style.backgroundSize = "100% auto";
+      inner.style.backgroundSize = "100% auto";
     }
   };
 }

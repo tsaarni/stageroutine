@@ -46,6 +46,18 @@
   line-height: 1.45;
   display: inline-block;
 
+  /* Multi-layered neon glow and breathing animation */
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
+    drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
+
+  animation: srNeonBloom 4s ease-in-out infinite;
+}
+
+/* Inner span: Firefox renders nothing when background-clip:text shares an
+   element with filter, so the text clip is kept separate from the glow. */
+.heroSubtitle span {
+  display: inline-block;
+
   /* Flowing linear gradient text */
   background: linear-gradient(
     90deg,
@@ -57,14 +69,11 @@
     #a78bfa 100%
   );
   background-size: 200% auto;
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 
-  /* Multi-layered neon glow and breathing animation */
-  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
-    drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
-
-  animation: srNeonSweep 7s linear infinite, srNeonBloom 4s ease-in-out infinite;
+  animation: srNeonSweep 7s linear infinite;
 }
 
 @keyframes srNeonSweep {

@@ -9,6 +9,9 @@ site/static/assets
 site/static/demo
 site/static/presenter.html
 
+# Generated API reference (docusaurus-plugin-typedoc, from src/index.ts)
+site/docs/api
+
 # Vite
 *.local
 

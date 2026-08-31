@@ -15,7 +15,7 @@ function HomepageHeader() {
       <div className={styles.heroContent}>
         <h1 className={styles.heroTitle}>{siteConfig.title}</h1>
         <p className={styles.heroSubtitle}>
-          Reactive, step-driven presentations and technical motion graphics.
+          <span>Reactive, step-driven presentations and technical motion graphics.</span>
         </p>
         <div className={styles.buttons}>
           <Link className={styles.primaryButton} to="/docs/guides/getting-started">

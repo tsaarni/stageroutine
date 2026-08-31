@@ -3,6 +3,9 @@ import { to } from "../motion/transitions";
 import { Connector, type ConnectorElement } from "./components/Connector";
 import type { DOMElement } from "./element";
 
+/**
+ * @internal
+ */
 export type LayoutElement =
   | DOMElement
   | ReactiveElementBase
@@ -14,8 +17,14 @@ export type LayoutElement =
       domElement?: HTMLElement;
     };
 
+/**
+ * @internal
+ */
 export type GridSlot = LayoutElement | null | undefined;
 
+/**
+ * @internal
+ */
 export interface RuleOptions {
   /** Line stroke color (defaults to "rgba(255, 255, 255, 0.12)"). */
   color?: string;
@@ -29,6 +38,10 @@ export interface RuleOptions {
   inset?: number;
 }
 
+/**
+ * Options for grid, row, and column layout arrangements.
+ * @category Layout
+ */
 export interface LayoutOptions {
   x?: number | "center";
   y?: number | "center";
@@ -44,6 +57,10 @@ export interface LayoutOptions {
   rule?: boolean | RuleOptions;
 }
 
+/**
+ * Options for 2-column split layouts.
+ * @category Layout
+ */
 export interface SplitLayoutOptions {
   leftX?: number;
   rightX?: number;
@@ -57,9 +74,22 @@ export interface SplitLayoutOptions {
   rule?: boolean | RuleOptions;
 }
 
+/**
+ * Relative cardinal placement position.
+ * @category Layout
+ */
 export type RelativePlacement = "top" | "bottom" | "left" | "right";
+
+/**
+ * Relative alignment axis mode.
+ * @category Layout
+ */
 export type RelativeAlign = "start" | "center" | "end";
 
+/**
+ * Options for orbital circular / elliptical layout arrangements.
+ * @category Layout
+ */
 export interface CircleLayoutOptions {
   /** Center X coordinate in stage cqw (default: 50). */
   centerX?: number;
@@ -237,6 +267,10 @@ function positionRelative(
   applyPosition(element, computedX, computedY);
 }
 
+/**
+ * Layout helper providing procedural positioning engines (rows, columns, grids, splits, orbits).
+ * @category Layout
+ */
 export const arrange = {
   /**
    * Arranges elements into a horizontal row.

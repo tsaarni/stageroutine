@@ -64,16 +64,13 @@ const editorialLead = Title("Program state. Watch motion.", {
   .decorate(gradient())
   .decorate(glow());
 
-const heroBody = Text(
-  "A framework for programmers to build seamless, animated presentations.",
-  {
-    x: "center",
-    y: 65,
-    anchor: "center",
-    opacity: 0,
-    style: { width: "65cqw", textAlign: "center" },
-  },
-);
+const heroBody = Text("A framework for programmers to build seamless, animated presentations.", {
+  x: "center",
+  y: 65,
+  anchor: "center",
+  opacity: 0,
+  style: { width: "65cqw", textAlign: "center" },
+});
 
 // Declare which elements are active in this scene.
 stage.scene("Introduction").with(brandTitle, sectionKicker, editorialLead, heroBody);
@@ -945,16 +942,13 @@ const stateRejected = Card("Rejected", {
 });
 
 // Arrange all nodes in a balanced circular topology
-arrange.circle(
-  [stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal],
-  {
-    centerX: 64,
-    centerY: 60,
-    radius: 20, // flatten 0 → true circle in pixels (cqw vs cqh auto-compensated)
-    startAngle: -160,
-    flatten: 0.2,
-  },
-);
+arrange.circle([stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal], {
+  centerX: 64,
+  centerY: 60,
+  radius: 20, // flatten 0 → true circle in pixels (cqw vs cqh auto-compensated)
+  startAngle: -160,
+  flatten: 0.2,
+});
 
 // Active sits directly above Authenticating (left edges aligned)
 arrange.above(stateActive, stateAuthenticating, 30);

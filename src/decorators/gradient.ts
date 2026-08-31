@@ -4,6 +4,10 @@
 
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
+/**
+ * Configuration options for the linear gradient text decorator.
+ * @category Decorators
+ */
 export interface GradientOptions {
   /** Array of CSS color stops for the gradient. */
   colors?: string[];
@@ -37,6 +41,9 @@ function injectKeyframes(name: string, body: string) {
   styleTag.textContent += `\n@keyframes ${name} {\n${body}\n}`;
 }
 
+/**
+ * @internal
+ */
 export function appendAnimation(el: HTMLElement, animDef: string) {
   const current = el.style.animation
     ? el.style.animation
@@ -50,6 +57,7 @@ export function appendAnimation(el: HTMLElement, animDef: string) {
 
 /**
  * Decorates an element with a linear gradient text effect and optional flowing animation.
+ * @category Decorators
  */
 export function gradient(options: GradientOptions = {}): ElementDecorator {
   const { colors = DEFAULT_GRADIENT, flow = true, duration = 7, angle = 90 } = options;

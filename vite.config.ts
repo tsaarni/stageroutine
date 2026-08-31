@@ -6,7 +6,8 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import { stageRoutinePlugin } from "./src/vite-plugin";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: process.env.BASE_URL || (command === "build" ? "/stageroutine/" : "/"),
   plugins: [stageRoutinePlugin()],
   build: {
     outDir: "dist",
@@ -18,4 +19,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

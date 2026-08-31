@@ -6,6 +6,10 @@ import * as THREE from "three";
 import type { StageContext } from "../../core/types";
 import { BackgroundElement, type BackgroundOptions } from "./base";
 
+/**
+ * Configuration options for the 3D Starfield background.
+ * @category Backgrounds
+ */
 export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
   /** Number of star particles (default: 2000) */
   count?: number;
@@ -19,6 +23,9 @@ export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
   spread?: number;
 }
 
+/**
+ * @internal
+ */
 export class StarfieldElement extends BackgroundElement {
   private renderer: THREE.WebGLRenderer | null = null;
   private scene: THREE.Scene | null = null;
@@ -181,6 +188,7 @@ export class StarfieldElement extends BackgroundElement {
 
 /**
  * Creates an interactive 3D Starfield background element.
+ * @category Backgrounds
  */
 export function Starfield(options: StarfieldOptions = {}): StarfieldElement {
   return new StarfieldElement(options);

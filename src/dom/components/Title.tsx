@@ -4,8 +4,16 @@
 
 import type { ElementOptions } from "../element";
 
+/**
+ * Visual typography variant for the Title component.
+ * @category Components
+ */
 export type TitleVariant = "title" | "hero" | "serif";
 
+/**
+ * Configuration options for the Title component.
+ * @category Components
+ */
 export interface TitleOptions extends ElementOptions {
   /** Visual typography variant: "title" (default), "hero" (large display), or "serif" (editorial italic). */
   variant?: TitleVariant;
@@ -20,6 +28,10 @@ export interface TitleOptions extends ElementOptions {
   className?: string;
 }
 
+/**
+ * Headline typography component supporting default title, hero, and serif editorial variants.
+ * @category Components
+ */
 export function Title(text: string, options: TitleOptions = {}) {
   const variant = options.variant ?? (options.hero ? "hero" : options.serif ? "serif" : "title");
 

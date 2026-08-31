@@ -2,6 +2,9 @@
  * Type definitions for StageRoutine Presenter Pointer Plugins.
  */
 
+/**
+ * @internal
+ */
 export interface PointerContext {
   /** The stage top-level container element (screen space) */
   container: HTMLElement;
@@ -13,6 +16,9 @@ export interface PointerContext {
   height: number;
 }
 
+/**
+ * @internal
+ */
 export interface PointerCoordinates {
   /** Screen space coordinates in physical browser pixels */
   screenX: number;
@@ -22,6 +28,9 @@ export interface PointerCoordinates {
   virtualY: number;
 }
 
+/**
+ * @internal
+ */
 export interface PointerPlugin {
   /** Unique plugin identifier */
   readonly id: string;

@@ -23,6 +23,16 @@
     }
   },
   "files": {
-    "ignore": ["dist", "node_modules", ".vite", ".chrome-profile"]
+    "ignore": [
+      "dist",
+      "node_modules",
+      ".vite",
+      ".chrome-profile",
+      "site/.docusaurus",
+      "site/build",
+      "site/docs/api",
+      "site/static/assets",
+      "site/static/demo"
+    ]
   }
 }

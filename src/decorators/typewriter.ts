@@ -12,6 +12,7 @@ import type { DOMElement, ElementDecorator } from "../dom/element";
  * - `{ pause: number }`: Pauses typing for a given duration in seconds.
  *
  * All time durations across typewriter steps are expressed in **seconds** (float).
+ * @category Decorators
  */
 export type TypewriterStep =
   | string
@@ -22,6 +23,7 @@ export type TypewriterStep =
 /**
  * Configuration options for the `typewriter` element decorator.
  * All time durations are expressed in **seconds** (float).
+ * @category Decorators
  */
 export interface TypewriterOptions {
   /** Default typing speed per character in seconds (default: `0.045`). */
@@ -50,6 +52,7 @@ export interface TypewriterOptions {
  *
  * All duration and timing values are expressed in **seconds** (float).
  *
+ * @category Decorators
  * @example
  * ```ts
  * // 1. Typing initial element text with entrance delay

@@ -9,6 +9,9 @@ import { BackgroundElement, type BackgroundOptions } from "./base";
 // Configuration Interfaces
 // ---------------------------------------------------------------------------
 
+/**
+ * @internal
+ */
 export interface BaseFluidOptions extends BackgroundOptions {
   /** Background color behind the fluid (default: "#09090b") */
   backgroundColor?: string;
@@ -18,6 +21,10 @@ export interface BaseFluidOptions extends BackgroundOptions {
   waveSpeed?: number;
 }
 
+/**
+ * Configuration options for procedural ASCII fluid simulation background.
+ * @category Backgrounds
+ */
 export interface AsciiFluidOptions extends BaseFluidOptions {
   /** ASCII character ramp ordered from darkest to brightest */
   characters?: string;
@@ -27,6 +34,10 @@ export interface AsciiFluidOptions extends BaseFluidOptions {
   color?: string;
 }
 
+/**
+ * Configuration options for procedural chromatic gradient fluid background.
+ * @category Backgrounds
+ */
 export interface GradientFluidOptions extends BaseFluidOptions {
   /**
    * Color palette from dark depth to luminous crest highlights.
@@ -248,6 +259,9 @@ interface FluidEngineConfig {
   atlasTexture?: THREE.CanvasTexture;
 }
 
+/**
+ * @internal
+ */
 export class FluidBackgroundElement extends BackgroundElement {
   private renderer: THREE.WebGLRenderer | null = null;
   private scene: THREE.Scene | null = null;
@@ -264,16 +278,15 @@ export class FluidBackgroundElement extends BackgroundElement {
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const allUniforms = {
-      ...config.uniforms,
-      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      u_time: { value: 0 },
-    };
-
     this.material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader: config.fragmentShader,
-      uniforms: allUniforms,
+      uniforms: {
+        u_time: { value: 0 },
+        u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        ...config.uniforms,
+      },
+      transparent: true,
       depthWrite: false,
       depthTest: false,
     });
@@ -281,11 +294,8 @@ export class FluidBackgroundElement extends BackgroundElement {
     const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material);
     this.scene.add(quad);
 
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      powerPreference: "high-performance",
-    });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     const canvas = this.renderer.domElement;
@@ -309,15 +319,14 @@ export class FluidBackgroundElement extends BackgroundElement {
   resume(): void {
     if (this.isRunning) return;
     this.isRunning = true;
+    this.clock.start();
 
     const animate = () => {
-      if (!this.isRunning || !this.renderer || !this.scene || !this.camera || !this.material)
+      if (!this.isRunning || !this.renderer || !this.material || !this.scene || !this.camera)
         return;
-
-      const time = this.clock.getElapsedTime() * (this.config.waveSpeed / 0.24);
-      this.material.uniforms.u_time.value = time;
+      const elapsed = this.clock.getElapsedTime();
+      this.material.uniforms.u_time.value = elapsed * this.config.waveSpeed;
       this.renderer.render(this.scene, this.camera);
-
       this.animFrameId = requestAnimationFrame(animate);
     };
 
@@ -331,12 +340,19 @@ export class FluidBackgroundElement extends BackgroundElement {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
+    this.clock.stop();
   }
 
   dispose(): void {
     this.pause();
-    if (this.config.atlasTexture) this.config.atlasTexture.dispose();
-    if (this.material) this.material.dispose();
+    if (this.material) {
+      this.material.dispose();
+      this.material = null;
+    }
+    if (this.config.atlasTexture) {
+      this.config.atlasTexture.dispose();
+      this.config.atlasTexture = undefined;
+    }
     if (this.renderer) {
       this.renderer.dispose();
       this.renderer.domElement.remove();
@@ -353,6 +369,7 @@ export class FluidBackgroundElement extends BackgroundElement {
 
 /**
  * Creates a procedural ASCII Fluid background element.
+ * @category Backgrounds
  */
 export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElement {
   const characters = options.characters ?? " .:-=+*#%@";
@@ -385,6 +402,7 @@ export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElem
 
 /**
  * Creates a procedural continuous Chromatic Gradient Fluid background element.
+ * @category Backgrounds
  */
 export function GradientFluid(options: GradientFluidOptions = {}): FluidBackgroundElement {
   const rawColors = options.colors ?? ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"];

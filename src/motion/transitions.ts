@@ -14,6 +14,7 @@ import type {
 /**
  * High-precision Cubic Bézier curve solver.
  * Solves B_x(t) = x for t via Newton-Raphson, then evaluates B_y(t).
+ * @category Motion
  */
 export function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number): EaseCurve {
   const cx = 3 * p1x;
@@ -74,6 +75,10 @@ export function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number):
   };
 }
 
+/**
+ * Standard preset easing curves for stage animations.
+ * @category Motion
+ */
 export const builtinEasings: Record<BuiltinEase, EaseCurve> = {
   linear: (t) => t,
   cubicOut: (t) => 1 - (1 - t) ** 3,
@@ -168,12 +173,16 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
 
 /**
  * Creates a fluent transition modifier.
- * e.g. `to(200).duration(1.5).ease("outExpo")`
+ * e.g. `card.x = to(200).duration(1.5).ease("quartOut")`
+ * @category Motion
  */
 export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>> {
   return new TransitionBuilder(target) as unknown as TransitionDescriptor<UnwrapTransition<T>>;
 }
 
+/**
+ * @internal
+ */
 export function isTransitionDescriptor(value: unknown): value is TransitionDescriptor {
   return (
     typeof value === "object" &&

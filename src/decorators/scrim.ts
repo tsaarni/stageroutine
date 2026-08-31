@@ -4,6 +4,10 @@
 
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
+/**
+ * Configuration options for the background scrim underlay decorator.
+ * @category Decorators
+ */
 export interface ScrimOptions {
   /** Background darkness opacity from 0 to 1 (default: 0.85). */
   opacity?: number;
@@ -17,6 +21,7 @@ export interface ScrimOptions {
 
 /**
  * Decorates an element with a soft radial dark aura underlay to make foreground text pop from busy animated backgrounds.
+ * @category Decorators
  */
 export function scrim(options: ScrimOptions = {}): ElementDecorator {
   const { opacity = 0.85, color = "#09090b", spread = "medium", blur = 0 } = options;

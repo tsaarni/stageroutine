@@ -21,3 +21,11 @@ window.__STAGEROUTINE_DEV__.getMetrics()
 ```
 
 This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `browser.animations.hidden_running` to spot CSS animations on hidden elements. Monitor component keys like `connector.<id>.raf_loop_active` and `pointer.raf_loop_active` to confirm background loops pause when inactive.
+
+## Modifying the documentation site
+
+To run the documentation site locally:
+
+```bash
+pnpm docs:serve
+```

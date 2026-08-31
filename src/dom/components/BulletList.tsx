@@ -7,6 +7,10 @@ import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
+/**
+ * Configuration options for the BulletList component.
+ * @category Components
+ */
 export interface BulletListOptions extends ElementOptions {
   itemSpacing?: number;
   color?: string;
@@ -15,6 +19,9 @@ export interface BulletListOptions extends ElementOptions {
   interactive?: boolean;
 }
 
+/**
+ * @internal
+ */
 export interface BulletListElement extends DOMElement {
   items: DOMElement[];
   readonly focusedRange: [number, number] | null;
@@ -25,6 +32,10 @@ export interface BulletListElement extends DOMElement {
   reveal(options?: StaggerOptions): StaggerBuilder;
 }
 
+/**
+ * Bullet list component with individual bullet point animation and interactive click-and-drag focus.
+ * @category Components
+ */
 export function BulletList(items: string[], options: BulletListOptions = {}): BulletListElement {
   const isHiddenInitially = options.opacity === 0;
   const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;

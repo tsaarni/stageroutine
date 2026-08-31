@@ -1,0 +1,125 @@
+.heroWrapper {
+  position: relative;
+  min-height: calc(100vh - var(--ifm-navbar-height));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: #09090b;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 900px;
+  padding: 5rem 1.5rem 4rem;
+}
+
+.heroTitle {
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+}
+
+.heroSubtitle {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(1.35rem, 2.7vw, 1.85rem);
+  font-style: italic;
+  font-weight: 300;
+  max-width: 760px;
+  margin: 0 auto 2.75rem;
+  line-height: 1.45;
+  display: inline-block;
+
+  /* Flowing linear gradient text */
+  background: linear-gradient(
+    90deg,
+    #a78bfa 0%,
+    #e0e7ff 22%,
+    #ffffff 35%,
+    #bae6fd 48%,
+    #c4b5fd 65%,
+    #a78bfa 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* Multi-layered neon glow and breathing animation */
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
+    drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
+
+  animation: srNeonSweep 7s linear infinite, srNeonBloom 4s ease-in-out infinite;
+}
+
+@keyframes srNeonSweep {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes srNeonBloom {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
+      drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.85))
+      drop-shadow(0 0 32px rgba(167, 139, 250, 0.6)) drop-shadow(0 0 65px rgba(147, 51, 234, 0.35));
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  background: #ffffff;
+  color: #09090b !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.8rem 2.2rem;
+  border-radius: 9999px;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.3);
+}
+
+.primaryButton:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 0 36px rgba(255, 255, 255, 0.45);
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #ffffff !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.8rem 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.secondaryButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}

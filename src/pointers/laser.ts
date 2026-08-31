@@ -1,5 +1,9 @@
 import type { PointerContext, PointerCoordinates, PointerPlugin } from "./types";
 
+/**
+ * Configuration options for the laser pointer plugin.
+ * @category Presenter
+ */
 export interface LaserPointerOptions {
   /** Base laser beam color in RGB hex. Defaults to neon laser ruby ('#ff0055'). */
   color?: string;
@@ -96,6 +100,10 @@ interface RawPoint {
   time: number;
 }
 
+/**
+ * WebGL-accelerated virtual laser pointer plugin with dynamic glowing comet tail.
+ * @category Presenter
+ */
 export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
   const colorRgb = hexToRgb(options.color ?? "#ff0055");
   const trailDurationMs = options.trailDurationMs ?? 160;

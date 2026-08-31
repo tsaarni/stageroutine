@@ -2,8 +2,16 @@
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
 
+/**
+ * Custom easing function mapping progress t (0..1) to animated value.
+ * @category Motion
+ */
 export type EaseCurve = (t: number) => number;
 
+/**
+ * Built-in named easing curves supported by StageRoutine transitions.
+ * @category Motion
+ */
 export type BuiltinEase =
   | "linear"
   | "cubicOut"
@@ -27,9 +35,14 @@ export type BuiltinEase =
  * - `"halfway"`: Triggers when target element reaches 50% of its easing progress.
  * - `"end"` | `"complete"`: Triggers when target element finishes its animation (progress = 1).
  * - `number`: Custom fractional progress (e.g. `0.75` for 75%).
+ * @internal
  */
 export type AnimationMilestone = "start" | "halfway" | "end" | "complete" | number;
 
+/**
+ * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
+ * @category Motion
+ */
 export interface TransitionDescriptor<T = unknown> {
   __isTransition: true;
   target: T;
@@ -64,6 +77,9 @@ export interface TransitionDescriptor<T = unknown> {
   ease(curve: BuiltinEase | EaseCurve): this;
 }
 
+/**
+ * @internal
+ */
 export interface TransitionRecord {
   elementId: string;
   property: string;
@@ -80,6 +96,7 @@ export interface TransitionRecord {
 /**
  * Theme configuration object for customizing stage canvas, typography, and surface tokens.
  * Supports camelCase property names (e.g. `surfaceBorder`) or raw CSS variable names (`--sr-surface-border`).
+ * @category Core
  */
 export interface ThemeConfig {
   /** Background color of the stage canvas (maps to `--sr-background`). */
@@ -108,6 +125,9 @@ export interface ThemeConfig {
   [key: string]: string | undefined;
 }
 
+/**
+ * @internal
+ */
 export interface StepSnapshot {
   sceneName: string;
   stepIndex: number;
@@ -116,6 +136,9 @@ export interface StepSnapshot {
   theme?: ThemeConfig;
 }
 
+/**
+ * @internal
+ */
 export interface StepData {
   sceneName: string;
   stepIndex: number;
@@ -126,29 +149,44 @@ export interface StepData {
   theme?: ThemeConfig;
 }
 
+/**
+ * @internal
+ */
 export interface StepChangeEvent {
   stepIndex: number;
   totalSteps: number;
   sceneName: string;
 }
 
+/**
+ * @internal
+ */
 export interface SceneChangeEvent {
   from: string;
   to: string;
   stepIndex: number;
 }
 
+/**
+ * @internal
+ */
 export interface ResizeEvent {
   width: number;
   height: number;
 }
 
+/**
+ * @internal
+ */
 export interface StageEventMap {
   sceneChange: SceneChangeEvent;
   stepChange: StepChangeEvent;
   resize: ResizeEvent;
 }
 
+/**
+ * @internal
+ */
 export interface StageContext {
   container: HTMLElement;
   width: number;
@@ -159,8 +197,15 @@ export interface StageContext {
   ): () => void;
 }
 
+/**
+ * @internal
+ */
 export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void;
 
+/**
+ * Interface implemented by dynamic or static stage background renderers.
+ * @category Backgrounds
+ */
 export interface Background {
   attach(stage: StageContext): void;
   dispose?(): void;
@@ -169,18 +214,36 @@ export interface Background {
   pause?(): void;
 }
 
+/**
+ * Options for initializing the Stage presentation director.
+ * @category Core
+ */
 export interface StageOptions {
+  /** Target HTML container or CSS selector to mount into. */
   target?: string | HTMLElement;
+  /** Virtual stage width in pixels (default: `1920`). */
   width?: number;
+  /** Virtual stage height in pixels (default: `1080`). */
   height?: number;
+  /** Default transition duration in seconds (default: `0.6`). */
   defaultDuration?: number;
+  /** Initial theme color overrides. */
   theme?: ThemeConfig;
 }
 
+/**
+ * @internal
+ */
 export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T;
 
+/**
+ * @internal
+ */
 export type ReactiveProp<T> = T | TransitionDescriptor<T>;
 
+/**
+ * @internal
+ */
 export type AnchorKeyword =
   | "top-left"
   | "center"
@@ -190,8 +253,15 @@ export type AnchorKeyword =
   | "bottom-left"
   | "bottom-right";
 
+/**
+ * @internal
+ */
 export type ElementAnchor = AnchorKeyword | [number, number];
 
+/**
+ * Base interface for all reactive presentation elements on stage.
+ * @category Core
+ */
 export interface ReactiveElementBase {
   readonly id: string;
   readonly kind: string;

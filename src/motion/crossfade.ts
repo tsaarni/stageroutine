@@ -8,6 +8,10 @@ import type {
 import type { DOMElement } from "../dom/element";
 import { to } from "./transitions";
 
+/**
+ * Configuration options for asymmetric crossfade transitions between two elements.
+ * @category Motion
+ */
 export interface CrossfadeOptions {
   /** Total choreography duration in seconds (default: 0.5s). */
   duration?: number;
@@ -21,6 +25,9 @@ export interface CrossfadeOptions {
   matchPosition?: boolean;
 }
 
+/**
+ * @internal
+ */
 export class CrossfadeBuilder {
   private fromElement: DOMElement | ReactiveElementBase;
   private toElement: DOMElement | ReactiveElementBase;
@@ -164,6 +171,7 @@ export class CrossfadeBuilder {
 /**
  * Creates an asymmetric phase swap between two elements in place.
  * Outgoing element exits quickly; incoming element enters smoothly with zero text double-vision.
+ * @category Motion
  */
 export function crossfade(
   fromElement: DOMElement | ReactiveElementBase,

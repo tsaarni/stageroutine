@@ -4,6 +4,10 @@
 
 import type { DOMElement } from "../dom/element";
 
+/**
+ * Configuration options for the film grain texture decorator.
+ * @category Decorators
+ */
 export interface GrainOptions {
   /** Film grain opacity from 0 to 1 (default: 0.12). */
   opacity?: number;
@@ -90,6 +94,7 @@ function createGrainContainer(
 
 /**
  * Universal decorator: Adds tactile analog film grain texture to any Element, Card, or Background.
+ * @category Decorators
  */
 export function grain(options: GrainOptions = {}) {
   const { granularity = 1, size = 512 } = options;

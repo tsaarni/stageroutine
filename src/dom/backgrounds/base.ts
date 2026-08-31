@@ -5,6 +5,10 @@
 import type { StageContext } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 
+/**
+ * Base options for background elements.
+ * @category Backgrounds
+ */
 export interface BackgroundOptions extends ElementOptions {
   /** Optional initial opacity (default: 1). */
   opacity?: number;
@@ -14,6 +18,7 @@ export interface BackgroundOptions extends ElementOptions {
  * Base reactive element for procedural GPU/WebGL backgrounds.
  * Handles automatic resize observation, full-bleed viewport positioning,
  * and automatic render loop pausing when invisible (0% GPU waste).
+ * @internal
  */
 export abstract class BackgroundElement extends DOMElement {
   protected isRunning = false;
@@ -101,8 +106,14 @@ export abstract class BackgroundElement extends DOMElement {
     this.onResize(window.innerWidth, window.innerHeight);
 
     // Register background lifecycle metrics
-    if ("metrics" in stage && typeof (stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } }).metrics.register === "function") {
-      (stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } }).metrics.register(`background.${this.kind.toLowerCase()}`, () => ({
+    if (
+      "metrics" in stage &&
+      typeof (stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } })
+        .metrics.register === "function"
+    ) {
+      (
+        stage as unknown as { metrics: { register: (k: string, g: () => unknown) => void } }
+      ).metrics.register(`background.${this.kind.toLowerCase()}`, () => ({
         is_running: this.isRunning ? 1 : 0,
         is_mounted: Boolean(this.domElement.isConnected),
         opacity: Number.parseFloat(this.domElement.style.opacity) || 1,

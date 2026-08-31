@@ -5,8 +5,16 @@
 
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
+/**
+ * Supported geometric styles for grouping brackets.
+ * @category Decorators
+ */
 export type BracketStyle = "curly" | "square" | "round" | "corners";
 
+/**
+ * Configuration options for the grouping bracket decorator.
+ * @category Decorators
+ */
 export interface BracketOptions {
   /** Bracket style: "curly" (default), "square", "round", or "corners". */
   style?: BracketStyle;
@@ -152,6 +160,7 @@ function buildBracketPath(
 
 /**
  * Decorates an element with a grouping bracket (curly brace, square bracket, or corner frame).
+ * @category Decorators
  */
 export function bracket(options: BracketOptions = {}): ElementDecorator {
   const {

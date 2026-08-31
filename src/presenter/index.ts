@@ -4,10 +4,17 @@
 
 import { getActiveStage } from "../core/index";
 
+/**
+ * Attaches speaker notes to the current stage step.
+ * @category Presenter
+ */
 export function notes(content: string | string[]): void {
   getActiveStage().setNotes(content);
 }
 
+/**
+ * @internal
+ */
 export interface PresenterSceneInfo {
   sceneIndex: number;
   sceneName: string;
@@ -15,11 +22,17 @@ export interface PresenterSceneInfo {
   stepCount: number;
 }
 
+/**
+ * @internal
+ */
 export interface PresenterStepInfo {
   stepIndex: number;
   sceneName: string;
 }
 
+/**
+ * @internal
+ */
 export interface PresenterMessage {
   // Step-level linear state
   currentStep: number;
@@ -38,6 +51,10 @@ export interface PresenterMessage {
   steps?: PresenterStepInfo[];
 }
 
+/**
+ * Client for synchronizing presenter view with the main presentation window via BroadcastChannel.
+ * @category Presenter
+ */
 export class PresenterClient {
   private channel: BroadcastChannel;
   private onUpdateCallback?: (msg: PresenterMessage) => void;
@@ -74,6 +91,10 @@ export class PresenterClient {
   }
 }
 
+/**
+ * Creates a new PresenterClient instance.
+ * @category Presenter
+ */
 export function createPresenterClient(): PresenterClient {
   return new PresenterClient();
 }

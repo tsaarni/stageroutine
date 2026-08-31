@@ -1,0 +1,578 @@
+/**
+ * StageRoutine Docusaurus Dark Theme
+ * Mirrors the visual design tokens, typography, and glassmorphic surfaces of StageRoutine.
+ */
+
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/newsreader/300.css";
+@import "@fontsource/newsreader/300-italic.css";
+@import "@fontsource/newsreader/400.css";
+@import "@fontsource/newsreader/400-italic.css";
+
+:root,
+[data-theme="dark"] {
+  /* StageRoutine Cyber Cyan & Monochrome Highlights */
+  --ifm-color-primary: #38bdf8;
+  --ifm-color-primary-dark: #0284c7;
+  --ifm-color-primary-darker: #0369a1;
+  --ifm-color-primary-darkest: #075985;
+  --ifm-color-primary-light: #7dd3fc;
+  --ifm-color-primary-lighter: #bae6fd;
+  --ifm-color-primary-lightest: #e0f2fe;
+
+  /* Typography */
+  --ifm-font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ifm-font-family-monospace: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+  --ifm-heading-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  --ifm-font-size-base: 15.5px;
+  --ifm-line-height-base: 1.65;
+  --ifm-heading-color: #ffffff;
+  --ifm-heading-line-height: 1.25;
+
+  /* StageRoutine Dark Palette */
+  --ifm-background-color: #09090b;
+  --ifm-background-surface-color: #09090b;
+  --ifm-text-color: #e4e4e7;
+  --ifm-color-emphasis-0: rgba(255, 255, 255, 0.03);
+  --ifm-color-emphasis-100: rgba(255, 255, 255, 0.05);
+  --ifm-color-emphasis-200: rgba(255, 255, 255, 0.08);
+  --ifm-color-emphasis-300: rgba(255, 255, 255, 0.12);
+  --ifm-color-emphasis-400: #71717a;
+  --ifm-color-emphasis-600: #a1a1aa;
+  --ifm-color-emphasis-700: #d4d4d8;
+  --ifm-color-emphasis-800: #e4e4e7;
+  --ifm-color-emphasis-900: #f4f4f5;
+  --ifm-color-content-secondary: #a1a1aa;
+
+  /* Layout & Surface Tokens */
+  --ifm-global-radius: 0.5rem;
+  --ifm-card-border-radius: 0.75rem;
+  --ifm-navbar-background-color: rgba(9, 9, 11, 0.75);
+  --ifm-navbar-shadow: none;
+  --ifm-navbar-height: 3.75rem;
+  --ifm-footer-background-color: #09090b;
+  --ifm-toc-border-color: rgba(255, 255, 255, 0.07);
+  --ifm-table-border-color: rgba(255, 255, 255, 0.1);
+  --ifm-table-stripe-background: rgba(255, 255, 255, 0.015);
+  --ifm-menu-color: #a1a1aa;
+  --ifm-menu-color-active: #ffffff;
+  --ifm-menu-color-background-active: rgba(56, 189, 248, 0.1);
+  --ifm-menu-color-background-hover: rgba(255, 255, 255, 0.04);
+  --ifm-code-font-size: 88%;
+  --docusaurus-highlighted-code-line-bg: rgba(56, 189, 248, 0.15);
+
+  /* Semantic Glassmorphic Surfaces */
+  --sr-glass-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  --sr-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --sr-glass-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 12px 32px -4px rgba(0, 0, 0, 0.6);
+  --sr-glass-blur: blur(20px) saturate(180%);
+}
+
+/* Base Body & Vertical Page Gradient Canvas */
+html,
+body {
+  background-color: #09090b !important;
+  color: var(--ifm-text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.main-wrapper {
+  background-color: #09090b !important;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ==========================================================================
+   Navbar
+   ========================================================================== */
+
+.navbar {
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ifm-navbar-background-color);
+}
+
+.navbar__title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.navbar__link {
+  font-weight: 500;
+  color: #a1a1aa;
+  transition: color 0.15s ease;
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Sidebar & Navigation
+   ========================================================================== */
+
+.theme-doc-sidebar-container,
+aside[class*="docSidebarContainer"] {
+  background: linear-gradient(180deg, rgba(18, 18, 21, 0.72) 0%, rgba(9, 9, 11, 0.82) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset -1px 0 0 0 rgba(255, 255, 255, 0.04), 4px 0 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.theme-doc-sidebar-menu {
+  padding: 1rem 0.5rem;
+}
+
+.menu__link {
+  font-size: 0.9rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.menu__list-item-collapsible > .menu__link {
+  font-weight: 600;
+}
+
+/* Uppercase Micro-kickers for Top-Level Categories */
+.theme-doc-sidebar-menu > .menu__list-item > .menu__list-item-collapsible .menu__link,
+.theme-doc-sidebar-menu > .menu__list-item > .menu__link--sublist {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #71717a;
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background: rgba(56, 189, 248, 0.1);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-left: 2px solid #38bdf8;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+/* ==========================================================================
+   Typography & Headings
+   ========================================================================== */
+
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #ffffff;
+}
+
+h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.4rem;
+  margin-top: 2.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #f4f4f5;
+  margin-top: 1.75rem;
+}
+
+/* StageRoutine Editorial Serif Italics */
+article em,
+article i {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 300;
+  font-style: italic;
+  color: #cbd5e1;
+}
+
+/* Micro-kickers & Badges */
+.sr-kicker-badge {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+/* ==========================================================================
+   Code Blocks & Terminal Window Styling (StageRoutine Aesthetic)
+   ========================================================================== */
+
+code {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.88em;
+  background-color: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  color: #e0f2fe;
+}
+
+pre code {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
+.theme-code-block,
+div[class*="codeBlockContainer"] {
+  background: #121216 !important;
+  background-color: #121216 !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 1.75rem !important;
+  overflow: hidden !important;
+}
+
+div[class*="codeBlockTitle"] {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #a1a1aa !important;
+  padding: 0.75rem 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+div[class*="codeBlockTitle"]::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 15px 0 0 rgba(255, 255, 255, 0.25), 30px 0 0 rgba(255, 255, 255, 0.25);
+  margin-right: 38px;
+}
+
+.theme-code-block pre,
+pre[class*="codeBlock_"] {
+  background: transparent !important;
+  padding: 1.25rem 1.5rem !important;
+  margin: 0 !important;
+}
+
+.theme-code-block code,
+code[class*="codeBlockLines_"] {
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.65 !important;
+}
+
+button[class*="copyButton"] {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 6px !important;
+  color: #cbd5e1 !important;
+  padding: 0.35rem 0.65rem !important;
+  transition: all 0.15s ease !important;
+}
+
+button[class*="copyButton"]:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #38bdf8 !important;
+}
+
+.theme-code-block-highlighted-line,
+div[class*="codeLine_"][class*="highlighted_"] {
+  background-color: rgba(56, 189, 248, 0.1) !important;
+  border-left: 3px solid #38bdf8 !important;
+  margin: 0 -1.5rem !important;
+  padding: 0 1.5rem !important;
+  display: block !important;
+}
+
+/* ==========================================================================
+   Frosted Glass Tables (.sr-table & markdown tables)
+   ========================================================================== */
+
+.markdown table,
+table {
+  width: 100% !important;
+  display: table !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+  overflow: hidden !important;
+  margin: 1.5rem 0 !important;
+}
+
+.markdown table thead,
+table thead {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.markdown table tr,
+table tr {
+  background-color: transparent !important;
+  border-top: none !important;
+  transition: background-color 0.15s ease-out;
+}
+
+.markdown table tr:nth-child(2n),
+table tr:nth-child(2n) {
+  background-color: transparent !important;
+}
+
+.markdown table tr:hover,
+table tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.markdown table th,
+table th {
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #a1a1aa !important;
+  padding: 0.85rem 1.25rem !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  text-align: left !important;
+}
+
+.markdown table td,
+table td {
+  padding: 0.85rem 1.25rem !important;
+  font-size: 0.92rem !important;
+  color: #e4e4e7 !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.markdown table tr:last-child td,
+table tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ==========================================================================
+   Frosted Glass Admonitions / Callouts
+   ========================================================================== */
+
+.alert {
+  border-radius: 10px;
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  color: #e4e4e7;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.alert--info {
+  border-color: rgba(56, 189, 248, 0.35);
+  border-top-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.alert--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  border-top-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.alert--success {
+  border-color: rgba(16, 185, 129, 0.35);
+  border-top-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.alert--danger {
+  border-color: rgba(244, 63, 94, 0.35);
+  border-top-color: rgba(244, 63, 94, 0.55);
+  background: rgba(244, 63, 94, 0.05);
+}
+
+/* ==========================================================================
+   Table of Contents
+   ========================================================================== */
+
+.table-of-contents__link {
+  color: #71717a;
+  font-size: 0.85rem;
+  transition: color 0.15s ease;
+}
+
+.table-of-contents__link:hover,
+.table-of-contents__link--active {
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   Pagination Navigation Links (Previous / Next)
+   ========================================================================== */
+
+/* Ensure short pages push the footer/pagination cleanly to the bottom */
+div[class*="docItemContainer"] {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: calc(100vh - var(--ifm-navbar-height) - 9rem) !important;
+}
+
+article {
+  flex: 1 0 auto !important;
+}
+
+.theme-doc-footer {
+  margin-top: 3.5rem !important;
+  margin-bottom: 2rem !important;
+  background: transparent !important;
+}
+
+.pagination-nav {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 1.25rem !important;
+  height: auto !important;
+  min-height: unset !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.pagination-nav__link {
+  height: auto !important;
+  min-height: 80px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  padding: 1.1rem 1.4rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pagination-nav__link:hover {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.15), inset 0 1px 0 0
+    rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-2px) !important;
+  text-decoration: none !important;
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.14em !important;
+  color: #71717a !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.pagination-nav__label {
+  font-family: var(--ifm-font-family-base) !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: #ffffff !important;
+  transition: color 0.15s ease !important;
+}
+
+.pagination-nav__link:hover .pagination-nav__label {
+  color: #38bdf8 !important;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: #09090b;
+}
+
+.footer__title {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.footer__link-item {
+  color: #71717a;
+  transition: color 0.15s ease;
+}
+
+.footer__link-item:hover {
+  color: #38bdf8;
+}

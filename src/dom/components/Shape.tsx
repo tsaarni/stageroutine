@@ -1,9 +1,22 @@
 import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 
+/**
+ * Geometric silhouette kind for the Shape component.
+ * @category Components
+ */
 export type ShapeKind = "box" | "circle" | "pill" | "diamond";
+
+/**
+ * Surface material preset for the Shape component.
+ * @category Components
+ */
 export type ShapeVariant = "surface" | "ghost" | "solid";
 
+/**
+ * Configuration options for the Shape, Card, Circle, Pill, and Diamond components.
+ * @category Components
+ */
 export interface ShapeOptions extends ElementOptions {
   /** Geometric silhouette: "box" (default), "circle", "pill", or "diamond". */
   kind?: ShapeKind;
@@ -31,6 +44,9 @@ export interface ShapeOptions extends ElementOptions {
   children?: unknown;
 }
 
+/**
+ * @internal
+ */
 export class ShapeElement extends DOMElement {
   readonly kind: ShapeKind;
   readonly variant: ShapeVariant;
@@ -160,6 +176,7 @@ export class ShapeElement extends DOMElement {
 
 /**
  * Universal shape container supporting multiple geometries and surface treatments.
+ * @category Components
  */
 export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = {}): ShapeElement {
   const stage = getActiveStage();
@@ -172,6 +189,7 @@ export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = 
 
 /**
  * Rectangular card container.
+ * @category Components
  */
 export function Card(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
   return Shape(childrenOrOptions, { ...options, kind: "box" });
@@ -179,6 +197,7 @@ export function Card(childrenOrOptions?: unknown, options: ShapeOptions = {}): S
 
 /**
  * Circular geometric node.
+ * @category Components
  */
 export function Circle(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
   return Shape(childrenOrOptions, { ...options, kind: "circle" });
@@ -186,6 +205,7 @@ export function Circle(childrenOrOptions?: unknown, options: ShapeOptions = {}):
 
 /**
  * Capsule pill tag / status indicator.
+ * @category Components
  */
 export function Pill(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
   return Shape(childrenOrOptions, { ...options, kind: "pill" });
@@ -193,6 +213,7 @@ export function Pill(childrenOrOptions?: unknown, options: ShapeOptions = {}): S
 
 /**
  * 45-degree rotated diamond decision node.
+ * @category Components
  */
 export function Diamond(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
   return Shape(childrenOrOptions, { ...options, kind: "diamond" });

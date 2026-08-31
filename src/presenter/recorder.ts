@@ -1,5 +1,6 @@
 /**
  * In-browser screen recorder using MediaRecorder to capture and download presentation video.
+ * @category Presenter
  */
 export class PresenterRecorder {
   private mediaRecorder: MediaRecorder | null = null;

@@ -6,6 +6,10 @@ import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
+/**
+ * Properties for configuring the TerminalWindow component.
+ * @category Components
+ */
 export interface TerminalWindowProps extends ElementOptions {
   title?: string;
   lines?: string[];
@@ -14,12 +18,19 @@ export interface TerminalWindowProps extends ElementOptions {
   interactive?: boolean;
 }
 
+/**
+ * @internal
+ */
 export interface TerminalWindowElement extends DOMElement {
   readonly focusedRange: [number, number] | null;
   focusLines(start: number, end?: number): this;
   unfocus(): this;
 }
 
+/**
+ * Terminal window component with macOS-style window controls and line-by-line interactive focus.
+ * @category Components
+ */
 export function TerminalWindow(props: TerminalWindowProps = {}): TerminalWindowElement {
   const lines = props.lines || [
     "$ pnpm create stageroutine@latest my-talk",

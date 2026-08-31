@@ -4,6 +4,10 @@
 
 import { DOMElement, type ElementOptions } from "../element";
 
+/**
+ * Configuration options for full-bleed CSS backgrounds.
+ * @category Backgrounds
+ */
 export interface CSSBackgroundOptions extends ElementOptions {
   /** Standard CSS background value (color, gradient, or url). */
   background?: string;
@@ -11,6 +15,7 @@ export interface CSSBackgroundOptions extends ElementOptions {
 
 /**
  * Full-bleed DOM background element styled with standard CSS.
+ * @internal
  */
 export class CSSBackgroundElement extends DOMElement {
   constructor(options: CSSBackgroundOptions = {}) {
@@ -37,6 +42,7 @@ export class CSSBackgroundElement extends DOMElement {
 /**
  * Creates a full-bleed CSS background supporting colors, gradients, and images.
  *
+ * @category Backgrounds
  * @example
  * ```ts
  * CSSBackground("#0f172a");

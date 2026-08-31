@@ -4,6 +4,10 @@
 
 import type { DOMElement } from "../dom/element";
 
+/**
+ * Configuration options for the radial dark vignette decorator.
+ * @category Decorators
+ */
 export interface VignetteOptions {
   /** Vignette color (default: "#09090b"). */
   color?: string;
@@ -32,6 +36,7 @@ function createVignetteElement(options: VignetteOptions): HTMLDivElement {
 
 /**
  * Universal decorator: Adds a soft radial dark vignette to any Element, Card, or Background.
+ * @category Decorators
  */
 export function vignette(options: VignetteOptions = {}) {
   return (target: DOMElement | HTMLElement) => {

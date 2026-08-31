@@ -7,8 +7,16 @@ import type { ElementAnchor, ReactiveElementBase, ReactiveProp } from "../core/t
 
 let nextId = 1;
 
+/**
+ * Callback function to decorate or style a Stage DOMElement instance.
+ * @category Decorators
+ */
 export type ElementDecorator = (element: DOMElement) => void;
 
+/**
+ * Base positioning and visual options shared across all Stage elements.
+ * @category Core
+ */
 export interface ElementOptions {
   id?: string;
   anchor?: ElementAnchor;
@@ -27,6 +35,10 @@ export interface ElementOptions {
   style?: Partial<CSSStyleDeclaration>;
 }
 
+/**
+ * Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage.
+ * @category Core
+ */
 export class DOMElement implements ReactiveElementBase {
   readonly id: string;
   readonly kind: string;

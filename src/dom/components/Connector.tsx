@@ -14,6 +14,7 @@ import {
 
 /**
  * Options for triggering glowing packet animations along a connector.
+ * @category Components
  */
 export interface PulseOptions {
   /** Color of the glowing particle (defaults to connector stroke color). */
@@ -26,6 +27,7 @@ export interface PulseOptions {
 
 /**
  * Options for continuous periodic packet pulses along a connector.
+ * @internal
  */
 export interface PeriodicPulseOptions extends PulseOptions {
   /** Interval between successive pulse emissions in seconds (default: 2.0s). */
@@ -38,6 +40,7 @@ export interface PeriodicPulseOptions extends PulseOptions {
  * - "center": 50% along the path (default)
  * - "end": 75% along the path
  * - number: explicit fractional ratio from 0.0 to 1.0
+ * @internal
  */
 export type LabelPlacement = "start" | "center" | "end" | number;
 
@@ -45,6 +48,7 @@ export type LabelPlacement = "start" | "center" | "end" | number;
  * Responsive offset for adjusting label badge position.
  * Supports numbers (1080p virtual pixels) and container units ("cqw", "cqh", "rem", "px").
  * e.g. `{ y: "-1.5cqh" }` or `{ x: "2cqw", y: -8 }`.
+ * @internal
  */
 export type LabelOffset = { x?: number | string; y?: number | string } | number | string;
 
@@ -64,6 +68,10 @@ function resolveOffset(val: number | string | undefined, baseDim: number): numbe
   return Number.parseFloat(s) || 0;
 }
 
+/**
+ * Head marker decoration types at the endpoints of a Connector line.
+ * @category Components
+ */
 export type ConnectorHeadType =
   | "none"
   | "arrow"
@@ -205,6 +213,7 @@ function createHeadMarker(
 
 /**
  * Configuration options for creating a reactive Connector between two elements or points.
+ * @category Components
  */
 export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   /** Optional text label rendered at the connector's midpoint or specified placement. */
@@ -267,11 +276,18 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   messageY?: ReactiveProp<number | string>;
 }
 
+/**
+ * Valid endpoint target for a Connector line (DOMElement, point coordinates, or element proxy).
+ * @category Components
+ */
 export type ConnectorTarget =
   | DOMElement
   | Point
   | { x: number | string; y: number | string; domElement?: HTMLElement };
 
+/**
+ * @internal
+ */
 export class ConnectorElement extends DOMElement {
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
@@ -462,7 +478,11 @@ export class ConnectorElement extends DOMElement {
     const startRaf = () => {
       if (typeof window === "undefined" || this.animInterval !== null) return;
       const tick = () => {
-        if (this.domElement?.isConnected && this.domElement.style.display !== "none" && this.domElement.style.visibility !== "hidden") {
+        if (
+          this.domElement?.isConnected &&
+          this.domElement.style.display !== "none" &&
+          this.domElement.style.visibility !== "hidden"
+        ) {
           this.update();
           this.animInterval = requestAnimationFrame(tick);
         } else {
@@ -1025,6 +1045,10 @@ export class ConnectorElement extends DOMElement {
   }
 }
 
+/**
+ * Creates a reactive visual connector / arrow between two nodes or coordinate points.
+ * @category Components
+ */
 export const Connector = (
   from: ConnectorTarget,
   to: ConnectorTarget,

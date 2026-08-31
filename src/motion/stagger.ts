@@ -8,6 +8,10 @@ import type {
 import type { DOMElement } from "../dom/element";
 import { to } from "./transitions";
 
+/**
+ * Configuration options for cascading stagger animations across multiple elements.
+ * @category Motion
+ */
 export interface StaggerOptions {
   duration?: number;
   overlap?: AnimationMilestone;
@@ -15,6 +19,9 @@ export interface StaggerOptions {
   props?: Record<string, unknown>;
 }
 
+/**
+ * @internal
+ */
 export class StaggerBuilder {
   private elements: (DOMElement | ReactiveElementBase)[];
   private durationSec = 0.4;
@@ -110,6 +117,7 @@ export class StaggerBuilder {
 
 /**
  * Creates a fluent stagger coordinator to cascade animations across a list of elements.
+ * @category Motion
  */
 export function stagger(
   elements: (DOMElement | ReactiveElementBase)[],

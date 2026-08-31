@@ -7,6 +7,10 @@ import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
+/**
+ * Configuration options for the glassmorphic Table component.
+ * @category Components
+ */
 export interface TableOptions extends ElementOptions {
   headers?: string[];
   rows: (string | number | HTMLElement)[][];
@@ -16,6 +20,9 @@ export interface TableOptions extends ElementOptions {
   interactive?: boolean;
 }
 
+/**
+ * @internal
+ */
 export interface TableElement extends DOMElement {
   rows: DOMElement[];
   readonly focusedRange: [number, number] | null;
@@ -25,6 +32,10 @@ export interface TableElement extends DOMElement {
   reveal(options?: StaggerOptions): StaggerBuilder;
 }
 
+/**
+ * Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus.
+ * @category Components
+ */
 export function Table(options: TableOptions): TableElement {
   const isHiddenInitially = options.opacity === 0;
   const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;

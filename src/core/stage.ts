@@ -65,6 +65,10 @@ class SceneBuilder {
   }
 }
 
+/**
+ * Presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
+ * @category Core
+ */
 export class Stage implements ElementHost {
   private options: StageOptions;
   private container: HTMLElement | null = null;
@@ -329,8 +333,13 @@ export class Stage implements ElementHost {
           const target = (anim.effect as { target?: Element } | null)?.target;
           const isElement = target instanceof HTMLElement;
           // Read directly from target style to avoid synchronous layout recalculation (getComputedStyle)
-          const inlineOpacity = isElement && target.style.opacity ? Number.parseFloat(target.style.opacity) : 1;
-          const isHidden = isElement && (inlineOpacity === 0 || target.style.display === "none" || target.style.visibility === "hidden");
+          const inlineOpacity =
+            isElement && target.style.opacity ? Number.parseFloat(target.style.opacity) : 1;
+          const isHidden =
+            isElement &&
+            (inlineOpacity === 0 ||
+              target.style.display === "none" ||
+              target.style.visibility === "hidden");
           if (isHidden) hiddenRunningCount++;
 
           runningList.push({
@@ -349,7 +358,9 @@ export class Stage implements ElementHost {
       }
 
       if (typeof performance !== "undefined" && "memory" in performance) {
-        const mem = (performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
+        const mem = (
+          performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }
+        ).memory;
         result["memory.js_heap_used_bytes"] = mem.usedJSHeapSize;
         result["memory.js_heap_total_bytes"] = mem.totalJSHeapSize;
       }
@@ -759,7 +770,11 @@ export class Stage implements ElementHost {
 
     // Attach global dev diagnostics hook
     if (typeof window !== "undefined") {
-      (window as unknown as { __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> } }).__STAGEROUTINE_DEV__ = {
+      (
+        window as unknown as {
+          __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+        }
+      ).__STAGEROUTINE_DEV__ = {
         getMetrics: () => this.metrics.collect(),
       };
     }
@@ -1230,12 +1245,20 @@ export class Stage implements ElementHost {
 // Global active stage singleton for helper bindings
 let activeStage: Stage | null = null;
 
+/**
+ * Creates and initializes a new presentation stage.
+ * @category Core
+ */
 export function createStage(options?: StageOptions): Stage {
   const stage = new Stage(options);
   activeStage = stage;
   return stage;
 }
 
+/**
+ * Returns the currently active presentation stage singleton.
+ * @category Core
+ */
 export function getActiveStage(): Stage {
   if (!activeStage) {
     activeStage = new Stage();

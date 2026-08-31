@@ -8,6 +8,10 @@ import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
+/**
+ * Configuration options for the syntax-highlighted CodeBlock component.
+ * @category Components
+ */
 export interface CodeBlockOptions extends ElementOptions {
   lang?: string;
   theme?: string;
@@ -16,12 +20,20 @@ export interface CodeBlockOptions extends ElementOptions {
   interactive?: boolean;
 }
 
+/**
+ * @internal
+ */
 export interface CodeBlockElement extends DOMElement {
   readonly focusedRange: [number, number] | null;
   focusLines(start: number, end?: number): this;
   unfocus(): this;
 }
 
+/**
+ * Code snippet component with syntax highlighting powered by the Shiki TextMate engine
+ * and interactive line/multi-line drag focus.
+ * @category Components
+ */
 export function CodeBlock(
   snippet: string | string[],
   options: CodeBlockOptions = {},

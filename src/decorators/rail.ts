@@ -5,6 +5,10 @@
 
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
+/**
+ * Configuration options for the accent rail / keyline decorator.
+ * @category Decorators
+ */
 export interface RailOptions {
   /** Which side the rail sits on ("left" | "right" | "top" | "bottom", default: "left"). */
   side?: "left" | "right" | "top" | "bottom";
@@ -36,6 +40,7 @@ export interface RailOptions {
 
 /**
  * Decorates an element with an accent rail (keyline / gutter indicator / curved bracket).
+ * @category Decorators
  */
 export function rail(options: RailOptions = {}): ElementDecorator {
   const {

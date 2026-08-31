@@ -5,6 +5,10 @@
 import type { DOMElement, ElementDecorator } from "../dom/element";
 import { appendAnimation } from "./gradient";
 
+/**
+ * Configuration options for the glow decorator.
+ * @category Decorators
+ */
 export interface GlowOptions {
   /** Whether the glow breathes/animates (default: true). */
   pulse?: boolean;
@@ -33,6 +37,7 @@ const PEAK_FILTER =
 
 /**
  * Decorates an element with the exact multi-layered neon glow effect with optional breathing animation.
+ * @category Decorators
  */
 export function glow(options: GlowOptions = {}): ElementDecorator {
   const { pulse = true, duration = 4 } = options;

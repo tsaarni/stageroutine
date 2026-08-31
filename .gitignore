@@ -3,6 +3,11 @@ node_modules
 
 # Build output
 dist
+site/build
+site/.docusaurus
+site/static/assets
+site/static/demo
+site/static/presenter.html
 
 # Vite
 *.local

@@ -39,5 +39,4 @@ stage.pause();
 
 - [Getting Started](./guides/getting-started) — install and run your first presentation
 - [Core Concepts](./guides/core-concepts) — continuous canvas, coordinate system, reactive elements, and motion
-- [Configuration](./guides/configuration) — customize behavior
 - [API Reference](./api/) — full API documentation

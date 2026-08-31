@@ -148,14 +148,43 @@ const { rule } = arrange.split([heading, body], codePanel, {
 
 Available helpers: `arrange.split`, `arrange.stack`, `arrange.grid`, and `arrange.circle`.
 
-## 10. Presenter Console
+## 10. Overlays
 
-The **Presenter Console** (`/presenter.html`) synchronizes with the presentation in real time over `BroadcastChannel`:
+**Overlays** are plugins that attach interactive UI on top of the stage. They receive a context with access to the DOM containers, stage dimensions, and the event bus.
 
-- **Speaker Notes**: Attach notes per step with `stage.setNotes([...])`.
-- **Upcoming Preview**: Preview upcoming step title and notes.
-- **Scene Navigation**: Direct dropdown scene jump with step controls.
-- **Timers**: Presentation elapsed timer and wall clock.
-- **Screen Recording**: Capture presentations to WebM directly in browser.
+```typescript
+import { NavigationOverlay, LaserPointer } from 'stageroutine';
 
+stage.overlay(LaserPointer());
+stage.overlay(NavigationOverlay());
+```
+
+Built-in overlays:
+
+- **`LaserPointer()`** — WebGL laser pointer with glowing trail. Toggle with `L` key or the navigation bar button.
+- **`NavigationOverlay()`** — Step and scene navigation buttons that appear on hover near the bottom of the screen.
+
+Custom overlays implement the `OverlayPlugin` interface (`mount`, `show`, `hide`, `destroy`) and communicate through the event bus via `ctx.emit()` and `ctx.on()`.
+
+## 11. Event System
+
+All communication between stage, overlays, keyboard, and the presenter console flows through a single typed event bus. Events use `domain:action` naming:
+
+| Domain | Commands (you send) | Notifications (you receive) |
+|---|---|---|
+| `nav:` | `nextStep`, `prevStep`, `nextScene`, `prevScene`, `gotoStep`, `gotoScene` | `stepChanged`, `sceneChanged` |
+| `stage:` | `requestState` | `resized`, `stateChanged` |
+| `pointer:` | `toggle` | `toggled` |
+
+Subscribe and emit from overlays via the context:
+
+```typescript
+// Listen for pointer state changes
+ctx.on("pointer:toggled", ({ active }) => { /* ... */ });
+
+// Emit a command
+ctx.emit("nav:nextStep");
+```
+
+The `BroadcastChannel` transparently bridges events to other windows, so the presenter console and overlays share the same event protocol.
 

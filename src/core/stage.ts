@@ -676,7 +676,19 @@ export class Stage implements ElementHost {
 
     // Keyboard controls (navigation only; pointer toggle is handled by pointer overlay)
     window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+      if (e.key === "Home") {
+        e.preventDefault();
+        this.emit("nav:gotoStep", { index: 0 });
+      } else if (e.key === "End") {
+        e.preventDefault();
+        this.emit("nav:gotoStep", { index: this.steps.length - 1 });
+      } else if (e.shiftKey && (e.key === "ArrowRight" || e.key === "PageDown")) {
+        e.preventDefault();
+        this.emit("nav:nextScene");
+      } else if (e.shiftKey && (e.key === "ArrowLeft" || e.key === "PageUp")) {
+        e.preventDefault();
+        this.emit("nav:prevScene");
+      } else if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
         this.emit("nav:nextStep");
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {

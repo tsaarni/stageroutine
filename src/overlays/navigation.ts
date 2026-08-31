@@ -53,11 +53,11 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
       bar = document.createElement("div");
       bar.className = "sr-nav-overlay sr-nav-hidden";
 
-      const btnPrevScene = createButton("«", "Previous scene");
-      const btnPrev = createButton("‹", "Previous step");
+      const btnPrevScene = createButton("«", "Previous scene (Shift+←)");
+      const btnPrev = createButton("‹", "Previous step (←)");
       const btnPointer = createPointerButton();
-      const btnNext = createButton("›", "Next step");
-      const btnNextScene = createButton("»", "Next scene");
+      const btnNext = createButton("›", "Next step (→)");
+      const btnNextScene = createButton("»", "Next scene (Shift+→)");
 
       bar.appendChild(btnPrevScene);
       bar.appendChild(btnPrev);

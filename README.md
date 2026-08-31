@@ -56,7 +56,7 @@ pnpm dev
 ```
 
 - **Main presentation**: `http://localhost:5173/`
-- **Presenter console**: `http://localhost:5173/presenter`
+- **Presenter console**: `http://localhost:5173/presenter.html`
 
 See [demo/main.ts](https://github.com/tsaarni/stageroutine/blob/main/demo/main.ts) for a full presentation example.
 

@@ -36,7 +36,12 @@ function HomepageHeader() {
 export default function Home(): React.JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <Layout title={siteConfig.title} description={siteConfig.tagline}>
+    <Layout
+      title={siteConfig.title}
+      description={siteConfig.tagline}
+      wrapperClassName={styles.homePageWrapper}
+      noFooter
+    >
       <HomepageHeader />
     </Layout>
   );

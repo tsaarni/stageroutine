@@ -91,7 +91,7 @@ body {
 
 .main-wrapper {
   background-color: #09090b !important;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--ifm-navbar-height));
 }
 
 /* Custom Scrollbars */

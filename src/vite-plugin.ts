@@ -6,7 +6,7 @@ import type { Plugin } from "vite";
 
 /**
  * Built-in StageRoutine Vite plugin.
- * Rewrites `/` and `/presenter` routes to their respective HTML entry points
+ * Rewrites `/` and `/presenter.html` routes to their respective HTML entry points
  * in both Vite dev and preview servers.
  */
 export function stageRoutinePlugin(): Plugin {
@@ -18,7 +18,7 @@ export function stageRoutinePlugin(): Plugin {
 
     if (cleanPath === "" || cleanPath === "/index.html") {
       target = "/demo/index.html";
-    } else if (cleanPath === "/presenter" || cleanPath === "/presenter.html") {
+    } else if (cleanPath === "/presenter.html") {
       target = "/src/presenter/presenter.html";
     }
 

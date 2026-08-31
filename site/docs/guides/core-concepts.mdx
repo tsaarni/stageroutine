@@ -18,6 +18,17 @@ import { Stage, AsciiFluid, vignette } from 'stageroutine';
 const stage = new Stage().background(AsciiFluid().decorate(vignette()));
 ```
 
+After defining scenes and steps, call `stage.mount()` to attach to the DOM and start playback:
+
+```html
+<div id="stage"></div>
+```
+
+```typescript
+// Mount into #stage container (defaults to document.body if omitted)
+stage.mount("#stage");
+```
+
 - **Persistence**: Elements stay alive across scenes unless removed. When elements move between scenes, they animate to their new positions instead of disappearing.
 - **Coordinate System**: Positions are percentages from `(0, 0)` (top-left) to `(100, 100)` (bottom-right). The value `"center"` resolves to `50%`.
 - **Anchors (`anchor`)**: Origin alignment point. Defaults to `"top-left"` for text and code blocks, and `"center"` for shapes and headlines.

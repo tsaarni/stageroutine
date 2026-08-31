@@ -3,6 +3,7 @@
  */
 
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
+import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
 import { type ElementHost, createReactiveProxy } from "./proxy";
 import type {
@@ -200,7 +201,7 @@ export class Stage implements ElementHost {
       try {
         handler(data);
       } catch (err) {
-        console.error(`Error in stage event handler for "${event}":`, err);
+        logger.error(`Error in stage event handler for "${event}":`, err);
       }
     }
   }
@@ -220,6 +221,10 @@ export class Stage implements ElementHost {
       text: "#ffffff",
       ...(this.options.theme || {}),
     };
+
+    if (this.options.logLevel) {
+      logger.setLevel(this.options.logLevel);
+    }
 
     this._registerCoreMetrics();
 
@@ -593,9 +598,14 @@ export class Stage implements ElementHost {
           (typeof this.options.target === "string"
             ? document.querySelector<HTMLElement>(this.options.target)
             : this.options.target) ||
-          document.body;
+          null;
 
-    if (!el) return this;
+    if (!el) {
+      logger.warn(
+        'mount() requires a target element or CSS selector, e.g. stage.mount("#stage"). No matching element found.',
+      );
+      return this;
+    }
     this.container = el;
 
     // Setup viewport container

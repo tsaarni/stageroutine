@@ -17,7 +17,7 @@ export interface BaseFluidOptions extends BackgroundOptions {
   backgroundColor?: string;
   /** Overall opacity / brightness factor (default: 0.28) */
   opacity?: number;
-  /** Speed of wave rolling across screen (default: 0.24) */
+  /** Speed of wave rolling across screen (default: 0.5) */
   waveSpeed?: number;
 }
 
@@ -377,7 +377,7 @@ export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElem
   const charColor = new THREE.Color(options.color ?? "#38bdf8");
   const bgColor = new THREE.Color(options.backgroundColor ?? "#09090b");
   const opacity = options.opacity ?? 0.28;
-  const waveSpeed = options.waveSpeed ?? 0.24;
+  const waveSpeed = options.waveSpeed ?? 0.5;
 
   const { texture: atlasTexture, charCount } = createGlyphAtlas(characters);
 
@@ -412,7 +412,7 @@ export function GradientFluid(options: GradientFluidOptions = {}): FluidBackgrou
   const color3 = new THREE.Color(rawColors[3] ?? "#e0f2fe");
 
   const opacity = options.opacity ?? 0.28;
-  const waveSpeed = options.waveSpeed ?? 0.24;
+  const waveSpeed = options.waveSpeed ?? 0.5;
   const gloss = options.gloss ?? 1.0;
 
   return new FluidBackgroundElement(

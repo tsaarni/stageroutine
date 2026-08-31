@@ -162,7 +162,7 @@ export function AsciiFluidCanvas({
   color = "#38bdf8",
   backgroundColor = "#09090b",
   opacity = 0.45,
-  waveSpeed = 1.0,
+  waveSpeed = 0.6,
   className,
   style,
 }: AsciiFluidCanvasProps): React.JSX.Element {

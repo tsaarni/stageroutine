@@ -30,7 +30,7 @@ stage.pause();
 
 stage.overlay(NavigationOverlay());
 stage.overlay(LaserPointer());
-stage.mount();
+stage.mount("#stage");
 ```
 
 See [demo/main.ts](https://github.com/tsaarni/stageroutine/blob/main/demo/main.ts) for a full example and [Core Concepts](./core-concepts) for detailed explanations.

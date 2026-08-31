@@ -6,8 +6,10 @@
 export {
   createStage,
   getActiveStage,
+  logger,
   Stage,
 } from "./core/index";
+export type { LogLevel } from "./core/logger";
 export type {
   StageOptions,
   ThemeConfig,

@@ -1361,4 +1361,4 @@ stage.pause();
 // Register overlays and mount the stage into the DOM.
 stage.overlay(LaserPointer());
 stage.overlay(NavigationOverlay());
-stage.mount();
+stage.mount("#stage");

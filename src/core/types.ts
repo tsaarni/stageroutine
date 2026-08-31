@@ -357,6 +357,8 @@ export interface StageOptions {
   defaultDuration?: number;
   /** Initial theme color overrides. */
   theme?: ThemeConfig;
+  /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
+  logLevel?: import("./logger").LogLevel;
 }
 
 /**

@@ -1,3 +1,5 @@
+import { logger } from "../core/logger";
+
 /**
  * In-browser screen recorder using MediaRecorder to capture and download presentation video.
  * @category Presenter
@@ -57,7 +59,7 @@ export class PresenterRecorder {
           this.micTrack.enabled = this.isMicEnabled;
         }
       } catch (micErr) {
-        console.warn("Microphone access not granted or unavailable:", micErr);
+        logger.warn("Microphone access not granted or unavailable:", micErr);
         this.micTrack = null;
       }
 
@@ -110,7 +112,7 @@ export class PresenterRecorder {
         this._emit();
       }, 1000);
     } catch (err) {
-      console.warn("Screen recording cancelled or not permitted:", err);
+      logger.warn("Screen recording cancelled or not permitted:", err);
     }
   }
 

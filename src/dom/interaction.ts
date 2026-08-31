@@ -2,6 +2,8 @@
  * Generic range selection and interactive focus utilities for StageRoutine components.
  */
 
+import { getActiveStage } from "../core/index";
+
 export interface RangeSelectionOptions {
   /** The container DOM element hosting the selectable items */
   container: HTMLElement;
@@ -122,12 +124,14 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
     updateRange(null);
   };
 
+  let unsubStepChange: (() => void) | null = null;
+
   if (interactive && typeof window !== "undefined") {
     container.addEventListener("pointerdown", onContainerPointerDown);
     container.addEventListener("pointerover", onContainerPointerOver);
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("click", onWindowClick);
-    window.addEventListener("stageroutine:stepchange", onStepChange);
+    unsubStepChange = getActiveStage().on("nav:stepChanged", onStepChange);
   }
 
   markClickable();
@@ -160,7 +164,7 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
         container.removeEventListener("pointerover", onContainerPointerOver);
         window.removeEventListener("pointerup", onPointerUp);
         window.removeEventListener("click", onWindowClick);
-        window.removeEventListener("stageroutine:stepchange", onStepChange);
+        unsubStepChange?.();
       }
     },
   };

@@ -757,3 +757,17 @@
 .sr-nav-btn:active {
   background: rgba(255, 255, 255, 0.12);
 }
+
+.sr-nav-btn-pointer {
+  margin-left: 0.35rem;
+}
+
+.sr-nav-btn-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--sr-text-muted);
+}
+
+.sr-nav-btn-active:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--sr-text-muted);
+}

@@ -364,6 +364,7 @@ export function LaserPointer(
       }
     }
     updateCursorVisibility();
+    ctx?.emit("pointer:toggled", { active: isActive });
   };
 
   const moveTo = (screenX: number, screenY: number, virtualX: number, virtualY: number) => {
@@ -444,11 +445,16 @@ export function LaserPointer(
       if (toggleKey !== null) {
         boundOnKeyDown = (e: KeyboardEvent) => {
           if (e.key === toggleKey || e.key === toggleKey.toUpperCase()) {
-            setActive(!isActive);
+            ctx?.emit("pointer:toggle");
           }
         };
         window.addEventListener("keydown", boundOnKeyDown);
       }
+
+      // Listen for pointer:toggle events from any source (keyboard, navigation overlay, presenter)
+      ctx.on("pointer:toggle", () => {
+        setActive(!isActive);
+      });
 
       if (isActive) {
         setActive(true);

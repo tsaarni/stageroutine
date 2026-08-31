@@ -105,7 +105,7 @@ export class StarfieldElement extends BackgroundElement {
     super.attach(stage);
 
     // Smooth tilt and warp burst on scene changes
-    this.unbindScene = stage.on("sceneChange", ({ to }) => {
+    this.unbindScene = stage.on("nav:sceneChanged", ({ to }) => {
       this.targetSpeed = this.baseSpeed * 3.5;
       setTimeout(() => {
         this.targetSpeed = this.baseSpeed;

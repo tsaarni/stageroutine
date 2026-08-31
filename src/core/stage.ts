@@ -164,10 +164,11 @@ export class Stage implements ElementHost {
       viewport,
       width: this.options.width || 1920,
       height: this.options.height || 1080,
-      next: () => this.next(),
-      prev: () => this.prev(),
-      nextScene: () => this.nextScene(),
-      prevScene: () => this.prevScene(),
+      next: () => this.emit("nav:nextStep"),
+      prev: () => this.emit("nav:prevStep"),
+      nextScene: () => this.emit("nav:nextScene"),
+      prevScene: () => this.emit("nav:prevScene"),
+      emit: this.emit.bind(this),
       on: this.on.bind(this),
     };
   }
@@ -188,7 +189,11 @@ export class Stage implements ElementHost {
     };
   }
 
-  emit<K extends keyof StageEventMap>(event: K, data: StageEventMap[K]): void {
+  emit<K extends keyof StageEventMap>(
+    event: K,
+    ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]
+  ): void {
+    const data = args[0] as StageEventMap[K];
     const set = this.listeners.get(event);
     if (!set) return;
     for (const handler of set) {
@@ -218,18 +223,32 @@ export class Stage implements ElementHost {
 
     this._registerCoreMetrics();
 
+    // Register navigation command handlers on the event bus
+    this.on("nav:nextStep", () => this._next());
+    this.on("nav:prevStep", () => this._prev());
+    this.on("nav:nextScene", () => this._nextScene());
+    this.on("nav:prevScene", () => this._prevScene());
+    this.on("nav:gotoScene", (data) => this._gotoScene(data.index));
+    this.on("nav:gotoStep", (data) => this._gotoStep(data.index));
+    this.on("stage:requestState", () => this._broadcastState());
+
     if (typeof window !== "undefined") {
       try {
         this.broadcastChannel = new BroadcastChannel("stageroutine-channel");
+
+        // Incoming: relay BroadcastChannel messages into the event bus
         this.broadcastChannel.onmessage = (event) => {
           if (this.steps.length === 0) return;
-          if (event.data?.action === "next") this.next();
-          if (event.data?.action === "prev") this.prev();
-          if (event.data?.action === "nextScene") this.nextScene();
-          if (event.data?.action === "prevScene") this.prevScene();
-          if (event.data?.action === "gotoScene") this.gotoScene(event.data.sceneIndex);
-          if (event.data?.action === "requestState") this._broadcast();
+          const msg = event.data;
+          if (msg?.event && typeof msg.event === "string") {
+            this.emit(msg.event as keyof StageEventMap, msg.data);
+          }
         };
+
+        // Outgoing: bridge stage:stateChanged to BroadcastChannel
+        this.on("stage:stateChanged", (data) => {
+          this.broadcastChannel?.postMessage({ event: "stage:stateChanged", data });
+        });
       } catch {
         // BroadcastChannel optional fallback
       }
@@ -641,7 +660,7 @@ export class Stage implements ElementHost {
       const sh = window.innerHeight / (this.options.height || 1080);
       const scale = Math.min(sw, sh);
       this.viewport.style.transform = `scale(${scale})`;
-      this.emit("resize", { width: window.innerWidth, height: window.innerHeight });
+      this.emit("stage:resized", { width: window.innerWidth, height: window.innerHeight });
     };
 
     window.addEventListener("resize", updateScale);
@@ -659,10 +678,10 @@ export class Stage implements ElementHost {
     window.addEventListener("keydown", (e) => {
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
-        this.next();
+        this.emit("nav:nextStep");
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
-        this.prev();
+        this.emit("nav:prevStep");
       }
     });
 
@@ -695,14 +714,14 @@ export class Stage implements ElementHost {
     return this;
   }
 
-  next(): void {
+  private _next(): void {
     if (this.currentStepIndex < this.steps.length - 1) {
       this.currentStepIndex++;
       this._playStepTransition(this.currentStepIndex);
     }
   }
 
-  prev(): void {
+  private _prev(): void {
     if (this.currentStepIndex > 0) {
       this.currentStepIndex--;
       this._applySnapshot(this.currentStepIndex);
@@ -760,7 +779,7 @@ export class Stage implements ElementHost {
    * Jump to a specific scene by 0-indexed scene number.
    * Restores the recorded state of the first step of that scene.
    */
-  gotoScene(sceneIndex: number): void {
+  private _gotoScene(sceneIndex: number): void {
     const scenes = this._getScenes();
     const target = scenes[sceneIndex];
     if (target) {
@@ -770,14 +789,24 @@ export class Stage implements ElementHost {
   }
 
   /**
+   * Jump to a specific step by global step index.
+   */
+  private _gotoStep(stepIndex: number): void {
+    if (stepIndex >= 0 && stepIndex < this.steps.length && stepIndex !== this.currentStepIndex) {
+      this.currentStepIndex = stepIndex;
+      this._applySnapshot(stepIndex);
+    }
+  }
+
+  /**
    * Jump to the first step of the next scene.
    * No-op if already on the last scene.
    */
-  nextScene(): void {
+  private _nextScene(): void {
     const idx = this._currentSceneIndex();
     const scenes = this._getScenes();
     if (idx < scenes.length - 1) {
-      this.gotoScene(idx + 1);
+      this._gotoScene(idx + 1);
     }
   }
 
@@ -785,10 +814,10 @@ export class Stage implements ElementHost {
    * Jump to the first step of the previous scene.
    * No-op if already on the first scene.
    */
-  prevScene(): void {
+  private _prevScene(): void {
     const idx = this._currentSceneIndex();
     if (idx > 0) {
-      this.gotoScene(idx - 1);
+      this._gotoScene(idx - 1);
     }
   }
 
@@ -798,16 +827,16 @@ export class Stage implements ElementHost {
 
     this.currentStepIndex = stepIdx;
 
-    this.emit("stepChange", {
-      stepIndex: stepIdx,
-      totalSteps: this.steps.length,
-      sceneName: snap.sceneName,
+    this.emit("nav:stepChanged", {
+      index: stepIdx,
+      total: this.steps.length,
+      scene: snap.sceneName,
     });
 
     if (snap.sceneName !== this.activeSceneName) {
       const from = this.activeSceneName;
       this.activeSceneName = snap.sceneName;
-      this.emit("sceneChange", { from, to: snap.sceneName, stepIndex: stepIdx });
+      this.emit("nav:sceneChanged", { from, to: snap.sceneName, index: stepIdx });
     }
 
     if (this.animFrameId) {
@@ -846,23 +875,23 @@ export class Stage implements ElementHost {
     }
 
     this._updateHash();
-    this._broadcast();
+    this._broadcastState();
   }
 
   private _playStepTransition(stepIdx: number): void {
     const step = this.steps[stepIdx];
     if (!step) return;
 
-    this.emit("stepChange", {
-      stepIndex: stepIdx,
-      totalSteps: this.steps.length,
-      sceneName: step.sceneName,
+    this.emit("nav:stepChanged", {
+      index: stepIdx,
+      total: this.steps.length,
+      scene: step.sceneName,
     });
 
     if (step.sceneName !== this.activeSceneName) {
       const from = this.activeSceneName;
       this.activeSceneName = step.sceneName;
-      this.emit("sceneChange", { from, to: step.sceneName, stepIndex: stepIdx });
+      this.emit("nav:sceneChanged", { from, to: step.sceneName, index: stepIdx });
     }
 
     if (this.animFrameId) {
@@ -876,17 +905,6 @@ export class Stage implements ElementHost {
       for (const action of step.actions) {
         action();
       }
-    }
-
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("stageroutine:stepchange", {
-          detail: {
-            stepIndex: stepIdx,
-            sceneName: step.sceneName,
-          },
-        }),
-      );
     }
 
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
@@ -1045,7 +1063,7 @@ export class Stage implements ElementHost {
 
     this.animFrameId = requestAnimationFrame(frame);
     this._updateHash();
-    this._broadcast();
+    this._broadcastState();
   }
 
   private _hideElement(element: ReactiveElementBase): void {
@@ -1201,8 +1219,8 @@ export class Stage implements ElementHost {
     return 0;
   }
 
-  private _broadcast(): void {
-    if (!this.broadcastChannel || this.steps.length === 0) return;
+  private _broadcastState(): void {
+    if (this.steps.length === 0) return;
     const step = this.steps[this.currentStepIndex];
     const nextStep = this.steps[this.currentStepIndex + 1];
 
@@ -1214,14 +1232,14 @@ export class Stage implements ElementHost {
     ) ||
       scenes[0] || { sceneIndex: 0, sceneName: "", startStepIndex: 0, stepCount: 1 };
 
-    this.broadcastChannel.postMessage({
-      currentStep: this.currentStepIndex,
-      totalSteps: this.steps.length,
-      currentSceneIndex: activeScene.sceneIndex,
+    this.emit("stage:stateChanged", {
+      step: this.currentStepIndex,
+      total: this.steps.length,
+      sceneIndex: activeScene.sceneIndex,
       totalScenes: scenes.length,
-      sceneName: activeScene.sceneName,
+      scene: activeScene.sceneName,
       notes: step?.notes ?? "",
-      nextSceneName: nextStep?.sceneName ?? "",
+      nextScene: nextStep?.sceneName ?? "",
       nextNotes: nextStep?.notes ?? "",
       scenes,
       steps: this.steps.map((s) => ({

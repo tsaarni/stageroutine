@@ -3,6 +3,7 @@
  */
 
 import { getActiveStage } from "../core/index";
+import type { StageStateChangedEvent } from "../core/types";
 
 /**
  * Attaches speaker notes to the current stage step.
@@ -31,25 +32,11 @@ export interface PresenterStepInfo {
 }
 
 /**
+ * Message payload received by the presenter from the stage via BroadcastChannel.
+ * Mirrors the StageStateChangedEvent shape.
  * @internal
  */
-export interface PresenterMessage {
-  // Step-level linear state
-  currentStep: number;
-  totalSteps: number;
-  notes: string;
-
-  // Scene-level structural state
-  currentSceneIndex: number;
-  totalScenes: number;
-  sceneName: string;
-  nextSceneName: string;
-  nextNotes: string;
-
-  // Jump outlines
-  scenes?: PresenterSceneInfo[];
-  steps?: PresenterStepInfo[];
-}
+export type PresenterMessage = StageStateChangedEvent;
 
 /**
  * Client for synchronizing presenter view with the main presentation window via BroadcastChannel.
@@ -62,16 +49,13 @@ export class PresenterClient {
   constructor() {
     this.channel = new BroadcastChannel("stageroutine-channel");
     this.channel.onmessage = (event) => {
-      if (
-        this.onUpdateCallback &&
-        event.data?.totalSteps !== undefined &&
-        event.data.totalSteps > 0
-      ) {
-        this.onUpdateCallback(event.data as PresenterMessage);
+      const msg = event.data;
+      if (msg?.event === "stage:stateChanged" && msg.data?.total > 0) {
+        this.onUpdateCallback?.(msg.data as PresenterMessage);
       }
     };
     // Request initial state from active presentation tab
-    this.channel.postMessage({ action: "requestState" });
+    this.channel.postMessage({ event: "stage:requestState" });
   }
 
   onUpdate(callback: (msg: PresenterMessage) => void): void {
@@ -79,15 +63,15 @@ export class PresenterClient {
   }
 
   next(): void {
-    this.channel.postMessage({ action: "next" });
+    this.channel.postMessage({ event: "nav:nextStep" });
   }
 
   prev(): void {
-    this.channel.postMessage({ action: "prev" });
+    this.channel.postMessage({ event: "nav:prevStep" });
   }
 
   gotoScene(sceneIndex: number): void {
-    this.channel.postMessage({ action: "gotoScene", sceneIndex });
+    this.channel.postMessage({ event: "nav:gotoScene", data: { index: sceneIndex } });
   }
 }
 

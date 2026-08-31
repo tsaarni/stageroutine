@@ -196,9 +196,7 @@ btnFontReset?.addEventListener("click", () => setFontSize(DEFAULT_FONT_SIZE));
 // ============================================================================
 client.onUpdate((msg) => {
   const currentSceneIdx =
-    typeof msg.currentSceneIndex === "number" && !Number.isNaN(msg.currentSceneIndex)
-      ? msg.currentSceneIndex
-      : 0;
+    typeof msg.sceneIndex === "number" && !Number.isNaN(msg.sceneIndex) ? msg.sceneIndex : 0;
   const totalScenes =
     typeof msg.totalScenes === "number" && !Number.isNaN(msg.totalScenes) && msg.totalScenes > 0
       ? msg.totalScenes
@@ -206,7 +204,7 @@ client.onUpdate((msg) => {
 
   if (sceneText) {
     sceneText.textContent = `Scene ${currentSceneIdx + 1} of ${totalScenes}${
-      msg.sceneName ? ` · ${msg.sceneName}` : ""
+      msg.scene ? ` · ${msg.scene}` : ""
     }`;
   }
 
@@ -218,7 +216,7 @@ client.onUpdate((msg) => {
 
   // Update step progress bar across all linear pause points
   if (progressBar) {
-    const progress = msg.totalSteps > 1 ? (msg.currentStep / (msg.totalSteps - 1)) * 100 : 100;
+    const progress = msg.total > 1 ? (msg.step / (msg.total - 1)) * 100 : 100;
     progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
   }
 
@@ -226,8 +224,8 @@ client.onUpdate((msg) => {
   renderNotesContent(msg.notes);
 
   // Coming up next
-  if (msg.nextSceneName) {
-    if (nextScene) nextScene.textContent = msg.nextSceneName;
+  if (msg.nextScene) {
+    if (nextScene) nextScene.textContent = msg.nextScene;
     if (nextNotes) {
       nextNotes.textContent = msg.nextNotes
         ? msg.nextNotes.replace(/\n+/g, " • ").trim()
@@ -240,10 +238,10 @@ client.onUpdate((msg) => {
 
   // Navigation button states (based on linear step index)
   if (btnPrev) {
-    btnPrev.disabled = msg.currentStep <= 0;
+    btnPrev.disabled = msg.step <= 0;
   }
   if (btnNext) {
-    btnNext.disabled = msg.currentStep >= msg.totalSteps - 1;
+    btnNext.disabled = msg.step >= msg.total - 1;
   }
 });
 

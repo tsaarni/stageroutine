@@ -149,39 +149,98 @@ export interface StepData {
   theme?: ThemeConfig;
 }
 
-/**
- * @internal
- */
-export interface StepChangeEvent {
-  stepIndex: number;
-  totalSteps: number;
-  sceneName: string;
+// ---------------------------------------------------------------------------
+// Unified Namespaced Event System
+//
+// Naming convention:
+//   domain:action
+//
+// Commands (imperative verbs) — actions triggered by user, overlay, or presenter:
+//   nav:nextStep, nav:prevStep, nav:nextScene, nav:prevScene,
+//   nav:gotoStep, nav:gotoScene, pointer:toggle, stage:requestState
+//
+// Notifications (past tense) — state changes emitted by core:
+//   nav:stepChanged, nav:sceneChanged, pointer:toggled,
+//   stage:resized, stage:stateChanged
+//
+// All events flow through a single typed bus. BroadcastChannel is a transparent
+// bridge that serializes events to other windows using the same names.
+// ---------------------------------------------------------------------------
+
+/** @internal */
+export interface NavStepChangedEvent {
+  index: number;
+  total: number;
+  scene: string;
 }
 
-/**
- * @internal
- */
-export interface SceneChangeEvent {
+/** @internal */
+export interface NavSceneChangedEvent {
   from: string;
   to: string;
-  stepIndex: number;
+  index: number;
 }
 
-/**
- * @internal
- */
-export interface ResizeEvent {
+/** @internal */
+export interface NavGotoStepEvent {
+  index: number;
+}
+
+/** @internal */
+export interface NavGotoSceneEvent {
+  index: number;
+}
+
+/** @internal */
+export interface StageResizedEvent {
   width: number;
   height: number;
 }
 
+/** @internal */
+export interface StageStateChangedEvent {
+  step: number;
+  total: number;
+  sceneIndex: number;
+  totalScenes: number;
+  scene: string;
+  notes: string;
+  nextScene: string;
+  nextNotes: string;
+  scenes: { sceneIndex: number; sceneName: string; startStepIndex: number; stepCount: number }[];
+  steps: { stepIndex: number; sceneName: string }[];
+}
+
+/** @internal */
+export interface PointerToggledEvent {
+  active: boolean;
+}
+
 /**
+ * Complete event map for the stage event bus.
  * @internal
  */
 export interface StageEventMap {
-  sceneChange: SceneChangeEvent;
-  stepChange: StepChangeEvent;
-  resize: ResizeEvent;
+  // Navigation commands
+  "nav:nextStep": undefined;
+  "nav:prevStep": undefined;
+  "nav:nextScene": undefined;
+  "nav:prevScene": undefined;
+  "nav:gotoStep": NavGotoStepEvent;
+  "nav:gotoScene": NavGotoSceneEvent;
+
+  // Navigation notifications
+  "nav:stepChanged": NavStepChangedEvent;
+  "nav:sceneChanged": NavSceneChangedEvent;
+
+  // Pointer commands & notifications
+  "pointer:toggle": undefined;
+  "pointer:toggled": PointerToggledEvent;
+
+  // Stage lifecycle
+  "stage:resized": StageResizedEvent;
+  "stage:requestState": undefined;
+  "stage:stateChanged": StageStateChangedEvent;
 }
 
 /**
@@ -219,6 +278,11 @@ export interface OverlayContext {
   nextScene(): void;
   /** Jump to the first step of the previous scene. */
   prevScene(): void;
+  /** Emit an event on the stage event bus. */
+  emit<K extends keyof StageEventMap>(
+    event: K,
+    ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]
+  ): void;
   /** Subscribe to stage events. Returns an unsubscribe function. */
   on<K extends keyof StageEventMap>(
     event: K,

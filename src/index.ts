@@ -13,6 +13,8 @@ export type {
   ThemeConfig,
   Background,
   ReactiveElementBase,
+  OverlayPlugin,
+  OverlayContext,
 } from "./core/types";
 
 // Motion & Transitions
@@ -127,8 +129,11 @@ export {
   PresenterRecorder,
 } from "./presenter/index";
 
-// Presenter Pointer Plugins
+// Overlays
 export {
-  laserPointer,
+  LaserPointer,
   type LaserPointerOptions,
-} from "./pointers/index";
+  type LaserPointerController,
+  NavigationOverlay,
+  type NavigationOverlayOptions,
+} from "./overlays/index";

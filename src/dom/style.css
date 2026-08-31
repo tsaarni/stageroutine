@@ -695,3 +695,65 @@
 .sr-cursor-hidden * {
   cursor: none !important;
 }
+
+/* ==========================================================================
+   Navigation Overlay
+   ========================================================================== */
+
+.sr-nav-overlay {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--sr-radius);
+  box-shadow: 0 0.5rem 2rem -0.5rem rgba(0, 0, 0, 0.3);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: auto;
+}
+
+.sr-nav-overlay.sr-nav-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sr-nav-overlay.sr-nav-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sr-nav-btn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--sr-radius);
+  color: var(--sr-text-dim, #52525b);
+  font-size: 1.5rem;
+  line-height: 1;
+  font-family: var(--sr-font-sans);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sr-text-muted);
+}
+
+.sr-nav-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}

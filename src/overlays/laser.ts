@@ -1,16 +1,33 @@
-import type { PointerContext, PointerCoordinates, PointerPlugin } from "./types";
+import type { OverlayContext, OverlayPlugin } from "../core/types";
 
 /**
- * Configuration options for the laser pointer plugin.
- * @category Presenter
+ * Configuration options for the laser pointer overlay.
+ * @category Overlays
  */
 export interface LaserPointerOptions {
   /** Base laser beam color in RGB hex. Defaults to neon laser ruby ('#ff0055'). */
   color?: string;
   /** Trail persistence in milliseconds. Defaults to 160ms. */
   trailDurationMs?: number;
-  /** Inactivity delay before the pointer sleeps. Defaults to 2000ms. */
+  /** Inactivity delay before the pointer canvas sleeps. Defaults to 2000ms. */
   idleTimeoutMs?: number;
+  /** Inactivity delay before the cursor is hidden. Defaults to 2000ms. */
+  cursorIdleMs?: number;
+  /** Keyboard key to toggle pointer on/off. Defaults to 'l'. Set to null to disable. */
+  toggleKey?: string | null;
+  /** Start with the pointer active. Defaults to false. */
+  active?: boolean;
+}
+
+/**
+ * Extended controller for the laser pointer overlay, beyond the base OverlayPlugin interface.
+ * @category Overlays
+ */
+export interface LaserPointerController {
+  /** Whether the laser pointer is currently active. */
+  active: boolean;
+  /** Returns diagnostic metrics for the pointer. */
+  getMetrics(): Record<string, unknown>;
 }
 
 const VERTEX_SHADER_SRC = `
@@ -101,15 +118,28 @@ interface RawPoint {
 }
 
 /**
- * WebGL-accelerated virtual laser pointer plugin with dynamic glowing comet tail.
- * @category Presenter
+ * WebGL-accelerated virtual laser pointer overlay with dynamic glowing comet tail.
+ *
+ * Manages its own pointer event listeners, cursor visibility, and keyboard toggle.
+ * Toggle with the L key (configurable) or programmatically via the returned controller.
+ *
+ * @example
+ * ```ts
+ * stage.overlay(LaserPointer());
+ * ```
+ *
+ * @category Overlays
  */
-export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
+export function LaserPointer(
+  options: LaserPointerOptions = {},
+): OverlayPlugin & LaserPointerController {
   const colorRgb = hexToRgb(options.color ?? "#ff0055");
   const trailDurationMs = options.trailDurationMs ?? 160;
   const idleTimeoutMs = options.idleTimeoutMs ?? 2000;
+  const cursorIdleMs = options.cursorIdleMs ?? 2000;
+  const toggleKey = options.toggleKey === undefined ? "l" : options.toggleKey;
 
-  let ctx: PointerContext | null = null;
+  let ctx: OverlayContext | null = null;
   let canvas: HTMLCanvasElement | null = null;
   let gl: WebGLRenderingContext | null = null;
   let program: WebGLProgram | null = null;
@@ -122,18 +152,25 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
   let uSegmentAgesLoc: WebGLUniformLocation | null = null;
   let uSegmentCountLoc: WebGLUniformLocation | null = null;
 
-  let width = 0;
-  let height = 0;
+  let canvasWidth = 0;
+  let canvasHeight = 0;
   let dpr = 1;
 
-  let isActive = false;
+  let isActive = options.active ?? false;
   let currentX = -100;
   let currentY = -100;
 
   let rawPoints: RawPoint[] = [];
 
   let rafId: number | null = null;
-  let idleTimer: number | null = null;
+  let pointerIdleTimer: number | null = null;
+  let cursorIdleTimer: number | null = null;
+
+  let boundOnResize: (() => void) | null = null;
+  let boundOnPointerMove: ((e: PointerEvent) => void) | null = null;
+  let boundOnPointerDown: ((e: PointerEvent) => void) | null = null;
+  let boundOnPointerUp: ((e: PointerEvent) => void) | null = null;
+  let boundOnKeyDown: ((e: KeyboardEvent) => void) | null = null;
 
   const initGL = () => {
     if (!canvas) return;
@@ -179,16 +216,16 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
     gl.uniform3f(uColorLoc, colorRgb[0], colorRgb[1], colorRgb[2]);
   };
 
-  const resize = () => {
+  const resizeCanvas = () => {
     if (!canvas || !gl) return;
     dpr = window.devicePixelRatio || 1;
-    width = window.innerWidth;
-    height = window.innerHeight;
+    canvasWidth = window.innerWidth;
+    canvasHeight = window.innerHeight;
 
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    canvas.width = Math.floor(canvasWidth * dpr);
+    canvas.height = Math.floor(canvasHeight * dpr);
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
 
     gl.viewport(0, 0, canvas.width, canvas.height);
   };
@@ -202,10 +239,8 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
     const now = performance.now();
     const timeSec = timeMs * 0.001;
 
-    // Clean expired points
     rawPoints = rawPoints.filter((p) => now - p.time < trailDurationMs);
 
-    // Build Continuous Spline Segments (up to 48 segments)
     const maxSegments = 48;
     const segmentsData = new Float32Array(maxSegments * 4);
     const agesData = new Float32Array(maxSegments * 2);
@@ -240,9 +275,7 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    const isSettled = rawPoints.length === 0;
-
-    if (!isSettled) {
+    if (rawPoints.length > 0) {
       rafId = requestAnimationFrame(render);
     } else {
       rafId = null;
@@ -255,15 +288,15 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
     }
   };
 
-  const resetIdleTimer = () => {
-    if (idleTimer !== null) {
-      window.clearTimeout(idleTimer);
+  const resetPointerIdleTimer = () => {
+    if (pointerIdleTimer !== null) {
+      window.clearTimeout(pointerIdleTimer);
     }
     if (canvas) {
       canvas.style.opacity = "1";
     }
     if (isActive && idleTimeoutMs > 0) {
-      idleTimer = window.setTimeout(() => {
+      pointerIdleTimer = window.setTimeout(() => {
         if (canvas) {
           canvas.style.opacity = "0";
         }
@@ -271,10 +304,99 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
     }
   };
 
-  return {
-    id: "laser-pointer",
+  const updateCursorVisibility = () => {
+    if (!ctx) return;
+    const container = ctx.container;
+    if (isActive) {
+      container.classList.add("sr-pointer-mode");
+      container.classList.remove("sr-cursor-hidden");
+      if (cursorIdleTimer !== null) {
+        window.clearTimeout(cursorIdleTimer);
+        cursorIdleTimer = null;
+      }
+      return;
+    }
 
-    mount(context: PointerContext) {
+    container.classList.remove("sr-pointer-mode");
+    container.classList.remove("sr-cursor-hidden");
+    if (cursorIdleTimer !== null) {
+      window.clearTimeout(cursorIdleTimer);
+    }
+    cursorIdleTimer = window.setTimeout(() => {
+      if (ctx && !isActive) {
+        ctx.container.classList.add("sr-cursor-hidden");
+      }
+    }, cursorIdleMs);
+  };
+
+  const toPointerCoords = (e: MouseEvent | PointerEvent) => {
+    const screenX = e.clientX;
+    const screenY = e.clientY;
+    if (!ctx) {
+      return { screenX, screenY, virtualX: screenX, virtualY: screenY };
+    }
+    const rect = ctx.viewport.getBoundingClientRect();
+    const scale = rect.width / ctx.width;
+    const virtualX = (e.clientX - rect.left) / scale;
+    const virtualY = (e.clientY - rect.top) / scale;
+    return { screenX, screenY, virtualX, virtualY };
+  };
+
+  const setActive = (active: boolean) => {
+    isActive = active;
+    if (active) {
+      if (canvas) canvas.style.opacity = "1";
+      resetPointerIdleTimer();
+      startLoop();
+    } else {
+      if (canvas) canvas.style.opacity = "0";
+      rawPoints = [];
+      if (pointerIdleTimer !== null) {
+        window.clearTimeout(pointerIdleTimer);
+        pointerIdleTimer = null;
+      }
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (gl) {
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
+    }
+    updateCursorVisibility();
+  };
+
+  const moveTo = (screenX: number, screenY: number, virtualX: number, virtualY: number) => {
+    if (!ctx) return;
+
+    currentX = screenX;
+    currentY = screenY;
+    const now = performance.now();
+
+    const last = rawPoints[0];
+    if (!last || Math.hypot(last.x - currentX, last.y - currentY) > 1.0) {
+      rawPoints.unshift({ x: currentX, y: currentY, time: now });
+    }
+
+    ctx.viewport.style.setProperty("--sr-pointer-x", `${virtualX}px`);
+    ctx.viewport.style.setProperty("--sr-pointer-y", `${virtualY}px`);
+
+    if (isActive) {
+      resetPointerIdleTimer();
+      startLoop();
+    }
+  };
+
+  return {
+    get active(): boolean {
+      return isActive;
+    },
+
+    set active(value: boolean) {
+      setActive(value);
+    },
+
+    mount(context: OverlayContext) {
       ctx = context;
 
       canvas = document.createElement("canvas");
@@ -289,66 +411,82 @@ export function laserPointer(options: LaserPointerOptions = {}): PointerPlugin {
       `;
 
       initGL();
-      resize();
-      window.addEventListener("resize", resize);
+      resizeCanvas();
+
+      boundOnResize = resizeCanvas;
+      window.addEventListener("resize", boundOnResize);
 
       ctx.container.appendChild(canvas);
-    },
 
-    setActive(active: boolean) {
-      isActive = active;
-      if (active) {
-        if (canvas) canvas.style.opacity = "1";
-        resetIdleTimer();
-        startLoop();
-      } else {
-        if (canvas) canvas.style.opacity = "0";
-        rawPoints = [];
-        if (idleTimer !== null) {
-          window.clearTimeout(idleTimer);
-          idleTimer = null;
+      boundOnPointerMove = (e: PointerEvent) => {
+        updateCursorVisibility();
+        const coords = toPointerCoords(e);
+        if (typeof e.getCoalescedEvents === "function") {
+          const events = e.getCoalescedEvents();
+          if (events && events.length > 0) {
+            for (const ce of events) {
+              const c = toPointerCoords(ce);
+              moveTo(c.screenX, c.screenY, c.virtualX, c.virtualY);
+            }
+            return;
+          }
         }
-        if (rafId !== null) {
-          cancelAnimationFrame(rafId);
-          rafId = null;
-        }
-        if (gl) {
-          gl.clear(gl.COLOR_BUFFER_BIT);
-        }
+        moveTo(coords.screenX, coords.screenY, coords.virtualX, coords.virtualY);
+      };
+      window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
+
+      boundOnPointerDown = (_e: PointerEvent) => {};
+      window.addEventListener("pointerdown", boundOnPointerDown);
+
+      boundOnPointerUp = (_e: PointerEvent) => {};
+      window.addEventListener("pointerup", boundOnPointerUp);
+
+      if (toggleKey !== null) {
+        boundOnKeyDown = (e: KeyboardEvent) => {
+          if (e.key === toggleKey || e.key === toggleKey.toUpperCase()) {
+            setActive(!isActive);
+          }
+        };
+        window.addEventListener("keydown", boundOnKeyDown);
       }
-    },
-
-    moveTo(coords: PointerCoordinates) {
-      if (!ctx) return;
-
-      currentX = coords.screenX;
-      currentY = coords.screenY;
-      const now = performance.now();
-
-      const last = rawPoints[0];
-      if (!last || Math.hypot(last.x - currentX, last.y - currentY) > 1.0) {
-        rawPoints.unshift({ x: currentX, y: currentY, time: now });
-      }
-
-      ctx.viewport.style.setProperty("--sr-pointer-x", `${coords.virtualX}px`);
-      ctx.viewport.style.setProperty("--sr-pointer-y", `${coords.virtualY}px`);
 
       if (isActive) {
-        resetIdleTimer();
-        startLoop();
+        setActive(true);
+      } else {
+        updateCursorVisibility();
       }
+    },
+
+    show() {
+      setActive(true);
+    },
+
+    hide() {
+      setActive(false);
     },
 
     destroy() {
-      if (idleTimer !== null) {
-        window.clearTimeout(idleTimer);
-        idleTimer = null;
+      if (pointerIdleTimer !== null) {
+        window.clearTimeout(pointerIdleTimer);
+        pointerIdleTimer = null;
+      }
+      if (cursorIdleTimer !== null) {
+        window.clearTimeout(cursorIdleTimer);
+        cursorIdleTimer = null;
       }
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
-      window.removeEventListener("resize", resize);
+      if (boundOnResize) window.removeEventListener("resize", boundOnResize);
+      if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
+      if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
+      if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
+      if (boundOnKeyDown) window.removeEventListener("keydown", boundOnKeyDown);
+      if (ctx) {
+        ctx.container.classList.remove("sr-pointer-mode");
+        ctx.container.classList.remove("sr-cursor-hidden");
+      }
       if (canvas) {
         canvas.remove();
         canvas = null;

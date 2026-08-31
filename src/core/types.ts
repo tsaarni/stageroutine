@@ -198,6 +198,70 @@ export interface StageContext {
 }
 
 /**
+ * Context passed to overlay plugins when they are mounted on the stage.
+ * Provides the DOM containers, stage dimensions, navigation methods, and event subscriptions.
+ * @category Core
+ */
+export interface OverlayContext {
+  /** The stage top-level container element (screen space). */
+  container: HTMLElement;
+  /** The scaled virtual viewport element (e.g. 1920×1080). */
+  viewport: HTMLElement;
+  /** Virtual stage width in pixels (e.g. 1920). */
+  width: number;
+  /** Virtual stage height in pixels (e.g. 1080). */
+  height: number;
+  /** Advance to the next step. */
+  next(): void;
+  /** Go back to the previous step. */
+  prev(): void;
+  /** Jump to the first step of the next scene. */
+  nextScene(): void;
+  /** Jump to the first step of the previous scene. */
+  prevScene(): void;
+  /** Subscribe to stage events. Returns an unsubscribe function. */
+  on<K extends keyof StageEventMap>(
+    event: K,
+    handler: (data: StageEventMap[K]) => void,
+  ): () => void;
+}
+
+/**
+ * Interface for overlay plugins that attach interactive UI on top of the stage.
+ *
+ * Overlays are mounted via `stage.overlay(plugin)` and receive an {@link OverlayContext}
+ * with navigation methods and event subscriptions.
+ *
+ * @example
+ * ```ts
+ * const myOverlay: OverlayPlugin = {
+ *   mount(ctx) {
+ *     const btn = document.createElement("button");
+ *     btn.textContent = "Next";
+ *     btn.addEventListener("click", () => ctx.next());
+ *     ctx.container.appendChild(btn);
+ *   },
+ *   show() {},
+ *   hide() {},
+ *   destroy() {},
+ * };
+ * stage.overlay(myOverlay);
+ * ```
+ *
+ * @category Core
+ */
+export interface OverlayPlugin {
+  /** Called once when the overlay is attached to the stage. */
+  mount(ctx: OverlayContext): void;
+  /** Show the overlay. */
+  show(): void;
+  /** Hide the overlay. */
+  hide(): void;
+  /** Remove overlay from the DOM and clean up all listeners. */
+  destroy(): void;
+}
+
+/**
  * @internal
  */
 export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void;

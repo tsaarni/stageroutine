@@ -2,7 +2,6 @@
  * The main presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  */
 
-import { type PointerPlugin, laserPointer } from "../pointers/index";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { MetricRegistry } from "./metrics";
 import { type ElementHost, createReactiveProxy } from "./proxy";
@@ -11,6 +10,8 @@ import type {
   Background,
   EaseCurve,
   ElementAnchor,
+  OverlayContext,
+  OverlayPlugin,
   ReactiveElementBase,
   StageEventMap,
   StageOptions,
@@ -130,70 +131,45 @@ export class Stage implements ElementHost {
     progress: number;
   }[] = [];
 
-  // Presenter Tools & Pointer State
-  private activePointer: PointerPlugin | null = null;
-  private isPointerActive = false;
-  private cursorIdleTimer: number | null = null;
+  // Overlay Plugins
+  private overlays: OverlayPlugin[] = [];
 
-  get laserActive(): boolean {
-    return this.isPointerActive;
-  }
-
-  set laserActive(active: boolean) {
-    this.isPointerActive = active;
-    this.activePointer?.setActive(active);
-    this._updateCursorVisibility();
-  }
-
-  get pointerActive(): boolean {
-    return this.isPointerActive;
-  }
-
-  set pointerActive(active: boolean) {
-    this.isPointerActive = active;
-    this.activePointer?.setActive(active);
-    this._updateCursorVisibility();
-  }
-
-  private _updateCursorVisibility(): void {
-    if (!this.container) return;
-    if (this.isPointerActive) {
-      this.container.classList.add("sr-pointer-mode");
-      this.container.classList.remove("sr-cursor-hidden");
-      if (this.cursorIdleTimer !== null) {
-        window.clearTimeout(this.cursorIdleTimer);
-        this.cursorIdleTimer = null;
-      }
-      return;
-    }
-
-    this.container.classList.remove("sr-pointer-mode");
-    this.container.classList.remove("sr-cursor-hidden");
-    if (this.cursorIdleTimer !== null) {
-      window.clearTimeout(this.cursorIdleTimer);
-    }
-    this.cursorIdleTimer = window.setTimeout(() => {
-      if (this.container && !this.isPointerActive) {
-        this.container.classList.add("sr-cursor-hidden");
-      }
-    }, 2000);
-  }
-
-  usePointer(pointer: PointerPlugin): this {
-    if (this.activePointer) {
-      this.activePointer.destroy();
-    }
-    this.activePointer = pointer;
-    if (this.container && this.viewport) {
-      this.activePointer.mount({
-        container: this.container,
-        viewport: this.viewport,
-        width: this.options.width || 1920,
-        height: this.options.height || 1080,
-      });
-      this.activePointer.setActive(this.isPointerActive);
+  /**
+   * Attaches an overlay plugin to the stage.
+   *
+   * If the stage is already mounted, the overlay is mounted immediately.
+   * Otherwise it is queued and mounted when `mount()` is called.
+   *
+   * @example
+   * ```ts
+   * stage.overlay(NavigationOverlay());
+   * ```
+   */
+  overlay(plugin: OverlayPlugin): this {
+    this.overlays.push(plugin);
+    if (this.container) {
+      plugin.mount(this._createOverlayContext());
     }
     return this;
+  }
+
+  private _createOverlayContext(): OverlayContext {
+    const container = this.container;
+    const viewport = this.viewport;
+    if (!container || !viewport) {
+      throw new Error("Cannot create overlay context before stage is mounted");
+    }
+    return {
+      container,
+      viewport,
+      width: this.options.width || 1920,
+      height: this.options.height || 1080,
+      next: () => this.next(),
+      prev: () => this.prev(),
+      nextScene: () => this.nextScene(),
+      prevScene: () => this.prevScene(),
+      on: this.on.bind(this),
+    };
   }
 
   on<K extends keyof StageEventMap>(
@@ -240,8 +216,6 @@ export class Stage implements ElementHost {
       ...(this.options.theme || {}),
     };
 
-    this.activePointer = laserPointer();
-
     this._registerCoreMetrics();
 
     if (typeof window !== "undefined") {
@@ -251,6 +225,8 @@ export class Stage implements ElementHost {
           if (this.steps.length === 0) return;
           if (event.data?.action === "next") this.next();
           if (event.data?.action === "prev") this.prev();
+          if (event.data?.action === "nextScene") this.nextScene();
+          if (event.data?.action === "prevScene") this.prevScene();
           if (event.data?.action === "gotoScene") this.gotoScene(event.data.sceneIndex);
           if (event.data?.action === "requestState") this._broadcast();
         };
@@ -366,16 +342,6 @@ export class Stage implements ElementHost {
       }
 
       return result;
-    });
-
-    // Pointer Plugin Metrics
-    this.metrics.register("pointer", () => {
-      if (this.activePointer?.getMetrics) {
-        return this.activePointer.getMetrics();
-      }
-      return {
-        is_active: this.isPointerActive ? 1 : 0,
-      };
     });
   }
 
@@ -681,66 +647,15 @@ export class Stage implements ElementHost {
     window.addEventListener("resize", updateScale);
     updateScale();
 
-    // Mount and bind active pointer plugin
-    if (this.activePointer) {
-      this.activePointer.mount({
-        container: this.container,
-        viewport: this.viewport,
-        width: this.options.width || 1920,
-        height: this.options.height || 1080,
-      });
-      this.activePointer.setActive(this.isPointerActive);
+    // Mount queued overlay plugins
+    if (this.overlays.length > 0) {
+      const ctx = this._createOverlayContext();
+      for (const plugin of this.overlays) {
+        plugin.mount(ctx);
+      }
     }
 
-    const toPointerCoords = (e: MouseEvent | PointerEvent) => {
-      const screenX = e.clientX;
-      const screenY = e.clientY;
-      if (!this.viewport) {
-        return { screenX, screenY, virtualX: screenX, virtualY: screenY };
-      }
-      const rect = this.viewport.getBoundingClientRect();
-      const scale = rect.width / (this.options.width || 1920);
-      const virtualX = (e.clientX - rect.left) / scale;
-      const virtualY = (e.clientY - rect.top) / scale;
-      return { screenX, screenY, virtualX, virtualY };
-    };
-
-    this._updateCursorVisibility();
-
-    window.addEventListener(
-      "pointermove",
-      (e) => {
-        this._updateCursorVisibility();
-        if (!this.activePointer) return;
-        if (typeof e.getCoalescedEvents === "function") {
-          const events = e.getCoalescedEvents();
-          if (events && events.length > 0) {
-            for (const ce of events) {
-              this.activePointer.moveTo(toPointerCoords(ce));
-            }
-            return;
-          }
-        }
-        const coords = toPointerCoords(e);
-        this.activePointer.moveTo(coords);
-      },
-      { passive: true },
-    );
-
-    window.addEventListener("pointerdown", (e) => {
-      if (!this.activePointer || !this.isPointerActive) return;
-      const coords = toPointerCoords(e);
-      this.activePointer.onPointerDown?.(coords);
-      this.activePointer.ping?.(coords);
-    });
-
-    window.addEventListener("pointerup", (e) => {
-      if (!this.activePointer || !this.isPointerActive) return;
-      const coords = toPointerCoords(e);
-      this.activePointer.onPointerUp?.(coords);
-    });
-
-    // Keyboard controls
+    // Keyboard controls (navigation only; pointer toggle is handled by pointer overlay)
     window.addEventListener("keydown", (e) => {
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
@@ -748,18 +663,16 @@ export class Stage implements ElementHost {
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
         this.prev();
-      } else if (e.key === "l" || e.key === "L") {
-        this.laserActive = !this.laserActive;
       }
     });
 
     // Check URL Hash for live HMR positioning
-    const initialIndex = this._parseHashStep();
+    const initialIndex = this._resolveHashTarget();
     this.currentStepIndex = initialIndex;
     this._applySnapshot(initialIndex);
 
     window.addEventListener("hashchange", () => {
-      const idx = this._parseHashStep();
+      const idx = this._resolveHashTarget();
       if (idx !== this.currentStepIndex) {
         this.currentStepIndex = idx;
         this._applySnapshot(idx);
@@ -797,23 +710,85 @@ export class Stage implements ElementHost {
   }
 
   /**
+   * Returns the list of distinct scenes computed from the step sequence.
+   * Each entry contains the scene's 0-based index, name, first step index, and step count.
+   */
+  private _getScenes(): {
+    sceneIndex: number;
+    sceneName: string;
+    startStepIndex: number;
+    stepCount: number;
+  }[] {
+    const scenes: {
+      sceneIndex: number;
+      sceneName: string;
+      startStepIndex: number;
+      stepCount: number;
+    }[] = [];
+    let current: (typeof scenes)[number] | null = null;
+
+    for (let i = 0; i < this.steps.length; i++) {
+      const name = this.steps[i].sceneName || "";
+      if (!current || current.sceneName !== name) {
+        current = { sceneIndex: scenes.length, sceneName: name, startStepIndex: i, stepCount: 1 };
+        scenes.push(current);
+      } else {
+        current.stepCount++;
+      }
+    }
+    return scenes;
+  }
+
+  /**
+   * Returns the 0-based index of the scene that contains the given step index,
+   * or 0 if no scenes exist.
+   */
+  private _currentSceneIndex(): number {
+    const scenes = this._getScenes();
+    for (const sc of scenes) {
+      if (
+        this.currentStepIndex >= sc.startStepIndex &&
+        this.currentStepIndex < sc.startStepIndex + sc.stepCount
+      ) {
+        return sc.sceneIndex;
+      }
+    }
+    return 0;
+  }
+
+  /**
    * Jump to a specific scene by 0-indexed scene number.
    * Restores the recorded state of the first step of that scene.
    */
   gotoScene(sceneIndex: number): void {
-    let currentIdx = 0;
-    let lastSceneName: string | null = null;
-    for (let i = 0; i < this.steps.length; i++) {
-      const name = this.steps[i].sceneName || "";
-      if (name !== lastSceneName) {
-        if (currentIdx === sceneIndex) {
-          this.currentStepIndex = i;
-          this._applySnapshot(i);
-          return;
-        }
-        currentIdx++;
-        lastSceneName = name;
-      }
+    const scenes = this._getScenes();
+    const target = scenes[sceneIndex];
+    if (target) {
+      this.currentStepIndex = target.startStepIndex;
+      this._applySnapshot(target.startStepIndex);
+    }
+  }
+
+  /**
+   * Jump to the first step of the next scene.
+   * No-op if already on the last scene.
+   */
+  nextScene(): void {
+    const idx = this._currentSceneIndex();
+    const scenes = this._getScenes();
+    if (idx < scenes.length - 1) {
+      this.gotoScene(idx + 1);
+    }
+  }
+
+  /**
+   * Jump to the first step of the previous scene.
+   * No-op if already on the first scene.
+   */
+  prevScene(): void {
+    const idx = this._currentSceneIndex();
+    if (idx > 0) {
+      this.gotoScene(idx - 1);
     }
   }
 
@@ -1164,20 +1139,65 @@ export class Stage implements ElementHost {
     }
   }
 
+  private _slugifySceneName(name: string): string {
+    return name.toLowerCase().replace(/\s+/g, "-");
+  }
+
   private _updateHash(): void {
     if (typeof window === "undefined") return;
     const step = this.steps[this.currentStepIndex];
     if (step) {
-      window.location.hash = `#${step.sceneName.toLowerCase().replace(/\s+/g, "-")}/${step.stepIndex}`;
+      window.location.hash = `#${this._slugifySceneName(step.sceneName)}/${step.stepIndex}`;
     }
   }
 
-  private _parseHashStep(): number {
+  /**
+   * Resolves the URL hash fragment to a step index.
+   *
+   * Supported formats:
+   * - `#scene-name/stepIndex` — go to that exact step (fully qualified)
+   * - `#scene-name` — go to first step of that scene
+   * - `#/stepIndex` — go to that step by global index
+   */
+  private _resolveHashTarget(): number {
     if (typeof window === "undefined" || !window.location.hash) return 0;
-    const match = window.location.hash.match(/\/(\d+)$/);
-    if (match?.[1]) {
-      return Number.parseInt(match[1], 10);
+
+    const raw = window.location.hash.slice(1); // strip leading '#'
+
+    // Format 3: #/stepIndex — bare step number
+    if (raw.startsWith("/")) {
+      const stepStr = raw.slice(1);
+      const stepIdx = Number.parseInt(stepStr, 10);
+      if (!Number.isNaN(stepIdx) && stepIdx >= 0 && stepIdx < this.steps.length) {
+        return stepIdx;
+      }
+      return 0;
     }
+
+    const slashPos = raw.lastIndexOf("/");
+
+    if (slashPos !== -1) {
+      const scenePart = raw.slice(0, slashPos);
+      const stepStr = raw.slice(slashPos + 1);
+      const stepIdx = Number.parseInt(stepStr, 10);
+
+      // Format 1: #scene-name/stepIndex — fully qualified
+      if (scenePart.length > 0 && !Number.isNaN(stepIdx)) {
+        if (stepIdx >= 0 && stepIdx < this.steps.length) {
+          return stepIdx;
+        }
+        return 0;
+      }
+    }
+
+    // Format 2: #scene-name — scene name only, go to first step of that scene
+    const slug = raw;
+    for (const step of this.steps) {
+      if (this._slugifySceneName(step.sceneName) === slug) {
+        return step.stepIndex;
+      }
+    }
+
     return 0;
   }
 
@@ -1186,37 +1206,7 @@ export class Stage implements ElementHost {
     const step = this.steps[this.currentStepIndex];
     const nextStep = this.steps[this.currentStepIndex + 1];
 
-    // Compute distinct scenes from steps
-    const scenes: {
-      sceneIndex: number;
-      sceneName: string;
-      startStepIndex: number;
-      stepCount: number;
-    }[] = [];
-
-    let currentScene: {
-      sceneIndex: number;
-      sceneName: string;
-      startStepIndex: number;
-      stepCount: number;
-    } | null = null;
-
-    for (let i = 0; i < this.steps.length; i++) {
-      const s = this.steps[i];
-      const sceneName: string = s.sceneName || (currentScene ? currentScene.sceneName : "Scene 1");
-      if (!currentScene || currentScene.sceneName !== sceneName) {
-        currentScene = {
-          sceneIndex: scenes.length,
-          sceneName,
-          startStepIndex: i,
-          stepCount: 1,
-        };
-        scenes.push(currentScene);
-      } else {
-        currentScene.stepCount++;
-      }
-    }
-
+    const scenes = this._getScenes();
     const currentStepIdx = this.currentStepIndex;
     const activeScene = scenes.find(
       (sc) =>

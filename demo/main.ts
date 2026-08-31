@@ -11,6 +11,8 @@ import {
   Connector,
   Diamond,
   Kicker,
+  LaserPointer,
+  NavigationOverlay,
   Pill,
   SequenceDiagram,
   Stage,
@@ -1356,5 +1358,7 @@ editorialLead.opacity = to(1).when(brandTitle, "halfway");
 heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 
-// Mount the stage into the DOM and begin keyboard/hash navigation listeners.
+// Register overlays and mount the stage into the DOM.
+stage.overlay(LaserPointer());
+stage.overlay(NavigationOverlay());
 stage.mount();

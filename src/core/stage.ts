@@ -90,6 +90,7 @@ export class Stage implements ElementHost {
   private currentStepTransitions: TransitionRecord[] = [];
   private currentStepActions: (() => void)[] = [];
   private currentStepNotes: string | undefined = undefined;
+  private notesDoc = "";
   private pendingMotionFlushes = new Set<() => void>();
   private isMountedState = false;
 
@@ -541,6 +542,15 @@ export class Stage implements ElementHost {
       }
     }
     this.activeElementIds = ids;
+  }
+
+  setNotesDocument(doc: string): this {
+    this.notesDoc = doc;
+    return this;
+  }
+
+  notes(doc: string): this {
+    return this.setNotesDocument(doc);
   }
 
   setNotes(text: string | string[]): void {
@@ -1261,6 +1271,7 @@ export class Stage implements ElementHost {
       totalScenes: scenes.length,
       scene: activeScene.sceneName,
       notes: step?.notes ?? "",
+      notesDoc: this.notesDoc,
       nextScene: nextStep?.sceneName ?? "",
       nextNotes: nextStep?.notes ?? "",
       scenes,

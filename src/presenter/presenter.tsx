@@ -13,7 +13,12 @@ import "@fontsource/material-symbols-outlined/400.css";
 
 import { TimerWidget } from "./components/TimerWidget";
 import { WallClock } from "./components/WallClock";
-import { PresenterRecorder, type PresenterSceneInfo, createPresenterClient } from "./index";
+import {
+  type PresenterMessage,
+  PresenterRecorder,
+  type PresenterSceneInfo,
+  createPresenterClient,
+} from "./index";
 
 const client = createPresenterClient();
 const recorder = new PresenterRecorder();
@@ -37,9 +42,6 @@ const sceneMenu = document.getElementById("scene-menu");
 
 const btnNext = document.getElementById("btn-next") as HTMLButtonElement | null;
 const btnPrev = document.getElementById("btn-prev") as HTMLButtonElement | null;
-const btnFontInc = document.getElementById("btn-font-inc");
-const btnFontDec = document.getElementById("btn-font-dec");
-const btnFontReset = document.getElementById("btn-font-reset");
 
 // Mount Header Widgets (Clock & Timer)
 if (headerRight) {
@@ -144,52 +146,173 @@ window.addEventListener("click", (e) => {
   }
 });
 
+import { marked } from "marked";
+
 // ============================================================================
-// 1. Notes Formatting Helper
+// 1. Markdown Notes Formatting Helper
 // ============================================================================
-function renderNotesContent(notesRaw: string | undefined): void {
+function slugifyScene(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function parseMarkdownDocument(doc: string): string {
+  if (!doc || !doc.trim()) return "";
+
+  const stepBreakHtml = (stepIdx: number) => `
+<div class="notes-step-break" data-break-index="${stepIdx}">
+  <span class="step-break-bullet">▸</span>
+  <span class="step-break-label">Step ${stepIdx + 1}</span>
+  <span class="kbd">Space</span>
+  <span class="step-break-line"></span>
+</div>
+`;
+
+  // Split document by ## Scene Headings
+  const sections = doc.split(/(?=^##\s+)/m);
+  const renderedSections: string[] = [];
+
+  for (const sec of sections) {
+    const trimmed = sec.trim();
+    if (!trimmed) continue;
+
+    const match = trimmed.match(/^##\s+([^\n]+)/m);
+    const sceneTitle = match ? match[1].trim() : "";
+    const slug = slugifyScene(sceneTitle);
+    const bodyWithoutHeading = trimmed.replace(/^##\s+[^\n]+\n?/, "");
+
+    // Split scene into individual step blocks by <!-- step -->
+    const stepChunks = bodyWithoutHeading.split(/<!--\s*step\s*-->/gi);
+    const renderedBlocks = stepChunks.map((chunk, idx) => {
+      const html = marked.parse(chunk.trim()) as string;
+      return `<div class="notes-step-block" data-step-index="${idx}">${html}</div>`;
+    });
+
+    let bodyHtml = "";
+    for (let i = 0; i < renderedBlocks.length; i++) {
+      if (i > 0) {
+        bodyHtml += stepBreakHtml(i);
+      }
+      bodyHtml += renderedBlocks[i];
+    }
+
+    renderedSections.push(
+      `<section class="notes-scene-section" id="notes-scene-${slug}" data-scene="${sceneTitle}">
+        <h2 class="notes-scene-heading"><span class="scene-heading-tag">SCENE</span>${sceneTitle}</h2>
+        <div class="notes-scene-body">
+          ${bodyHtml}
+        </div>
+      </section>`,
+    );
+  }
+
+  return renderedSections.join("\n");
+}
+
+let lastRenderedDoc = "";
+
+function updateNotesDisplay(msg: PresenterMessage): void {
   if (!currentNotes) return;
 
-  if (!notesRaw || notesRaw.trim().length === 0) {
-    currentNotes.replaceChildren(
-      <span class="notes-empty-state">No speaker notes for this step.</span>,
-    );
+  const doc = msg.notesDoc || msg.notes || "";
+  if (!doc) {
+    currentNotes.replaceChildren(<span class="notes-empty-state">No speaker notes loaded.</span>);
     return;
   }
 
-  const lines = notesRaw
-    .trim()
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+  if (doc !== lastRenderedDoc) {
+    lastRenderedDoc = doc;
+    currentNotes.innerHTML = parseMarkdownDocument(doc);
+  }
 
-  const hasBullets = lines.some((l) => l.startsWith("-") || l.startsWith("*") || l.startsWith("•"));
+  // Determine current active scene and step within scene
+  const activeScene = msg.scenes?.find(
+    (sc) => msg.step >= sc.startStepIndex && msg.step < sc.startStepIndex + sc.stepCount,
+  );
+  const activeSceneName = activeScene?.sceneName || msg.scene;
+  const stepInScene = activeScene ? msg.step - activeScene.startStepIndex : 0;
 
-  if (hasBullets) {
-    currentNotes.replaceChildren(
-      <ul>
-        {lines.map((l) => (
-          <li key={l}>{l.replace(/^[-*•]\s*/, "")}</li>
-        ))}
-      </ul>,
-    );
-  } else {
-    currentNotes.textContent = notesRaw;
+  if (activeSceneName) {
+    const slug = slugifyScene(activeSceneName);
+    const targetSection =
+      document.getElementById(`notes-scene-${slug}`) ||
+      currentNotes.querySelector(`[data-scene="${activeSceneName}"]`);
+
+    for (const sec of currentNotes.querySelectorAll(".notes-scene-section")) {
+      const isCurrentScene = sec === targetSection;
+      sec.classList.toggle("active-scene", isCurrentScene);
+
+      if (isCurrentScene) {
+        // Highlight the specific active step block within the current scene
+        const stepBlocks = sec.querySelectorAll(".notes-step-block");
+        const totalBlocks = stepBlocks.length;
+        const targetStepIdx = Math.min(stepInScene, Math.max(0, totalBlocks - 1));
+
+        for (const block of stepBlocks) {
+          const blockIdx = Number(block.getAttribute("data-step-index"));
+          block.classList.toggle("active-step", blockIdx === targetStepIdx);
+          block.classList.toggle("past-step", blockIdx < targetStepIdx);
+          block.classList.toggle("future-step", blockIdx > targetStepIdx);
+        }
+
+        // Update step break badges
+        for (const brk of sec.querySelectorAll(".notes-step-break")) {
+          const brkIdx = Number(brk.getAttribute("data-break-index"));
+          brk.classList.toggle("passed-break", brkIdx <= targetStepIdx);
+        }
+      } else {
+        for (const block of sec.querySelectorAll(".notes-step-block")) {
+          block.classList.remove("active-step", "past-step", "future-step");
+        }
+      }
+    }
+
+    if (targetSection) {
+      const stepBlocks = targetSection.querySelectorAll(".notes-step-block");
+      const targetStepIdx = Math.min(stepInScene, Math.max(0, stepBlocks.length - 1));
+      const activeBlock =
+        targetSection.querySelector(`.notes-step-block[data-step-index="${targetStepIdx}"]`) ||
+        targetSection;
+      activeBlock.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }
 }
 
-const DEFAULT_FONT_SIZE = 15;
-let currentFontSize = DEFAULT_FONT_SIZE; // px
-function setFontSize(size: number): void {
-  currentFontSize = Math.min(36, Math.max(10, size));
-  if (currentNotes) {
-    currentNotes.style.fontSize = `${currentFontSize}px`;
-  }
-}
+// Click to select/jump directly to a scene or step
+currentNotes?.addEventListener("click", (e) => {
+  // If user is selecting/highlighting text, do not trigger navigation
+  if (window.getSelection()?.toString().length) return;
 
-btnFontInc?.addEventListener("click", () => setFontSize(currentFontSize + 2));
-btnFontDec?.addEventListener("click", () => setFontSize(currentFontSize - 2));
-btnFontReset?.addEventListener("click", () => setFontSize(DEFAULT_FONT_SIZE));
+  const target = e.target as HTMLElement;
+
+  // 1. Check if clicked a step block
+  const stepBlock = target.closest(".notes-step-block") as HTMLElement | null;
+  if (stepBlock) {
+    const sceneSection = stepBlock.closest(".notes-scene-section") as HTMLElement | null;
+    const sceneName = sceneSection?.getAttribute("data-scene");
+    const stepOffset = Number(stepBlock.getAttribute("data-step-index")) || 0;
+
+    const sceneInfo = registeredScenes.find((s) => s.sceneName === sceneName);
+    if (sceneInfo) {
+      const targetStep = sceneInfo.startStepIndex + stepOffset;
+      client.gotoStep(targetStep);
+      return;
+    }
+  }
+
+  // 2. Check if clicked a scene heading
+  const sceneHeading = target.closest(".notes-scene-heading") as HTMLElement | null;
+  if (sceneHeading) {
+    const sceneSection = sceneHeading.closest(".notes-scene-section") as HTMLElement | null;
+    const sceneName = sceneSection?.getAttribute("data-scene");
+    const sceneInfo = registeredScenes.find((s) => s.sceneName === sceneName);
+    if (sceneInfo) {
+      client.gotoScene(sceneInfo.sceneIndex);
+    }
+  }
+});
 
 // ============================================================================
 // 2. Presenter Client State Sync
@@ -220,20 +343,20 @@ client.onUpdate((msg) => {
     progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
   }
 
-  // Current speaker notes for this step
-  renderNotesContent(msg.notes);
+  // Render markdown document and track active scene
+  updateNotesDisplay(msg);
 
-  // Coming up next
-  if (msg.nextScene) {
-    if (nextScene) nextScene.textContent = msg.nextScene;
+  // Coming up next: always show the next scene
+  const nextSceneObj = registeredScenes[currentSceneIdx + 1];
+
+  if (nextSceneObj) {
+    if (nextScene) nextScene.textContent = nextSceneObj.sceneName;
     if (nextNotes) {
-      nextNotes.textContent = msg.nextNotes
-        ? msg.nextNotes.replace(/\n+/g, " • ").trim()
-        : "(No notes for next step)";
+      nextNotes.textContent = `Scene ${nextSceneObj.sceneIndex + 1} of ${totalScenes}`;
     }
   } else {
-    if (nextScene) nextScene.textContent = "End of presentation 🎉";
-    if (nextNotes) nextNotes.textContent = "No further steps";
+    if (nextScene) nextScene.textContent = "End of presentation";
+    if (nextNotes) nextNotes.textContent = "All scenes completed";
   }
 
   // Navigation button states (based on linear step index)
@@ -268,9 +391,5 @@ window.addEventListener("keydown", (e) => {
   } else if ((e.key === "r" || e.key === "R") && (e.altKey || e.metaKey || e.ctrlKey)) {
     e.preventDefault();
     recorder.toggle();
-  } else if (e.key === "+" || e.key === "=") {
-    setFontSize(currentFontSize + 4);
-  } else if (e.key === "-" || e.key === "_") {
-    setFontSize(currentFontSize - 4);
   }
 });

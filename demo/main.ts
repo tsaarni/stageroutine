@@ -30,9 +30,10 @@ import {
   typewriter,
   vignette,
 } from "../src/index";
+import notesDoc from "./notes.md?raw";
 
 // Initialize presentation stage with the ASCII Fluid background
-const stage = new Stage().background(AsciiFluid().decorate(vignette()));
+const stage = new Stage().background(AsciiFluid().decorate(vignette())).notes(notesDoc);
 
 // Positioning components:
 // - x, y: The spot on the stage (percentage from top-left, or "center").
@@ -76,13 +77,6 @@ const heroBody = Text("A framework for programmers to build seamless, animated p
 
 // Declare which elements are active in this scene.
 stage.scene("Introduction").with(brandTitle, sectionKicker, editorialLead, heroBody);
-
-// Speaker notes for this scene.
-stage.setNotes([
-  "Welcome to StageRoutine.",
-  "- State mutation drives animation.",
-  "- Canvas acts as a continuous reactive space.",
-]);
 
 // Animate elements into view using direct property assignments.
 sectionKicker.opacity = 1;
@@ -137,11 +131,6 @@ codePanel.x = 110;
 stage
   .scene("Continuous Plane")
   .with(brandTitle, leftHeading, leftBody, codePanel, ...(planeRule ? [planeRule] : []));
-stage.setNotes([
-  "Notice the continuous camera pan:",
-  "- The brand title glides smoothly into the top-left corner.",
-  "- The code block slides in from the right edge with an accent rail.",
-]);
 
 // Reposition brandTitle to the top-left corner.
 brandTitle.x = to(6).ease("cubicInOut");
@@ -199,11 +188,6 @@ arrange.column([rightHeading, rightBody, featureChecklist], {
 stage
   .scene("Snapshot Engine")
   .with(brandTitle, codePanel, rightHeading, rightBody, featureChecklist);
-stage.setNotes([
-  "Watch the horizontal spatial balance:",
-  "- Code panel glides across to the left column.",
-  "- Mechanics & staggered checklist glide in on the right.",
-]);
 
 // Slide left column off-screen.
 leftHeading.opacity = 0;
@@ -243,11 +227,6 @@ const terminalPanel = TerminalWindow({
 stage
   .scene("Presenter Telemetry")
   .with(brandTitle, terminalPanel, rightHeading, rightBody, featureChecklist);
-stage.setNotes([
-  "Vertical camera glide:",
-  "- Code block lifts off the screen.",
-  "- Live dev terminal rises from below.",
-]);
 
 // Slide code block upward off-screen and lift terminal up from below.
 codePanel.y = to(-50).ease("cubicInOut");
@@ -349,10 +328,6 @@ stage
     showcaseCode,
     showcaseTerminal,
   );
-stage.setNotes([
-  "Component Showcase:",
-  "- Displays Title, Text, Kicker, Pill, Card, BulletList, CodeBlock, and TerminalWindow together.",
-]);
 
 // Dismiss previous telemetry scene elements
 terminalPanel.y = to(120).ease("cubicInOut");
@@ -445,12 +420,6 @@ stage
     decoratorTypewriterDemo,
     decoratorCode,
   );
-stage.setNotes([
-  "Element Decorators Scene:",
-  "- Shows how decorators cleanly extend elements without coupling styles or stylesheets.",
-  "- Demonstrates gradient with custom warm palette.",
-  "- Demonstrates typewriter with realistic cadence and blinking cursor.",
-]);
 
 // Dismiss showcase elements
 showcaseKicker.opacity = 0;
@@ -538,11 +507,6 @@ const tableCode = CodeBlock(
 stage
   .scene("Structured Data & Metrics")
   .with(brandTitle, tableKicker, tableHeading, tableText, serviceMetricsTable, tableCode);
-stage.setNotes([
-  "Structured Data & Interactive Metrics Scene:",
-  "- Displays the glassmorphic Table component with metric column alignments.",
-  "- Demonstrates click-and-drag multi-row selection for focusing audience attention during talks.",
-]);
 
 // Dismiss decorator elements
 decoratorKicker.opacity = 0;
@@ -696,14 +660,6 @@ stage
     connGatewayRedis,
   );
 
-stage.setNotes([
-  "Component Architecture Request Flow:",
-  "- Step 1: Ingress traffic enters through API Gateway via HTTPS.",
-  "- Step 2: Gateway queries Redis cache for session token.",
-  "- Step 3: Gateway routes to Auth Service over gRPC, querying PostgreSQL.",
-  "- Step 4: Live callout annotates active perimeter-tracked service.",
-]);
-
 // Dismiss table elements
 tableKicker.opacity = 0;
 tableHeading.opacity = 0;
@@ -835,15 +791,6 @@ stage
     authService,
     ...seq.elements,
   );
-
-stage.setNotes([
-  "Sequence Protocol Flow Scene:",
-  "- Step 1: Client App, API Gateway, and Auth Service fly smoothly into timeline positions.",
-  "- Step 2: Client sends login request to API Gateway.",
-  "- Step 3: Gateway validates credentials against Auth Server.",
-  "- Step 4: Auth Server returns claims and signed JWT to Gateway.",
-  "- Step 5: Gateway returns 200 OK Bearer session to Client.",
-]);
 
 // Reveal Sequence heading
 sequenceKicker.opacity = 1;
@@ -1041,14 +988,6 @@ stage
     tTerminate,
   );
 
-stage.setNotes([
-  "State Machine Topologies Scene:",
-  "- Step 1: Initial pseudostate transitions to Idle.",
-  "- Step 2: Idle transitions to Authenticating on submit().",
-  "- Step 3: Success transitions to Active; failure branches to Rejected with retry.",
-  "- Step 4: Active state can terminate into the Final state.",
-]);
-
 // Dismiss sequence elements
 sequenceKicker.opacity = 0;
 sequenceHeading.opacity = 0;
@@ -1179,12 +1118,6 @@ stage
     connDiamondPill,
   );
 
-stage.setNotes([
-  "Geometric Primitives Scene:",
-  "- Step 1: Initial compact shapes enter with connected auto-tracking lines.",
-  "- Step 2: Shapes dynamically resize and text naturally reflows across line breaks in real time.",
-]);
-
 // Dismiss state machine elements
 stateKicker.opacity = 0;
 stateHeading.opacity = 0;
@@ -1301,12 +1234,6 @@ stage
     crossfadeCode,
   );
 
-stage.setNotes([
-  "Motion Orchestration & Crossfade Scene:",
-  "- Step 1: Legacy pipeline card and code example enter.",
-  "- Step 2: In-place crossfade swaps legacy card with StageRoutine reactive card with depth scaling.",
-]);
-
 // Dismiss geometry elements
 geoKicker.opacity = 0;
 geoHeading.opacity = 0;
@@ -1333,11 +1260,6 @@ stage.pause();
 // --- Scene: Conclusion ---
 
 stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
-stage.setNotes([
-  "Concluding overview:",
-  "- The title glides back to center stage.",
-  "- Press Left Arrow anytime to smoothly rewind.",
-]);
 
 // Dismiss motion elements
 motionKicker.opacity = 0;

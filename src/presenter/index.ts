@@ -6,11 +6,11 @@ import { getActiveStage } from "../core/index";
 import type { StageStateChangedEvent } from "../core/types";
 
 /**
- * Attaches speaker notes to the current stage step.
+ * Attaches the complete speaker notes Markdown document to the stage.
  * @category Presenter
  */
-export function notes(content: string | string[]): void {
-  getActiveStage().setNotes(content);
+export function notes(content: string): void {
+  getActiveStage().setNotesDocument(content);
 }
 
 /**
@@ -68,6 +68,10 @@ export class PresenterClient {
 
   prev(): void {
     this.channel.postMessage({ event: "nav:prevStep" });
+  }
+
+  gotoStep(stepIndex: number): void {
+    this.channel.postMessage({ event: "nav:gotoStep", data: { index: stepIndex } });
   }
 
   gotoScene(sceneIndex: number): void {

@@ -205,6 +205,7 @@ export interface StageStateChangedEvent {
   totalScenes: number;
   scene: string;
   notes: string;
+  notesDoc?: string;
   nextScene: string;
   nextNotes: string;
   scenes: { sceneIndex: number; sceneName: string; startStepIndex: number; stepCount: number }[];

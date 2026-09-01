@@ -147,6 +147,21 @@
   transform: scaleX(-1);
 }
 
+.sr-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  color: inherit;
+  user-select: none;
+}
+
+.sr-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ==========================================================================
    Surface & Container Components
    ========================================================================== */
@@ -190,6 +205,12 @@
   word-break: normal;
   contain: layout style;
   transition: border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.sr-shape .sr-kicker,
+.sr-card .sr-kicker {
+  margin-bottom: 0;
+  line-height: 1.25;
 }
 
 /* Surface variant (default glass container) */

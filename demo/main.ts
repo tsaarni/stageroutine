@@ -2,6 +2,10 @@
  * Demo presentation script showing how to build animated slides with StageRoutine.
  */
 
+import Cpu from "~icons/lucide/cpu";
+import Database from "~icons/lucide/database";
+import Globe from "~icons/lucide/globe";
+import Sparkles from "~icons/lucide/sparkles";
 import {
   AsciiFluid,
   BulletList,
@@ -25,6 +29,7 @@ import {
   crossfade,
   glow,
   gradient,
+  pulseSequence,
   rail,
   to,
   typewriter,
@@ -253,7 +258,13 @@ const customPill = Pill("Reactive", {
   opacity: 0,
 });
 
-arrange.row([showcaseKicker, showcasePill, customPill], {
+const showcaseIcon = Sparkles({
+  size: 24,
+  color: "#f59e0b",
+  opacity: 0,
+});
+
+arrange.row([showcaseKicker, showcasePill, customPill, showcaseIcon], {
   x: 6,
   y: 18,
   gap: 2,
@@ -321,6 +332,7 @@ stage
     showcaseKicker,
     showcasePill,
     customPill,
+    showcaseIcon,
     showcaseTitle,
     showcaseText,
     showcaseCard,
@@ -340,6 +352,7 @@ featureChecklist.opacity = 0;
 showcaseKicker.opacity = 1;
 showcasePill.opacity = 1;
 customPill.opacity = 1;
+showcaseIcon.opacity = 1;
 showcaseTitle.opacity = 1;
 showcaseText.opacity = 1;
 showcaseCard.opacity = 1;
@@ -425,6 +438,7 @@ stage
 showcaseKicker.opacity = 0;
 showcasePill.opacity = 0;
 customPill.opacity = 0;
+showcaseIcon.opacity = 0;
 showcaseTitle.opacity = 0;
 showcaseText.opacity = 0;
 showcaseCard.opacity = 0;
@@ -1154,9 +1168,178 @@ morphPill.width = to(280).duration(0.6).ease("cubicInOut");
 connBoxCircle.pulse({ color: "#38bdf8", duration: 0.5 });
 stage.pause();
 
+// --- Scene: Edge AI Pipeline & Topology ---
+
+const aiKicker = Kicker("10 / Real-Time Intelligence", {
+  opacity: 0,
+});
+
+const aiHeading = Title("Edge AI & Vector Mesh", {
+  opacity: 0,
+  width: "30cqw",
+});
+
+const aiDescription = Text(
+  "Plug icon libraries on-demand and connect them directly into reactive topology networks with real-time signal pulses.",
+  {
+    opacity: 0,
+    width: "30cqw",
+  },
+);
+
+const aiClientNode = Card(
+  [Globe({ size: 36, color: "#38bdf8" }), Kicker("Edge Client", { color: "#38bdf8" })],
+  {
+    opacity: 0,
+    width: 145,
+    height: 130,
+    align: "center",
+  },
+);
+
+const aiGatewayNode = Card(
+  [Cpu({ size: 36, color: "#a855f7" }), Kicker("AI Gateway", { color: "#a855f7" })],
+  {
+    opacity: 0,
+    width: 145,
+    height: 130,
+    align: "center",
+  },
+);
+
+const aiVectorNode = Card(
+  [Database({ size: 36, color: "#10b981" }), Kicker("Vector Memory", { color: "#10b981" })],
+  {
+    opacity: 0,
+    width: 145,
+    height: 130,
+    align: "center",
+  },
+);
+
+const aiReasoningNode = Card(
+  [Sparkles({ size: 36, color: "#f59e0b" }), Kicker("LLM Reasoning", { color: "#f59e0b" })],
+  {
+    opacity: 0,
+    width: 145,
+    height: 130,
+    align: "center",
+  },
+);
+
+const { rule: aiRule } = arrange.split(
+  [aiKicker, aiHeading, aiDescription],
+  [aiClientNode, aiGatewayNode, aiReasoningNode, aiVectorNode],
+  {
+    leftX: 6,
+    rightX: 39,
+    y: 18,
+    gap: 3,
+    rule: { color: "rgba(255, 255, 255, 0.22)", strokeWidth: 2.5, dashed: false },
+  },
+);
+if (aiRule) aiRule.opacity = 0;
+
+arrange.grid(
+  [
+    [aiClientNode, aiGatewayNode, aiReasoningNode],
+    [null, aiVectorNode, null],
+  ],
+  {
+    x: 40,
+    y: 26,
+    gapX: 14.5,
+    gapY: 9.5,
+  },
+);
+
+const connAiClientGateway = Connector(aiClientNode, aiGatewayNode, {
+  label: "Prompt Ingress",
+  color: "#38bdf8",
+  routing: "bezier",
+  fromAnchor: "right",
+  toAnchor: "left",
+  labelOffsetY: -18,
+  end: 0,
+});
+
+const connAiGatewayVector = Connector(aiGatewayNode, aiVectorNode, {
+  label: "Vector Search",
+  color: "#10b981",
+  routing: "corner",
+  fromAnchor: "bottom",
+  toAnchor: "top",
+  labelOffsetX: 108,
+  labelOffsetY: 0,
+  end: 0,
+});
+
+const connAiGatewayLLM = Connector(aiGatewayNode, aiReasoningNode, {
+  label: "Context Stream",
+  color: "#f59e0b",
+  routing: "bezier",
+  fromAnchor: "right",
+  toAnchor: "left",
+  labelOffsetY: -18,
+  end: 0,
+});
+
+pulseSequence([
+  { connector: connAiClientGateway, color: "#38bdf8" },
+  { connector: connAiGatewayVector, color: "#10b981" },
+  { connector: connAiGatewayLLM, color: "#f59e0b" },
+]);
+
+stage
+  .scene("Edge AI Pipeline")
+  .with(
+    brandTitle,
+    aiKicker,
+    aiHeading,
+    aiDescription,
+    aiClientNode,
+    aiGatewayNode,
+    aiVectorNode,
+    aiReasoningNode,
+    connAiClientGateway,
+    connAiGatewayVector,
+    connAiGatewayLLM,
+    ...(aiRule ? [aiRule] : []),
+  );
+
+// Dismiss geometry elements
+geoKicker.opacity = 0;
+geoHeading.opacity = 0;
+geoDescription.opacity = 0;
+morphBox.opacity = 0;
+morphCircle.opacity = 0;
+morphDiamond.opacity = 0;
+morphPill.opacity = 0;
+connBoxCircle.opacity = 0;
+connDiamondPill.opacity = 0;
+
+// Reveal AI scene elements
+aiKicker.opacity = 1;
+aiHeading.opacity = 1;
+aiDescription.opacity = 1;
+if (aiRule) aiRule.opacity = 1;
+aiClientNode.opacity = 1;
+aiGatewayNode.opacity = 1;
+aiVectorNode.opacity = 1;
+aiReasoningNode.opacity = 1;
+connAiClientGateway.opacity = 1;
+connAiGatewayVector.opacity = 1;
+connAiGatewayLLM.opacity = 1;
+
+// Draw connector arrows only after the card move animations have settled
+connAiClientGateway.end = to(1).after(aiReasoningNode);
+connAiGatewayVector.end = to(1).after(aiReasoningNode);
+connAiGatewayLLM.end = to(1).after(aiReasoningNode);
+stage.pause();
+
 // --- Scene: Motion Orchestration & Crossfade ---
 
-const motionKicker = Kicker("10 / Motion Orchestration", {
+const motionKicker = Kicker("11 / Motion Orchestration", {
   opacity: 0,
 });
 
@@ -1234,16 +1417,22 @@ stage
     crossfadeCode,
   );
 
-// Dismiss geometry elements
-geoKicker.opacity = 0;
-geoHeading.opacity = 0;
-geoDescription.opacity = 0;
-morphBox.opacity = 0;
-morphCircle.opacity = 0;
-morphDiamond.opacity = 0;
-morphPill.opacity = 0;
-connBoxCircle.opacity = 0;
-connDiamondPill.opacity = 0;
+// Dismiss AI scene elements
+aiKicker.opacity = 0;
+aiHeading.opacity = 0;
+aiDescription.opacity = 0;
+aiClientNode.opacity = 0;
+aiGatewayNode.opacity = 0;
+aiVectorNode.opacity = 0;
+aiReasoningNode.opacity = 0;
+aiReasoningNode.scale = 1;
+connAiClientGateway.opacity = 0;
+connAiGatewayVector.opacity = 0;
+connAiGatewayLLM.opacity = 0;
+connAiClientGateway.end = 0;
+connAiGatewayVector.end = 0;
+connAiGatewayLLM.end = 0;
+if (aiRule) aiRule.opacity = 0;
 
 // Reveal crossfade elements
 motionKicker.opacity = 1;

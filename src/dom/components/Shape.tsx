@@ -129,12 +129,20 @@ export class ShapeElement extends DOMElement {
       } else if (children instanceof Node) {
         el.appendChild(children);
       } else if (children instanceof DOMElement) {
+        children.domElement.style.position = "relative";
+        children.domElement.style.left = "auto";
+        children.domElement.style.top = "auto";
+        children.domElement.style.transform = "none";
         el.appendChild(children.domElement);
       } else if (Array.isArray(children)) {
         for (const child of children) {
           if (child instanceof Node) {
             el.appendChild(child);
           } else if (child instanceof DOMElement) {
+            child.domElement.style.position = "relative";
+            child.domElement.style.left = "auto";
+            child.domElement.style.top = "auto";
+            child.domElement.style.transform = "none";
             el.appendChild(child.domElement);
           } else if (typeof child === "string" || typeof child === "number") {
             const span = document.createElement("span");

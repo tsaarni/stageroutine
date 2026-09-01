@@ -101,7 +101,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Guides",
-      items: ["guides/getting-started", "guides/core-concepts"],
+      items: ["guides/getting-started", "guides/core-concepts", "guides/icons"],
     },
     {
       type: "category",

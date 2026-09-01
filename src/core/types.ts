@@ -419,6 +419,7 @@ export interface ReactiveElementBase {
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color?: ReactiveProp<string>;
+  readonly isPlaying?: boolean;
   play?(): void;
   pause?(): void;
   onClick?(handler: (event: MouseEvent) => void): this;

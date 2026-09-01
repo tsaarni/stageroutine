@@ -332,25 +332,41 @@ export class Stage implements ElementHost {
           runningCount++;
 
           const target = (anim.effect as { target?: Element } | null)?.target;
-          const isElement = target instanceof HTMLElement;
-          // Read directly from target style to avoid synchronous layout recalculation (getComputedStyle)
-          const inlineOpacity =
-            isElement && target.style.opacity ? Number.parseFloat(target.style.opacity) : 1;
+          // Check both HTMLElement and SVGElement; SVG nodes do not inherit HTMLElement.
+          // Check target and parent visibility to detect hidden background animations.
+          const isElement = target instanceof HTMLElement || target instanceof SVGElement;
+          const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
+          const inlineOpacity = targetEl?.style.opacity
+            ? Number.parseFloat(targetEl.style.opacity)
+            : 1;
+          const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
+          const parentOpacity = parentEl?.style.opacity
+            ? Number.parseFloat(parentEl.style.opacity)
+            : 1;
           const isHidden =
-            isElement &&
+            targetEl !== null &&
             (inlineOpacity === 0 ||
-              target.style.display === "none" ||
-              target.style.visibility === "hidden");
+              parentOpacity === 0 ||
+              targetEl.style.display === "none" ||
+              targetEl.style.visibility === "hidden" ||
+              parentEl?.style.display === "none" ||
+              parentEl?.style.visibility === "hidden" ||
+              !targetEl.isConnected);
           if (isHidden) hiddenRunningCount++;
 
           runningList.push({
             name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
             target_tag: target?.tagName,
-            target_class: typeof target?.className === "string" ? target.className : undefined,
+            target_class:
+              typeof target?.className === "string"
+                ? target.className
+                : target?.classList?.toString() || undefined,
             is_hidden: isHidden ? 1 : 0,
           });
         }
 
+        const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
+        result["connectors.total_active_pulses"] = pulsePackets.length;
         result["animations.total_running"] = runningCount;
         result["animations.hidden_running"] = hiddenRunningCount;
         if (runningList.length > 0) {
@@ -428,15 +444,26 @@ export class Stage implements ElementHost {
       color: element.color,
     };
 
-    for (const key of Object.keys(element)) {
+    const proto = Object.getPrototypeOf(element);
+    const allKeys = new Set([
+      ...Object.keys(element),
+      ...(proto ? Object.getOwnPropertyNames(proto) : []),
+    ]);
+
+    for (const key of allKeys) {
       if (
+        key !== "constructor" &&
         key !== "id" &&
         key !== "kind" &&
         key !== "domElement" &&
         !(key in initialProps) &&
         typeof (element as Record<string, unknown>)[key] !== "function"
       ) {
-        initialProps[key] = (element as Record<string, unknown>)[key];
+        try {
+          initialProps[key] = (element as Record<string, unknown>)[key];
+        } catch {
+          // ignore getters that fail
+        }
       }
     }
 
@@ -1137,9 +1164,9 @@ export class Stage implements ElementHost {
       node.style.pointerEvents = opacity === 0 ? "none" : "auto";
     }
     if (opacity > 0) {
-      element.play?.();
+      if (!element.isPlaying) element.play?.();
     } else {
-      element.pause?.();
+      if (element.isPlaying) element.pause?.();
     }
     if (blur > 0 || brightness !== 1) {
       const filters: string[] = [];

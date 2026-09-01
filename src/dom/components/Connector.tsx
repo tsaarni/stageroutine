@@ -23,6 +23,8 @@ export interface PulseOptions {
   duration?: number;
   /** Diameter of the particle in virtual canvas pixels (default: 8px). */
   size?: number;
+  /** Callback invoked when the pulse completes its traversal. */
+  onComplete?: () => void;
 }
 
 /**
@@ -32,6 +34,48 @@ export interface PulseOptions {
 export interface PeriodicPulseOptions extends PulseOptions {
   /** Interval between successive pulse emissions in seconds (default: 2.0s). */
   interval?: number;
+  /** Initial delay in seconds before the first pulse emission fires (default: 0s). */
+  delay?: number;
+}
+
+/**
+ * Step configuration for a multi-connector sequential pulse chain.
+ * @category Motion
+ */
+export interface PulseSequenceStep {
+  /** The connector element to pulse. */
+  connector: ConnectorElement;
+  /** Duration in seconds for this pulse traversal (default: 0.45s). */
+  duration?: number;
+  /** Particle color override. */
+  color?: string;
+  /** Particle diameter in pixels. */
+  size?: number;
+  /** Optional pause delay in seconds before the next connector pulses. */
+  delayAfter?: number;
+}
+
+/**
+ * Options for configuring a multi-connector sequential pulse loop.
+ * @category Motion
+ */
+export interface PulseSequenceOptions {
+  /** Whether the sequence should loop continuously (default: true). */
+  loop?: boolean;
+  /** Pause in seconds after the final connector finishes before restarting the cycle (default: 1.45s). */
+  pauseAfter?: number;
+  /** Initial delay in seconds before the first pulse begins (e.g. while nodes settle). */
+  startDelay?: number;
+}
+
+/**
+ * Controller handle returned by `pulseSequence()`.
+ * @category Motion
+ */
+export interface PulseSequenceController {
+  start(): void;
+  stop(): void;
+  isRunning(): boolean;
 }
 
 /**
@@ -256,9 +300,12 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   startHeadSize?: number;
   /** Size of the end head marker in virtual canvas pixels (defaults to 16). */
   endHeadSize?: number;
-  /** Trim-path start offset from 0.0 to 1.0 (useful for draw-in transitions). */
+  /** Trim-path start offset from 0.0 to 1.0. */
   start?: ReactiveProp<number>;
-  /** Trim-path end offset from 0.0 to 1.0 (useful for draw-in transitions). */
+  /**
+   * Trim-path end offset from 0.0 to 1.0 for draw-in transitions.
+   * When animated (e.g. `to(1)`), the arrowhead automatically rides the leading edge of the stroke.
+   */
   end?: ReactiveProp<number>;
   /** Corner radius for rounded box intersections (defaults to 12). */
   radius?: number;
@@ -321,11 +368,33 @@ export class ConnectorElement extends DOMElement {
   labelBg: SVGRectElement | null = null;
   labelText: SVGTextElement | null = null;
 
-  start: ReactiveProp<number> = 0;
-  end: ReactiveProp<number> = 1;
+  private _start: ReactiveProp<number> = 0;
+  private _end: ReactiveProp<number> = 1;
+
+  get start(): ReactiveProp<number> {
+    return this._start;
+  }
+  set start(val: ReactiveProp<number>) {
+    this._start = val;
+    if (this.animInterval === null) {
+      this.update();
+    }
+  }
+
+  get end(): ReactiveProp<number> {
+    return this._end;
+  }
+  set end(val: ReactiveProp<number>) {
+    this._end = val;
+    if (this.animInterval === null) {
+      this.update();
+    }
+  }
+
   messageY?: ReactiveProp<number | string>;
   private animInterval: number | null = null;
   private periodicIntervalTimer: number | null = null;
+  private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
   private activePulseDots = new Set<SVGElement>();
   constructor(from: ConnectorTarget, to: ConnectorTarget, options: ConnectorOptions = {}) {
@@ -470,7 +539,6 @@ export class ConnectorElement extends DOMElement {
       } else if (periodic === true) {
         this.periodicOptions = { interval: 2.0 };
       }
-      this._startPeriodicTimer();
     }
 
     this.update();
@@ -514,6 +582,8 @@ export class ConnectorElement extends DOMElement {
     stage.metrics.register(`connector.${this.id}`, () => ({
       raf_loop_active: this.animInterval !== null ? 1 : 0,
       periodic_pulse_active: this.periodicIntervalTimer !== null ? 1 : 0,
+      active_pulses_count: this.activePulseDots.size,
+      dom_pulse_packets_count: this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
       is_mounted: Boolean(this.domElement?.isConnected),
     }));
   }
@@ -860,17 +930,43 @@ export class ConnectorElement extends DOMElement {
       }
     }
 
-    // Position End Head Marker — tip always at endPt (node boundary), angle from path tangent
+    // Position End Head Marker
+    // During draw-in transitions (endVal < 1), the arrowhead rides the leading edge of the stroke:
+    // 1. Calculate point `p` at current trim length (`endVal * actualLen`) along the path.
+    // 2. Measure tangent vector `(tx, ty)` at `p` to orient the arrowhead along the curve.
+    // 3. Project arrowhead tip forward by `endRetract` so the marker base connects to `p`.
+    // 4. When endVal >= 0.999, coordinates converge exactly to `endPt` with zero visual snap.
     if (this.endHeadNode) {
       if (endVal - startVal <= 0.02 || endVal <= 0.02) {
         this.endHeadNode.style.opacity = "0";
       } else {
         this.endHeadNode.style.opacity = "1";
-        const angle = Math.atan2(endTy, endTx) * (180 / Math.PI);
-        this.endHeadNode.setAttribute(
-          "transform",
-          `translate(${endPt.x}, ${endPt.y}) rotate(${angle})`,
-        );
+
+        if (endVal >= 0.999 || actualLen <= 0) {
+          const angle = Math.atan2(endTy, endTx) * (180 / Math.PI);
+          this.endHeadNode.setAttribute(
+            "transform",
+            `translate(${endPt.x}, ${endPt.y}) rotate(${angle})`,
+          );
+        } else {
+          const trimLen = Math.max(0, Math.min(actualLen, endVal * actualLen));
+          const p = this.pathNode.getPointAtLength(trimLen);
+          const pPrev = this.pathNode.getPointAtLength(Math.max(0, trimLen - 2));
+          const dl = Math.hypot(p.x - pPrev.x, p.y - pPrev.y);
+          const tx = dl > 0 ? (p.x - pPrev.x) / dl : endTx;
+          const ty = dl > 0 ? (p.y - pPrev.y) / dl : endTy;
+          const angle = Math.atan2(ty, tx) * (180 / Math.PI);
+
+          const r = this.endRetract || 16;
+          const tipX = p.x + tx * r;
+          const tipY = p.y + ty * r;
+          const headScale = Math.min(1, endVal * 4);
+
+          this.endHeadNode.setAttribute(
+            "transform",
+            `translate(${tipX}, ${tipY}) rotate(${angle}) scale(${headScale})`,
+          );
+        }
       }
     }
 
@@ -911,14 +1007,21 @@ export class ConnectorElement extends DOMElement {
         }
 
         let offX = resolveOffset(this.labelOffsetX as number | string | undefined, 1920);
-        let offY = resolveOffset(this.labelOffsetY as number | string | undefined, 1080);
+        let offY = 0;
 
-        if (typeof this.labelOffset === "number" || typeof this.labelOffset === "string") {
-          offY += resolveOffset(this.labelOffset, 1080);
-        } else if (this.labelOffset && typeof this.labelOffset === "object") {
-          const obj = this.labelOffset as { x?: number | string; y?: number | string };
-          offX += resolveOffset(obj.x, 1920);
-          offY += resolveOffset(obj.y, 1080);
+        if (this.labelOffsetY !== undefined) {
+          offY = resolveOffset(this.labelOffsetY as number | string | undefined, 1080);
+        } else if (this.labelOffset !== undefined) {
+          if (typeof this.labelOffset === "number" || typeof this.labelOffset === "string") {
+            offY = resolveOffset(this.labelOffset, 1080);
+          } else if (typeof this.labelOffset === "object" && this.labelOffset !== null) {
+            const obj = this.labelOffset as { x?: number | string; y?: number | string };
+            offX += resolveOffset(obj.x, 1920);
+            offY += resolveOffset(obj.y, 1080);
+          }
+        } else {
+          // Default offset above the connector path
+          offY = -14;
         }
 
         try {
@@ -963,11 +1066,17 @@ export class ConnectorElement extends DOMElement {
   private _executePulse(options: PulseOptions = {}): void {
     if (typeof window === "undefined") return;
 
+    // Clean up any existing active pulses on THIS connector before spawning a new one
+    this.cancelPulses();
+
+    const opacity = typeof this.opacity === "number" ? this.opacity : 1;
+    if (opacity <= 0.01) return;
+
     const startVal = typeof this.start === "number" ? this.start : 0;
     const endVal = typeof this.end === "number" ? this.end : 1;
 
-    // Do not pulse across invisible or zero-length connectors
-    if (endVal - startVal <= 0.05) return;
+    // Do not pulse across invisible or incomplete connectors
+    if (endVal < 0.95 || endVal - startVal <= 0.05) return;
 
     const pathD = this.pathNode.getAttribute("d");
     if (!pathD) return;
@@ -977,6 +1086,7 @@ export class ConnectorElement extends DOMElement {
     const size = options.size ?? 12;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("sr-pulse-packet");
     g.style.offsetPath = `path('${pathD}')`;
     g.style.offsetRotate = "auto";
     g.style.willChange = "offset-distance, opacity";
@@ -1014,10 +1124,40 @@ export class ConnectorElement extends DOMElement {
       },
     );
 
-    anim.onfinish = () => {
+    let finished = false;
+    const cleanup = (triggerComplete: boolean) => {
+      if (finished) return;
+      finished = true;
       this.activePulseDots.delete(g);
       g.remove();
+      if (triggerComplete) {
+        options.onComplete?.();
+      }
     };
+
+    anim.onfinish = () => cleanup(true);
+    anim.oncancel = () => cleanup(false);
+  }
+
+  /**
+   * Immediately cancels and removes all in-flight pulse packets on this connector.
+   * Note: Paused Web Animations do not fire onfinish handlers.
+   * Explicit cancellation ensures no orphan SVG nodes remain.
+   */
+  cancelPulses(): this {
+    for (const dot of Array.from(this.activePulseDots)) {
+      for (const a of dot.getAnimations()) {
+        a.cancel();
+      }
+      dot.remove();
+    }
+    this.activePulseDots.clear();
+
+    const stray = this.svgRoot.querySelectorAll(".sr-pulse-packet");
+    for (let i = 0; i < stray.length; i++) {
+      stray[i].remove();
+    }
+    return this;
   }
 
   /**
@@ -1049,26 +1189,165 @@ export class ConnectorElement extends DOMElement {
     this._pausePeriodicPulse();
     if (!this.periodicOptions) return;
 
-    const intervalMs = (this.periodicOptions.interval ?? 2.0) * 1000;
-    this._executePulse(this.periodicOptions);
+    const opacity = typeof this.opacity === "number" ? this.opacity : 1;
+    if (opacity <= 0.01) return;
 
-    this.periodicIntervalTimer = window.setInterval(() => {
+    const intervalMs = (this.periodicOptions.interval ?? 2.0) * 1000;
+    const delayMs = (this.periodicOptions.delay ?? 0) * 1000;
+
+    const startLoop = () => {
+      this.periodicTimeoutTimer = null;
+      if (typeof this.opacity === "number" && this.opacity <= 0.01) return;
       this._executePulse(this.periodicOptions || {});
-    }, intervalMs);
+      this.periodicIntervalTimer = window.setInterval(() => {
+        if (typeof this.opacity === "number" && this.opacity <= 0.01) {
+          this._pausePeriodicPulse();
+          return;
+        }
+        this._executePulse(this.periodicOptions || {});
+      }, intervalMs);
+    };
+
+    if (delayMs > 0) {
+      this.periodicTimeoutTimer = window.setTimeout(startLoop, delayMs);
+    } else {
+      startLoop();
+    }
   }
 
   private _pausePeriodicPulse(): void {
+    if (this.periodicTimeoutTimer !== null) {
+      clearTimeout(this.periodicTimeoutTimer);
+      this.periodicTimeoutTimer = null;
+    }
     if (this.periodicIntervalTimer !== null) {
       clearInterval(this.periodicIntervalTimer);
       this.periodicIntervalTimer = null;
     }
+    this.cancelPulses();
   }
 
   private _resumePeriodicPulse(): void {
-    if (this.periodicOptions && this.periodicIntervalTimer === null) {
+    if (
+      this.periodicOptions &&
+      this.periodicIntervalTimer === null &&
+      this.periodicTimeoutTimer === null
+    ) {
       this._startPeriodicTimer();
     }
   }
+
+  play(): void {
+    super.play();
+    this._resumePeriodicPulse();
+  }
+
+  pause(): void {
+    super.pause();
+    this._pausePeriodicPulse();
+  }
+}
+
+/**
+ * Orchestrates a sequential pulse relay across multiple connectors.
+ * Uses onComplete event callbacks instead of independent interval timers.
+ * This prevents timer drift and guarantees exactly one pulse is active at a time.
+ * @category Motion
+ */
+export function pulseSequence(
+  steps: (ConnectorElement | PulseSequenceStep)[],
+  options: PulseSequenceOptions = {},
+): PulseSequenceController {
+  let running = false;
+  let timer: number | null = null;
+  const pauseAfterMs = (options.pauseAfter ?? 1.45) * 1000;
+  const loop = options.loop ?? true;
+
+  const stepList: PulseSequenceStep[] = steps.map((s) => ("connector" in s ? s : { connector: s }));
+
+  const stop = () => {
+    running = false;
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    for (const s of stepList) {
+      s.connector.cancelPulses();
+    }
+  };
+
+  const runStep = (idx: number) => {
+    if (!running) return;
+
+    if (idx >= stepList.length) {
+      if (!loop) {
+        running = false;
+        return;
+      }
+      timer = window.setTimeout(() => {
+        timer = null;
+        if (running) runStep(0);
+      }, pauseAfterMs);
+      return;
+    }
+
+    const current = stepList[idx];
+    const conn = current.connector;
+    if (!conn) return;
+
+    const opacity = typeof conn.opacity === "number" ? conn.opacity : 1;
+    const startVal = typeof conn.start === "number" ? conn.start : 0;
+    const endVal = typeof conn.end === "number" ? conn.end : 1;
+
+    // Wait until the connector has finished drawing in (end >= 0.98) and is visible
+    if (opacity <= 0.01 || endVal < 0.98 || endVal - startVal < 0.9) {
+      timer = window.setTimeout(() => {
+        timer = null;
+        if (running) runStep(idx);
+      }, 50);
+      return;
+    }
+
+    conn.pulse({
+      duration: current.duration ?? 0.45,
+      color: current.color,
+      size: current.size,
+      onComplete: () => {
+        if (!running) return;
+        const delay = (current.delayAfter ?? 0) * 1000;
+        if (delay > 0) {
+          timer = window.setTimeout(() => {
+            timer = null;
+            if (running) runStep(idx + 1);
+          }, delay);
+        } else {
+          runStep(idx + 1);
+        }
+      },
+    });
+  };
+
+  const start = () => {
+    stop();
+    running = true;
+    runStep(0);
+  };
+
+  if (stepList.length > 0) {
+    const first = stepList[0].connector;
+    first.onPlay(() => {
+      start();
+    });
+    first.onPause(() => {
+      stop();
+    });
+  }
+
+  return {
+    start,
+    stop,
+    isRunning: () => running,
+  };
 }
 
 /**

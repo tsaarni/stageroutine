@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./jsx-runtime": "./src/dom/jsx-runtime.ts",
     "./jsx-dev-runtime": "./src/dom/jsx-dev-runtime.ts",
-    "./style.css": "./src/dom/style.css"
+    "./style.css": "./src/dom/style.css",
+    "./vite": "./src/vite-plugin.ts"
   },
   "scripts": {
     "dev": "vite",
@@ -26,9 +27,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@iconify-json/lucide": "^1.2.127",
+    "@iconify/utils": "^3.1.4",
     "@types/node": "^26.2.0",
     "@types/three": "^0.185.4",
     "typescript": "^5.7.3",
+    "unplugin-icons": "^23.0.1",
     "vite": "^6.2.0"
   },
   "packageManager": "pnpm@11.7.0",

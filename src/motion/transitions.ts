@@ -116,7 +116,7 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
   triggerTarget?: ReactiveElementBase | string;
   triggerMilestone?: AnimationMilestone;
   triggerProperty?: string;
-  curve: EaseCurve = builtinEasings.quartOut; // Smooth deceleration by default, zero bounce
+  curve: EaseCurve = builtinEasings.cubicOut; // Smooth, natural deceleration without tail stall
 
   constructor(target: T) {
     this.target = target;

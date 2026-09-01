@@ -11,6 +11,14 @@ export {
   type ImageFit,
 } from "./Image";
 export {
+  Icon,
+  IconElement,
+  defineIcons,
+  resolveIconSvg,
+  type IconOptions,
+  type IconDefinition,
+} from "./Icon";
+export {
   Video,
   VideoElement,
   type VideoOptions,
@@ -52,10 +60,14 @@ export { Table, type TableOptions, type TableElement } from "./Table";
 export {
   Connector,
   ConnectorElement,
+  pulseSequence,
   type ConnectorOptions,
   type ConnectorTarget,
   type ConnectorHeadType,
   type PulseOptions,
+  type PulseSequenceStep,
+  type PulseSequenceOptions,
+  type PulseSequenceController,
 } from "./Connector";
 export {
   Lifeline,

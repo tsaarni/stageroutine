@@ -8,3 +8,9 @@ declare module "*.module.css" {
   const classes: { readonly [key: string]: string };
   export default classes;
 }
+
+declare module "~icons/*" {
+  import type { IconElement, IconOptions } from "./dom/components/Icon";
+  const iconFactory: (options?: IconOptions) => IconElement;
+  export default iconFactory;
+}

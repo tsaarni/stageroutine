@@ -57,7 +57,7 @@ export class DOMElement implements ReactiveElementBase {
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
 
-  private isPlaying = true;
+  isPlaying = true;
   private playListeners = new Set<() => void>();
   private pauseListeners = new Set<() => void>();
 
@@ -155,9 +155,11 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
-   * Resumes all CSS and Web Animations running on this element and its subtree.
+   * Resumes CSS and Web Animations on this element and its subtree.
+   * Uses an isPlaying guard to prevent duplicate timer creation during frame renders.
    */
   play(): void {
+    if (this.isPlaying) return;
     this.isPlaying = true;
     this.domElement.style.animationPlayState = "running";
     if (typeof this.domElement.getAnimations === "function") {

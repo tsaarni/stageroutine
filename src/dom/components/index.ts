@@ -5,6 +5,23 @@
 export { Title, type TitleOptions, type TitleVariant } from "./Title";
 export { Text, type TextOptions } from "./Text";
 export {
+  Image,
+  ImageElement,
+  type ImageOptions,
+  type ImageFit,
+} from "./Image";
+export {
+  Video,
+  VideoElement,
+  type VideoOptions,
+} from "./Video";
+export {
+  Webcam,
+  WebcamElement,
+  type WebcamOptions,
+  type CameraDevice,
+} from "./Webcam";
+export {
   Shape,
   Card,
   Circle,

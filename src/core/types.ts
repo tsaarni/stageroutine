@@ -373,21 +373,34 @@ export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? Unwr
 export type ReactiveProp<T> = T | TransitionDescriptor<T>;
 
 /**
- * @internal
+ * 2D coordinate point or vector. Numbers default to 0..100 percentages or cqw/cqh units.
+ * @category Core
+ */
+export interface Point {
+  x: number | string;
+  y: number | string;
+}
+
+/**
+ * Standard named position or anchor keyword.
+ * @category Core
  */
 export type AnchorKeyword =
   | "top-left"
   | "center"
   | "top"
   | "bottom"
+  | "left"
+  | "right"
   | "top-right"
   | "bottom-left"
   | "bottom-right";
 
 /**
- * @internal
+ * Element or connector anchor: either a named keyword or an { x, y } percentage point.
+ * @category Core
  */
-export type ElementAnchor = AnchorKeyword | [number, number];
+export type ElementAnchor = AnchorKeyword | Point;
 
 /**
  * Base interface for all reactive presentation elements on stage.

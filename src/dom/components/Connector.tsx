@@ -1,5 +1,5 @@
 import { getActiveStage } from "../../core/index";
-import type { ReactiveProp } from "../../core/types";
+import type { ElementAnchor, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
   type Box,
@@ -232,10 +232,10 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
   /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
   curvature?: number;
-  /** Cardinal attachment face on the origin target ("auto" | "top" | "bottom" | "left" | "right"). */
-  fromAnchor?: "auto" | CardinalSide;
-  /** Cardinal attachment face on the destination target ("auto" | "top" | "bottom" | "left" | "right"). */
-  toAnchor?: "auto" | CardinalSide;
+  /** Cardinal attachment face or custom { x, y } anchor on the origin target ("auto" | "top" | "bottom" | "left" | "right" | { x, y }). */
+  fromAnchor?: "auto" | ElementAnchor;
+  /** Cardinal attachment face or custom { x, y } anchor on the destination target ("auto" | "top" | "bottom" | "left" | "right" | { x, y }). */
+  toAnchor?: "auto" | ElementAnchor;
   /** Stroke color of the connector line (defaults to #38bdf8). */
   color?: string;
   /** Stroke width in virtual pixels (defaults to 3). */
@@ -308,8 +308,8 @@ export class ConnectorElement extends DOMElement {
   labelOffsetX: ReactiveProp<number | string> = 0;
   labelOffsetY: ReactiveProp<number | string> = 0;
 
-  fromAnchor: "auto" | CardinalSide = "auto";
-  toAnchor: "auto" | CardinalSide = "auto";
+  fromAnchor: "auto" | ElementAnchor = "auto";
+  toAnchor: "auto" | ElementAnchor = "auto";
 
   svgRoot: SVGSVGElement;
   pathNode: SVGPathElement;
@@ -559,9 +559,35 @@ export class ConnectorElement extends DOMElement {
       };
     }
 
-    const pt = target as Point;
-    const px = typeof pt.x === "number" ? (pt.x <= 100 ? (pt.x / 100) * 1920 : pt.x) : 0;
-    const py = typeof pt.y === "number" ? (pt.y <= 100 ? (pt.y / 100) * 1080 : pt.y) : 0;
+    const pt = target as { x?: number | string; y?: number | string };
+    let px = 0;
+    if (typeof pt.x === "number") {
+      px = pt.x <= 100 ? (pt.x / 100) * 1920 : pt.x;
+    } else if (typeof pt.x === "string") {
+      const s = pt.x.trim();
+      if (s === "center") {
+        px = 960;
+      } else if (s.endsWith("cqw") || s.endsWith("%")) {
+        px = (Number.parseFloat(s) / 100) * 1920;
+      } else {
+        px = Number.parseFloat(s) || 0;
+      }
+    }
+
+    let py = 0;
+    if (typeof pt.y === "number") {
+      py = pt.y <= 100 ? (pt.y / 100) * 1080 : pt.y;
+    } else if (typeof pt.y === "string") {
+      const s = pt.y.trim();
+      if (s === "center") {
+        py = 540;
+      } else if (s.endsWith("cqh") || s.endsWith("%")) {
+        py = (Number.parseFloat(s) / 100) * 1080;
+      } else {
+        py = Number.parseFloat(s) || 0;
+      }
+    }
+
     return { point: { x: px, y: py } };
   }
 
@@ -577,7 +603,7 @@ export class ConnectorElement extends DOMElement {
       target: ConnectorTarget,
       box: Box,
       targetPt: Point,
-      anchorPreference: "auto" | CardinalSide,
+      anchorPreference: "auto" | ElementAnchor,
     ): { point: Point; side: CardinalSide } => {
       let shapeKind = "box";
       if ("kind" in target && typeof (target as { kind?: string }).kind === "string") {

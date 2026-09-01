@@ -1,6 +1,5 @@
-/**
- * Geometric primitives, perimeter attachment solvers, and orthogonal/bézier routers.
- */
+import { resolveAnchor } from "../core/interpolators";
+import type { ElementAnchor } from "../core/types";
 
 export interface Point {
   x: number;
@@ -19,52 +18,79 @@ export interface Box {
 export type CardinalSide = "top" | "bottom" | "left" | "right" | "center";
 
 /**
- * Calculates the cardinal attachment point on a box (middle of top/bottom/left/right edge),
- * automatically selecting the face facing the target point.
+ * Calculates the attachment point on a box, supporting named cardinal faces,
+ * "auto" face selection facing target, or custom { x, y } percentage anchors.
  */
 export function getBoxAnchorPoint(
   box: Box,
-  anchor: "auto" | CardinalSide = "auto",
+  anchor: "auto" | ElementAnchor = "auto",
   targetPt?: Point,
   padding = 6,
 ): { point: Point; side: CardinalSide } {
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
 
-  let chosenSide: CardinalSide = anchor === "auto" ? "center" : anchor;
+  if (anchor === "auto") {
+    let chosenSide: CardinalSide = "center";
+    if (targetPt) {
+      const dx = targetPt.x - cx;
+      const dy = targetPt.y - cy;
+      const hw = box.width / 2;
+      const hh = box.height / 2;
 
-  if (anchor === "auto" && targetPt) {
-    const dx = targetPt.x - cx;
-    const dy = targetPt.y - cy;
-    const hw = box.width / 2;
-    const hh = box.height / 2;
+      // Compare slope to box aspect ratio
+      if (Math.abs(dx) * hh >= Math.abs(dy) * hw) {
+        chosenSide = dx >= 0 ? "right" : "left";
+      } else {
+        chosenSide = dy >= 0 ? "bottom" : "top";
+      }
+    }
 
-    // Compare slope to box aspect ratio
-    if (Math.abs(dx) * hh >= Math.abs(dy) * hw) {
-      chosenSide = dx >= 0 ? "right" : "left";
-    } else {
-      chosenSide = dy >= 0 ? "bottom" : "top";
+    switch (chosenSide) {
+      case "top":
+        return { point: { x: cx, y: box.y - padding }, side: "top" };
+      case "bottom":
+        return {
+          point: { x: cx, y: box.y + box.height + padding },
+          side: "bottom",
+        };
+      case "left":
+        return { point: { x: box.x - padding, y: cy }, side: "left" };
+      case "right":
+        return {
+          point: { x: box.x + box.width + padding, y: cy },
+          side: "right",
+        };
+      default:
+        return { point: { x: cx, y: cy }, side: "center" };
     }
   }
 
-  switch (chosenSide) {
-    case "top":
-      return { point: { x: cx, y: box.y - padding }, side: "top" };
-    case "bottom":
-      return {
-        point: { x: cx, y: box.y + box.height + padding },
-        side: "bottom",
-      };
-    case "left":
-      return { point: { x: box.x - padding, y: cy }, side: "left" };
-    case "right":
-      return {
-        point: { x: box.x + box.width + padding, y: cy },
-        side: "right",
-      };
-    default:
-      return { point: { x: cx, y: cy }, side: "center" };
+  const { x: pctX, y: pctY } = resolveAnchor(anchor);
+  const px = box.x + (pctX / 100) * box.width;
+  const py = box.y + (pctY / 100) * box.height;
+
+  let padX = 0;
+  let padY = 0;
+  let side: CardinalSide = "center";
+
+  if (pctX >= 99) {
+    padX = padding;
+    side = "right";
+  } else if (pctX <= 1) {
+    padX = -padding;
+    side = "left";
   }
+
+  if (pctY >= 99) {
+    padY = padding;
+    side = "bottom";
+  } else if (pctY <= 1) {
+    padY = -padding;
+    side = "top";
+  }
+
+  return { point: { x: px + padX, y: py + padY }, side };
 }
 
 /**

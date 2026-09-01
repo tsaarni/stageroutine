@@ -139,28 +139,42 @@ export function px(val: number): string {
   return `${val}px`;
 }
 
-export function parseAnchor(
-  anchor: ElementAnchor | [number, number] | string | undefined,
-): [number, number] {
-  if (Array.isArray(anchor) && anchor.length === 2) {
-    return [anchor[0], anchor[1]];
+export function resolveAnchor(anchor: ElementAnchor | string | undefined): {
+  x: number;
+  y: number;
+} {
+  if (anchor && typeof anchor === "object" && "x" in anchor && "y" in anchor) {
+    return {
+      x: typeof anchor.x === "number" ? anchor.x : Number.parseFloat(String(anchor.x)) || 0,
+      y: typeof anchor.y === "number" ? anchor.y : Number.parseFloat(String(anchor.y)) || 0,
+    };
   }
   switch (anchor) {
     case "center":
-      return [50, 50];
+      return { x: 50, y: 50 };
     case "top":
-      return [50, 0];
+      return { x: 50, y: 0 };
     case "bottom":
-      return [50, 100];
+      return { x: 50, y: 100 };
+    case "left":
+      return { x: 0, y: 50 };
+    case "right":
+      return { x: 100, y: 50 };
+    case "top-left":
+      return { x: 0, y: 0 };
     case "top-right":
-      return [100, 0];
+      return { x: 100, y: 0 };
     case "bottom-left":
-      return [0, 100];
+      return { x: 0, y: 100 };
     case "bottom-right":
-      return [100, 100];
+      return { x: 100, y: 100 };
     default:
-      return [0, 0];
+      return { x: 0, y: 0 };
   }
+}
+
+export function parseAnchor(anchor: ElementAnchor | string | undefined): { x: number; y: number } {
+  return resolveAnchor(anchor);
 }
 
 export function computeTransformAndOrigin(
@@ -168,7 +182,7 @@ export function computeTransformAndOrigin(
   yVal: number | string | undefined,
   scaleVal: number | undefined,
   rotationVal: number | undefined,
-  _anchorVal?: ElementAnchor | [number, number] | string | undefined,
+  _anchorVal?: ElementAnchor | string | undefined,
 ): { transform: string; transformOrigin: string } {
   const xStr = formatCoord(xVal, "cqw");
   const yStr = formatCoord(yVal, "cqh");
@@ -205,14 +219,21 @@ export function interpolateValue(from: unknown, to: unknown, t: number): unknown
       v === "top-left" ||
       v === "top" ||
       v === "bottom" ||
+      v === "left" ||
+      v === "right" ||
       v === "top-right" ||
       v === "bottom-left" ||
       v === "bottom-right");
 
-  if ((Array.isArray(from) && Array.isArray(to)) || isAnchorKeyword(from) || isAnchorKeyword(to)) {
-    const aFrom = parseAnchor(from as ElementAnchor);
-    const aTo = parseAnchor(to as ElementAnchor);
-    return [lerpNumber(aFrom[0], aTo[0], t), lerpNumber(aFrom[1], aTo[1], t)];
+  const isAnchorObj = (v: unknown) => v !== null && typeof v === "object" && "x" in v && "y" in v;
+
+  if (isAnchorObj(from) || isAnchorObj(to) || isAnchorKeyword(from) || isAnchorKeyword(to)) {
+    const aFrom = resolveAnchor(from as ElementAnchor);
+    const aTo = resolveAnchor(to as ElementAnchor);
+    return {
+      x: lerpNumber(aFrom.x, aTo.x, t),
+      y: lerpNumber(aFrom.y, aTo.y, t),
+    };
   }
 
   if (typeof from === "string" && typeof to === "string") {

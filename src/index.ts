@@ -8,6 +8,10 @@ export {
   getActiveStage,
   logger,
   Stage,
+  storage,
+  StageStorage,
+  type StorageOptions,
+  type StorageListener,
 } from "./core/index";
 export type { LogLevel } from "./core/logger";
 export type {
@@ -83,6 +87,12 @@ export {
 export {
   Title,
   Text,
+  Image,
+  ImageElement,
+  Video,
+  VideoElement,
+  Webcam,
+  WebcamElement,
   Shape,
   Card,
   Circle,
@@ -103,6 +113,11 @@ export {
   type TitleOptions,
   type TitleVariant,
   type TextOptions,
+  type ImageOptions,
+  type ImageFit,
+  type VideoOptions,
+  type WebcamOptions,
+  type CameraDevice,
   type ShapeOptions,
   type ShapeKind,
   type ShapeVariant,

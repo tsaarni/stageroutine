@@ -419,8 +419,19 @@ export interface ReactiveElementBase {
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color?: ReactiveProp<string>;
-  readonly isPlaying?: boolean;
-  play?(): void;
-  pause?(): void;
+  readonly isMounted?: boolean;
+  readonly isActive?: boolean;
+  onMount?(fn: () => void): () => void;
+  onUnmount?(fn: () => void): () => void;
+  onActivate?(fn: () => void): () => void;
+  onDeactivate?(fn: () => void): () => void;
   onClick?(handler: (event: MouseEvent) => void): this;
+  /** @internal Engine driver */
+  _mount?(parent: HTMLElement): void;
+  /** @internal Engine driver */
+  _unmount?(): void;
+  /** @internal Engine driver */
+  _activate?(): void;
+  /** @internal Engine driver */
+  _deactivate?(): void;
 }

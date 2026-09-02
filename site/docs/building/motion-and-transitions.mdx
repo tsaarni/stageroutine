@@ -1,0 +1,68 @@
+---
+sidebar_position: 3
+---
+
+# Motion & Transitions
+
+StageRoutine makes animations declarative. You define target values with `to()` and link transitions with milestones.
+
+## Property Transitions
+
+To animate an element property, assign a `to(target)` descriptor:
+
+```typescript
+// Move to x: 50 over 0.8 seconds with custom easing
+title.x = to(50).duration(0.8).ease("quartOut");
+title.opacity = to(1).duration(0.5);
+```
+
+### Supported Animated Properties
+- **Spatial**: `x`, `y`, `scale`, `rotation`, `width`, `height`
+- **Visual**: `opacity`, `blur`, `brightness`, `color`
+
+## Milestone Chaining
+
+Synchronize animations relative to other elements without doing millisecond math:
+
+![Milestone Synchronization](/img/milestone-timeline.svg)
+
+```typescript
+// Animate title first
+title.opacity = to(1).duration(1.0);
+
+// Start code halfway through title's animation (at 0.5s)
+code.opacity = to(1).duration(0.6).when(title, "halfway");
+
+// Start kicker immediately when title finishes (at 1.0s)
+kicker.opacity = to(1).when(title, "end");
+```
+
+### Available Milestones
+- `"start"` (or `0`): Starts at the same time as target animation
+- `"halfway"` (or `0.5`): Starts when target reaches 50% progress
+- `"end"` (or `"complete"`): Starts when target finishes
+
+## Staggering Collections
+
+Cascade property changes across an array of elements with `stagger()`:
+
+```typescript
+import { stagger } from "stageroutine";
+
+stagger([item1, item2, item3], {
+  opacity: to(1),
+  y: to(40),
+}, {
+  delay: 0.1, // 100ms interval between items
+});
+```
+
+## Crossfading
+
+Dissolve one element into another smoothly:
+
+```typescript
+import { crossfade } from "stageroutine";
+
+crossfade(oldDiagram, newDiagram, { duration: 0.6 });
+```

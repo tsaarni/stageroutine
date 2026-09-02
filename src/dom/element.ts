@@ -57,9 +57,13 @@ export class DOMElement implements ReactiveElementBase {
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
 
-  isPlaying = true;
-  private playListeners = new Set<() => void>();
-  private pauseListeners = new Set<() => void>();
+  isMounted = false;
+  isActive = false;
+
+  private mountListeners = new Set<() => void>();
+  private unmountListeners = new Set<() => void>();
+  private activateListeners = new Set<() => void>();
+  private deactivateListeners = new Set<() => void>();
 
   constructor(
     kind: string,
@@ -139,52 +143,87 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
-   * Registers a callback triggered whenever this element enters active playback state.
+   * Registers a callback triggered when this element is mounted into the DOM.
    */
-  onPlay(fn: () => void): () => void {
-    this.playListeners.add(fn);
-    return () => this.playListeners.delete(fn);
+  onMount(fn: () => void): () => void {
+    this.mountListeners.add(fn);
+    return () => this.mountListeners.delete(fn);
   }
 
   /**
-   * Registers a callback triggered whenever this element enters paused state.
+   * Registers a callback triggered when this element is unmounted from the DOM.
    */
-  onPause(fn: () => void): () => void {
-    this.pauseListeners.add(fn);
-    return () => this.pauseListeners.delete(fn);
+  onUnmount(fn: () => void): () => void {
+    this.unmountListeners.add(fn);
+    return () => this.unmountListeners.delete(fn);
   }
 
   /**
-   * Resumes CSS and Web Animations on this element and its subtree.
-   * Uses an isPlaying guard to prevent duplicate timer creation during frame renders.
+   * Registers a callback triggered whenever this element becomes active and visible on stage.
    */
-  play(): void {
-    if (this.isPlaying) return;
-    this.isPlaying = true;
-    this.domElement.style.animationPlayState = "running";
-    if (typeof this.domElement.getAnimations === "function") {
-      for (const anim of this.domElement.getAnimations({ subtree: true })) {
-        anim.play();
-      }
+  onActivate(fn: () => void): () => void {
+    this.activateListeners.add(fn);
+    return () => this.activateListeners.delete(fn);
+  }
+
+  /**
+   * Registers a callback triggered whenever this element becomes inactive / hidden.
+   */
+  onDeactivate(fn: () => void): () => void {
+    this.deactivateListeners.add(fn);
+    return () => this.deactivateListeners.delete(fn);
+  }
+
+  /**
+   * Mounts the element's DOM node into the specified parent container.
+   */
+  /**
+   * @internal Mounts the element's DOM node into the specified parent container.
+   */
+  _mount(parent: HTMLElement): void {
+    if (this.isMounted) return;
+    this.isMounted = true;
+    if (!this.domElement.parentElement) {
+      parent.appendChild(this.domElement);
     }
-    for (const listener of this.playListeners) {
+    for (const listener of this.mountListeners) {
       listener();
     }
   }
 
   /**
-   * Pauses all CSS and Web Animations running on this element and its subtree to save CPU/GPU cycles.
+   * @internal Unmounts the element from the DOM and releases resources.
    */
-  pause(): void {
-    if (!this.isPlaying) return;
-    this.isPlaying = false;
-    this.domElement.style.animationPlayState = "paused";
-    if (typeof this.domElement.getAnimations === "function") {
-      for (const anim of this.domElement.getAnimations({ subtree: true })) {
-        anim.pause();
-      }
+  _unmount(): void {
+    if (!this.isMounted) return;
+    this._deactivate();
+    this.isMounted = false;
+    this.domElement.remove();
+    for (const listener of this.unmountListeners) {
+      listener();
     }
-    for (const listener of this.pauseListeners) {
+  }
+
+  /**
+   * @internal Activates the element when it enters active scene visibility (opacity > 0).
+   * Notifies registered `onActivate` listeners to start timers, RAF loops, or media streams.
+   */
+  _activate(): void {
+    if (this.isActive) return;
+    this.isActive = true;
+    for (const listener of this.activateListeners) {
+      listener();
+    }
+  }
+
+  /**
+   * @internal Deactivates the element when it leaves active visibility (opacity === 0).
+   * Notifies registered `onDeactivate` listeners to pause timers, RAF loops, or media streams.
+   */
+  _deactivate(): void {
+    if (!this.isActive) return;
+    this.isActive = false;
+    for (const listener of this.deactivateListeners) {
       listener();
     }
   }

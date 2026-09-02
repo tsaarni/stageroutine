@@ -18,7 +18,7 @@ function HomepageHeader() {
           <span>Reactive, step-driven presentations and technical motion graphics.</span>
         </p>
         <div className={styles.buttons}>
-          <Link className={styles.primaryButton} to="/docs/guides/getting-started">
+          <Link className={styles.primaryButton} to="/docs/getting-started/quickstart">
             Get Started
           </Link>
           <a className={styles.secondaryButton} href={demoUrl} target="_top">

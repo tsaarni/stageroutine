@@ -156,8 +156,7 @@ export class StarfieldElement extends BackgroundElement {
     this.animFrameId = requestAnimationFrame(animate);
   }
 
-  override pause(): void {
-    super.pause();
+  pause(): void {
     this.isRunning = false;
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);

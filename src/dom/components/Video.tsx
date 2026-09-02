@@ -167,17 +167,18 @@ export class VideoElement extends DOMElement {
       });
     }
 
-    // Auto-pause video when element leaves active playback or gets hidden
-    this.onPause(() => {
-      if (this.playing) {
+    // Resume video playback when active and pause when hidden
+    this.onActivate(() => {
+      if (this.playing && this.videoElement.paused) {
+        this.videoElement.play().catch(() => {});
+      }
+    });
+
+    this.onDeactivate(() => {
+      if (!this.videoElement.paused) {
         this.videoElement.pause();
       }
     });
-  }
-
-  override pause(): void {
-    super.pause();
-    this.videoElement.pause();
   }
 }
 

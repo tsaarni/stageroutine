@@ -1,0 +1,68 @@
+---
+sidebar_position: 4
+---
+
+# Layout & Positioning
+
+StageRoutine includes layout helpers under the `arrange` namespace to position groups of elements cleanly without manual coordinate calculations.
+
+## `arrange.split`
+
+Splits elements into two columns and calculates an optional vertical dividing line:
+
+```typescript
+import { arrange } from "stageroutine";
+
+const { rule } = arrange.split([heading, body], codePanel, {
+  leftX: 8,
+  rightX: 52,
+  y: 25,
+  gap: 4,
+  rule: { dashed: true, color: "rgba(255, 255, 255, 0.15)" }, // or simply `rule: true`
+});
+
+// `rule` is a generated Connector element placed between the columns
+if (rule) {
+  stage.scene("Comparison").with(heading, body, codePanel, rule);
+}
+```
+
+## `arrange.stack`
+
+Arranges elements in a vertical column with uniform spacing:
+
+```typescript
+arrange.stack([title, subtitle, description], {
+  x: "center",
+  startY: 30,
+  gap: 5,
+});
+```
+
+## `arrange.grid`
+
+Positions elements into rows and columns:
+
+```typescript
+arrange.grid([card1, card2, card3, card4], {
+  cols: 2,
+  startX: 10,
+  startY: 20,
+  cellWidth: 38,
+  cellHeight: 30,
+  gapX: 4,
+  gapY: 4,
+});
+```
+
+## `arrange.circle`
+
+Distributes elements evenly around a circular circumference:
+
+```typescript
+arrange.circle([node1, node2, node3, node4], {
+  centerX: 50,
+  centerY: 50,
+  radius: 25,
+});
+```

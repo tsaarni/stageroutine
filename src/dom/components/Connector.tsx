@@ -567,13 +567,15 @@ export class ConnectorElement extends DOMElement {
       }
     };
 
-    this.onPlay(() => {
+    this.onActivate(() => {
       this._resumePeriodicPulse();
+      this._resumeTravelingDots();
       startRaf();
     });
 
-    this.onPause(() => {
+    this.onDeactivate(() => {
       this._pausePeriodicPulse();
+      this._pauseTravelingDots();
       stopRaf();
     });
 
@@ -1237,14 +1239,23 @@ export class ConnectorElement extends DOMElement {
     }
   }
 
-  play(): void {
-    super.play();
-    this._resumePeriodicPulse();
+  private _resumeTravelingDots(): void {
+    if (this.svgRoot.classList.contains("sr-connector-traveling-dots")) {
+      this.domElement.style.animationPlayState = "running";
+      this.pathNode.style.animationPlayState = "running";
+      for (const anim of this.pathNode.getAnimations()) {
+        anim.play();
+      }
+    }
   }
 
-  pause(): void {
-    super.pause();
-    this._pausePeriodicPulse();
+  private _pauseTravelingDots(): void {
+    if (this.svgRoot.classList.contains("sr-connector-traveling-dots")) {
+      this.pathNode.style.animationPlayState = "paused";
+      for (const anim of this.pathNode.getAnimations()) {
+        anim.pause();
+      }
+    }
   }
 }
 
@@ -1335,10 +1346,10 @@ export function pulseSequence(
 
   if (stepList.length > 0) {
     const first = stepList[0].connector;
-    first.onPlay(() => {
+    first.onActivate(() => {
       start();
     });
-    first.onPause(() => {
+    first.onDeactivate(() => {
       stop();
     });
   }

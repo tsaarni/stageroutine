@@ -1,0 +1,72 @@
+---
+sidebar_position: 2
+---
+
+# Scenes & Steps
+
+In StageRoutine, elements are not locked to a single slide. The same element can live across multiple scenes, smoothly animating to new positions when you switch scenes.
+
+![Elements Persisting Across Scenes](/img/scenes-and-steps.svg)
+
+## Declaring Scenes
+
+You declare a scene by giving it a name and listing which elements belong in it:
+
+```typescript
+// 1. Define elements once
+const title = Title("StageRoutine", { x: "center", y: 45 });
+const kicker = Kicker("01 / ARCHITECTURE", { x: "center", y: 35 });
+const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 40, opacity: 0 });
+
+// 2. Scene 1: Title and Kicker
+stage.scene("Intro").with(title, kicker);
+stage.pause();
+
+// 3. Scene 2: Title stays, shrinks to the corner, and Code appears
+stage.scene("Code").with(title, code);
+title.x = to(10);
+title.y = to(10);
+title.scale = to(0.7);
+code.opacity = to(1).when(title, "halfway");
+stage.pause();
+```
+
+## How Element Persistence Works
+
+When you switch from Scene 1 to Scene 2:
+- **Shared elements** (`title` in both scenes): Remain on screen and animate smoothly to their new `x`, `y`, `scale`, or `opacity`.
+- **New elements** (`code` added in Scene 2): Enter the stage and animate in.
+- **Removed elements** (`kicker` omitted in Scene 2): Automatically fade out and hide.
+
+Because elements are persistent JavaScript objects, you don't need duplicate markup or transition hacks between slides.
+
+## Step Pauses
+
+Within any scene, you can have multiple sequential reveals or animations. Calling `stage.pause()` creates a click pause for the presenter:
+
+```typescript
+// Step 1: Reveal first bullet
+bullet1.opacity = to(1);
+stage.pause();
+
+// Step 2: Reveal second bullet on next click
+bullet2.opacity = to(1);
+stage.pause();
+```
+
+## Speaker Notes
+
+Attach speaker notes inline for specific steps:
+
+```typescript
+stage.setNotes("Explain the microservices architecture here.");
+stage.pause();
+```
+
+You can also keep notes in a separate Markdown file where headings match scene names:
+
+```typescript
+import notesDoc from "./notes.md?raw";
+
+stage.notes(notesDoc);
+```

@@ -470,6 +470,14 @@ export class Stage implements ElementHost {
     this.initialProperties.set(element.id, { ...initialProps });
     this.propertyState.set(element.id, initialProps);
 
+    if (this.viewport) {
+      if (typeof element._mount === "function") {
+        element._mount(this.viewport);
+      } else if (!element.domElement.parentElement) {
+        this.viewport.appendChild(element.domElement);
+      }
+    }
+
     return createReactiveProxy(element, this);
   }
 
@@ -690,7 +698,9 @@ export class Stage implements ElementHost {
     // Attach top-level registered element DOM nodes
     for (const element of this.elementRegistry.values()) {
       this._hideElement(element);
-      if (!element.domElement.parentElement) {
+      if (typeof element._mount === "function") {
+        element._mount(this.viewport);
+      } else if (!element.domElement.parentElement) {
         this.viewport.appendChild(element.domElement);
       }
     }
@@ -924,7 +934,6 @@ export class Stage implements ElementHost {
 
       const props = snap.properties.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
-      el.play?.();
     }
 
     // Apply snapshot theme if present
@@ -1012,7 +1021,6 @@ export class Stage implements ElementHost {
       if (!el) continue;
       const props = this.propertyState.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
-      el.play?.();
     }
 
     for (let pass = 0; pass < 6; pass++) {
@@ -1131,7 +1139,7 @@ export class Stage implements ElementHost {
     node.style.opacity = "0";
     node.style.visibility = "hidden";
     node.style.pointerEvents = "none";
-    element.pause?.();
+    element._deactivate?.();
   }
 
   private _applyStyles(element: ReactiveElementBase, props: Record<string, unknown>): void {
@@ -1164,9 +1172,9 @@ export class Stage implements ElementHost {
       node.style.pointerEvents = opacity === 0 ? "none" : "auto";
     }
     if (opacity > 0) {
-      if (!element.isPlaying) element.play?.();
+      element._activate?.();
     } else {
-      if (element.isPlaying) element.pause?.();
+      element._deactivate?.();
     }
     if (blur > 0 || brightness !== 1) {
       const filters: string[] = [];

@@ -1,0 +1,139 @@
+---
+sidebar_position: 1
+---
+
+# Under the Hood
+
+This guide explains what happens behind the scenes when you build and run a StageRoutine presentation: how the DOM is constructed, how reactive property mutations are captured, and how the animation loop renders frames.
+
+## 1. The Two-Phase Execution Model
+
+StageRoutine runs in two separate phases:
+
+![Two-Phase Execution Model](/img/execution-model.svg)
+
+1. **Recording Phase**: When the page loads, your TypeScript code runs once from top to bottom. It creates DOM elements and records property changes into step queues.
+2. **Playback Phase**: When you call `stage.mount()`, the stage displays elements in a virtual viewport and starts the interactive presentation engine.
+
+## 2. Virtual Viewport & DOM Construction
+
+StageRoutine renders all content inside a fixed virtual viewport (by default `1920x1080` pixels).
+
+![Virtual Viewport Scaling](/img/viewport-scaling.svg)
+
+### Responsive Scaling
+To look identical on any laptop, monitor, or projector, StageRoutine calculates a uniform scale factor:
+
+```typescript
+const scale = Math.min(
+  window.innerWidth / 1920,
+  window.innerHeight / 1080
+);
+this.viewport.style.transform = `scale(${scale})`;
+```
+
+### Container Query Units
+Instead of fixed pixels, element coordinates are mapped to CSS container query units (`cqw`, `cqh`):
+- `1 cqw` = 1% of the viewport width (`19.2px`)
+- `1 cqh` = 1% of the viewport height (`10.8px`)
+
+When an element moves to `(50, 40)`, StageRoutine converts it into a GPU-accelerated CSS transform:
+
+```typescript
+node.style.transformOrigin = "50% 50%";
+node.style.transform = "translate(50cqw, 40cqh) scale(1) rotate(0deg)";
+```
+
+## 3. Reactive Proxies & Mutation Recording
+
+To animate properties easily without boilerplate, elements are wrapped in a standard JavaScript `Proxy`.
+
+A `Proxy` lets StageRoutine listen to property assignments:
+
+```typescript
+title.x = to(80).duration(0.8).ease("quartOut");
+```
+
+When you write `title.x = ...`, the Proxy traps the assignment. Instead of modifying the DOM immediately, it stores a `TransitionRecord`:
+
+```typescript
+host.recordMutation(
+  target.id,    // "title-1"
+  "x",          // property name
+  fromValue,    // current value (e.g. 50)
+  80,           // target value
+  800,          // duration in ms
+  0,            // delay in ms
+  curve         // easing function
+);
+```
+
+## 4. Steps vs. Snapshots
+
+Whenever you call `stage.pause()`, StageRoutine commits the recorded transitions and takes a state snapshot:
+
+```typescript
+// 1. Step Record (transitions to play forward)
+this.steps.push({
+  sceneName: this.currentSceneName,
+  stepIndex: stepIdx,
+  transitions: [...this.currentStepTransitions],
+  activeElementIds: new Set(this.activeElementIds),
+});
+
+// 2. State Snapshot (exact property values for instant seeking)
+this.snapshots.push({
+  sceneName: this.currentSceneName,
+  stepIndex: stepIdx,
+  properties: clone(this.propertyState),
+  activeElementIds: new Set(this.activeElementIds),
+});
+```
+
+### Why Both?
+- **Moving Forward (`nextStep`)**: The stage animates transitions smoothly over time using the frame loop.
+- **Moving Backward or Scrubbing (`prevStep`, `gotoStep`)**: The stage instantly restores exact property values from the snapshot. This keeps navigation fast and free of accumulated floating-point errors.
+
+## 5. The Frame & Animation Loop
+
+Animations are driven by `requestAnimationFrame`. 
+
+`requestAnimationFrame` is the browser's native clock for screen repainting. It calls the render function right before every monitor refresh (typically 60 or 120 times per second).
+
+### Milestone Dependency Resolution
+If you synchronize elements with `.when()`, StageRoutine calculates start offsets before the loop begins:
+
+![Milestone Synchronization Timeline](/img/milestone-timeline.svg)
+
+```typescript
+// .when(title, "halfway") resolves to a concrete start time:
+if (milestone === "halfway") {
+  baseStart = parent.startOffsetMs + parent.durationMs * 0.5;
+} else if (milestone === "end") {
+  baseStart = parent.endOffsetMs;
+}
+
+transition.startOffsetMs = baseStart + delayMs;
+transition.endOffsetMs = transition.startOffsetMs + transition.durationMs;
+```
+
+### Per-Frame Interpolation & DOM Updates
+On every frame tick:
+
+![Frame Animation Loop](/img/frame-loop.svg)
+
+1. **Calculate Progress**: Computes `progress = (elapsed - startOffsetMs) / durationMs` (clamped between `0.0` and `1.0`).
+2. **Apply Easing**: Calculates the curved progress value using easing functions like `quartOut`.
+3. **Interpolate Values**: Blends from the start value to the target value based on progress:
+   - **Numbers**: `start + (target - start) * progress` *(e.g. `0` to `100` at 50% progress = `50`)*
+   - **Colors**: Smoothly blends RGB and Alpha channels.
+   - **CSS units**: Interpolates the numerical value and keeps the unit *(e.g. `20px` → `80px`)*.
+4. **Write to DOM**: Directly updates the element's inline GPU styles (`transform`, `opacity`, and `filter`).
+
+```typescript
+// Frame render writes directly to DOM styles:
+node.style.transform = `translate(${currentX}cqw, ${currentY}cqh) scale(${currentScale})`;
+node.style.opacity = `${currentOpacity}`;
+```
+
+Once all transitions complete, the loop stops, and the stage snaps to the final clean snapshot state.

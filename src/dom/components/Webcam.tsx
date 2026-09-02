@@ -149,16 +149,13 @@ export class WebcamElement extends DOMElement {
       }
     });
 
-    this.onPlay(() => {
+    this.onActivate(() => {
       this.start();
     });
 
-    this.onPause(() => {
+    this.onDeactivate(() => {
       this.stop();
     });
-
-    // Start stream if element is initialized
-    this.start();
   }
 
   /**
@@ -234,11 +231,6 @@ export class WebcamElement extends DOMElement {
       storage.set("webcam.deviceId", nextCam.id);
       await this.start();
     }
-  }
-
-  override pause(): void {
-    super.pause();
-    this.stop();
   }
 }
 

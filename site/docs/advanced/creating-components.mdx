@@ -1,0 +1,71 @@
+---
+sidebar_position: 2
+---
+
+# Creating Components
+
+StageRoutine components are reactive elements that wrap HTML or SVG DOM nodes.
+
+## Component Lifecycle
+
+Managing resource lifecycles ensures animations, render loops, and timers only run when the component is actively visible on stage:
+
+![Component Lifecycle](/img/component-lifecycle.svg)
+
+- **`onMount`**: Called once when the component DOM node is attached to the stage viewport.
+- **`onActivate`**: Called when the component becomes visible in a scene (`opacity > 0`). Start canvas render loops or WebGL shaders here.
+- **`onDeactivate`**: Called when the component becomes hidden (`opacity === 0`). Pause expensive rendering loops or audio here.
+- **`onUnmount`**: Called when the stage is destroyed. Clean up event listeners and WebGL contexts here.
+
+## Writing a Component Function
+
+Components instantiate and return a `DOMElement`:
+
+```typescript
+import { DOMElement, type ElementOptions } from "stageroutine";
+
+export interface BadgeOptions extends ElementOptions {
+  label: string;
+}
+
+export function Badge(options: BadgeOptions): DOMElement {
+  const node = document.createElement("div");
+  node.className = "my-badge";
+  node.innerText = options.label;
+
+  const element = new DOMElement("Badge", node, {
+    anchor: "center",
+    ...options,
+  });
+
+  element.onActivate(() => {
+    // Start canvas / animations
+  });
+
+  element.onDeactivate(() => {
+    // Pause canvas / animations
+  });
+
+  return element;
+}
+```
+
+## Using JSX
+
+StageRoutine includes a lightweight JSX runtime for declaring markup without React overhead:
+
+```tsx
+/** @jsxImportSource stageroutine */
+import { DOMElement } from "stageroutine";
+
+export function Card({ title, content, ...options }) {
+  const vdom = (
+    <div class="card-container">
+      <h3>{title}</h3>
+      <p>{content}</p>
+    </div>
+  );
+
+  return new DOMElement("Card", vdom, options);
+}
+```

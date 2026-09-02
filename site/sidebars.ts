@@ -100,8 +100,29 @@ const sidebars: SidebarsConfig = {
     "intro",
     {
       type: "category",
-      label: "Guides",
-      items: ["guides/getting-started", "guides/core-concepts", "guides/icons"],
+      label: "Getting Started",
+      items: ["getting-started/quickstart", "getting-started/concepts"],
+    },
+    {
+      type: "category",
+      label: "Building Presentations",
+      items: [
+        "building/canvas-and-coordinates",
+        "building/scenes-and-steps",
+        "building/motion-and-transitions",
+        "building/layout-and-positioning",
+        "building/visuals",
+      ],
+    },
+    {
+      type: "category",
+      label: "Advanced",
+      items: [
+        "advanced/under-the-hood",
+        "advanced/creating-components",
+        "advanced/overlays-and-events",
+        "advanced/icon-sets",
+      ],
     },
     {
       type: "category",

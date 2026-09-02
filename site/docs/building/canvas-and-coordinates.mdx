@@ -1,0 +1,52 @@
+---
+sidebar_position: 1
+---
+
+# Canvas & Coordinates
+
+StageRoutine provides a fixed virtual canvas with percentage-based coordinates to ensure your presentation looks identical on any display.
+
+## Virtual Viewport
+
+When you call `stage.mount("#stage")`, StageRoutine creates a `1920x1080` virtual viewport and centers it inside your browser window.
+
+![Virtual Viewport Scaling](/img/viewport-scaling.svg)
+
+- **Fixed 16:9 Canvas**: You author presentations against a standard `1920×1080` virtual canvas without needing responsive CSS media queries.
+- **Automatic Scaling**: StageRoutine automatically scales and centers the entire stage to fit any screen, projector, or window size while preserving proportions.
+- **Letterboxing**: On screens with non-16:9 aspect ratios (such as ultrawide or tall windows), black bars appear around the canvas so content is never stretched or cropped.
+
+## Coordinate System
+
+Coordinates range from `(0, 0)` (top-left) to `(100, 100)` (bottom-right). 
+
+![StageRoutine Coordinate System](/img/coordinate-system.svg)
+
+- `x: "center"` or `y: "center"` resolves to `50%`.
+- Container query units (`50cqw`, `40cqh`) are computed automatically.
+
+```typescript
+const headline = Title("System Overview", {
+  x: "center", // 50%
+  y: 20,       // 20%
+});
+```
+
+## Anchors
+
+The `anchor` property defines which point on the element aligns with `(x, y)`:
+
+| Anchor | Description | Default For |
+|---|---|---|
+| `"top-left"` | Alignment relative to element's top-left corner | `Text`, `CodeBlock`, `Table` |
+| `"center"` | Alignment relative to element's exact center | `Title`, `Circle`, `Pill`, `Shape` |
+| `"top"` | Top center | Headers |
+| `"bottom"` | Bottom center | Footers |
+
+```typescript
+const title = Title("Centered Title", {
+  x: "center",
+  y: "center",
+  anchor: "center",
+});
+```

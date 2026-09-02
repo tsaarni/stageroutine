@@ -1,0 +1,48 @@
+---
+sidebar_position: 3
+---
+
+# Overlays & Event System
+
+Overlays and the presenter console communicate through a central, typed event bus.
+
+## Overlays
+
+Overlays attach interactive UI widgets over the stage canvas (such as laser pointers, drawing tools, and navigation buttons):
+
+```typescript
+import { Stage, NavigationOverlay, LaserPointer } from "stageroutine";
+
+const stage = new Stage();
+stage.overlay(LaserPointer());
+stage.overlay(NavigationOverlay());
+```
+
+### Built-in Overlays
+- **`LaserPointer()`**: WebGL glowing laser pointer. Toggle with the `L` key.
+- **`NavigationOverlay()`**: Next/Previous step buttons and scene jumper that appears on mouse hover at the screen bottom.
+
+## Event System
+
+All communication between the stage, overlays, keyboard shortcuts, and the presenter console flows through a single typed event bus using `domain:action` event names:
+
+| Domain | Commands (Actions you trigger) | Notifications (State updates) |
+|---|---|---|
+| `nav:` | `nextStep`, `prevStep`, `nextScene`, `gotoStep` | `stepChanged`, `sceneChanged` |
+| `stage:` | `requestState` | `resized`, `stateChanged` |
+| `pointer:` | `toggle` | `toggled` |
+
+### Listening & Emitting
+
+```typescript
+// Listen for navigation step changes
+stage.on("nav:stepChanged", ({ index, total, scene }) => {
+  console.log(`Step ${index + 1} of ${total} (${scene})`);
+});
+
+// Emit navigation commands programmatically
+stage.emit("nav:nextStep");
+```
+
+### Dual-Screen BroadcastChannel
+The event bus transparently bridges across browser windows using the browser's native `BroadcastChannel`. Opening `presenter.html` on a second display immediately connects to the stage without network sockets or servers.

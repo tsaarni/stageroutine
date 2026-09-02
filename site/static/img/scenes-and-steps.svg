@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Elements Persisting Across Scenes" viewBox="0 0 780 260" width="100%">
+  <title>Elements Persisting Across Scenes</title>
+
+  <defs>
+    <marker id="step-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+
+  <!-- Scene 1: "Intro" -->
+  <g transform="translate(20, 20)">
+    <rect x="0" y="0" width="340" height="210" rx="8" fill="rgba(255, 255, 255, 0.04)" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="20" y="32" fill="#38bdf8" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">Scene 1: "Intro"</text>
+    <text x="20" y="52" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">.with(title, kicker)</text>
+
+    <!-- Element 1: Title (Centered, Hero) -->
+    <g transform="translate(20, 70)">
+      <rect x="0" y="0" width="300" height="52" rx="6" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" stroke-width="1.5" />
+      <text x="150" y="26" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">title: Title("StageRoutine")</text>
+      <text x="150" y="44" fill="#38bdf8" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">x: "center", y: 45, scale: 1.0</text>
+    </g>
+
+    <!-- Element 2: Kicker (Only in Scene 1) -->
+    <g transform="translate(20, 135)">
+      <rect x="0" y="0" width="300" height="42" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1" />
+      <text x="150" y="26" fill="#a1a1aa" font-size="13" font-weight="600" font-family="system-ui, sans-serif" text-anchor="middle">kicker: Kicker("01 / OVERVIEW")</text>
+    </g>
+  </g>
+
+  <!-- Arrow between Scene 1 and Scene 2 -->
+  <line x1="375" y1="125" x2="405" y2="125" stroke="#38bdf8" stroke-width="2" marker-end="url(#step-arrow)" />
+
+  <!-- Scene 2: "Architecture" -->
+  <g transform="translate(420, 20)">
+    <rect x="0" y="0" width="340" height="210" rx="8" fill="rgba(255, 255, 255, 0.04)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.5" />
+    <text x="20" y="32" fill="#ffffff" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">Scene 2: "Architecture"</text>
+    <text x="20" y="52" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">.with(title, codeBlock)</text>
+
+    <!-- Element 1: Title (Moved & Scaled Down) -->
+    <g transform="translate(20, 70)">
+      <rect x="0" y="0" width="300" height="52" rx="6" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" stroke-width="1.5" />
+      <text x="150" y="26" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">title (same instance)</text>
+      <text x="150" y="44" fill="#38bdf8" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">x: 10, y: 10, scale: 0.7 (animates)</text>
+    </g>
+
+    <!-- Element 3: CodeBlock (Newly Introduced in Scene 2) -->
+    <g transform="translate(20, 135)">
+      <rect x="0" y="0" width="300" height="52" rx="6" fill="rgba(255, 255, 255, 0.08)" stroke="#ffffff" stroke-width="1.5" />
+      <text x="150" y="26" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">codeBlock: CodeBlock([...])</text>
+      <text x="150" y="44" fill="#38bdf8" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">x: "center", y: 40 (fades in)</text>
+    </g>
+  </g>
+</svg>

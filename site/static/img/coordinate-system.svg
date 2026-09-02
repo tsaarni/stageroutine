@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StageRoutine Coordinate System" viewBox="0 0 780 400" width="100%">
+  <title>StageRoutine Coordinate System</title>
+
+  <!-- Top & Left Axis Guides -->
+  <text x="70" y="28" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace">x: 0%</text>
+  <text x="710" y="28" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">+X → 100%</text>
+  <text x="52" y="50" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">y: 0%</text>
+  <text x="52" y="358" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">+Y ↓ 100%</text>
+
+  <!-- Stage Canvas (16:9 Presentation Viewport) -->
+  <rect x="70" y="45" width="640" height="310" rx="10" fill="rgba(56, 189, 248, 0.03)" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.5" />
+
+  <!-- Center Crosshairs -->
+  <line x1="70" y1="200" x2="710" y2="200" stroke="rgba(56, 189, 248, 0.2)" stroke-dasharray="5 5" stroke-width="1.5" />
+  <line x1="390" y1="45" x2="390" y2="355" stroke="rgba(56, 189, 248, 0.2)" stroke-dasharray="5 5" stroke-width="1.5" />
+
+  <!-- Center Point (50, 50) -->
+  <circle cx="390" cy="200" r="5" fill="#38bdf8" stroke="#09090b" stroke-width="1.5" />
+
+  <!-- Center Badge -->
+  <g transform="translate(325, 144)">
+    <rect x="0" y="0" width="130" height="42" rx="6" fill="rgba(9, 9, 11, 0.85)" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="65" y="20" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle">(50, 50)</text>
+    <text x="65" y="35" fill="#38bdf8" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">"center"</text>
+  </g>
+
+  <!-- Top-Left (0, 0) -->
+  <circle cx="70" cy="45" r="4.5" fill="#38bdf8" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(86, 62)">
+    <text x="0" y="14" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">(0, 0)</text>
+    <text x="0" y="30" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">"top-left"</text>
+  </g>
+
+  <!-- Top Center (50, 0) -->
+  <circle cx="390" cy="45" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(390, 62)">
+    <text x="0" y="14" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle">(50, 0)</text>
+    <text x="0" y="30" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace" text-anchor="middle">"top"</text>
+  </g>
+
+  <!-- Top-Right (100, 0) -->
+  <circle cx="710" cy="45" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(694, 62)">
+    <text x="0" y="14" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="end">(100, 0)</text>
+    <text x="0" y="30" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace" text-anchor="end">"top-right"</text>
+  </g>
+
+  <!-- Left Center (0, 50) -->
+  <circle cx="70" cy="200" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(86, 190)">
+    <text x="0" y="12" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">(0, 50)</text>
+    <text x="0" y="28" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">"left"</text>
+  </g>
+
+  <!-- Right Center (100, 50) -->
+  <circle cx="710" cy="200" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(694, 190)">
+    <text x="0" y="12" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="end">(100, 50)</text>
+    <text x="0" y="28" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace" text-anchor="end">"right"</text>
+  </g>
+
+  <!-- Bottom-Left (0, 100) -->
+  <circle cx="70" cy="355" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(86, 318)">
+    <text x="0" y="12" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">(0, 100)</text>
+    <text x="0" y="28" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">"bottom-left"</text>
+  </g>
+
+  <!-- Bottom Center (50, 100) -->
+  <circle cx="390" cy="355" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(390, 318)">
+    <text x="0" y="12" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle">(50, 100)</text>
+    <text x="0" y="28" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace" text-anchor="middle">"bottom"</text>
+  </g>
+
+  <!-- Bottom-Right (100, 100) -->
+  <circle cx="710" cy="355" r="4.5" fill="#ffffff" stroke="#09090b" stroke-width="1.5" />
+  <g transform="translate(694, 318)">
+    <text x="0" y="12" fill="#ffffff" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="end">(100, 100)</text>
+    <text x="0" y="28" fill="#a1a1aa" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace" text-anchor="end">"bottom-right"</text>
+  </g>
+</svg>

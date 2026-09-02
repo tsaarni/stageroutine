@@ -1,0 +1,75 @@
+---
+sidebar_position: 5
+---
+
+# Visuals & Styling
+
+Enhance elements and the stage with built-in decorators, WebGL backgrounds, and icons.
+
+## Decorators
+
+Decorators add visual effects to elements via `.decorate()` without modifying their positioning or layout.
+
+```typescript
+import { Title, CodeBlock, gradient, glow, rail, bracket, typewriter } from "stageroutine";
+
+// Apply visual styles
+const title = Title("StageRoutine").decorate(gradient()).decorate(glow());
+
+// Add technical rail lines and brackets to code blocks
+const terminal = CodeBlock(["pnpm dev"]).decorate(rail()).decorate(bracket());
+```
+
+### Built-in Decorators
+- `gradient()`: Text or container gradient fills
+- `glow()`: Neon glowing drop-shadows
+- `rail()`: Left accent line
+- `bracket()`: Technical framing brackets
+- `typewriter()`: Animated typewriter text reveal
+
+## Backgrounds
+
+Backgrounds provide procedural canvas or WebGL backdrops beneath the stage:
+
+```typescript
+import { Stage, AsciiFluid, Starfield, GradientFluid, vignette } from "stageroutine";
+
+const stage = new Stage().background(
+  AsciiFluid().decorate(vignette())
+);
+```
+
+### Built-in Backgrounds
+- `AsciiFluid()`: WebGL fluid simulation rendered with ASCII characters
+- `GradientFluid()`: Smooth colorful fluid simulation
+- `Starfield()`: Procedural 3D perspective stars
+- `CSSBackground()`: Gradients and solid colors
+
+## Icons
+
+StageRoutine bundles only the icons you use at build time. 
+
+Install an icon set:
+
+```bash
+pnpm add -D @iconify-json/lucide
+```
+
+Import icons directly with the `~icons/` syntax:
+
+```typescript
+import Database from "~icons/lucide/database";
+import Cpu from "~icons/lucide/cpu";
+
+// Standalone icon element
+const dbIcon = Database({ x: 10, y: 20, size: 48, color: "#38bdf8" });
+
+// Passed inside a Card
+const card = Card({
+  icon: Cpu(),
+  kicker: "COMPUTE",
+  title: "Worker Node",
+});
+```
+
+To define project icon sets in JSON, see [Defining Icon Sets](../advanced/icon-sets).

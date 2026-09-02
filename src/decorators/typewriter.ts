@@ -214,11 +214,11 @@ export function typewriter(
       _isPlaying = false;
     }
 
-    element.onPlay(() => {
+    element.onActivate(() => {
       startTyping();
     });
 
-    element.onPause(() => {
+    element.onDeactivate(() => {
       stopTyping();
       textSpan.textContent = "";
     });

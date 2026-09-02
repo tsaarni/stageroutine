@@ -1,0 +1,59 @@
+---
+sidebar_position: 4
+---
+
+# Defining Icon Sets
+
+You can define project icon sets in Iconify JSON format and bundle them at build time.
+
+## 1. Create `mycompany-icons.json`
+
+```json
+{
+  "prefix": "mycompany",
+  "icons": {
+    "gateway": {
+      "body": "<rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"currentColor\"/>",
+      "width": 24,
+      "height": 24
+    },
+    "edge-device": {
+      "body": "<circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M12 7v10M7 12h10\" stroke=\"currentColor\" stroke-width=\"2\"/>",
+      "width": 24,
+      "height": 24
+    }
+  }
+}
+```
+
+## 2. Register in `vite.config.ts`
+
+```typescript
+import { defineConfig } from "vite";
+import { stageRoutinePlugin } from "stageroutine/vite";
+import mycompanyIcons from "./mycompany-icons.json";
+
+export default defineConfig({
+  plugins: [
+    stageRoutinePlugin({
+      iconsOptions: {
+        customCollections: {
+          mycompany: mycompanyIcons,
+        },
+      },
+    }),
+  ],
+});
+```
+
+## 3. Import and Use
+
+```typescript
+import Gateway from "~icons/mycompany/gateway";
+import EdgeDevice from "~icons/mycompany/edge-device";
+
+const node = Card({
+  icon: Gateway(),
+  kicker: "API GATEWAY",
+});
+```

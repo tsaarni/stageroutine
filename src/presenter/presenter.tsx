@@ -11,6 +11,7 @@ import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/700.css";
 import "@fontsource/material-symbols-outlined/400.css";
 
+import { MetricRegistry } from "../core/metrics";
 import { TimerWidget } from "./components/TimerWidget";
 import { WallClock } from "./components/WallClock";
 import {
@@ -22,6 +23,30 @@ import {
 
 const client = createPresenterClient();
 const recorder = new PresenterRecorder();
+
+// Metrics & Diagnostics
+const metrics = new MetricRegistry();
+let updatesReceived = 0;
+let notesRendered = 0;
+let scrollInvocations = 0;
+let lastUpdateTime = 0;
+
+metrics.register("presenter", () => ({
+  updates_received: updatesReceived,
+  notes_rendered: notesRendered,
+  scroll_invocations: scrollInvocations,
+  last_update_elapsed_ms: lastUpdateTime > 0 ? Math.round(performance.now() - lastUpdateTime) : -1,
+}));
+
+if (typeof window !== "undefined") {
+  (
+    window as unknown as {
+      __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+    }
+  ).__STAGEROUTINE_DEV__ = {
+    getMetrics: () => metrics.collect(),
+  };
+}
 
 // DOM References
 const sceneText = document.getElementById("scene-text");
@@ -224,6 +249,7 @@ function updateNotesDisplay(msg: PresenterMessage): void {
 
   if (doc !== lastRenderedDoc) {
     lastRenderedDoc = doc;
+    notesRendered++;
     currentNotes.innerHTML = parseMarkdownDocument(doc);
   }
 
@@ -275,6 +301,7 @@ function updateNotesDisplay(msg: PresenterMessage): void {
       const activeBlock =
         targetSection.querySelector(`.notes-step-block[data-step-index="${targetStepIdx}"]`) ||
         targetSection;
+      scrollInvocations++;
       activeBlock.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }
@@ -318,6 +345,8 @@ currentNotes?.addEventListener("click", (e) => {
 // 2. Presenter Client State Sync
 // ============================================================================
 client.onUpdate((msg) => {
+  updatesReceived++;
+  lastUpdateTime = performance.now();
   const currentSceneIdx =
     typeof msg.sceneIndex === "number" && !Number.isNaN(msg.sceneIndex) ? msg.sceneIndex : 0;
   const totalScenes =

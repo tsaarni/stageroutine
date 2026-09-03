@@ -123,6 +123,10 @@ export class Stage implements ElementHost {
   private lastFrameDurationMs = 0;
   private maxFrameDurationMs = 0;
   private currentFps = 60;
+  private syncMessagesSent = 0;
+  private syncMessagesReceived = 0;
+  private syncStateBroadcasts = 0;
+  private syncLastMsgTime = 0;
   private activeTransitionsSnapshot: {
     elementId: string;
     property: string;
@@ -245,6 +249,8 @@ export class Stage implements ElementHost {
         // Incoming: relay BroadcastChannel messages into the event bus
         this.broadcastChannel.onmessage = (event) => {
           if (this.steps.length === 0) return;
+          this.syncMessagesReceived++;
+          this.syncLastMsgTime = performance.now();
           const msg = event.data;
           if (msg?.event && typeof msg.event === "string") {
             this.emit(msg.event as keyof StageEventMap, msg.data);
@@ -253,6 +259,8 @@ export class Stage implements ElementHost {
 
         // Outgoing: bridge stage:stateChanged to BroadcastChannel
         this.on("stage:stateChanged", (data) => {
+          this.syncMessagesSent++;
+          this.syncLastMsgTime = performance.now();
           this.broadcastChannel?.postMessage({ event: "stage:stateChanged", data });
         });
       } catch {
@@ -384,6 +392,15 @@ export class Stage implements ElementHost {
 
       return result;
     });
+
+    // Multi-Window / Tab Synchronization Metrics
+    this.metrics.register("sync", () => ({
+      channel_messages_sent: this.syncMessagesSent,
+      channel_messages_received: this.syncMessagesReceived,
+      state_broadcasts: this.syncStateBroadcasts,
+      last_msg_elapsed_ms:
+        this.syncLastMsgTime > 0 ? Math.round(performance.now() - this.syncLastMsgTime) : -1,
+    }));
   }
 
   // --- ElementHost Implementation ---
@@ -1288,6 +1305,7 @@ export class Stage implements ElementHost {
 
   private _broadcastState(): void {
     if (this.steps.length === 0) return;
+    this.syncStateBroadcasts++;
     const step = this.steps[this.currentStepIndex];
     const nextStep = this.steps[this.currentStepIndex + 1];
 

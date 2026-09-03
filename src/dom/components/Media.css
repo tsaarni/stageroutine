@@ -1,0 +1,13 @@
+@layer sr-components {
+  .sr-image,
+  .sr-video,
+  .sr-webcam {
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .sr-webcam.is-mirrored {
+    transform: scaleX(-1);
+  }
+}

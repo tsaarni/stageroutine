@@ -1,0 +1,12 @@
+@layer sr-components {
+  .sr-kicker {
+    font-family: var(--sr-font-mono);
+    font-size: var(--sr-font-kicker);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--sr-text-dim);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+}

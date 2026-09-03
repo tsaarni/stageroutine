@@ -1,0 +1,77 @@
+@layer sr-components {
+  .sr-callout {
+    background: var(--sr-surface);
+    backdrop-filter: var(--sr-surface-backdrop);
+    -webkit-backdrop-filter: var(--sr-surface-backdrop);
+    border: var(--sr-surface-border);
+    border-left: 4px solid var(--sr-primary);
+    border-radius: var(--sr-radius);
+    box-shadow: var(--sr-surface-shadow);
+    padding: var(--sr-space-sm) var(--sr-space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sr-space-xs);
+    box-sizing: border-box;
+    max-width: 22cqw;
+
+    & .sr-callout-title {
+      font-family: var(--sr-font-mono);
+      font-size: var(--sr-font-kicker);
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sr-primary);
+      margin: 0;
+    }
+
+    & .sr-callout-body {
+      font-family: var(--sr-font-sans);
+      font-size: var(--sr-font-body);
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+      color: var(--sr-text-muted);
+      margin: 0;
+    }
+  }
+
+  .sr-connector-traveling-dots path {
+    stroke-dasharray: 4px 10px !important;
+    animation: sr-marching-dots 0.8s linear infinite !important;
+  }
+
+  @keyframes sr-marching-dots {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: -14px;
+    }
+  }
+
+  .sr-connector-label-group {
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+    transition: opacity 0.2s ease-out;
+
+    & rect {
+      fill: var(--sr-background);
+      stroke: none;
+      stroke-width: 0;
+      rx: 2px;
+      ry: 2px;
+    }
+
+    & text {
+      font-family: var(--sr-font-mono);
+      font-size: var(--sr-font-kicker);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      fill: var(--sr-text);
+      dominant-baseline: central;
+      text-anchor: middle;
+    }
+  }
+}

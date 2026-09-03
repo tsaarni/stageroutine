@@ -1,0 +1,68 @@
+/**
+ * Base design tokens and cascade layers for StageRoutine.
+ */
+
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/newsreader/300.css";
+@import "@fontsource/newsreader/300-italic.css";
+@import "@fontsource/newsreader/400.css";
+@import "@fontsource/newsreader/400-italic.css";
+
+/* Declare cascade layers: framework sits in sr-base and sr-components, so user styles always win */
+@layer sr-base, sr-components;
+
+@layer sr-base {
+  :root {
+    user-select: none;
+    -webkit-user-select: none;
+
+    /* Core Canvas & Palette */
+    --sr-background: #09090b;
+    --sr-text: #ffffff;
+    --sr-primary: #f97316;
+    --sr-accent: var(--sr-primary);
+
+    /* Secondary Text (Auto-derived from text color) */
+    --sr-text-muted: color-mix(in srgb, var(--sr-text) 65%, transparent);
+    --sr-text-dim: color-mix(in srgb, var(--sr-text) 40%, transparent);
+
+    /* Surface & Container Tokens (Adaptive to theme text color) */
+    --sr-surface: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sr-text) 5%, transparent) 0%,
+      color-mix(in srgb, var(--sr-text) 1.5%, transparent) 100%
+    );
+    --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 10%, transparent);
+    --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 20%, transparent);
+    --sr-surface-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0
+      color-mix(in srgb, var(--sr-text) 10%, transparent);
+    --sr-surface-backdrop: blur(16px);
+
+    /* Spatial Scale & Radius */
+    --sr-radius: 0.5rem;
+    --sr-space-xs: 0.75rem;
+    --sr-space-sm: 1.5rem;
+    --sr-space-md: 2.25rem;
+    --sr-space-lg: 3.5rem;
+    --sr-space-xl: 5rem;
+
+    /* Typographic Scale (1080p Scale) */
+    --sr-font-hero: 6.5rem;
+    --sr-font-title: 3.85rem;
+    --sr-font-lead: 2.45rem;
+    --sr-font-body: 1.85rem;
+    --sr-font-code: 1.45rem;
+    --sr-font-kicker: 1.2rem;
+
+    /* Font Families */
+    --sr-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --sr-font-serif: "Newsreader", Georgia, serif;
+    --sr-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+}

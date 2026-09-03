@@ -2,6 +2,7 @@
  * The main presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  */
 
+import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
@@ -562,23 +563,13 @@ export class Stage implements ElementHost {
 
   private _applyTheme(theme: ThemeConfig): void {
     if (!this.container) return;
-    const bg = theme.background || theme["--sr-background"] || theme["--stage-background"];
-    if (bg) {
-      this.container.style.backgroundColor = bg;
+    if (theme.background) {
+      this.container.style.backgroundColor = theme.background;
     }
-    const txt = theme.text || theme["--sr-text"] || theme["--stage-text"];
-    if (txt) {
-      this.container.style.color = txt;
+    if (theme.text) {
+      this.container.style.color = theme.text;
     }
-    for (const [key, value] of Object.entries(theme)) {
-      if (key.startsWith("--")) {
-        this.container.style.setProperty(key, String(value));
-      } else {
-        const kebab = key.replace(/([A-Z])/g, "-$1").toLowerCase();
-        this.container.style.setProperty(`--sr-${kebab}`, String(value));
-        this.container.style.setProperty(`--stage-${kebab}`, String(value));
-      }
-    }
+    applyThemeTokens(this.container, theme);
   }
 
   _setActiveScene(name: string, elements: ReactiveElementBase[]): void {

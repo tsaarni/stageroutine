@@ -31,6 +31,7 @@
     "@iconify/utils": "^3.1.4",
     "@types/node": "^26.2.0",
     "@types/three": "^0.185.4",
+    "csstype": "^3.2.3",
     "typescript": "^5.7.3",
     "unplugin-icons": "^23.0.1",
     "vite": "^6.2.0"

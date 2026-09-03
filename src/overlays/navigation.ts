@@ -2,6 +2,7 @@
  * Navigation overlay providing prev/next scene and step controls on top of the stage.
  */
 
+import "./navigation.css";
 import type { OverlayContext, OverlayPlugin } from "../core/types";
 
 /**

@@ -2,6 +2,7 @@
  * Standalone reactive Webcam component for live presenter video feeds.
  */
 
+import "./Media.css";
 import { getActiveStage } from "../../core/index";
 import { storage } from "../../core/storage";
 import { DOMElement, type ElementOptions } from "../element";

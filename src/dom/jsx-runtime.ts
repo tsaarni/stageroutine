@@ -3,6 +3,7 @@
  */
 
 import { getActiveStage } from "../core/index";
+import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 import { DOMElement, type ElementOptions } from "./element";
 
 export const Fragment = Symbol("StageRoutine.Fragment");
@@ -57,6 +58,7 @@ const ALL_STAGE_OPTION_KEYS = new Set([
   "color",
   "className",
   "style",
+  "theme",
   "id",
   "asElement",
 ]);
@@ -204,6 +206,11 @@ export function jsx(
       } else if (typeof value === "object" && value !== null) {
         Object.assign((element as HTMLElement).style, value);
       }
+      continue;
+    }
+
+    if (key === "theme" && typeof value === "object" && value !== null) {
+      applyThemeTokens(element as HTMLElement, value as Partial<ThemeConfig>);
       continue;
     }
 

@@ -2,6 +2,7 @@
  * Standalone reactive Image element for presentation slides and technical diagrams.
  */
 
+import "./Media.css";
 import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 

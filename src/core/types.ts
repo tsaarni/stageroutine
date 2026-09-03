@@ -98,32 +98,8 @@ export interface TransitionRecord {
  * Supports camelCase property names (e.g. `surfaceBorder`) or raw CSS variable names (`--sr-surface-border`).
  * @category Core
  */
-export interface ThemeConfig {
-  /** Background color of the stage canvas (maps to `--sr-background`). */
-  background?: string;
-  /** Primary text color for headlines and hero typography (maps to `--sr-text`). */
-  text?: string;
-  /** Secondary text color for body paragraphs and descriptions (maps to `--sr-text-muted`). */
-  textMuted?: string;
-  /** Tertiary text color for kickers, labels, and bullet dots (maps to `--sr-text-dim`). */
-  textDim?: string;
-  /** Brand/accent highlight color (maps to `--sr-primary`). */
-  primary?: string;
-  /** Accent highlight color (maps to `--sr-accent`). */
-  accent?: string;
-  /** Surface background fill for cards, terminals, and badges (maps to `--sr-surface`). */
-  surface?: string;
-  /** Outline border for surface containers (maps to `--sr-surface-border`). */
-  surfaceBorder?: string;
-  /** Top specular highlight / rim color for surfaces (maps to `--sr-surface-highlight`). */
-  surfaceHighlight?: string;
-  /** Elevation shadow and inner lighting for surfaces (maps to `--sr-surface-shadow`). */
-  surfaceShadow?: string;
-  /** Backdrop blur filter for translucent surfaces (maps to `--sr-surface-backdrop`). */
-  surfaceBackdrop?: string;
-  /** Custom CSS variables or extended theme keys. */
-  [key: string]: string | undefined;
-}
+import type { ThemeConfig } from "../theme/tokens";
+export type { ThemeConfig };
 
 /**
  * @internal

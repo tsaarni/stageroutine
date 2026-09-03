@@ -1,0 +1,22 @@
+@layer sr-components {
+  /* Sequence Lifeline & Activation Elements */
+  .sr-lifeline {
+    position: absolute;
+    width: 2px;
+    border-left: 2px dashed rgba(148, 163, 184, 0.65);
+    pointer-events: none;
+    z-index: 0;
+    box-sizing: border-box;
+  }
+
+  .sr-activation {
+    position: absolute;
+    width: 14px;
+    background: var(--sr-primary);
+    border-radius: 4px;
+    box-shadow: 0 0 16px var(--sr-primary);
+    border: none;
+    z-index: 2;
+    box-sizing: border-box;
+  }
+}

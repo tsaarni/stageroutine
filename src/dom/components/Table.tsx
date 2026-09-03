@@ -2,6 +2,7 @@
  * Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus.
  */
 
+import "./Table.css";
 import { getActiveStage } from "../../core/stage";
 import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";

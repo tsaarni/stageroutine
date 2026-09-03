@@ -2,6 +2,7 @@
  * Micro-label component used for chapter indices and section category tags.
  */
 
+import "./Kicker.css";
 import type { ElementOptions } from "../element";
 
 /**
@@ -18,12 +19,15 @@ export interface KickerOptions extends ElementOptions {
  * @category Components
  */
 export function Kicker(label: string, options: KickerOptions = {}) {
-  const classes = ["sr-kicker", options.className].filter(Boolean).join(" ");
-  const customStyles: Record<string, string> = {};
-  if (options.color) customStyles.color = options.color;
+  const { className, color, style: customStyle, ...restOptions } = options;
+  const classes = ["sr-kicker", className].filter(Boolean).join(" ");
+  const mergedStyle = {
+    ...(color ? { color } : {}),
+    ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
+  };
 
   return (
-    <div className={classes} style={customStyles} {...options}>
+    <div className={classes} style={mergedStyle} {...restOptions}>
       {label}
     </div>
   );

@@ -1,3 +1,4 @@
+import "./Shape.css";
 import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 

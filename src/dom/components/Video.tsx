@@ -2,6 +2,7 @@
  * Standalone reactive Video element for screen recordings, video walkthroughs, and animated media.
  */
 
+import "./Media.css";
 import { getActiveStage } from "../../core/index";
 import type { ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";

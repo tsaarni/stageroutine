@@ -1,0 +1,46 @@
+@layer sr-components {
+  .sr-hero {
+    font-family: var(--sr-font-sans);
+    font-size: var(--sr-font-hero);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    margin: 0;
+    color: var(--sr-text);
+    white-space: nowrap;
+  }
+
+  .sr-title {
+    font-family: var(--sr-font-sans);
+    font-size: var(--sr-font-title);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0;
+    color: var(--sr-text);
+
+    & em,
+    & i {
+      font-style: italic;
+      font-family: var(--sr-font-serif);
+      font-weight: 300;
+      color: var(--sr-text-muted);
+    }
+  }
+
+  .sr-serif-lead {
+    font-family: var(--sr-font-serif);
+    font-size: var(--sr-font-lead);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    margin: 0;
+    color: var(--sr-text-muted);
+
+    & em,
+    & i {
+      color: var(--sr-primary);
+    }
+  }
+}

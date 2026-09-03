@@ -2,6 +2,7 @@
  * Sequence diagram primitives: Lifeline, ActivationBar execution blocks, and SequenceDiagram builder.
  */
 
+import "./SequenceDiagram.css";
 import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";

@@ -69,3 +69,55 @@ export function Card({ title, content, ...options }) {
   return new DOMElement("Card", vdom, options);
 }
 ```
+
+## Component Styling Best Practices
+
+When creating custom components, follow these 4 standards for maintainability and seamless theming:
+
+### 1. Colocate Component Styles
+Keep CSS in a companion file right next to your component and import it directly:
+
+```
+src/components/
+├── Badge.tsx
+└── Badge.css
+```
+
+```typescript
+// Badge.tsx
+import "./Badge.css";
+import { DOMElement, type ElementOptions } from "stageroutine";
+```
+
+### 2. Wrap Styles in `@layer sr-components`
+Always declare styles inside the `sr-components` cascade layer so users can override your component's CSS without needing `!important`:
+
+```css
+/* Badge.css */
+@layer sr-components {
+  .my-badge {
+    background: var(--sr-surface);
+    border: var(--sr-surface-border);
+    border-radius: var(--sr-radius);
+    color: var(--sr-text);
+    padding: 0.35rem 0.85rem;
+    font-family: var(--sr-font-mono);
+  }
+}
+```
+
+### 3. Use Semantic Tokens
+Always bind colors and geometry to `--sr-*` CSS variables instead of hardcoded hex values. This ensures your component automatically adapts when a user changes themes or calls `stage.theme(...)`.
+
+### 4. Extend `ElementOptions`
+When your options interface extends `ElementOptions`, your component automatically inherits:
+- **`style`**: Typed inline CSS overrides via `csstype`.
+- **`theme`**: Localized token overrides (`{ surface: "...", primary: "..." }`).
+- **`className`**: Custom class name merging.
+
+```typescript
+export interface BadgeOptions extends ElementOptions {
+  label: string;
+}
+```
+

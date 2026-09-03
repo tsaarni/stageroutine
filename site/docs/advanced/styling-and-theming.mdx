@@ -1,0 +1,154 @@
+---
+sidebar_position: 2
+---
+
+# Styling & Theming
+
+StageRoutine uses a three-tier styling model where higher levels override lower levels:
+
+![Styling & Theming Inheritance](/img/style-layers.svg)
+
+1. **Element Customization**: Local overrides applied directly to an element (`color`, `style`, or container-scoped `theme`).
+2. **Stage Theme**: Presentation-wide palette set via `stage.theme(...)` across all scenes.
+3. **Built-in Defaults**: Fallback appearance used when no theme or custom style is specified.
+
+## 1. Stage Theming
+
+Call `stage.theme(...)` to apply a color palette across all scenes:
+
+### Using Built-in Themes
+
+StageRoutine includes ready-to-use themes matching popular developer palettes:
+
+```typescript
+import { Stage, themes } from "stageroutine";
+
+const stage = new Stage();
+
+// Apply a theme preset:
+stage.theme(themes.tokyoNight);
+```
+
+Built-in presets include:
+- `themes.defaultDark` — Cinematic zinc & orange (default)
+- `themes.defaultLight` — Clean editorial light mode
+- `themes.tokyoNight` — Deep navy & neon blue
+- `themes.dracula` — Dark violet & pink
+- `themes.cyberpunk` — High-contrast black, cyan & yellow
+
+### Creating Custom Themes
+
+To create a custom theme, provide 3 colors (`background`, `text`, and `primary`). StageRoutine automatically derives the matching secondary shades:
+
+```typescript
+stage.theme({
+  background: "#1e1e2e",
+  text: "#cdd6f4",
+  primary: "#cba6f7",
+});
+```
+
+![Automatic Palette Derivation](/img/adaptive-theming.svg)
+
+You can also provide optional overrides for fonts, border radius, and surfaces:
+
+```typescript
+stage.theme({
+  background: "#0f172a",
+  text: "#f8fafc",
+  primary: "#38bdf8",
+  radius: "0.75rem",
+  fontSans: '"Fira Code", monospace',
+});
+```
+
+## 2. Element Customization
+
+Elements accept `color`, `style`, and `theme` options.
+
+### Typed Inline Styles
+
+Every element accepts a `style` option typed via `csstype`:
+
+```typescript
+import { Title, Text } from "stageroutine";
+
+const title = Title("Architecture Overview", {
+  x: "center",
+  y: 40,
+  color: "#38bdf8",
+  style: {
+    letterSpacing: "-0.04em",
+    textTransform: "uppercase",
+  },
+});
+
+const body = Text("System design principles...", {
+  style: {
+    width: "60cqw",
+    textAlign: "center",
+  },
+});
+```
+
+### Container-Scoped Themes
+
+You can scope theme tokens to a container or composite component. All child elements inherit the localized theme tokens automatically:
+
+```typescript
+import { TerminalWindow } from "stageroutine";
+
+// A custom terminal with its own localized dark palette
+const terminal = TerminalWindow({
+  title: "zsh",
+  theme: {
+    surface: "#11111b",
+    primary: "#a6e3a1",
+  },
+});
+```
+
+## 3. How Styles Work Under the Hood
+
+### Cascade Layers
+
+StageRoutine wraps all internal component styles inside standard W3C cascade layers:
+
+```css
+@layer sr-base, sr-components;
+```
+
+1. **`sr-base`**: Declares default `:root` tokens, fonts, and reset styles.
+2. **`sr-components`**: Declares component layout and visual styles.
+
+According to the W3C Cascade Layers specification, **unlayered styles always take precedence over layered styles**. This design acts as a defensive sandbox:
+- Global CSS resets on a host webpage will not break StageRoutine slides.
+- Custom utility classes applied via `className: "my-class"` always win over default component styles without needing `!important`.
+
+### Semantic Design Tokens
+
+When building custom components, bind colors and metrics to `--sr-*` CSS variables instead of hardcoded values:
+
+| CSS Variable | Default Meaning | Example Usage |
+| :--- | :--- | :--- |
+| `--sr-background` | Canvas backdrop color | Slide background |
+| `--sr-text` | Primary foreground text | Headings, hero copy |
+| `--sr-text-muted` | 65% opacity text tint | Paragraphs, descriptions |
+| `--sr-text-dim` | 40% opacity text tint | Kickers, labels, bullet dots |
+| `--sr-primary` | Main accent / brand color | Focus borders, glow highlights |
+| `--sr-surface` | Glass container fill | Terminal and Card backgrounds |
+| `--sr-surface-border`| Subtle outline | Container edges |
+| `--sr-radius` | Global border radius | Cards, buttons, terminals |
+| `--sr-font-sans` | Sans-serif typography | Titles, descriptions |
+| `--sr-font-mono` | Monospace typography | Code blocks, terminals, kickers |
+
+Referencing these variables ensures your custom elements automatically respond when `stage.theme(...)` is called:
+
+```css
+.my-custom-badge {
+  background: var(--sr-surface);
+  border: var(--sr-surface-border);
+  border-radius: var(--sr-radius);
+  color: var(--sr-text);
+}
+```

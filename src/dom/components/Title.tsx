@@ -2,6 +2,7 @@
  * Headline typography component supporting default title, hero, and serif editorial variants.
  */
 
+import "./Title.css";
 import type { ElementOptions } from "../element";
 
 /**
@@ -42,12 +43,23 @@ export function Title(text: string, options: TitleOptions = {}) {
     baseClass = "sr-serif-lead";
   }
 
-  const { className, hero: _hero, serif: _serif, variant: _variant, ...restOptions } = options;
+  const {
+    className,
+    hero: _hero,
+    serif: _serif,
+    variant: _variant,
+    color,
+    style: customStyle,
+    ...restOptions
+  } = options;
   const classes = [baseClass, className].filter(Boolean).join(" ");
-  const style = options.color ? { color: options.color } : undefined;
+  const mergedStyle = {
+    ...(color ? { color } : {}),
+    ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
+  };
 
   return (
-    <div className={classes} style={style} {...restOptions}>
+    <div className={classes} style={mergedStyle} {...restOptions}>
       {options.kicker && <span className="sr-kicker">{options.kicker}</span>}
       {text}
     </div>

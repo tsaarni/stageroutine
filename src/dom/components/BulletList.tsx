@@ -2,6 +2,7 @@
  * Bullet list component with individual bullet point animation and interactive click-and-drag focus.
  */
 
+import "./BulletList.css";
 import { getActiveStage } from "../../core/stage";
 import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";

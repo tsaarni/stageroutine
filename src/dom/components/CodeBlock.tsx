@@ -3,6 +3,7 @@
  * and interactive line/multi-line drag focus.
  */
 
+import "./CodeBlock.css";
 import { codeToHtml } from "shiki";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
@@ -12,9 +13,12 @@ import { attachRangeSelection } from "../interaction";
  * Configuration options for the syntax-highlighted CodeBlock component.
  * @category Components
  */
-export interface CodeBlockOptions extends ElementOptions {
+export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
   lang?: string;
-  theme?: string;
+  /** Shiki syntax highlighting theme (e.g. "vitesse-dark", "github-dark") or Stage ThemeConfig */
+  theme?: string | ElementOptions["theme"];
+  /** Explicit alias for Shiki syntax theme */
+  syntaxTheme?: string;
   className?: string;
   /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
   interactive?: boolean;
@@ -39,7 +43,8 @@ export function CodeBlock(
   options: CodeBlockOptions = {},
 ): CodeBlockElement {
   const lang = options.lang || "typescript";
-  const theme = options.theme || "vitesse-dark";
+  const shikiTheme =
+    options.syntaxTheme || (typeof options.theme === "string" ? options.theme : "vitesse-dark");
   const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
   const isInteractive = options.interactive ?? true;
 
@@ -93,7 +98,7 @@ export function CodeBlock(
   });
 
   // Highlight with Shiki TextMate engine
-  codeToHtml(trimmed, { lang, theme })
+  codeToHtml(trimmed, { lang, theme: shikiTheme })
     .then((html) => {
       const temp = document.createElement("div");
       temp.innerHTML = html;
@@ -109,7 +114,8 @@ export function CodeBlock(
     });
 
   const stage = getActiveStage();
-  const domEl = new DOMElement("CodeBlock", preEl, options);
+  const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
+  const domEl = new DOMElement("CodeBlock", preEl, { ...options, theme: elementTheme });
   const el = stage.registerElement(domEl) as unknown as CodeBlockElement;
 
   el.focusLines = function (start: number, end: number = start) {

@@ -2,6 +2,7 @@
  * Standalone reactive Icon element for presentation slides and technical diagrams.
  */
 
+import "./Icon.css";
 import { getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 

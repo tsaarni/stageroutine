@@ -2,6 +2,7 @@
  * Body copy paragraph component formatted for high-legibility presentation slides.
  */
 
+import "./Text.css";
 import type { ElementOptions } from "../element";
 
 /**
@@ -18,11 +19,15 @@ export interface TextOptions extends ElementOptions {
  * @category Components
  */
 export function Text(text: string, options: TextOptions = {}) {
-  const classes = ["sr-text", options.className].filter(Boolean).join(" ");
-  const style = options.color ? { color: options.color } : undefined;
+  const { className, color, style: customStyle, ...restOptions } = options;
+  const classes = ["sr-text", className].filter(Boolean).join(" ");
+  const mergedStyle = {
+    ...(color ? { color } : {}),
+    ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
+  };
 
   return (
-    <p className={classes} style={style} {...options}>
+    <p className={classes} style={mergedStyle} {...restOptions}>
       {text}
     </p>
   );

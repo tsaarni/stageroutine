@@ -1,3 +1,4 @@
+import "./Connector.css";
 import { getActiveStage } from "../../core/index";
 import type { ElementAnchor, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";

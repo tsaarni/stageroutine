@@ -119,6 +119,7 @@ const sidebars: SidebarsConfig = {
       label: "Advanced",
       items: [
         "advanced/under-the-hood",
+        "advanced/styling-and-theming",
         "advanced/creating-components",
         "advanced/overlays-and-events",
         "advanced/icon-sets",

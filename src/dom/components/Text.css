@@ -1,0 +1,11 @@
+@layer sr-components {
+  .sr-text {
+    font-family: var(--sr-font-sans);
+    font-size: var(--sr-font-body);
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--sr-text-muted);
+  }
+}

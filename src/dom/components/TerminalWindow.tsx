@@ -2,6 +2,7 @@
  * Terminal window component with macOS-style window controls and line-by-line interactive focus.
  */
 
+import "./TerminalWindow.css";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";

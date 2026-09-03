@@ -2,8 +2,10 @@
  * Represents an animated HTML element on the stage, wrapping a real DOM node with reactive transform properties.
  */
 
+import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
 import type { ElementAnchor, ReactiveElementBase, ReactiveProp } from "../core/types";
+import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 
 let nextId = 1;
 
@@ -32,7 +34,8 @@ export interface ElementOptions {
   brightness?: ReactiveProp<number>;
   color?: ReactiveProp<string>;
   className?: string;
-  style?: Partial<CSSStyleDeclaration>;
+  style?: CSSProperties | Partial<CSSStyleDeclaration>;
+  theme?: Partial<ThemeConfig>;
 }
 
 /**
@@ -135,6 +138,10 @@ export class DOMElement implements ReactiveElementBase {
       this.domElement.className = Array.from(new Set([...existing, ...incoming]))
         .filter(Boolean)
         .join(" ");
+    }
+
+    if (options.theme) {
+      applyThemeTokens(this.domElement, options.theme);
     }
 
     if (options.style && typeof options.style === "object") {

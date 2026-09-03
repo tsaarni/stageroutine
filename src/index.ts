@@ -22,6 +22,16 @@ export type {
   OverlayPlugin,
   OverlayContext,
 } from "./core/types";
+export {
+  themes,
+  defaultDark,
+  defaultLight,
+  dracula,
+  tokyoNight,
+  cyberpunk,
+  applyThemeTokens,
+  TOKEN_MAP,
+} from "./theme/index";
 
 // Motion & Transitions
 export {

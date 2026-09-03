@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StageRoutine Style and Theme Inheritance Hierarchy" viewBox="0 0 780 290" width="100%">
+  <title>StageRoutine Style and Theme Inheritance</title>
+
+  <defs>
+    <marker id="inherit-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+    </marker>
+    <marker id="inherit-arrow-muted" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="rgba(255, 255, 255, 0.35)" />
+    </marker>
+  </defs>
+
+  <!-- Outer Canvas Container -->
+  <rect x="10" y="10" width="760" height="270" rx="10" fill="rgba(56, 189, 248, 0.02)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5" />
+  <text x="30" y="38" fill="#ffffff" font-size="15" font-weight="700" font-family="system-ui, sans-serif">Style &amp; Theme Inheritance</text>
+  <text x="235" y="38" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">— Local element customizations override the stage theme, which overrides defaults</text>
+
+  <!-- Level 1: Element Customization -->
+  <g transform="translate(30, 55)">
+    <rect x="0" y="0" width="700" height="54" rx="6" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="1.5" />
+    <text x="20" y="24" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif">1. Element Customization</text>
+    <text x="205" y="24" fill="#a1a1aa" font-size="13" font-family="system-ui, sans-serif">— Local overrides: typed CSS properties, colors, or container themes</text>
+    <text x="20" y="44" fill="#38bdf8" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace">Title("...", { color: "#38bdf8", style: { letterSpacing: "-0.04em" } })</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="70" y1="111" x2="70" y2="127" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#inherit-arrow)" />
+  <text x="85" y="123" fill="#38bdf8" font-size="11" font-weight="600" font-family="system-ui, sans-serif">overrides stage theme</text>
+
+  <!-- Level 2: Stage Theme -->
+  <g transform="translate(30, 130)">
+    <rect x="0" y="0" width="700" height="54" rx="6" fill="rgba(255, 255, 255, 0.04)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.5" />
+    <text x="20" y="24" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif">2. Stage Theme</text>
+    <text x="140" y="24" fill="#a1a1aa" font-size="13" font-family="system-ui, sans-serif">— Presentation-wide palette: canvas background, accent color, and glass surfaces</text>
+    <text x="20" y="44" fill="#38bdf8" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace">stage.theme(themes.tokyoNight)</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="70" y1="186" x2="70" y2="202" stroke="rgba(255, 255, 255, 0.35)" stroke-width="1.5" marker-end="url(#inherit-arrow-muted)" />
+  <text x="85" y="198" fill="#a1a1aa" font-size="11" font-weight="500" font-family="system-ui, sans-serif">overrides out-of-the-box defaults</text>
+
+  <!-- Level 3: Built-in Defaults -->
+  <g transform="translate(30, 205)">
+    <rect x="0" y="0" width="700" height="54" rx="6" fill="rgba(255, 255, 255, 0.02)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+    <text x="20" y="24" fill="#a1a1aa" font-size="14" font-weight="700" font-family="system-ui, sans-serif">3. Built-in Defaults</text>
+    <text x="165" y="24" fill="#71717a" font-size="13" font-family="system-ui, sans-serif">— Base fallback appearance used when no theme or custom style is specified</text>
+    <text x="20" y="44" fill="#71717a" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace">Default component layout, typography, and colors</text>
+  </g>
+</svg>

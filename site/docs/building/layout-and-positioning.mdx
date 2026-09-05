@@ -2,67 +2,159 @@
 sidebar_position: 4
 ---
 
-# Layout & Positioning
+# Layout and Positioning
 
-StageRoutine includes layout helpers under the `arrange` namespace to position groups of elements cleanly without manual coordinate calculations.
+The `layout` object calculates element coordinates and dimensions automatically.
+For details on stage units and screen coordinates, see [Canvas & Coordinates](./canvas-and-coordinates).
 
-## `arrange.split`
+![StageRoutine Layout Modes](/img/layout-modes.svg)
 
-Splits elements into two columns and calculates an optional vertical dividing line:
+## Vertical Stacks
+
+Use `layout.vstack` to arrange elements in a column from top to bottom.
 
 ```typescript
-import { arrange } from "stageroutine";
+import { layout } from "stageroutine";
 
-const { rule } = arrange.split([heading, body], codePanel, {
-  leftX: 8,
-  rightX: 52,
-  y: 25,
+layout.vstack([title, subtitle, description], {
+  x: "center", // Horizontal position or "center" (default: 10)
+  y: 20,       // Vertical start position (default: 15)
+  gap: 3,      // Space between elements (default: 3)
+});
+```
+
+## Horizontal Stacks
+
+Use `layout.hstack` to arrange elements in a row from left to right.
+
+```typescript
+layout.hstack([card1, card2, card3], {
+  x: 10,  // Horizontal start position (default: 10)
+  y: 35,  // Vertical position or "center" (default: 15)
+  gap: 4, // Space between elements (default: 4)
+});
+```
+
+## Nested Stacks
+
+You can nest arrays inside `layout.hstack` and `layout.vstack`.
+An inner array switches the layout direction for that slot.
+
+- In `layout.hstack`, an inner array stacks elements vertically into a column.
+- In `layout.vstack`, an inner array stacks elements horizontally into a row.
+
+![StageRoutine Nested Stacks](/img/nested-stacks.svg)
+
+```typescript
+// Two columns side by side
+layout.hstack([
+  [heading, body], // First column (stacked vertically)
+  codePanel,       // Second column
+], {
   gap: 4,
-  rule: { dashed: true, color: "rgba(255, 255, 255, 0.15)" }, // or simply `rule: true`
 });
 
-// `rule` is a generated Connector element placed between the columns
-if (rule) {
-  stage.scene("Comparison").with(heading, body, codePanel, rule);
-}
+// A row nested inside a vertical stack
+layout.vstack([
+  header,
+  [card1, card2],  // Nested row (arranged horizontally)
+  footer,
+], {
+  gap: 3,
+});
 ```
 
-## `arrange.stack`
-
-Arranges elements in a vertical column with uniform spacing:
+Nested slots divide available space equally by default.
+To set custom sizes, pass an array to `width` or `height`:
 
 ```typescript
-arrange.stack([title, subtitle, description], {
-  x: "center",
-  startY: 30,
-  gap: 5,
+// 40% for column 1, 50% for column 2
+layout.hstack([[heading, body], codePanel], {
+  width: [40, 50],
 });
 ```
 
-## `arrange.grid`
+## Grid Layouts
 
-Positions elements into rows and columns:
+Use `layout.grid` to align elements in rows and columns at the same time.
+Pass a two-dimensional array of rows.
+Use `null` for empty cells.
 
 ```typescript
-arrange.grid([card1, card2, card3, card4], {
-  cols: 2,
-  startX: 10,
-  startY: 20,
-  cellWidth: 38,
-  cellHeight: 30,
-  gapX: 4,
-  gapY: 4,
+layout.grid([
+  [clientApp,   apiGateway,   null],
+  [authService, dbService,    redisCache],
+], {
+  x: "center", // Horizontal position or "center" (default: 10)
+  y: 25,       // Vertical start position (default: 15)
+  gapX: 4,     // Space between columns (default: 4)
+  gapY: 4,     // Space between rows (default: 4)
 });
 ```
 
-## `arrange.circle`
+## Relative Positioning
 
-Distributes elements evenly around a circular circumference:
+Use relative helpers to position one element next to another element.
+These helpers change only one coordinate axis.
 
 ```typescript
-arrange.circle([node1, node2, node3, node4], {
-  centerX: 50,
-  centerY: 50,
-  radius: 25,
+// Place caption 2 units below chart
+layout.below(caption, chart, 2);
+
+// Place details 4 units to the right of card
+layout.rightOf(details, card, 4);
+```
+
+Available helpers:
+- `layout.below(element, target, gap)`: sets `y` below the target.
+- `layout.above(element, target, gap)`: sets `y` above the target.
+- `layout.rightOf(element, target, gap)`: sets `x` to the right of the target.
+- `layout.leftOf(element, target, gap)`: sets `x` to the left of the target.
+
+## Circular Layouts
+
+Use `layout.circle` to place elements in a circle around a center point.
+
+```typescript
+layout.circle([node1, node2, node3, node4], {
+  center: [50, 50], // Center point [x, y] or element (default: [50, 50])
+  radius: 18,       // Distance from center (default: 20)
 });
 ```
+
+## Divider Lines
+
+Add `rule: true` to draw lines between elements.
+The layout functions return the created line elements.
+Pass them to `scene.with`:
+
+```typescript
+const rules = layout.hstack([[heading, body], codePanel], {
+  rule: { dashed: true, color: "rgba(255, 255, 255, 0.15)" },
+});
+
+stage.scene("Overview").with(heading, body, codePanel, ...rules);
+```
+
+## Animated Transitions
+
+By default, layouts update positions immediately.
+To animate elements into their new positions, pass a callback to `animate`.
+
+The layout calculates the target `x` and `y` coordinates, then calls your callback for each axis to build the transition.
+
+```typescript
+layout.vstack([card1, card2, card3], {
+  animate: (coord, el, index) =>
+    to(coord).duration(0.8).ease("quartOut").delay(index * 0.1),
+});
+
+stage.scene("Details").with(card1, card2, card3);
+```
+
+Callback parameters:
+- `coord`: Target coordinate (`x` or `y`) calculated by the layout.
+- `el`: Element being positioned.
+- `index`: Element index in the layout, useful for staggered delays.
+
+To use default timing without custom easing or delay, pass `animate: true`.

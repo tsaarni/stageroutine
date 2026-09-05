@@ -2,6 +2,7 @@
  * Places a soft dark underlay behind text or elements to keep them readable over busy backgrounds.
  */
 
+import type { Point } from "../core/types";
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 /**
@@ -14,7 +15,7 @@ export interface ScrimOptions {
   /** Color of the radial dark aura (default: "#09090b"). */
   color?: string;
   /** Horizontal and vertical expansion/spread factor (default: "medium"). */
-  spread?: "tight" | "medium" | "wide" | { x: number; y: number };
+  spread?: "tight" | "medium" | "wide" | Point;
   /** Optional backdrop blur in pixels behind the scrim (default: 0). */
   blur?: number;
 }
@@ -34,9 +35,9 @@ export function scrim(options: ScrimOptions = {}): ElementDecorator {
   } else if (spread === "wide") {
     insetY = "-90%";
     insetX = "-45%";
-  } else if (typeof spread === "object") {
-    insetY = `-${spread.y}%`;
-    insetX = `-${spread.x}%`;
+  } else if (Array.isArray(spread)) {
+    insetX = `-${spread[0]}%`;
+    insetY = `-${spread[1]}%`;
   }
 
   return (element: DOMElement) => {

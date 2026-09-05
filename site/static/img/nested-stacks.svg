@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StageRoutine Nested Stacks" viewBox="0 0 780 245" width="100%">
+  <title>StageRoutine Nested Stacks</title>
+
+  <defs>
+    <marker id="arrow-sky" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+
+  <!-- Panel 1: layout.hstack with nested column -->
+  <g>
+    <rect x="20" y="20" width="360" height="210" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="40" y="48" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.hstack</text>
+    <text x="40" y="66" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">Nested column inside row</text>
+    <text x="355" y="48" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">→ X primary</text>
+
+    <!-- Slot 1: Column [heading, body] -->
+    <rect x="40" y="80" width="145" height="136" rx="6" fill="rgba(56, 189, 248, 0.03)" stroke="rgba(56, 189, 248, 0.4)" stroke-dasharray="3 3" stroke-width="1" />
+    <text x="112" y="96" fill="#38bdf8" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">[heading, body] ↓</text>
+
+    <rect x="48" y="104" width="129" height="46" rx="5" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="112" y="132" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">heading</text>
+
+    <rect x="48" y="158" width="129" height="50" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="112" y="188" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">body</text>
+
+    <!-- Gap between slots -->
+    <line x1="187" y1="145" x2="203" y2="145" stroke="#38bdf8" stroke-width="1.5" marker-start="url(#arrow-sky)" marker-end="url(#arrow-sky)" />
+    <text x="195" y="137" fill="#38bdf8" font-size="9" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">gap</text>
+
+    <!-- Slot 2: Single element codePanel -->
+    <rect x="205" y="80" width="150" height="136" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="280" y="144" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">codePanel</text>
+    <text x="280" y="164" fill="#a1a1aa" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">single element</text>
+  </g>
+
+  <!-- Panel 2: layout.vstack with nested row -->
+  <g>
+    <rect x="400" y="20" width="360" height="210" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="420" y="48" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.vstack</text>
+    <text x="420" y="66" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">Nested row inside column</text>
+    <text x="735" y="48" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">↓ Y primary</text>
+
+    <!-- Slot 1: header -->
+    <rect x="420" y="78" width="320" height="30" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="580" y="98" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">header</text>
+
+    <!-- Slot 2: Row [card1, card2] -->
+    <rect x="420" y="116" width="320" height="60" rx="6" fill="rgba(56, 189, 248, 0.03)" stroke="rgba(56, 189, 248, 0.4)" stroke-dasharray="3 3" stroke-width="1" />
+    <text x="430" y="129" fill="#38bdf8" font-size="9" font-weight="600" font-family="JetBrains Mono, monospace">[card1, card2] →</text>
+
+    <rect x="428" y="133" width="145" height="36" rx="4" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="500" y="156" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">card1</text>
+
+    <!-- Gap between nested cards -->
+    <line x1="575" y1="151" x2="585" y2="151" stroke="#38bdf8" stroke-width="1.5" marker-start="url(#arrow-sky)" marker-end="url(#arrow-sky)" />
+
+    <rect x="587" y="133" width="145" height="36" rx="4" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="660" y="156" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">card2</text>
+
+    <!-- Slot 3: footer -->
+    <rect x="420" y="184" width="320" height="30" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="580" y="204" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">footer</text>
+  </g>
+</svg>

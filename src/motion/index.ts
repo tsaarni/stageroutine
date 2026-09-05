@@ -2,21 +2,16 @@
  * Exports all motion primitives: atomic transitions (to) and group choreography (stagger).
  */
 
-export {
-  to,
-  cubicBezier,
-  builtinEasings,
-  isTransitionDescriptor,
-} from "./transitions";
+export { to, cubicBezier } from "./transitions";
 
 export {
   stagger,
-  StaggerBuilder,
+  type StaggerBuilder,
   type StaggerOptions,
 } from "./stagger";
 
 export {
   crossfade,
-  CrossfadeBuilder,
+  type CrossfadeBuilder,
   type CrossfadeOptions,
 } from "./crossfade";

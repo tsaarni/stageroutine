@@ -12,7 +12,8 @@ StageRoutine is a presentation framework in TypeScript and TSX for building cont
 ## Example
 
 ```typescript
-import { Stage, Title, Kicker, to, AsciiFluid, vignette } from "stageroutine";
+import { Stage, Title, Kicker, to, vignette } from "stageroutine";
+import { AsciiFluid } from "stageroutine/backgrounds";
 
 // 1. Initialize stage with dynamic background
 const stage = new Stage().background(AsciiFluid().decorate(vignette()));

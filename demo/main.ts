@@ -2,12 +2,7 @@
  * Demo presentation script showing how to build animated slides with StageRoutine.
  */
 
-import Cpu from "~icons/lucide/cpu";
-import Database from "~icons/lucide/database";
-import Globe from "~icons/lucide/globe";
-import Sparkles from "~icons/lucide/sparkles";
 import {
-  AsciiFluid,
   BulletList,
   Card,
   Circle,
@@ -24,17 +19,22 @@ import {
   TerminalWindow,
   Text,
   Title,
-  arrange,
   bracket,
   crossfade,
   glow,
   gradient,
+  layout,
   pulseSequence,
   rail,
   to,
   typewriter,
   vignette,
-} from "../src/index";
+} from "stageroutine";
+import { AsciiFluid } from "stageroutine/backgrounds";
+import Cpu from "~icons/lucide/cpu";
+import Database from "~icons/lucide/database";
+import Globe from "~icons/lucide/globe";
+import Sparkles from "~icons/lucide/sparkles";
 import notesDoc from "./notes.md?raw";
 
 // Initialize presentation stage with the ASCII Fluid background
@@ -122,20 +122,18 @@ const codePanel = CodeBlock(
   },
 ).decorate(rail());
 
-const { rule: planeRule } = arrange.split([leftHeading, leftBody], codePanel, {
-  leftX: 6,
-  rightX: 52,
+const [planeRule] = layout.hstack([[leftHeading, leftBody], codePanel], {
+  x: 6,
   y: 23,
-  gap: 3.5,
+  gap: 4,
+  width: [42, 44],
   rule: { color: "rgba(255, 255, 255, 0.12)", dashed: true },
 });
 if (planeRule) planeRule.opacity = 0;
 codePanel.x = 110;
 
 // brandTitle remains in this scene, so it smoothly glides to its new position instead of recreating.
-stage
-  .scene("Continuous Plane")
-  .with(brandTitle, leftHeading, leftBody, codePanel, ...(planeRule ? [planeRule] : []));
+stage.scene("Continuous Plane").with(brandTitle, leftHeading, leftBody, codePanel, planeRule);
 
 // Reposition brandTitle to the top-left corner.
 brandTitle.x = to(6).ease("cubicInOut");
@@ -184,7 +182,7 @@ const featureChecklist = BulletList(
   },
 );
 
-arrange.column([rightHeading, rightBody, featureChecklist], {
+layout.vstack([rightHeading, rightBody, featureChecklist], {
   x: 52,
   y: 18,
   gap: 4,
@@ -264,7 +262,7 @@ const showcaseIcon = Sparkles({
   opacity: 0,
 });
 
-arrange.row([showcaseKicker, showcasePill, customPill, showcaseIcon], {
+layout.hstack([showcaseKicker, showcasePill, customPill, showcaseIcon], {
   x: 6,
   y: 18,
   gap: 2,
@@ -319,10 +317,12 @@ const showcaseTerminal = TerminalWindow({
   width: "42cqw",
 });
 
-arrange.split(
-  [showcaseTitle, showcaseText, showcaseCard, showcaseList],
-  [showcaseCode, showcaseTerminal],
-  { leftX: 6, rightX: 52, y: 25, gap: 3.5 },
+layout.hstack(
+  [
+    [showcaseTitle, showcaseText, showcaseCard, showcaseList],
+    [showcaseCode, showcaseTerminal],
+  ],
+  { x: 6, y: 25, gap: 4, width: [42, 44] },
 );
 
 stage
@@ -417,10 +417,12 @@ const decoratorCode = CodeBlock(
   },
 ).decorate(bracket({ side: "left", style: "curly", color: "rgba(255, 255, 255, 0.2)" }));
 
-arrange.split(
-  [decoratorKicker, decoratorHeading, decoratorGradientDemo, decoratorTypewriterDemo],
-  decoratorCode,
-  { leftX: 6, rightX: 52, y: 18, leftWidth: 42, rightWidth: 44, gap: 3 },
+layout.hstack(
+  [
+    [decoratorKicker, decoratorHeading, decoratorGradientDemo, decoratorTypewriterDemo],
+    decoratorCode,
+  ],
+  { x: 6, y: 18, gap: 4, width: [42, 44] },
 );
 
 stage
@@ -484,7 +486,7 @@ const serviceMetricsTable = Table({
   width: "42cqw",
 });
 
-arrange.column([tableKicker, tableHeading, tableText], {
+layout.vstack([tableKicker, tableHeading, tableText], {
   x: 6,
   y: 18,
   width: 42,
@@ -557,7 +559,7 @@ const topologyHeading = Title("Reactive Component Graphs", {
   width: "42cqw",
 });
 
-arrange.column([topologyKicker, topologyHeading], {
+layout.vstack([topologyKicker, topologyHeading], {
   x: 6,
   y: 18,
   gap: 2,
@@ -606,7 +608,7 @@ const topologyNote = Card(
 ).decorate(rail({ side: "right" }));
 
 // Position topology nodes via wider 2D matrix grid shifted to the right
-arrange.grid(
+layout.grid(
   [
     [clientCard, apiGateway, redisCache],
     [null, authService, databaseCard],
@@ -810,8 +812,8 @@ stage
 sequenceKicker.opacity = 1;
 sequenceHeading.opacity = 1;
 
-// Fly shared participant components smoothly into Sequence Timeline positions via arrange.row!
-arrange.row([clientCard, apiGateway, authService], {
+// Fly shared participant components smoothly into Sequence Timeline positions via layout.hstack!
+layout.hstack([clientCard, apiGateway, authService], {
   x: 44,
   y: 22,
   gap: 12.5,
@@ -853,7 +855,7 @@ const stateHeading = Title("Interactive State Transitions", {
   width: "36cqw",
 });
 
-arrange.column([stateKicker, stateHeading], {
+layout.vstack([stateKicker, stateHeading], {
   x: 6,
   y: 18,
   gap: 2,
@@ -905,16 +907,15 @@ const stateRejected = Card("Rejected", {
 });
 
 // Arrange all nodes in a balanced circular topology
-arrange.circle([stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal], {
-  centerX: 64,
-  centerY: 60,
+layout.circle([stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal], {
+  center: [64, 60],
   radius: 20, // flatten 0 → true circle in pixels (cqw vs cqh auto-compensated)
   startAngle: -160,
   flatten: 0.2,
 });
 
 // Active sits directly above Authenticating (left edges aligned)
-arrange.above(stateActive, stateAuthenticating, 30);
+layout.above(stateActive, stateAuthenticating, 30);
 
 // Elegant Single-Curvature Arc Transitions
 const tStart = Connector(stateInitial, stateIdle, {
@@ -1060,7 +1061,7 @@ const geoDescription = Text(
   },
 );
 
-arrange.column([geoKicker, geoHeading, geoDescription], {
+layout.vstack([geoKicker, geoHeading, geoDescription], {
   x: 6,
   y: 18,
   gap: 3,
@@ -1095,13 +1096,18 @@ const morphPill = Pill("Cluster Active", {
   borderColor: "#10b981",
 });
 
-arrange.grid([morphBox, morphCircle, morphDiamond, morphPill], {
-  cols: 2,
-  x: 52,
-  y: 28,
-  gapX: 8,
-  gapY: 7,
-});
+layout.grid(
+  [
+    [morphBox, morphCircle],
+    [morphDiamond, morphPill],
+  ],
+  {
+    x: 52,
+    y: 28,
+    gapX: 8,
+    gapY: 7,
+  },
+);
 
 const connBoxCircle = Connector(morphBox, morphCircle, {
   label: "auto-tracking",
@@ -1227,20 +1233,22 @@ const aiReasoningNode = Card(
   },
 );
 
-const { rule: aiRule } = arrange.split(
-  [aiKicker, aiHeading, aiDescription],
-  [aiClientNode, aiGatewayNode, aiReasoningNode, aiVectorNode],
+const [aiRule] = layout.hstack(
+  [
+    [aiKicker, aiHeading, aiDescription],
+    [aiClientNode, aiGatewayNode, aiReasoningNode, aiVectorNode],
+  ],
   {
-    leftX: 6,
-    rightX: 39,
+    x: 6,
     y: 18,
-    gap: 3,
+    gap: 4,
+    width: [29, 57],
     rule: { color: "rgba(255, 255, 255, 0.22)", strokeWidth: 2.5, dashed: false },
   },
 );
 if (aiRule) aiRule.opacity = 0;
 
-arrange.grid(
+layout.grid(
   [
     [aiClientNode, aiGatewayNode, aiReasoningNode],
     [null, aiVectorNode, null],
@@ -1304,7 +1312,7 @@ stage
     connAiClientGateway,
     connAiGatewayVector,
     connAiGatewayLLM,
-    ...(aiRule ? [aiRule] : []),
+    aiRule,
   );
 
 // Dismiss geometry elements
@@ -1391,13 +1399,11 @@ const crossfadeCode = CodeBlock(
   },
 ).decorate(bracket({ side: "left", style: "curly", color: "rgba(56, 189, 248, 0.4)" }));
 
-arrange.split([motionKicker, motionHeading, motionDescription, legacyCard], crossfadeCode, {
-  leftX: 6,
-  rightX: 52,
+layout.hstack([[motionKicker, motionHeading, motionDescription, legacyCard], crossfadeCode], {
+  x: 6,
   y: 18,
-  leftWidth: 42,
-  rightWidth: 44,
-  gap: 3.5,
+  gap: 4,
+  width: [42, 44],
 });
 
 // Match position and dimensions exactly for in-place crossfade

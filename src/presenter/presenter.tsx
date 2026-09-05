@@ -14,14 +14,10 @@ import "@fontsource/material-symbols-outlined/400.css";
 import { MetricRegistry } from "../core/metrics";
 import { TimerWidget } from "./components/TimerWidget";
 import { WallClock } from "./components/WallClock";
-import {
-  type PresenterMessage,
-  PresenterRecorder,
-  type PresenterSceneInfo,
-  createPresenterClient,
-} from "./index";
+import { PresenterClient, PresenterRecorder } from "./index";
+import type { PresenterMessage, PresenterSceneInfo } from "./messages";
 
-const client = createPresenterClient();
+const client = new PresenterClient();
 const recorder = new PresenterRecorder();
 
 // Metrics & Diagnostics

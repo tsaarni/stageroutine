@@ -1,4 +1,4 @@
-import type { ReactiveElementBase } from "../core/index";
+import type { Point, ReactiveElementBase, TransitionDescriptor } from "../core/index";
 import { to } from "../motion/transitions";
 import { Connector, type ConnectorElement } from "./components/Connector";
 import type { DOMElement } from "./element";
@@ -23,6 +23,21 @@ export type LayoutElement =
 export type GridSlot = LayoutElement | null | undefined;
 
 /**
+ * Animation configuration for layout placement.
+ * Can be:
+ * - `boolean`: `true` to animate with default duration (0.6s).
+ * - `Function`: A callback receiving `(coord, element, index)` returning a configured transition via `to(coord)`.
+ * @category Layout
+ */
+export type LayoutAnimation =
+  | boolean
+  | ((
+      coord: number | "center",
+      element: LayoutElement,
+      index: number,
+    ) => TransitionDescriptor<unknown>);
+
+/**
  * @internal
  */
 export interface RuleOptions {
@@ -39,38 +54,38 @@ export interface RuleOptions {
 }
 
 /**
+ * A slot in a stack layout: either a single element or a nested array of elements (column/row).
+ * @category Layout
+ */
+export type StackSlot = LayoutElement | LayoutElement[];
+
+/**
  * Options for grid, row, and column layout arrangements.
  * @category Layout
  */
 export interface LayoutOptions {
+  /** Horizontal start position in stage width percentage units (`cqw`, 0..100) or `"center"`. */
   x?: number | "center";
+  /** Vertical start position in stage height percentage units (`cqh`, 0..100) or `"center"`. */
   y?: number | "center";
-  width?: number | string;
-  height?: number | string;
+  /** Width constraint in stage width percentage units (`cqw`, 0..100), CSS unit string, or array per column. */
+  width?: number | string | (number | string)[];
+  /** Height constraint in stage height percentage units (`cqh`, 0..100), CSS unit string, or array per row. */
+  height?: number | string | (number | string)[];
+  /** Gutter spacing shorthand along the primary axis in stage percentage units (`cqw` horizontally, `cqh` vertically). */
   gap?: number;
+  /** Horizontal gutter spacing in stage width percentage units (`cqw`, 0..100). */
   gapX?: number;
+  /** Vertical gutter spacing in stage height percentage units (`cqh`, 0..100). */
   gapY?: number;
-  cols?: number;
-  animate?: boolean;
+  /**
+   * Whether or how to animate elements into target positions.
+   * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+   */
+  animate?: LayoutAnimation;
+  /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
   duration?: number;
-  /** Optional divider rule(s) placed in gutters between elements. */
-  rule?: boolean | RuleOptions;
-}
-
-/**
- * Options for 2-column split layouts.
- * @category Layout
- */
-export interface SplitLayoutOptions {
-  leftX?: number;
-  rightX?: number;
-  y?: number | "center";
-  gap?: number;
-  leftWidth?: number;
-  rightWidth?: number;
-  animate?: boolean;
-  duration?: number;
-  /** Optional column rule placed centrally in the gutter between columns. */
+  /** Optional divider rule(s) placed in gutters between elements or columns/rows. */
   rule?: boolean | RuleOptions;
 }
 
@@ -81,22 +96,18 @@ export interface SplitLayoutOptions {
 export type RelativePlacement = "top" | "bottom" | "left" | "right";
 
 /**
- * Relative alignment axis mode.
+ * Perpendicular alignment mode for relative placement.
  * @category Layout
  */
 export type RelativeAlign = "start" | "center" | "end";
 
 /**
- * Options for orbital circular / elliptical layout arrangements.
+ * Options for circular/orbit layout arrangement.
  * @category Layout
  */
 export interface CircleLayoutOptions {
-  /** Center X coordinate in stage cqw (default: 50). */
-  centerX?: number;
-  /** Center Y coordinate in stage cqh (default: 50). */
-  centerY?: number;
-  /** Center anchor point as { x, y } or a center element. */
-  center?: { x: number; y: number } | LayoutElement;
+  /** Center anchor point as [x, y] or a center element (default: [50, 50]). */
+  center?: Point | LayoutElement;
   /** Horizontal orbit radius in cqw (default: 18). */
   radius?: number;
   /** Vertical squash factor, 0 = perfect circle, 1 = flat line (default: 0). */
@@ -107,9 +118,12 @@ export interface CircleLayoutOptions {
   span?: number;
   /** Whether each element is centered on its orbit point (default: true). */
   centerElements?: boolean;
-  /** Whether to animate into the circular positions (default: false). */
-  animate?: boolean;
-  /** Duration in seconds if animated (default: 0.6s). */
+  /**
+   * Whether or how to animate elements into circular positions.
+   * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+   */
+  animate?: LayoutAnimation;
+  /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
   duration?: number;
 }
 
@@ -182,32 +196,38 @@ function applyPosition(
   x: number | "center",
   y: number | "center",
   options: {
-    animate?: boolean;
+    animate?: LayoutAnimation;
     duration?: number;
-    width?: number | string;
-    height?: number | string;
+    width?: number | string | (number | string)[];
+    height?: number | string | (number | string)[];
   } = {},
+  index = 0,
 ): void {
   const target = el as Record<string, unknown>;
-  if (options.width !== undefined && target.width === undefined) {
-    target.width = typeof options.width === "number" ? `${options.width}cqw` : options.width;
+  const optWidth = Array.isArray(options.width) ? options.width[0] : options.width;
+  const optHeight = Array.isArray(options.height) ? options.height[0] : options.height;
+  if (optWidth !== undefined && target.width === undefined) {
+    target.width = typeof optWidth === "number" ? `${optWidth}cqw` : optWidth;
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.width) {
-      dom.style.width =
-        typeof options.width === "number" ? `${options.width}cqw` : String(options.width);
+      dom.style.width = typeof optWidth === "number" ? `${optWidth}cqw` : String(optWidth);
     }
   }
-  if (options.height !== undefined && target.height === undefined) {
-    target.height = typeof options.height === "number" ? `${options.height}cqh` : options.height;
+  if (optHeight !== undefined && target.height === undefined) {
+    target.height = typeof optHeight === "number" ? `${optHeight}cqh` : optHeight;
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.height) {
-      dom.style.height =
-        typeof options.height === "number" ? `${options.height}cqh` : String(options.height);
+      dom.style.height = typeof optHeight === "number" ? `${optHeight}cqh` : String(optHeight);
     }
   }
   if (options.animate) {
-    target.x = to(x).duration(options.duration ?? 0.6);
-    target.y = to(y).duration(options.duration ?? 0.6);
+    if (typeof options.animate === "function") {
+      target.x = options.animate(x, el, index);
+      target.y = options.animate(y, el, index);
+    } else {
+      target.x = to(x).duration(options.duration ?? 0.6);
+      target.y = to(y).duration(options.duration ?? 0.6);
+    }
   } else {
     target.x = x;
     target.y = y;
@@ -268,21 +288,82 @@ function positionRelative(
 }
 
 /**
- * Layout helper providing procedural positioning engines (rows, columns, grids, splits, orbits).
+ * Layout helper providing procedural positioning engines (hstack, vstack, grid, split, circle, relational).
  * @category Layout
  */
-export const arrange = {
+export const layout = {
   /**
-   * Arranges elements into a horizontal row.
+   * Arranges elements into a horizontal row (horizontal stack).
    * Returns any created divider rules if options.rule is enabled.
    */
-  row(elements: LayoutElement[], options: LayoutOptions = {}): ConnectorElement[] {
+  /**
+   * Arranges elements or columns horizontally (horizontal stack).
+   * Slots can be single elements or nested arrays of elements (columns stacked vertically).
+   * Returns any created divider rules if options.rule is enabled.
+   */
+  hstack(elements: StackSlot[], options: LayoutOptions = {}): ConnectorElement[] {
     if (elements.length === 0) return [];
 
-    const gap = options.gap ?? 4;
-    const measurements = elements.map((el) => measureElement(el, options.width));
-    const totalWidth =
-      measurements.reduce((sum, m) => sum + m.widthCqw, 0) + Math.max(0, elements.length - 1) * gap;
+    const gapX = options.gapX ?? options.gap ?? 4;
+    const gapY = options.gapY ?? 3;
+
+    const slotCount = elements.length;
+    const defaultX = 10;
+    const startXVal = typeof options.x === "number" ? options.x : defaultX;
+    const totalGapsX = Math.max(0, slotCount - 1) * gapX;
+    const autoColWidth = Math.max(10, (100 - startXVal * 2 - totalGapsX) / slotCount);
+
+    interface MeasuredSlot {
+      widthCqw: number;
+      heightCqh: number;
+      isColumn: boolean;
+      items: { el: LayoutElement; widthCqw: number; heightCqh: number }[];
+    }
+
+    const slotMeasurements: MeasuredSlot[] = [];
+
+    elements.forEach((slot, index) => {
+      const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
+
+      if (Array.isArray(slot)) {
+        const colElements = slot;
+        const colWidth = explicitWidth !== undefined ? explicitWidth : autoColWidth;
+
+        for (const el of colElements) {
+          if ((el as Record<string, unknown>).width === undefined) {
+            (el as Record<string, unknown>).width =
+              typeof colWidth === "number" ? `${colWidth}cqw` : colWidth;
+          }
+        }
+
+        const items = colElements.map((el) => {
+          const m = measureElement(el, colWidth);
+          return { el, widthCqw: m.widthCqw, heightCqh: m.heightCqh };
+        });
+
+        const totalH =
+          items.reduce((sum, it) => sum + it.heightCqh, 0) + Math.max(0, items.length - 1) * gapY;
+        const maxW =
+          typeof colWidth === "number" ? colWidth : Math.max(...items.map((it) => it.widthCqw));
+
+        slotMeasurements.push({
+          widthCqw: maxW,
+          heightCqh: totalH,
+          isColumn: true,
+          items,
+        });
+      } else {
+        const m = measureElement(slot, explicitWidth);
+        slotMeasurements.push({
+          widthCqw: m.widthCqw,
+          heightCqh: m.heightCqh,
+          isColumn: false,
+          items: [{ el: slot, widthCqw: m.widthCqw, heightCqh: m.heightCqh }],
+        });
+      }
+    });
+
+    const totalWidth = slotMeasurements.reduce((sum, sm) => sum + sm.widthCqw, 0) + totalGapsX;
 
     let currentX: number;
     if (options.x === "center") {
@@ -290,50 +371,69 @@ export const arrange = {
     } else if (typeof options.x === "number") {
       currentX = options.x;
     } else {
-      currentX = 10;
+      currentX = defaultX;
     }
 
-    const y = options.y ?? 30;
-    const yNum = typeof y === "number" ? y : 30;
-    const maxH = Math.max(...measurements.map((m) => m.heightCqh));
+    const y = options.y ?? 24;
+    const yNum = typeof y === "number" ? y : 24;
+    const maxH = Math.max(...slotMeasurements.map((sm) => sm.heightCqh));
     const rules: ConnectorElement[] = [];
+    let itemIdx = 0;
 
-    elements.forEach((el, index) => {
-      const m = measurements[index];
-      applyPosition(el, currentX, y, options);
+    slotMeasurements.forEach((sm, index) => {
+      const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
 
-      if (options.rule && index < elements.length - 1) {
-        const ruleX = currentX + m.widthCqw + gap / 2;
+      if (sm.isColumn) {
+        let colY = yNum;
+        for (const { el, heightCqh } of sm.items) {
+          const elWidth = (el as Record<string, unknown>).width as number | string | undefined;
+          const appliedOptions = {
+            ...options,
+            width: explicitWidth !== undefined ? explicitWidth : (elWidth ?? sm.widthCqw),
+          };
+          applyPosition(el, currentX, colY, appliedOptions, itemIdx++);
+          colY += heightCqh + gapY;
+        }
+      } else {
+        const item = sm.items[0];
+        if (item) {
+          const appliedOptions = {
+            ...options,
+            width: explicitWidth,
+          };
+          applyPosition(item.el, currentX, y, appliedOptions, itemIdx++);
+        }
+      }
+
+      if (options.rule && index < slotMeasurements.length - 1) {
+        const ruleX = currentX + sm.widthCqw + gapX / 2;
         const inset =
           typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
         const startY = yNum + inset;
         const endY = yNum + maxH - inset;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const ruleConn = Connector(
-          { x: ruleX, y: startY },
-          { x: ruleX, y: endY },
-          {
-            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-            strokeWidth: cfg.strokeWidth ?? 1,
-            dashed: cfg.dashed,
-            dotted: cfg.dotted,
-            endHead: "none",
-          },
-        );
+        const ruleConn = Connector([ruleX, startY], [ruleX, endY], {
+          color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
+          strokeWidth: cfg.strokeWidth ?? 1,
+          dashed: cfg.dashed,
+          dotted: cfg.dotted,
+          endHead: "none",
+        });
         rules.push(ruleConn);
       }
 
-      currentX += m.widthCqw + gap;
+      currentX += sm.widthCqw + gapX;
     });
 
     return rules;
   },
 
   /**
-   * Arranges elements into a vertical column.
+   * Arranges elements or rows vertically (vertical stack).
+   * Slots can be single elements or nested arrays of elements (rows laid out horizontally).
    * Returns any created divider rules if options.rule is enabled.
    */
-  column(elements: LayoutElement[], options: LayoutOptions = {}): ConnectorElement[] {
+  vstack(elements: StackSlot[], options: LayoutOptions = {}): ConnectorElement[] {
     if (elements.length === 0) return [];
 
     const x = options.x ?? 10;
@@ -341,17 +441,81 @@ export const arrange = {
     const effectiveWidth =
       options.width ?? (x === "center" ? 80 : Math.max(20, 100 - xNum - (xNum > 30 ? 4 : 6)));
 
-    const gap = options.gap ?? 3;
-    const measurements = elements.map((el) =>
-      options.width !== undefined
-        ? measureElement(el, options.width)
-        : (el as Record<string, unknown>).width !== undefined
-          ? measureElement(el)
-          : measureElement(el, effectiveWidth),
-    );
+    const gapY = options.gapY ?? options.gap ?? 3;
+    const gapX = options.gapX ?? 4;
+
+    interface MeasuredSlot {
+      widthCqw: number;
+      heightCqh: number;
+      isRow: boolean;
+      items: { el: LayoutElement; widthCqw: number; heightCqh: number }[];
+    }
+
+    const slotMeasurements: MeasuredSlot[] = [];
+
+    elements.forEach((slot, index) => {
+      const explicitHeight = Array.isArray(options.height) ? options.height[index] : options.height;
+
+      if (Array.isArray(slot)) {
+        const rowElements = slot;
+        const totalGapsX = Math.max(0, rowElements.length - 1) * gapX;
+        const widthVal =
+          typeof effectiveWidth === "number"
+            ? effectiveWidth
+            : Array.isArray(effectiveWidth) && typeof effectiveWidth[0] === "number"
+              ? (effectiveWidth[0] as number)
+              : 80;
+        const autoItemWidth = Math.max(10, (widthVal - totalGapsX) / rowElements.length);
+
+        for (const el of rowElements) {
+          if ((el as Record<string, unknown>).width === undefined) {
+            (el as Record<string, unknown>).width = `${autoItemWidth}cqw`;
+          }
+        }
+
+        const items = rowElements.map((el) => {
+          const m = measureElement(el, autoItemWidth);
+          return { el, widthCqw: m.widthCqw, heightCqh: m.heightCqh };
+        });
+
+        const totalW = items.reduce((sum, it) => sum + it.widthCqw, 0) + totalGapsX;
+        const maxH =
+          typeof explicitHeight === "number"
+            ? explicitHeight
+            : Math.max(...items.map((it) => it.heightCqh));
+
+        slotMeasurements.push({
+          widthCqw: totalW,
+          heightCqh: maxH,
+          isRow: true,
+          items,
+        });
+      } else {
+        const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
+        const elWidth = (slot as Record<string, unknown>).width;
+        const m =
+          explicitW !== undefined
+            ? measureElement(slot, explicitW)
+            : elWidth !== undefined
+              ? measureElement(slot)
+              : measureElement(
+                  slot,
+                  typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
+                    ? effectiveWidth
+                    : undefined,
+                );
+        slotMeasurements.push({
+          widthCqw: m.widthCqw,
+          heightCqh: typeof explicitHeight === "number" ? explicitHeight : m.heightCqh,
+          isRow: false,
+          items: [{ el: slot, widthCqw: m.widthCqw, heightCqh: m.heightCqh }],
+        });
+      }
+    });
+
     const totalHeight =
-      measurements.reduce((sum, m) => sum + m.heightCqh, 0) +
-      Math.max(0, elements.length - 1) * gap;
+      slotMeasurements.reduce((sum, sm) => sum + sm.heightCqh, 0) +
+      Math.max(0, slotMeasurements.length - 1) * gapY;
 
     let currentY: number;
     if (options.y === "center") {
@@ -363,67 +527,81 @@ export const arrange = {
     }
 
     const rules: ConnectorElement[] = [];
+    let itemIdx = 0;
+    const widthNum =
+      typeof effectiveWidth === "number"
+        ? effectiveWidth
+        : typeof effectiveWidth === "string"
+          ? Number.parseFloat(effectiveWidth) || 44
+          : 44;
 
-    elements.forEach((el, index) => {
-      const m = measurements[index];
-      const elWidth = (el as Record<string, unknown>).width as number | string | undefined;
-      const appliedOptions =
-        options.width !== undefined ? options : { ...options, width: elWidth ?? effectiveWidth };
-      applyPosition(el, x, currentY, appliedOptions);
+    slotMeasurements.forEach((sm, index) => {
+      const explicitH = Array.isArray(options.height) ? options.height[index] : options.height;
 
-      if (options.rule && index < elements.length - 1) {
-        const ruleY = currentY + m.heightCqh + gap / 2;
+      if (sm.isRow) {
+        let rowX = xNum;
+        for (const { el, widthCqw } of sm.items) {
+          const appliedOptions = {
+            ...options,
+            height: explicitH,
+          };
+          applyPosition(el, rowX, currentY, appliedOptions, itemIdx++);
+          rowX += widthCqw + gapX;
+        }
+      } else {
+        const item = sm.items[0];
+        if (item) {
+          const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
+          const elWidth = (item.el as Record<string, unknown>).width as number | string | undefined;
+          const appliedOptions = {
+            ...options,
+            width:
+              explicitW !== undefined
+                ? explicitW
+                : (elWidth ??
+                  (typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
+                    ? effectiveWidth
+                    : undefined)),
+            height: explicitH,
+          };
+          applyPosition(item.el, x, currentY, appliedOptions, itemIdx++);
+        }
+      }
+
+      if (options.rule && index < slotMeasurements.length - 1) {
+        const ruleY = currentY + sm.heightCqh + gapY / 2;
         const inset =
           typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
-        const widthNum = typeof effectiveWidth === "number" ? effectiveWidth : 44;
         const startX = xNum + inset;
         const endX = xNum + widthNum - inset;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const ruleConn = Connector(
-          { x: startX, y: ruleY },
-          { x: endX, y: ruleY },
-          {
-            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-            strokeWidth: cfg.strokeWidth ?? 1,
-            dashed: cfg.dashed,
-            dotted: cfg.dotted,
-            endHead: "none",
-          },
-        );
+        const ruleConn = Connector([startX, ruleY], [endX, ruleY], {
+          color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
+          strokeWidth: cfg.strokeWidth ?? 1,
+          dashed: cfg.dashed,
+          dotted: cfg.dotted,
+          endHead: "none",
+        });
         rules.push(ruleConn);
       }
 
-      currentY += m.heightCqh + gap;
+      currentY += sm.heightCqh + gapY;
     });
 
     return rules;
   },
 
   /**
-   * Arranges elements into a multi-column grid.
-   * Supports 2D row/column matrices (with `null` for empty slots) or flat 1D arrays with `cols`.
+   * Arranges elements into a multi-column grid defined as a 2D matrix of rows and columns.
+   * Supports `null` or `undefined` for empty matrix slots.
+   * Returns divider rules placed in grid gutters if options.rule is enabled.
    */
-  grid(elements: GridSlot[] | GridSlot[][], options: LayoutOptions = {}): void {
-    if (elements.length === 0) return;
+  grid(matrix: GridSlot[][], options: LayoutOptions = {}): ConnectorElement[] {
+    if (matrix.length === 0) return [];
 
-    const is2D = Array.isArray(elements[0]);
-    let matrix: GridSlot[][];
-    let cols: number;
+    const cols = Math.max(...matrix.map((row) => (Array.isArray(row) ? row.length : 0)));
+    if (cols === 0) return [];
 
-    if (is2D) {
-      matrix = elements as GridSlot[][];
-      cols = Math.max(...matrix.map((row) => (Array.isArray(row) ? row.length : 0)));
-    } else {
-      const flat = elements as GridSlot[];
-      cols = options.cols ?? 3;
-      matrix = [];
-      for (let i = 0; i < flat.length; i += cols) {
-        matrix.push(flat.slice(i, i + cols));
-      }
-    }
-
-    const startX = typeof options.x === "number" ? options.x : 10;
-    const startY = typeof options.y === "number" ? options.y : 20;
     const gapX = options.gapX ?? options.gap ?? 4;
     const gapY = options.gapY ?? options.gap ?? 4;
 
@@ -436,106 +614,84 @@ export const arrange = {
       }
     }
 
-    if (flatNonNull.length === 0) return;
+    if (flatNonNull.length === 0) return [];
 
-    const measurements = flatNonNull.map((el) => measureElement(el, options.width));
+    const measurements = flatNonNull.map((el) =>
+      measureElement(el, Array.isArray(options.width) ? options.width[0] : options.width),
+    );
     const maxColWidth = Math.max(...measurements.map((m) => m.widthCqw));
     const maxRowHeight = Math.max(...measurements.map((m) => m.heightCqh));
 
+    const totalGridWidth = cols * maxColWidth + Math.max(0, cols - 1) * gapX;
+    const totalGridHeight = matrix.length * maxRowHeight + Math.max(0, matrix.length - 1) * gapY;
+
+    let startX: number;
+    if (options.x === "center") {
+      startX = Math.max(0, (100 - totalGridWidth) / 2);
+    } else if (typeof options.x === "number") {
+      startX = options.x;
+    } else {
+      startX = 10;
+    }
+
+    let startY: number;
+    if (options.y === "center") {
+      startY = Math.max(0, (100 - totalGridHeight) / 2);
+    } else if (typeof options.y === "number") {
+      startY = options.y;
+    } else {
+      startY = 20;
+    }
+
+    let itemIdx = 0;
     matrix.forEach((row, rowIdx) => {
       if (!Array.isArray(row)) return;
       row.forEach((slot, colIdx) => {
         if (!slot) return;
         const targetX = startX + colIdx * (maxColWidth + gapX);
         const targetY = startY + rowIdx * (maxRowHeight + gapY);
-        applyPosition(slot, targetX, targetY, options);
+        applyPosition(slot, targetX, targetY, options, itemIdx++);
       });
     });
-  },
 
-  /**
-   * Arranges two groups into a classic split slide layout (left column & right column).
-   * Returns the central column rule connector if options.rule is enabled.
-   */
-  split(
-    left: LayoutElement | LayoutElement[],
-    right: LayoutElement | LayoutElement[],
-    options: SplitLayoutOptions = {},
-  ): { rule?: ConnectorElement } {
-    const leftElements = Array.isArray(left) ? left : [left];
-    const rightElements = Array.isArray(right) ? right : [right];
-
-    const leftX = options.leftX ?? 6;
-    const rightX = options.rightX ?? 52;
-    const y = options.y ?? 24;
-    const yNum = typeof y === "number" ? y : 24;
-    const gap = options.gap ?? 3;
-    const leftWidth = options.leftWidth ?? rightX - leftX - (options.rule ? 4 : 2);
-    const rightWidth = options.rightWidth ?? Math.max(20, 100 - rightX - 6);
-
-    for (const el of leftElements) {
-      if ((el as Record<string, unknown>).width === undefined) {
-        (el as Record<string, unknown>).width = `${leftWidth}cqw`;
-      }
-    }
-    for (const el of rightElements) {
-      if ((el as Record<string, unknown>).width === undefined) {
-        (el as Record<string, unknown>).width = `${rightWidth}cqw`;
-      }
-    }
-
-    arrange.column(leftElements, {
-      x: leftX,
-      y,
-      gap,
-      width: leftWidth,
-      animate: options.animate,
-      duration: options.duration,
-    });
-
-    arrange.column(rightElements, {
-      x: rightX,
-      y,
-      gap,
-      width: rightWidth,
-      animate: options.animate,
-      duration: options.duration,
-    });
-
-    let ruleConn: ConnectorElement | undefined;
+    const rules: ConnectorElement[] = [];
     if (options.rule) {
-      const ruleX = leftX + leftWidth + (rightX - (leftX + leftWidth)) / 2;
-      const leftM = leftElements.map((el) => measureElement(el, leftWidth));
-      const rightM = rightElements.map((el) => measureElement(el, rightWidth));
-      const leftH =
-        leftM.reduce((sum, m) => sum + m.heightCqh, 0) + Math.max(0, leftElements.length - 1) * gap;
-      const rightH =
-        rightM.reduce((sum, m) => sum + m.heightCqh, 0) +
-        Math.max(0, rightElements.length - 1) * gap;
-      const totalH = Math.max(leftH, rightH);
-
-      const inset = typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
-      const startY = yNum + inset;
-      const endY = yNum + totalH - inset;
       const cfg = typeof options.rule === "object" ? options.rule : {};
-      ruleConn = Connector(
-        { x: ruleX, y: startY },
-        { x: ruleX, y: endY },
-        {
-          color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-          strokeWidth: cfg.strokeWidth ?? 1,
-          dashed: cfg.dashed,
-          dotted: cfg.dotted,
-          endHead: "none",
-        },
-      );
+      const inset = typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
+      // Vertical column dividers
+      for (let c = 0; c < cols - 1; c++) {
+        const ruleX = startX + (c + 1) * maxColWidth + c * gapX + gapX / 2;
+        rules.push(
+          Connector([ruleX, startY + inset], [ruleX, startY + totalGridHeight - inset], {
+            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
+            strokeWidth: cfg.strokeWidth ?? 1,
+            dashed: cfg.dashed,
+            dotted: cfg.dotted,
+            endHead: "none",
+          }),
+        );
+      }
+      // Horizontal row dividers
+      for (let r = 0; r < matrix.length - 1; r++) {
+        const ruleY = startY + (r + 1) * maxRowHeight + r * gapY + gapY / 2;
+        rules.push(
+          Connector([startX + inset, ruleY], [startX + totalGridWidth - inset, ruleY], {
+            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
+            strokeWidth: cfg.strokeWidth ?? 1,
+            dashed: cfg.dashed,
+            dotted: cfg.dotted,
+            endHead: "none",
+          }),
+        );
+      }
     }
 
-    return { rule: ruleConn };
+    return rules;
   },
 
   /**
    * Positions an element above a target element, separated by `gap`.
+   * @param gap Vertical separation distance in stage height percentage units (`cqh`, 0..100; default: 2).
    * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
    */
   above(
@@ -549,6 +705,7 @@ export const arrange = {
 
   /**
    * Positions an element below a target element, separated by `gap`.
+   * @param gap Vertical separation distance in stage height percentage units (`cqh`, 0..100; default: 2).
    * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
    */
   below(
@@ -562,6 +719,7 @@ export const arrange = {
 
   /**
    * Positions an element to the right of a target element, separated by `gap`.
+   * @param gap Horizontal separation distance in stage width percentage units (`cqw`, 0..100; default: 2).
    * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
    */
   rightOf(
@@ -575,6 +733,7 @@ export const arrange = {
 
   /**
    * Positions an element to the left of a target element, separated by `gap`.
+   * @param gap Horizontal separation distance in stage width percentage units (`cqw`, 0..100; default: 2).
    * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
    */
   leftOf(
@@ -593,20 +752,21 @@ export const arrange = {
     const count = elements.length;
     if (count === 0) return;
 
-    let cx = options.centerX ?? 50;
-    let cy = options.centerY ?? 50;
+    let cx = 50;
+    let cy = 50;
 
     if (options.center) {
-      if ("x" in options.center && "y" in options.center) {
-        if (typeof options.center.x === "number") cx = options.center.x;
-        if (typeof options.center.y === "number") cy = options.center.y;
-      }
-      // If anchor element, center on its midpoint
-      const centerEl = options.center as LayoutElement;
-      if ("domElement" in centerEl || "width" in centerEl) {
-        const m = measureElement(centerEl);
-        if (typeof centerEl.x === "number") cx = centerEl.x + m.widthCqw / 2;
-        if (typeof centerEl.y === "number") cy = centerEl.y + m.heightCqh / 2;
+      if (Array.isArray(options.center)) {
+        cx = options.center[0];
+        cy = options.center[1];
+      } else {
+        // If anchor element, center on its midpoint
+        const centerEl = options.center as LayoutElement;
+        if ("domElement" in centerEl || "width" in centerEl) {
+          const m = measureElement(centerEl);
+          if (typeof centerEl.x === "number") cx = centerEl.x + m.widthCqw / 2;
+          if (typeof centerEl.y === "number") cy = centerEl.y + m.heightCqh / 2;
+        }
       }
     }
 

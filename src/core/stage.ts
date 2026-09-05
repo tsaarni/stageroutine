@@ -32,22 +32,32 @@ class SceneBuilder {
     this.name = name;
   }
 
-  with(...elements: (ReactiveElementBase | { items?: ReactiveElementBase[] })[]): this {
+  with(
+    ...elements: (
+      | ReactiveElementBase
+      | { items?: ReactiveElementBase[] }
+      | { rows?: ReactiveElementBase[] }
+      | null
+      | undefined
+      | false
+    )[]
+  ): this {
     const flattened: ReactiveElementBase[] = [];
     for (const el of elements) {
+      if (!el || typeof el !== "object") continue;
       if ("id" in el && "domElement" in el) {
         flattened.push(el as ReactiveElementBase);
       }
       if ("items" in el && Array.isArray((el as { items?: ReactiveElementBase[] }).items)) {
         for (const item of (el as { items: ReactiveElementBase[] }).items) {
-          if ("id" in item && "domElement" in item) {
+          if (item && typeof item === "object" && "id" in item && "domElement" in item) {
             flattened.push(item);
           }
         }
       }
       if ("rows" in el && Array.isArray((el as { rows?: ReactiveElementBase[] }).rows)) {
         for (const row of (el as { rows: ReactiveElementBase[] }).rows) {
-          if ("id" in row && "domElement" in row) {
+          if (row && typeof row === "object" && "id" in row && "domElement" in row) {
             flattened.push(row);
           }
         }
@@ -212,6 +222,15 @@ export class Stage implements ElementHost {
     }
   }
 
+  /**
+   * Initializes a new presentation Stage.
+   *
+   * @remarks
+   * As a side effect, the constructor sets this instance as the module-global
+   * `activeStage` singleton used by standalone component factories and motion helpers.
+   * Creating multiple `Stage` instances simultaneously in the same JS execution
+   * context will cause the latter instance to overwrite `activeStage`.
+   */
   constructor(options: StageOptions = {}) {
     activeStage = this;
     this.options = {
@@ -1329,16 +1348,6 @@ export class Stage implements ElementHost {
 
 // Global active stage singleton for helper bindings
 let activeStage: Stage | null = null;
-
-/**
- * Creates and initializes a new presentation stage.
- * @category Core
- */
-export function createStage(options?: StageOptions): Stage {
-  const stage = new Stage(options);
-  activeStage = stage;
-  return stage;
-}
 
 /**
  * Returns the currently active presentation stage singleton.

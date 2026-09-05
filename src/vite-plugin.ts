@@ -96,12 +96,28 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
         resolve: {
           alias: [
             {
+              find: /^stageroutine\/backgrounds$/,
+              replacement: resolve(__dirname, "dom/backgrounds/index.ts"),
+            },
+            {
+              find: /^stageroutine\/overlays$/,
+              replacement: resolve(__dirname, "overlays/index.ts"),
+            },
+            {
+              find: /^stageroutine\/presenter$/,
+              replacement: resolve(__dirname, "presenter/index.ts"),
+            },
+            {
               find: /^stageroutine\/jsx-runtime$/,
               replacement: resolve(__dirname, "dom/jsx-runtime.ts"),
             },
             {
               find: /^stageroutine\/jsx-dev-runtime$/,
               replacement: resolve(__dirname, "dom/jsx-dev-runtime.ts"),
+            },
+            {
+              find: /^stageroutine\/styles\.css$/,
+              replacement: resolve(__dirname, "dom/style.css"),
             },
             {
               find: /^stageroutine\/style\.css$/,

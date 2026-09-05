@@ -4,7 +4,7 @@
 
 import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
-import type { ElementAnchor, ReactiveElementBase, ReactiveProp } from "../core/types";
+import type { ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
 import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 
 let nextId = 1;
@@ -22,6 +22,7 @@ export type ElementDecorator = (element: DOMElement) => void;
 export interface ElementOptions {
   id?: string;
   anchor?: ElementAnchor;
+  position?: Point;
   x?: ReactiveProp<number | string>;
   y?: ReactiveProp<number | string>;
   width?: ReactiveProp<number | string>;
@@ -91,8 +92,8 @@ export class DOMElement implements ReactiveElementBase {
       this.domElement = html as HTMLElement;
     }
 
-    this.x = options.x ?? 0;
-    this.y = options.y ?? 0;
+    this.x = options.x ?? (options.position ? options.position[0] : 0);
+    this.y = options.y ?? (options.position ? options.position[1] : 0);
     this.width = options.width ?? options.size;
     this.height = options.height ?? options.size;
     this.scale = options.scale ?? 1;

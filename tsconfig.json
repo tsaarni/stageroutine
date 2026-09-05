@@ -11,17 +11,22 @@
     "declarationMap": true,
     "sourceMap": true,
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "jsxImportSource": "stageroutine",
     "baseUrl": ".",
     "paths": {
       "stageroutine": ["./src/index.ts"],
-      "stageroutine/style.css": ["./src/dom/style.css"],
+      "stageroutine/backgrounds": ["./src/dom/backgrounds/index.ts"],
+      "stageroutine/overlays": ["./src/overlays/index.ts"],
+      "stageroutine/presenter": ["./src/presenter/index.ts"],
       "stageroutine/jsx-runtime": ["./src/dom/jsx-runtime.ts"],
       "stageroutine/jsx-dev-runtime": ["./src/dom/jsx-dev-runtime.ts"],
-      "stageroutine/*": ["./src/*"]
+      "stageroutine/styles.css": ["./src/dom/style.css"],
+      "stageroutine/style.css": ["./src/dom/style.css"],
+      "stageroutine/vite": ["./src/vite-plugin.ts"]
     }
   },
-  "include": ["src", "demo"]
+  "include": ["src", "demo", "scripts"]
 }

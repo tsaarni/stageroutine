@@ -98,7 +98,7 @@ export abstract class BackgroundElement extends DOMElement {
   /** Clean up WebGL resources, geometries, textures, and observers */
   abstract dispose(): void;
 
-  /** Lifecycle attach hook for compatibility with createStage({ background }) */
+  /** Lifecycle attach hook invoked when the background is attached to a stage */
   attach(stage: StageContext): void {
     if (!this.domElement.parentElement) {
       stage.container.prepend(this.domElement);

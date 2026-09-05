@@ -1,5 +1,5 @@
 /**
- * Sequence diagram primitives: Lifeline, ActivationBar execution blocks, and SequenceDiagram builder.
+ * Sequence diagram primitives: Lifeline, Activation execution blocks, and SequenceDiagram builder.
  */
 
 import "./SequenceDiagram.css";
@@ -17,21 +17,16 @@ export interface LifelineOptions extends ElementOptions {
 }
 
 /**
- * @internal
+ * Configuration options for execution activation bars.
+ * @category Components
  */
-export interface ActivationBarOptions extends ElementOptions {
+export interface ActivationOptions extends ElementOptions {
   from?: ConnectorElement | number;
   to?: ConnectorElement | number;
   y?: number;
   height?: number;
   color?: string;
 }
-
-/**
- * Configuration options for execution activation bars.
- * @category Components
- */
-export type ActivationOptions = ActivationBarOptions;
 
 /**
  * Configuration options for the SequenceDiagram coordinator.
@@ -46,12 +41,7 @@ export interface SequenceDiagramOptions {
 }
 
 /**
- * Configuration options for the Sequence diagram alias.
- * @category Components
- */
-export type SequenceOptions = SequenceDiagramOptions;
-
-/**
+ * Vertical dashed lifeline element rendered below its participant actor.
  * @internal
  */
 export class LifelineElement extends DOMElement {
@@ -88,14 +78,14 @@ export class LifelineElement extends DOMElement {
     }
   }
 
-  activationBar(options: ActivationBarOptions = {}): ActivationBarElement {
+  activationBar(options: ActivationOptions = {}): ActivationBarElement {
     const stage = getActiveStage();
     const el = new ActivationBarElement(this, options);
     this.activations.push(el);
     return stage.registerElement(el) as ActivationBarElement;
   }
 
-  activation(options: ActivationBarOptions = {}): ActivationBarElement {
+  activation(options: ActivationOptions = {}): ActivationBarElement {
     return this.activationBar(options);
   }
 
@@ -123,12 +113,16 @@ export class LifelineElement extends DOMElement {
   }
 }
 
+/**
+ * Execution activation bar element attached to a lifeline.
+ * @internal
+ */
 export class ActivationBarElement extends DOMElement {
   lifeline: LifelineElement;
   relY: number;
   barHeight: number;
 
-  constructor(lifeline: LifelineElement, options: ActivationBarOptions = {}) {
+  constructor(lifeline: LifelineElement, options: ActivationOptions = {}) {
     const color = options.color || "#38bdf8";
     const bar = document.createElement("div");
     bar.className = "sr-activation sr-activation-bar";
@@ -193,11 +187,7 @@ export class ActivationBarElement extends DOMElement {
 }
 
 /**
- * @internal
- */
-export type ActivationElement = ActivationBarElement;
-
-/**
+ * Sequence diagram coordinator that manages lifelines, messages, and activations for a set of participants.
  * @internal
  */
 export class SequenceDiagramElement {
@@ -278,7 +268,7 @@ export class SequenceDiagramElement {
 
   activate(
     actor: DOMElement | LifelineElement,
-    options: ActivationBarOptions = {},
+    options: ActivationOptions = {},
   ): ActivationBarElement {
     const act = "actor" in actor ? (actor as LifelineElement).actor : (actor as DOMElement);
     const line = this.getLifeline(act);
@@ -289,7 +279,7 @@ export class SequenceDiagramElement {
 
   activationBar(
     actor: DOMElement | LifelineElement,
-    options: ActivationBarOptions = {},
+    options: ActivationOptions = {},
   ): ActivationBarElement {
     return this.activate(actor, options);
   }
@@ -304,48 +294,11 @@ export const SequenceDiagram = (options?: SequenceDiagramOptions): SequenceDiagr
 };
 
 /**
- * Alias for SequenceDiagram.
- * @category Components
- */
-export const sequenceDiagram = SequenceDiagram;
-
-/**
- * Alias for SequenceDiagram.
- * @category Components
- */
-export const Sequence = (options?: SequenceDiagramOptions): SequenceDiagramElement => {
-  return new SequenceDiagramElement(options);
-};
-
-/**
  * Creates a vertical dashed timeline lifeline extending from a participant actor.
- * @category Components
+ * Module-internal: lifelines are created and owned by the SequenceDiagram coordinator.
  */
-export const Lifeline = (actor: DOMElement, options?: LifelineOptions): LifelineElement => {
+const Lifeline = (actor: DOMElement, options?: LifelineOptions): LifelineElement => {
   const stage = getActiveStage();
   const el = new LifelineElement(actor, options);
   return stage.registerElement(el) as LifelineElement;
-};
-
-/**
- * @internal
- */
-export const ActivationBar = (
-  lifeline: LifelineElement,
-  options?: ActivationBarOptions,
-): ActivationBarElement => {
-  const stage = getActiveStage();
-  const el = new ActivationBarElement(lifeline, options);
-  return stage.registerElement(el) as ActivationBarElement;
-};
-
-/**
- * Creates an execution focus activation block on a lifeline timeline.
- * @category Components
- */
-export const Activation = (
-  lifeline: LifelineElement,
-  options?: ActivationBarOptions,
-): ActivationBarElement => {
-  return ActivationBar(lifeline, options);
 };

@@ -1,10 +1,7 @@
 import { resolveAnchor } from "../core/interpolators";
-import type { ElementAnchor } from "../core/types";
+import type { ElementAnchor, Point } from "../core/types";
 
-export interface Point {
-  x: number;
-  y: number;
-}
+export type { Point };
 
 export interface Box {
   x: number;
@@ -19,7 +16,7 @@ export type CardinalSide = "top" | "bottom" | "left" | "right" | "center";
 
 /**
  * Calculates the attachment point on a box, supporting named cardinal faces,
- * "auto" face selection facing target, or custom { x, y } percentage anchors.
+ * "auto" face selection facing target, or custom [x, y] percentage anchors.
  */
 export function getBoxAnchorPoint(
   box: Box,
@@ -33,8 +30,8 @@ export function getBoxAnchorPoint(
   if (anchor === "auto") {
     let chosenSide: CardinalSide = "center";
     if (targetPt) {
-      const dx = targetPt.x - cx;
-      const dy = targetPt.y - cy;
+      const dx = targetPt[0] - cx;
+      const dy = targetPt[1] - cy;
       const hw = box.width / 2;
       const hh = box.height / 2;
 
@@ -48,25 +45,25 @@ export function getBoxAnchorPoint(
 
     switch (chosenSide) {
       case "top":
-        return { point: { x: cx, y: box.y - padding }, side: "top" };
+        return { point: [cx, box.y - padding], side: "top" };
       case "bottom":
         return {
-          point: { x: cx, y: box.y + box.height + padding },
+          point: [cx, box.y + box.height + padding],
           side: "bottom",
         };
       case "left":
-        return { point: { x: box.x - padding, y: cy }, side: "left" };
+        return { point: [box.x - padding, cy], side: "left" };
       case "right":
         return {
-          point: { x: box.x + box.width + padding, y: cy },
+          point: [box.x + box.width + padding, cy],
           side: "right",
         };
       default:
-        return { point: { x: cx, y: cy }, side: "center" };
+        return { point: [cx, cy], side: "center" };
     }
   }
 
-  const { x: pctX, y: pctY } = resolveAnchor(anchor);
+  const [pctX, pctY] = resolveAnchor(anchor);
   const px = box.x + (pctX / 100) * box.width;
   const py = box.y + (pctY / 100) * box.height;
 
@@ -90,7 +87,7 @@ export function getBoxAnchorPoint(
     side = "top";
   }
 
-  return { point: { x: px + padX, y: py + padY }, side };
+  return { point: [px + padX, py + padY], side };
 }
 
 /**
@@ -100,10 +97,10 @@ export function getBoxAnchorPoint(
 export function getPerimeterPoint(box: Box, target: Point, r = 12, padding = 6): Point {
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
-  const dx = target.x - cx;
-  const dy = target.y - cy;
+  const dx = target[0] - cx;
+  const dy = target[1] - cy;
 
-  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  if (dx === 0 && dy === 0) return [cx, cy];
 
   const hw = box.width / 2 + padding;
   const hh = box.height / 2 + padding;
@@ -125,7 +122,7 @@ export function getPerimeterPoint(box: Box, target: Point, r = 12, padding = 6):
     py = cornerY + Math.sin(angle) * r;
   }
 
-  return { x: cx + px, y: cy + py };
+  return [cx + px, cy + py];
 }
 
 /**
@@ -143,23 +140,23 @@ export function getTransformedPerimeterPoint(box: Box, target: Point, r = 12, pa
   const cy = box.y + box.height / 2;
   const rad = (-rotation * Math.PI) / 180;
 
-  const dx = (target.x - cx) / scale;
-  const dy = (target.y - cy) / scale;
-  const localTarget = {
-    x: cx + (dx * Math.cos(rad) - dy * Math.sin(rad)),
-    y: cy + (dx * Math.sin(rad) + dy * Math.cos(rad)),
-  };
+  const dx = (target[0] - cx) / scale;
+  const dy = (target[1] - cy) / scale;
+  const localTarget: Point = [
+    cx + (dx * Math.cos(rad) - dy * Math.sin(rad)),
+    cy + (dx * Math.sin(rad) + dy * Math.cos(rad)),
+  ];
 
   const localPoint = getPerimeterPoint(box, localTarget, r, padding);
 
-  const lx = (localPoint.x - cx) * scale;
-  const ly = (localPoint.y - cy) * scale;
+  const lx = (localPoint[0] - cx) * scale;
+  const ly = (localPoint[1] - cy) * scale;
   const worldRad = (rotation * Math.PI) / 180;
 
-  return {
-    x: cx + (lx * Math.cos(worldRad) - ly * Math.sin(worldRad)),
-    y: cy + (lx * Math.sin(worldRad) + ly * Math.cos(worldRad)),
-  };
+  return [
+    cx + (lx * Math.cos(worldRad) - ly * Math.sin(worldRad)),
+    cy + (lx * Math.sin(worldRad) + ly * Math.cos(worldRad)),
+  ];
 }
 
 /**
@@ -172,44 +169,44 @@ export function computeOrthogonalPath(
   endSide: CardinalSide = "center",
 ): string {
   // If perfectly aligned on an axis (straight line)
-  if (Math.abs(start.x - end.x) < 3) {
-    return `M ${start.x} ${start.y} L ${start.x} ${end.y}`;
+  if (Math.abs(start[0] - end[0]) < 3) {
+    return `M ${start[0]} ${start[1]} L ${start[0]} ${end[1]}`;
   }
-  if (Math.abs(start.y - end.y) < 3) {
-    return `M ${start.x} ${start.y} L ${end.x} ${start.y}`;
+  if (Math.abs(start[1] - end[1]) < 3) {
+    return `M ${start[0]} ${start[1]} L ${end[0]} ${start[1]}`;
   }
 
   // If start exits horizontally (left or right)
   if (startSide === "left" || startSide === "right") {
     if (endSide === "left" || endSide === "right" || endSide === "center") {
       // Step-Z horizontal
-      const midX = (start.x + end.x) / 2;
-      return `M ${start.x} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${end.x} ${end.y}`;
+      const midX = (start[0] + end[0]) / 2;
+      return `M ${start[0]} ${start[1]} L ${midX} ${start[1]} L ${midX} ${end[1]} L ${end[0]} ${end[1]}`;
     }
     // Exits horizontal, enters vertical (L-shape)
-    return `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`;
+    return `M ${start[0]} ${start[1]} L ${end[0]} ${start[1]} L ${end[0]} ${end[1]}`;
   }
 
   // If start exits vertically (top or bottom)
   if (startSide === "top" || startSide === "bottom") {
     if (endSide === "top" || endSide === "bottom" || endSide === "center") {
       // Step-Z vertical
-      const midY = (start.y + end.y) / 2;
-      return `M ${start.x} ${start.y} L ${start.x} ${midY} L ${end.x} ${midY} L ${end.x} ${end.y}`;
+      const midY = (start[1] + end[1]) / 2;
+      return `M ${start[0]} ${start[1]} L ${start[0]} ${midY} L ${end[0]} ${midY} L ${end[0]} ${end[1]}`;
     }
     // Exits vertical, enters horizontal (L-shape)
-    return `M ${start.x} ${start.y} L ${start.x} ${end.y} L ${end.x} ${end.y}`;
+    return `M ${start[0]} ${start[1]} L ${start[0]} ${end[1]} L ${end[0]} ${end[1]}`;
   }
 
   // Fallback based on dominant axis
-  const dx = Math.abs(end.x - start.x);
-  const dy = Math.abs(end.y - start.y);
+  const dx = Math.abs(end[0] - start[0]);
+  const dy = Math.abs(end[1] - start[1]);
   if (dx >= dy) {
-    const midX = (start.x + end.x) / 2;
-    return `M ${start.x} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${end.x} ${end.y}`;
+    const midX = (start[0] + end[0]) / 2;
+    return `M ${start[0]} ${start[1]} L ${midX} ${start[1]} L ${midX} ${end[1]} L ${end[0]} ${end[1]}`;
   }
-  const midY = (start.y + end.y) / 2;
-  return `M ${start.x} ${start.y} L ${start.x} ${midY} L ${end.x} ${midY} L ${end.x} ${end.y}`;
+  const midY = (start[1] + end[1]) / 2;
+  return `M ${start[0]} ${start[1]} L ${start[0]} ${midY} L ${end[0]} ${midY} L ${end[0]} ${end[1]}`;
 }
 
 /**
@@ -222,21 +219,21 @@ export function computeBezierPath(
   endSide: CardinalSide = "center",
 ): string {
   if (startSide === "top" || startSide === "bottom") {
-    const dy = (end.y - start.y) * 0.5;
-    const cp1x = start.x;
-    const cp1y = start.y + dy;
-    const cp2x = end.x;
-    const cp2y = end.y - dy;
-    return `M ${start.x} ${start.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end.x} ${end.y}`;
+    const dy = (end[1] - start[1]) * 0.5;
+    const cp1x = start[0];
+    const cp1y = start[1] + dy;
+    const cp2x = end[0];
+    const cp2y = end[1] - dy;
+    return `M ${start[0]} ${start[1]} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end[0]} ${end[1]}`;
   }
 
-  const dx = (end.x - start.x) * 0.5;
-  const cp1x = start.x + dx;
-  const cp1y = start.y;
-  const cp2x = end.x - dx;
-  const cp2y = end.y;
+  const dx = (end[0] - start[0]) * 0.5;
+  const cp1x = start[0] + dx;
+  const cp1y = start[1];
+  const cp2x = end[0] - dx;
+  const cp2y = end[1];
 
-  return `M ${start.x} ${start.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end.x} ${end.y}`;
+  return `M ${start[0]} ${start[1]} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end[0]} ${end[1]}`;
 }
 
 /**
@@ -247,17 +244,17 @@ export function computeBezierPath(
  * @param curvature Bow factor relative to chord length (default 0.25). Negative bows left (inward).
  */
 export function computeArcPath(start: Point, end: Point, curvature = 0.25): string {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
   const dist = Math.hypot(dx, dy);
 
   if (dist < 1e-4) {
-    return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    return `M ${start[0]} ${start[1]} L ${end[0]} ${end[1]}`;
   }
 
   // Midpoint
-  const midX = (start.x + end.x) * 0.5;
-  const midY = (start.y + end.y) * 0.5;
+  const midX = (start[0] + end[0]) * 0.5;
+  const midY = (start[1] + end[1]) * 0.5;
 
   // Right-perpendicular unit vector (90° clockwise from travel direction)
   // This bows outward for nodes arranged clockwise around a circle
@@ -269,5 +266,5 @@ export function computeArcPath(start: Point, end: Point, curvature = 0.25): stri
   const cpX = midX + perpX * offset;
   const cpY = midY + perpY * offset;
 
-  return `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`;
+  return `M ${start[0]} ${start[1]} Q ${cpX} ${cpY} ${end[0]} ${end[1]}`;
 }

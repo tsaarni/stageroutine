@@ -2,7 +2,7 @@
  * Interpolators for smoothly blending numbers, colors, container units, and transform coordinates.
  */
 
-import type { ElementAnchor } from "./types";
+import type { ElementAnchor, Point } from "./types";
 
 export interface RGBA {
   r: number;
@@ -139,42 +139,62 @@ export function px(val: number): string {
   return `${val}px`;
 }
 
-export function resolveAnchor(anchor: ElementAnchor | string | undefined): {
-  x: number;
-  y: number;
-} {
-  if (anchor && typeof anchor === "object" && "x" in anchor && "y" in anchor) {
-    return {
-      x: typeof anchor.x === "number" ? anchor.x : Number.parseFloat(String(anchor.x)) || 0,
-      y: typeof anchor.y === "number" ? anchor.y : Number.parseFloat(String(anchor.y)) || 0,
-    };
+export function resolveAnchor(anchor: ElementAnchor | string | undefined): Point {
+  if (Array.isArray(anchor) && anchor.length >= 2) {
+    return [
+      typeof anchor[0] === "number" ? anchor[0] : Number.parseFloat(String(anchor[0])) || 0,
+      typeof anchor[1] === "number" ? anchor[1] : Number.parseFloat(String(anchor[1])) || 0,
+    ];
   }
   switch (anchor) {
     case "center":
-      return { x: 50, y: 50 };
+      return [50, 50];
     case "top":
-      return { x: 50, y: 0 };
+      return [50, 0];
     case "bottom":
-      return { x: 50, y: 100 };
+      return [50, 100];
     case "left":
-      return { x: 0, y: 50 };
+      return [0, 50];
     case "right":
-      return { x: 100, y: 50 };
+      return [100, 50];
     case "top-left":
-      return { x: 0, y: 0 };
+      return [0, 0];
     case "top-right":
-      return { x: 100, y: 0 };
+      return [100, 0];
     case "bottom-left":
-      return { x: 0, y: 100 };
+      return [0, 100];
     case "bottom-right":
-      return { x: 100, y: 100 };
+      return [100, 100];
     default:
-      return { x: 0, y: 0 };
+      return [0, 0];
   }
 }
 
-export function parseAnchor(anchor: ElementAnchor | string | undefined): { x: number; y: number } {
+export function parseAnchor(anchor: ElementAnchor | string | undefined): Point {
   return resolveAnchor(anchor);
+}
+
+/**
+ * Resolves a coordinate value (number, percentage string, or cqw/cqh) to canvas pixels.
+ */
+export function resolveCoordToPx(val: number | string | undefined, stageDimension: number): number {
+  if (typeof val === "number") {
+    return (val / 100) * stageDimension;
+  }
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (s === "center") {
+      return stageDimension * 0.5;
+    }
+    if (s.endsWith("cqw") || s.endsWith("cqh") || s.endsWith("%")) {
+      return (Number.parseFloat(s) / 100) * stageDimension;
+    }
+    if (s.endsWith("rem")) {
+      return Number.parseFloat(s) * 16;
+    }
+    return Number.parseFloat(s) || 0;
+  }
+  return 0;
 }
 
 export function computeTransformAndOrigin(
@@ -225,15 +245,13 @@ export function interpolateValue(from: unknown, to: unknown, t: number): unknown
       v === "bottom-left" ||
       v === "bottom-right");
 
-  const isAnchorObj = (v: unknown) => v !== null && typeof v === "object" && "x" in v && "y" in v;
+  const isAnchorTuple = (v: unknown): v is Point =>
+    Array.isArray(v) && v.length >= 2 && typeof v[0] === "number" && typeof v[1] === "number";
 
-  if (isAnchorObj(from) || isAnchorObj(to) || isAnchorKeyword(from) || isAnchorKeyword(to)) {
+  if (isAnchorTuple(from) || isAnchorTuple(to) || isAnchorKeyword(from) || isAnchorKeyword(to)) {
     const aFrom = resolveAnchor(from as ElementAnchor);
     const aTo = resolveAnchor(to as ElementAnchor);
-    return {
-      x: lerpNumber(aFrom.x, aTo.x, t),
-      y: lerpNumber(aFrom.y, aTo.y, t),
-    };
+    return [lerpNumber(aFrom[0], aTo[0], t), lerpNumber(aFrom[1], aTo[1], t)] as Point;
   }
 
   if (typeof from === "string" && typeof to === "string") {

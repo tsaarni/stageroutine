@@ -1,5 +1,5 @@
 import "./Connector.css";
-import { getActiveStage } from "../../core/index";
+import { getActiveStage, resolveCoordToPx } from "../../core/index";
 import type { ElementAnchor, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
@@ -91,11 +91,11 @@ export type LabelPlacement = "start" | "center" | "end" | number;
 
 /**
  * Responsive offset for adjusting label badge position.
- * Supports numbers (1080p virtual pixels) and container units ("cqw", "cqh", "rem", "px").
- * e.g. `{ y: "-1.5cqh" }` or `{ x: "2cqw", y: -8 }`.
+ * Supports a 2D tuple `[x, y]` or a scalar vertical offset number/string ("cqw", "cqh", "rem", "px").
+ * e.g. `[0, "-1.5cqh"]` or `["2cqw", -8]`.
  * @internal
  */
-export type LabelOffset = { x?: number | string; y?: number | string } | number | string;
+export type LabelOffset = readonly [x: number | string, y: number | string] | number | string;
 
 function resolveOffset(val: number | string | undefined, baseDim: number): number {
   if (val === undefined) return 0;
@@ -265,7 +265,7 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   label?: string;
   /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
   labelPlacement?: ReactiveProp<LabelPlacement>;
-  /** Responsive offset to nudge the label ({ x, y } in px, cqw, cqh, or rem). Reactive. */
+  /** Responsive offset to nudge the label ([x, y] in px, cqw, cqh, or rem). Reactive. */
   labelOffset?: ReactiveProp<LabelOffset>;
   /** Horizontal offset for the label in virtual pixels or container units. Reactive. */
   labelOffsetX?: ReactiveProp<number | string>;
@@ -277,9 +277,9 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
   /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
   curvature?: number;
-  /** Cardinal attachment face or custom { x, y } anchor on the origin target ("auto" | "top" | "bottom" | "left" | "right" | { x, y }). */
+  /** Cardinal attachment face or custom [x, y] anchor on the origin target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
   fromAnchor?: "auto" | ElementAnchor;
-  /** Cardinal attachment face or custom { x, y } anchor on the destination target ("auto" | "top" | "bottom" | "left" | "right" | { x, y }). */
+  /** Cardinal attachment face or custom [x, y] anchor on the destination target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
   toAnchor?: "auto" | ElementAnchor;
   /** Stroke color of the connector line (defaults to #38bdf8). */
   color?: string;
@@ -325,13 +325,13 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
 }
 
 /**
- * Valid endpoint target for a Connector line (DOMElement, point coordinates, or element proxy).
+ * Valid endpoint target for a Connector line (DOMElement or point coordinates as an [x, y] tuple).
  * @category Components
  */
 export type ConnectorTarget =
   | DOMElement
   | Point
-  | { x: number | string; y: number | string; domElement?: HTMLElement };
+  | readonly [x: number | string, y: number | string];
 
 /**
  * @internal
@@ -609,7 +609,7 @@ export class ConnectorElement extends DOMElement {
         const height = dRect.height / scale;
 
         return {
-          point: { x: x + width / 2, y: y + height / 2 },
+          point: [x + width / 2, y + height / 2],
           box: {
             x,
             y,
@@ -623,45 +623,28 @@ export class ConnectorElement extends DOMElement {
 
       const width = dom.offsetWidth || 120;
       const height = dom.offsetHeight || 60;
-      const rawX = typeof el.x === "number" ? (el.x <= 100 ? (el.x / 100) * 1920 : el.x) : 0;
-      const rawY = typeof el.y === "number" ? (el.y <= 100 ? (el.y / 100) * 1080 : el.y) : 0;
+      const rawX = resolveCoordToPx(
+        typeof el.x === "number" || typeof el.x === "string" ? el.x : 0,
+        1920,
+      );
+      const rawY = resolveCoordToPx(
+        typeof el.y === "number" || typeof el.y === "string" ? el.y : 0,
+        1080,
+      );
 
       return {
-        point: { x: rawX + width / 2, y: rawY + height / 2 },
+        point: [rawX + width / 2, rawY + height / 2],
         box: { x: rawX, y: rawY, width, height },
       };
     }
 
-    const pt = target as { x?: number | string; y?: number | string };
-    let px = 0;
-    if (typeof pt.x === "number") {
-      px = pt.x <= 100 ? (pt.x / 100) * 1920 : pt.x;
-    } else if (typeof pt.x === "string") {
-      const s = pt.x.trim();
-      if (s === "center") {
-        px = 960;
-      } else if (s.endsWith("cqw") || s.endsWith("%")) {
-        px = (Number.parseFloat(s) / 100) * 1920;
-      } else {
-        px = Number.parseFloat(s) || 0;
-      }
+    if (Array.isArray(target) && target.length >= 2) {
+      const px = resolveCoordToPx(target[0], 1920);
+      const py = resolveCoordToPx(target[1], 1080);
+      return { point: [px, py] };
     }
 
-    let py = 0;
-    if (typeof pt.y === "number") {
-      py = pt.y <= 100 ? (pt.y / 100) * 1080 : pt.y;
-    } else if (typeof pt.y === "string") {
-      const s = pt.y.trim();
-      if (s === "center") {
-        py = 540;
-      } else if (s.endsWith("cqh") || s.endsWith("%")) {
-        py = (Number.parseFloat(s) / 100) * 1080;
-      } else {
-        py = Number.parseFloat(s) || 0;
-      }
-    }
-
-    return { point: { x: px, y: py } };
+    return { point: [0, 0] };
   }
 
   update(): void {
@@ -751,8 +734,8 @@ export class ConnectorElement extends DOMElement {
 
     if (typeof this.messageY === "number" && this.messageY !== 0) {
       const fixedY = this.messageY <= 100 ? (this.messageY / 100) * 1080 : this.messageY;
-      let x1 = fromResolved.point.x;
-      let x2 = toResolved.point.x;
+      let x1 = fromResolved.point[0];
+      let x2 = toResolved.point[0];
       const dir = x2 >= x1 ? 1 : -1;
 
       const vRect =
@@ -785,12 +768,12 @@ export class ConnectorElement extends DOMElement {
         x2 -= dir * lifelineGap;
       }
 
-      startPt = { x: x1, y: fixedY };
-      endPt = { x: x2, y: fixedY };
+      startPt = [x1, fixedY];
+      endPt = [x2, fixedY];
     }
 
-    const dx = endPt.x - startPt.x;
-    const dy = endPt.y - startPt.y;
+    const dx = endPt[0] - startPt[0];
+    const dy = endPt[1] - startPt[1];
     const dist = Math.hypot(dx, dy);
     const chordNx = dist > 0 ? dx / dist : 1;
     const chordNy = dist > 0 ? dy / dist : 0;
@@ -800,7 +783,7 @@ export class ConnectorElement extends DOMElement {
         return computeOrthogonalPath(sp, ep, startSide, endSide);
       if (this.connectorStyle === "bezier") return computeBezierPath(sp, ep, startSide, endSide);
       if (this.connectorStyle === "arc") return computeArcPath(sp, ep, this.curvature);
-      return `M ${sp.x} ${sp.y} L ${ep.x} ${ep.y}`;
+      return `M ${sp[0]} ${sp[1]} L ${ep[0]} ${ep[1]}`;
     };
 
     // Pass 1: write the full-length path so we can measure tangents via the DOM.
@@ -839,15 +822,15 @@ export class ConnectorElement extends DOMElement {
     }
 
     // Pass 2: retract endpoints along the true curve tangent, then rebuild.
-    let pathStartPt = { ...startPt };
-    let pathEndPt = { ...endPt };
+    let pathStartPt: Point = startPt;
+    let pathEndPt: Point = endPt;
     if (this.endHeadNode && this.endRetract > 0 && dist > 4) {
       const r = dist > 20 ? this.endRetract : dist * 0.3;
-      pathEndPt = { x: endPt.x - endTx * r, y: endPt.y - endTy * r };
+      pathEndPt = [endPt[0] - endTx * r, endPt[1] - endTy * r];
     }
     if (this.startHeadNode && this.startRetract > 0 && dist > 4) {
       const r = dist > 20 ? this.startRetract : dist * 0.3;
-      pathStartPt = { x: startPt.x - startTx * r, y: startPt.y - startTy * r };
+      pathStartPt = [startPt[0] - startTx * r, startPt[1] - startTy * r];
     }
 
     const d = buildPath(pathStartPt, pathEndPt);
@@ -928,7 +911,7 @@ export class ConnectorElement extends DOMElement {
         const angle = Math.atan2(startTy, startTx) * (180 / Math.PI);
         this.startHeadNode.setAttribute(
           "transform",
-          `translate(${startPt.x}, ${startPt.y}) rotate(${angle})`,
+          `translate(${startPt[0]}, ${startPt[1]}) rotate(${angle})`,
         );
       }
     }
@@ -949,7 +932,7 @@ export class ConnectorElement extends DOMElement {
           const angle = Math.atan2(endTy, endTx) * (180 / Math.PI);
           this.endHeadNode.setAttribute(
             "transform",
-            `translate(${endPt.x}, ${endPt.y}) rotate(${angle})`,
+            `translate(${endPt[0]}, ${endPt[1]}) rotate(${angle})`,
           );
         } else {
           const trimLen = Math.max(0, Math.min(actualLen, endVal * actualLen));
@@ -1015,12 +998,11 @@ export class ConnectorElement extends DOMElement {
         if (this.labelOffsetY !== undefined) {
           offY = resolveOffset(this.labelOffsetY as number | string | undefined, 1080);
         } else if (this.labelOffset !== undefined) {
-          if (typeof this.labelOffset === "number" || typeof this.labelOffset === "string") {
-            offY = resolveOffset(this.labelOffset, 1080);
-          } else if (typeof this.labelOffset === "object" && this.labelOffset !== null) {
-            const obj = this.labelOffset as { x?: number | string; y?: number | string };
-            offX += resolveOffset(obj.x, 1920);
-            offY += resolveOffset(obj.y, 1080);
+          if (Array.isArray(this.labelOffset)) {
+            offX += resolveOffset(this.labelOffset[0], 1920);
+            offY += resolveOffset(this.labelOffset[1], 1080);
+          } else {
+            offY = resolveOffset(this.labelOffset as number | string, 1080);
           }
         } else {
           // Default offset above the connector path
@@ -1033,13 +1015,13 @@ export class ConnectorElement extends DOMElement {
             const pt = this.pathNode.getPointAtLength(totalPathLength * ratio);
             this.labelGroup.setAttribute("transform", `translate(${pt.x + offX}, ${pt.y + offY})`);
           } else {
-            const mx = startPt.x + (endPt.x - startPt.x) * ratio;
-            const my = startPt.y + (endPt.y - startPt.y) * ratio;
+            const mx = startPt[0] + (endPt[0] - startPt[0]) * ratio;
+            const my = startPt[1] + (endPt[1] - startPt[1]) * ratio;
             this.labelGroup.setAttribute("transform", `translate(${mx + offX}, ${my + offY})`);
           }
         } catch {
-          const mx = startPt.x + (endPt.x - startPt.x) * ratio;
-          const my = startPt.y + (endPt.y - startPt.y) * ratio;
+          const mx = startPt[0] + (endPt[0] - startPt[0]) * ratio;
+          const my = startPt[1] + (endPt[1] - startPt[1]) * ratio;
           this.labelGroup.setAttribute("transform", `translate(${mx + offX}, ${my + offY})`);
         }
       }

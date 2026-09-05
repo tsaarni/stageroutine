@@ -4,37 +4,71 @@ sidebar_position: 1
 
 # Canvas & Coordinates
 
-StageRoutine provides a fixed virtual canvas with percentage-based coordinates to ensure your presentation looks identical on any display.
+StageRoutine uses a fixed virtual canvas with percentage coordinates. This ensures your presentation looks identical on all displays.
 
 ## Virtual Viewport
 
-When you call `stage.mount("#stage")`, StageRoutine creates a `1920x1080` virtual viewport and centers it inside your browser window.
+When you call `stage.mount("#stage")`, StageRoutine creates a `1920×1080` virtual viewport and centers it in your browser window.
 
 ![Virtual Viewport Scaling](/img/viewport-scaling.svg)
 
-- **Fixed 16:9 Canvas**: You author presentations against a standard `1920×1080` virtual canvas without needing responsive CSS media queries.
-- **Automatic Scaling**: StageRoutine automatically scales and centers the entire stage to fit any screen, projector, or window size while preserving proportions.
-- **Letterboxing**: On screens with non-16:9 aspect ratios (such as ultrawide or tall windows), black bars appear around the canvas so content is never stretched or cropped.
+- **Fixed 16:9 Canvas**: You author presentations for a standard `1920×1080` virtual canvas. You do not need CSS media queries.
+- **Automatic Scaling**: StageRoutine scales and centers the stage to fit any screen, projector, or window size.
+- **Letterboxing**: On displays with non-16:9 aspect ratios, black bars appear around the canvas. Content never stretches or crops.
 
 ## Coordinate System
 
-Coordinates range from `(0, 0)` (top-left) to `(100, 100)` (bottom-right). 
+Coordinates range from `(0, 0)` (top-left) to `(100, 100)` (bottom-right).
 
 ![StageRoutine Coordinate System](/img/coordinate-system.svg)
 
-- `x: "center"` or `y: "center"` resolves to `50%`.
-- Container query units (`50cqw`, `40cqh`) are computed automatically.
+- Raw numbers are always stage percentages (`0..100%`), mapped to CSS container query units (`cqw` and `cqh`).
+- Keyword `"center"` resolves to `50%`.
+- Explicit pixels require units: `"200px"` or `px(200)`.
 
 ```typescript
+import { Title, px } from "stageroutine";
+
+// Percentage positioning (recommended for responsive slides)
 const headline = Title("System Overview", {
   x: "center", // 50%
   y: 20,       // 20%
 });
+
+// Explicit pixel positioning
+const badge = Title("v2.0", {
+  x: px(1600),
+  y: px(60),
+});
 ```
+
+## Element Position vs. Geometric Points
+
+StageRoutine separates element options from geometric points:
+
+1. **Element Options (`{ x?, y? }`):**
+   Elements have separate `x` and `y` properties. This lets layout functions and animations modify one axis without changing the other:
+   ```typescript
+   const card = Card("Service", { x: 20, y: 35 });
+   card.x = to(80); // Animates horizontal axis only
+   ```
+   You can also use the `position` tuple shorthand:
+   ```typescript
+   const card = Card("Service", { position: [20, 35] });
+   ```
+
+2. **Geometric Points (`Point = readonly [x, y]`):**
+   Standalone vector locations use fixed-length tuples:
+   ```typescript
+   import { Connector } from "stageroutine";
+
+   // Connects point [20, 35] to point [80, 50]
+   const line = Connector([20, 35], [80, 50]);
+   ```
 
 ## Anchors
 
-The `anchor` property defines which point on the element aligns with `(x, y)`:
+The `anchor` property defines which point on the element aligns with `(x, y)`. Anchors accept named keywords or `[x, y]` percentage tuples:
 
 | Anchor | Description | Default For |
 |---|---|---|
@@ -42,6 +76,7 @@ The `anchor` property defines which point on the element aligns with `(x, y)`:
 | `"center"` | Alignment relative to element's exact center | `Title`, `Circle`, `Pill`, `Shape` |
 | `"top"` | Top center | Headers |
 | `"bottom"` | Bottom center | Footers |
+| `[x, y]` | Custom percentage point on the element (e.g. `[100, 50]` for right edge) | Custom |
 
 ```typescript
 const title = Title("Centered Title", {

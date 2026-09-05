@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StageRoutine Layout Modes" viewBox="0 0 780 470" width="100%">
+  <title>StageRoutine Layout Modes</title>
+
+  <defs>
+    <marker id="arrow-sky" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+
+  <!-- 1. layout.vstack (Top-Left) -->
+  <g>
+    <rect x="20" y="20" width="360" height="205" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="40" y="48" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.vstack</text>
+    <text x="40" y="66" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">Top-to-bottom column</text>
+    <text x="355" y="48" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">↓ Y axis</text>
+
+    <!-- Item 1: title -->
+    <rect x="40" y="82" width="225" height="30" rx="5" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="152" y="102" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">title</text>
+
+    <!-- Item 2: subtitle -->
+    <rect x="40" y="122" width="225" height="30" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="152" y="142" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">subtitle</text>
+
+    <!-- Item 3: description -->
+    <rect x="40" y="162" width="225" height="30" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="152" y="182" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">description</text>
+
+    <!-- Gap dimension indicator -->
+    <line x1="280" y1="112" x2="280" y2="122" stroke="#38bdf8" stroke-width="1.5" marker-start="url(#arrow-sky)" marker-end="url(#arrow-sky)" />
+    <text x="294" y="120" fill="#38bdf8" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace">gap: 3</text>
+  </g>
+
+  <!-- 2. layout.hstack (Top-Right) -->
+  <g>
+    <rect x="400" y="20" width="360" height="205" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="420" y="48" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.hstack</text>
+    <text x="420" y="66" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">Left-to-right row</text>
+    <text x="735" y="48" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">→ X axis</text>
+
+    <!-- Item 1: card1 -->
+    <rect x="428" y="82" width="88" height="90" rx="6" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="472" y="132" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">card1</text>
+
+    <!-- Item 2: card2 -->
+    <rect x="536" y="82" width="88" height="90" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="580" y="132" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">card2</text>
+
+    <!-- Item 3: card3 -->
+    <rect x="644" y="82" width="88" height="90" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="688" y="132" fill="#ffffff" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">card3</text>
+
+    <!-- Gap dimension indicator -->
+    <line x1="516" y1="192" x2="536" y2="192" stroke="#38bdf8" stroke-width="1.5" marker-start="url(#arrow-sky)" marker-end="url(#arrow-sky)" />
+    <text x="526" y="206" fill="#38bdf8" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">gap: 4</text>
+  </g>
+
+  <!-- 3. layout.grid (Bottom-Left) -->
+  <g>
+    <rect x="20" y="245" width="360" height="205" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="40" y="273" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.grid</text>
+    <text x="40" y="291" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">2D matrix aligned in rows &amp; columns</text>
+    <text x="355" y="273" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">X &amp; Y grid</text>
+
+    <!-- Row 1 -->
+    <rect x="40" y="308" width="94" height="48" rx="5" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="87" y="337" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">clientApp</text>
+
+    <rect x="148" y="308" width="94" height="48" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="195" y="337" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">apiGateway</text>
+
+    <!-- Empty slot (null) -->
+    <rect x="256" y="308" width="94" height="48" rx="5" fill="rgba(255, 255, 255, 0.01)" stroke="rgba(255, 255, 255, 0.15)" stroke-dasharray="3 3" stroke-width="1" />
+    <text x="303" y="337" fill="#71717a" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">null</text>
+
+    <!-- Row 2 -->
+    <rect x="40" y="370" width="94" height="48" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="87" y="399" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">authService</text>
+
+    <rect x="148" y="370" width="94" height="48" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="195" y="399" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">dbService</text>
+
+    <rect x="256" y="370" width="94" height="48" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
+    <text x="303" y="399" fill="#ffffff" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">redisCache</text>
+
+    <!-- Gap indicators -->
+    <text x="249" y="303" fill="#38bdf8" font-size="9" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">gapX</text>
+    <text x="37" y="364" fill="#38bdf8" font-size="9" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">gapY</text>
+  </g>
+
+  <!-- 4. layout.circle (Bottom-Right) -->
+  <g>
+    <rect x="400" y="245" width="360" height="205" rx="8" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.5" />
+    <text x="420" y="273" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace">layout.circle</text>
+    <text x="420" y="291" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif">Radial distribution around a center</text>
+    <text x="735" y="273" fill="#71717a" font-size="12" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="end">Orbit</text>
+
+    <!-- Orbit path -->
+    <circle cx="580" cy="368" r="50" fill="none" stroke="rgba(56, 189, 248, 0.3)" stroke-dasharray="4 4" stroke-width="1.2" />
+
+    <!-- Center dot -->
+    <circle cx="580" cy="368" r="3.5" fill="#38bdf8" />
+    <text x="580" y="382" fill="#a1a1aa" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">center</text>
+
+    <!-- Radius pointer -->
+    <line x1="580" y1="368" x2="612" y2="336" stroke="#38bdf8" stroke-width="1.2" marker-end="url(#arrow-sky)" />
+    <text x="612" y="352" fill="#38bdf8" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace">radius</text>
+
+    <!-- Nodes -->
+    <rect x="548" y="303" width="64" height="24" rx="12" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" stroke-width="1.2" />
+    <text x="580" y="319" fill="#ffffff" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">node1</text>
+
+    <rect x="635" y="356" width="64" height="24" rx="12" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.2" />
+    <text x="667" y="372" fill="#ffffff" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">node2</text>
+
+    <rect x="548" y="409" width="64" height="24" rx="12" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.2" />
+    <text x="580" y="425" fill="#ffffff" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">node3</text>
+
+    <rect x="461" y="356" width="64" height="24" rx="12" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.2" />
+    <text x="493" y="372" fill="#ffffff" font-size="10" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">node4</text>
+  </g>
+</svg>

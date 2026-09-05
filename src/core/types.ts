@@ -35,7 +35,7 @@ export type BuiltinEase =
  * - `"halfway"`: Triggers when target element reaches 50% of its easing progress.
  * - `"end"` | `"complete"`: Triggers when target element finishes its animation (progress = 1).
  * - `number`: Custom fractional progress (e.g. `0.75` for 75%).
- * @internal
+ * @category Motion
  */
 export type AnimationMilestone = "start" | "halfway" | "end" | "complete" | number;
 
@@ -143,37 +143,31 @@ export interface StepData {
 // bridge that serializes events to other windows using the same names.
 // ---------------------------------------------------------------------------
 
-/** @internal */
 export interface NavStepChangedEvent {
   index: number;
   total: number;
   scene: string;
 }
 
-/** @internal */
 export interface NavSceneChangedEvent {
   from: string;
   to: string;
   index: number;
 }
 
-/** @internal */
 export interface NavGotoStepEvent {
   index: number;
 }
 
-/** @internal */
 export interface NavGotoSceneEvent {
   index: number;
 }
 
-/** @internal */
 export interface StageResizedEvent {
   width: number;
   height: number;
 }
 
-/** @internal */
 export interface StageStateChangedEvent {
   step: number;
   total: number;
@@ -188,14 +182,15 @@ export interface StageStateChangedEvent {
   steps: { stepIndex: number; sceneName: string }[];
 }
 
-/** @internal */
 export interface PointerToggledEvent {
   active: boolean;
 }
 
 /**
- * Complete event map for the stage event bus.
- * @internal
+ * Complete event map for the stage event bus. Command events are imperative verbs
+ * triggered by overlays or the presenter (`nav:nextStep`, ...); notification events
+ * are past-tense state changes emitted by core (`nav:stepChanged`, ...).
+ * @category Core
  */
 export interface StageEventMap {
   // Navigation commands
@@ -221,7 +216,8 @@ export interface StageEventMap {
 }
 
 /**
- * @internal
+ * Context passed to background renderers when they are attached to the stage.
+ * @category Core
  */
 export interface StageContext {
   container: HTMLElement;
@@ -339,23 +335,23 @@ export interface StageOptions {
 }
 
 /**
- * @internal
+ * Unwraps a potentially animated property type to its underlying raw value.
+ * @category Core
  */
 export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T;
 
 /**
- * @internal
+ * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * @category Core
  */
 export type ReactiveProp<T> = T | TransitionDescriptor<T>;
 
 /**
- * 2D coordinate point or vector. Numbers default to 0..100 percentages or cqw/cqh units.
+ * 2D coordinate point or vector as a fixed-length [x, y] tuple.
+ * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
  * @category Core
  */
-export interface Point {
-  x: number | string;
-  y: number | string;
-}
+export type Point = readonly [x: number, y: number];
 
 /**
  * Standard named position or anchor keyword.
@@ -373,7 +369,7 @@ export type AnchorKeyword =
   | "bottom-right";
 
 /**
- * Element or connector anchor: either a named keyword or an { x, y } percentage point.
+ * Element or connector anchor: either a named keyword or an [x, y] percentage point.
  * @category Core
  */
 export type ElementAnchor = AnchorKeyword | Point;

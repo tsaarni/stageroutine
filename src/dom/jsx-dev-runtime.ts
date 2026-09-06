@@ -3,4 +3,16 @@
  */
 
 export { Fragment, createElement, jsxDEV, jsx, jsxs } from "./jsx-runtime";
-export type { JSX } from "./jsx-runtime";
+export type {
+  JSX,
+  JSXProps,
+  ComponentFunction,
+  DOMElement,
+  ReactiveElementBase,
+  ElementAnchor,
+  AnchorKeyword,
+  Point,
+  TransitionDescriptor,
+  ReactiveProp,
+  EaseCurve,
+} from "./jsx-runtime";

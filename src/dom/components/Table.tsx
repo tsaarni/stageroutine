@@ -13,11 +13,15 @@ import { attachRangeSelection } from "../interaction";
  * @category Components
  */
 export interface TableOptions extends ElementOptions {
+  /** Column header labels displayed in the table header row. */
   headers?: string[];
+  /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
   rows: (string | number | HTMLElement)[][];
+  /** Text alignment per column ("left", "center", or "right", default: "left"). */
   align?: ("left" | "center" | "right")[];
+  /** Additional CSS class name. */
   className?: string;
-  /** Whether clicking or dragging rows focuses them interactively. Defaults to true. */
+  /** Whether clicking or dragging rows focuses them interactively (default: true). */
   interactive?: boolean;
 }
 

@@ -77,7 +77,7 @@ export function resolveIconSvg(nameOrSvg: string): string | undefined {
 export interface IconOptions extends ElementOptions {
   /** Icon identifier (e.g. "lucide:heart", "mycompany:logo") or raw SVG markup. */
   name?: string;
-  /** Force registration as top-level stage element. */
+  /** Force registration as top-level stage element (default: false). */
   asElement?: boolean;
 }
 

@@ -169,8 +169,7 @@ export class CrossfadeBuilder {
 }
 
 /**
- * Creates an asymmetric phase swap between two elements in place.
- * Outgoing element exits quickly; incoming element enters smoothly with zero text double-vision.
+ * Creates an asymmetric crossfade transition swapping two elements in place.
  * @category Motion
  */
 export function crossfade(

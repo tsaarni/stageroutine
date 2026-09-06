@@ -12,7 +12,9 @@ import { Connector, type ConnectorElement, type ConnectorOptions } from "./Conne
  * @category Components
  */
 export interface LifelineOptions extends ElementOptions {
+  /** Vertical length of the dashed line in pixels (default: 500). Automatically extends when activations exceed length. */
   length?: number;
+  /** Stroke color of the dashed line (default: "rgba(148, 163, 184, 0.7)"). */
   color?: string;
 }
 
@@ -21,10 +23,15 @@ export interface LifelineOptions extends ElementOptions {
  * @category Components
  */
 export interface ActivationOptions extends ElementOptions {
+  /** Starting message connector or Y coordinate anchor. */
   from?: ConnectorElement | number;
+  /** Ending message connector or Y coordinate anchor. */
   to?: ConnectorElement | number;
+  /** Explicit vertical offset along the lifeline in pixels or stage units. */
   y?: number;
+  /** Explicit bar height in pixels or stage units (default: 20). */
   height?: number;
+  /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
   color?: string;
 }
 
@@ -33,11 +40,18 @@ export interface ActivationOptions extends ElementOptions {
  * @category Components
  */
 export interface SequenceDiagramOptions {
+  /** Initial actor elements to register as diagram participants. */
   participants?: DOMElement[];
+  /** Vertical start position for the first message in stage height percentage (default: 36). */
   startY?: number;
+  /** Vertical spacing between message rows in stage height percentage (default: 9). */
   gapY?: number;
+  /** Minimum length of participant lifelines in pixels (default: 500). Automatically extends to fit messages and activations. */
   lifelineLength?: number;
+  /** Stroke color of participant lifelines (default: "rgba(148, 163, 184, 0.7)"). */
   lifelineColor?: string;
+  /** Padding in pixels below the lowest message or activation (default: 48). */
+  paddingBottom?: number;
 }
 
 /**
@@ -78,15 +92,26 @@ export class LifelineElement extends DOMElement {
     }
   }
 
-  activationBar(options: ActivationOptions = {}): ActivationBarElement {
+  /** Sets the visual length of the dashed lifeline in pixels. */
+  setLength(length: number): void {
+    const rounded = Math.round(length);
+    if (rounded > 0 && rounded !== this.length) {
+      this.length = rounded;
+      this.domElement.style.height = `${this.length}px`;
+    }
+  }
+
+  activate(options: ActivationOptions = {}): ActivationBarElement {
     const stage = getActiveStage();
     const el = new ActivationBarElement(this, options);
     this.activations.push(el);
-    return stage.registerElement(el) as ActivationBarElement;
-  }
 
-  activation(options: ActivationOptions = {}): ActivationBarElement {
-    return this.activationBar(options);
+    const needed = (el.relY + el.barHeight) * 10.8 + 48;
+    if (needed > this.length) {
+      this.setLength(needed);
+    }
+
+    return stage.registerElement(el) as ActivationBarElement;
   }
 
   hasActivationAt(y1080: number): boolean {
@@ -196,6 +221,8 @@ export class SequenceDiagramElement {
   readonly messages: ConnectorElement[] = [];
   readonly activations: ActivationBarElement[] = [];
   private lifelineMap = new Map<DOMElement, LifelineElement>();
+  private defaultLifelineLength: number;
+  private paddingBottom: number;
   startY: number;
   gapY: number;
 
@@ -206,14 +233,68 @@ export class SequenceDiagramElement {
   constructor(options: SequenceDiagramOptions = {}) {
     this.startY = options.startY ?? 36;
     this.gapY = options.gapY ?? 9;
+    this.defaultLifelineLength = options.lifelineLength ?? 500;
+    this.paddingBottom = options.paddingBottom ?? 48;
 
     if (options.participants) {
       for (const p of options.participants) {
         this.addParticipant(p, {
-          length: options.lifelineLength,
+          length: this.defaultLifelineLength,
           color: options.lifelineColor,
         });
       }
+    }
+  }
+
+  private updateLifelineLengths(): void {
+    let maxNeeded = this.defaultLifelineLength;
+
+    for (const line of this.lifelines) {
+      const actorYRaw = typeof line.actor.y === "number" ? line.actor.y : 22;
+      const actorYPx = actorYRaw > 100 ? actorYRaw : (actorYRaw / 100) * 1080;
+      let actorHeightPx = (9.25 / 100) * 1080;
+      if (typeof line.actor.height === "number") {
+        actorHeightPx =
+          line.actor.height > 100 ? line.actor.height : (line.actor.height / 100) * 1080;
+      } else if (line.actor.domElement?.offsetHeight) {
+        actorHeightPx = line.actor.domElement.offsetHeight;
+      }
+      const actorBottomPx = actorYPx + actorHeightPx;
+
+      for (const msg of this.messages) {
+        const msgYRaw =
+          typeof msg.y === "number" || typeof msg.y === "string"
+            ? msg.y
+            : typeof msg.messageY === "number" || typeof msg.messageY === "string"
+              ? msg.messageY
+              : 0;
+        const msgYPx =
+          typeof msgYRaw === "number"
+            ? msgYRaw > 100
+              ? msgYRaw
+              : (msgYRaw / 100) * 1080
+            : typeof msgYRaw === "string" && (msgYRaw.endsWith("cqh") || msgYRaw.endsWith("%"))
+              ? (Number.parseFloat(msgYRaw) / 100) * 1080
+              : Number.parseFloat(String(msgYRaw)) || 0;
+
+        if (msgYPx > 0) {
+          const needed = msgYPx - actorBottomPx + this.paddingBottom;
+          if (needed > maxNeeded) {
+            maxNeeded = needed;
+          }
+        }
+      }
+
+      for (const act of this.activations) {
+        const actBottomPx = (act.relY + act.barHeight) * 10.8 + this.paddingBottom;
+        if (actBottomPx > maxNeeded) {
+          maxNeeded = actBottomPx;
+        }
+      }
+    }
+
+    for (const line of this.lifelines) {
+      line.setLength(maxNeeded);
     }
   }
 
@@ -226,6 +307,7 @@ export class SequenceDiagramElement {
     this.participants.push(actor);
     this.lifelines.push(line);
     this.lifelineMap.set(actor, line);
+    this.updateLifelineLengths();
     return line;
   }
 
@@ -263,6 +345,7 @@ export class SequenceDiagramElement {
     });
 
     this.messages.push(conn);
+    this.updateLifelineLengths();
     return conn;
   }
 
@@ -272,16 +355,10 @@ export class SequenceDiagramElement {
   ): ActivationBarElement {
     const act = "actor" in actor ? (actor as LifelineElement).actor : (actor as DOMElement);
     const line = this.getLifeline(act);
-    const active = line.activationBar(options);
+    const active = line.activate(options);
     this.activations.push(active);
+    this.updateLifelineLengths();
     return active;
-  }
-
-  activationBar(
-    actor: DOMElement | LifelineElement,
-    options: ActivationOptions = {},
-  ): ActivationBarElement {
-    return this.activate(actor, options);
   }
 }
 
@@ -289,9 +366,9 @@ export class SequenceDiagramElement {
  * Creates a reactive Sequence Diagram coordinator with lifelines and messages.
  * @category Components
  */
-export const SequenceDiagram = (options?: SequenceDiagramOptions): SequenceDiagramElement => {
+export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramElement {
   return new SequenceDiagramElement(options);
-};
+}
 
 /**
  * Creates a vertical dashed timeline lifeline extending from a participant actor.

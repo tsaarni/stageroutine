@@ -34,18 +34,22 @@ export class PresenterClient {
     this.onUpdateCallback = callback;
   }
 
+  /** Advances the presentation to the next step. */
   next(): void {
     this.channel.postMessage({ event: "nav:nextStep" });
   }
 
+  /** Returns the presentation to the previous step. */
   prev(): void {
     this.channel.postMessage({ event: "nav:prevStep" });
   }
 
+  /** Jumps directly to a step by 0-based index. */
   gotoStep(stepIndex: number): void {
     this.channel.postMessage({ event: "nav:gotoStep", data: { index: stepIndex } });
   }
 
+  /** Jumps directly to a scene by 0-based index. */
   gotoScene(sceneIndex: number): void {
     this.channel.postMessage({ event: "nav:gotoScene", data: { index: sceneIndex } });
   }

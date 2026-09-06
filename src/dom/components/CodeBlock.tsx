@@ -17,8 +17,6 @@ export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
   lang?: string;
   /** Shiki syntax highlighting theme (e.g. "vitesse-dark", "github-dark") or Stage ThemeConfig */
   theme?: string | ElementOptions["theme"];
-  /** Explicit alias for Shiki syntax theme */
-  syntaxTheme?: string;
   className?: string;
   /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
   interactive?: boolean;
@@ -43,8 +41,7 @@ export function CodeBlock(
   options: CodeBlockOptions = {},
 ): CodeBlockElement {
   const lang = options.lang || "typescript";
-  const shikiTheme =
-    options.syntaxTheme || (typeof options.theme === "string" ? options.theme : "vitesse-dark");
+  const shikiTheme = typeof options.theme === "string" ? options.theme : "vitesse-dark";
   const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
   const isInteractive = options.interactive ?? true;
 

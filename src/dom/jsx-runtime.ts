@@ -272,3 +272,14 @@ export namespace JSX {
     [elemName: string]: any;
   }
 }
+
+export type { DOMElement } from "./element";
+export type {
+  ReactiveElementBase,
+  ElementAnchor,
+  AnchorKeyword,
+  Point,
+  TransitionDescriptor,
+  ReactiveProp,
+  EaseCurve,
+} from "../core/types";

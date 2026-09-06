@@ -12,10 +12,13 @@ import { attachRangeSelection } from "../interaction";
  * @category Components
  */
 export interface TerminalWindowProps extends ElementOptions {
+  /** Window title bar label (default: "bash - 80x24"). */
   title?: string;
+  /** Command-line output lines to display. */
   lines?: string[];
+  /** Additional CSS class name. */
   className?: string;
-  /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
+  /** Whether clicking or dragging lines focuses them interactively (default: true). */
   interactive?: boolean;
 }
 

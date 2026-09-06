@@ -12,8 +12,7 @@ import type {
 } from "../core/types";
 
 /**
- * High-precision Cubic Bézier curve solver.
- * Solves B_x(t) = x for t via Newton-Raphson, then evaluates B_y(t).
+ * Creates a cubic Bézier easing curve from control points (p1x, p1y) and (p2x, p2y).
  * @category Motion
  */
 export function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number): EaseCurve {

@@ -1,3 +1,32 @@
+/**
+ * Public API Surface Reporter & Validator
+ *
+ * Why:
+ *   Tracks and locks the public API surface of the package across releases.
+ *   Prevents accidental breaking changes and catches internal types that are
+ *   exposed in function signatures but forgotten from public exports.
+ *
+ * What it inspects:
+ *   All package entry points defined under "exports" in package.json (e.g. ".",
+ *   "./backgrounds", "./overlays", etc.), examining exported functions, classes,
+ *   interfaces, type aliases, enums, and constants alongside their JSDoc comments.
+ *
+ * How:
+ *   Uses the TypeScript Compiler API (ts.createProgram, ts.TypeChecker) to parse
+ *   source files, extract declarations and signatures, and trace referenced types
+ *   to ensure all exposed types are properly exported.
+ *
+ * What it produces:
+ *   A formatted Markdown report at `etc/api-report.md` listing the entire public
+ *   API surface, documentation, and any diagnostic warnings for unexported types.
+ *
+ * How to run:
+ *   pnpm api:report                 # Generate and update etc/api-report.md
+ *   pnpm api:report -- --check      # Check if etc/api-report.md is up-to-date (used in CI)
+ *   pnpm api:report -- --strict     # Fail if there are unexported types or warnings
+ *   pnpm api:report -- --stdout     # Output markdown directly to stdout
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
@@ -62,22 +91,84 @@ function printNode(node: ts.Node): string {
   );
 }
 
-function getJSDocSummary(symbol: ts.Symbol): string | undefined {
+function formatJSDoc(symbol: ts.Symbol, checker?: ts.TypeChecker, indent = ""): string | undefined {
   const parts: string[] = [];
 
-  const deprecatedTag = symbol.getJsDocTags().find((t) => t.name === "deprecated");
+  const deprecatedTag = symbol.getJsDocTags(checker).find((t) => t.name === "deprecated");
   if (deprecatedTag) {
     const comment = deprecatedTag.text ? ts.displayPartsToString(deprecatedTag.text).trim() : "";
     parts.push(comment ? `@deprecated ${comment}` : "@deprecated");
   }
 
-  const doc = ts.displayPartsToString(symbol.getDocumentationComment(undefined));
+  const doc = ts.displayPartsToString(symbol.getDocumentationComment(checker)).trim();
   if (doc) {
-    const firstLine = doc.split("\n")[0].trim();
-    if (firstLine.length > 0) parts.push(firstLine);
+    parts.push(doc);
   }
 
-  return parts.length > 0 ? parts.join(" — ") : undefined;
+  const otherTags = symbol
+    .getJsDocTags(checker)
+    .filter((t) => t.name !== "deprecated" && t.name !== "internal" && t.name !== "category");
+
+  for (const tag of otherTags) {
+    const text = tag.text ? ts.displayPartsToString(tag.text).trim() : "";
+    parts.push(text ? `@${tag.name} ${text}` : `@${tag.name}`);
+  }
+
+  if (parts.length === 0) return undefined;
+
+  const lines = parts.flatMap((p) => p.split("\n").map((l) => l.trimEnd()));
+
+  if (lines.length === 1 && !lines[0].startsWith("@")) {
+    return `${indent}/** ${lines[0]} */`;
+  }
+
+  return [
+    `${indent}/**`,
+    ...lines.map((line) => `${indent} *${line ? ` ${line}` : ""}`),
+    `${indent} */`,
+  ].join("\n");
+}
+
+function formatSignatureJSDoc(
+  sig: ts.Signature,
+  checker?: ts.TypeChecker,
+  indent = "",
+): string | undefined {
+  const parts: string[] = [];
+
+  const deprecatedTag = sig.getJsDocTags().find((t) => t.name === "deprecated");
+  if (deprecatedTag) {
+    const comment = deprecatedTag.text ? ts.displayPartsToString(deprecatedTag.text).trim() : "";
+    parts.push(comment ? `@deprecated ${comment}` : "@deprecated");
+  }
+
+  const doc = ts.displayPartsToString(sig.getDocumentationComment(checker)).trim();
+  if (doc) {
+    parts.push(doc);
+  }
+
+  const otherTags = sig
+    .getJsDocTags()
+    .filter((t) => t.name !== "deprecated" && t.name !== "internal" && t.name !== "category");
+
+  for (const tag of otherTags) {
+    const text = tag.text ? ts.displayPartsToString(tag.text).trim() : "";
+    parts.push(text ? `@${tag.name} ${text}` : `@${tag.name}`);
+  }
+
+  if (parts.length === 0) return undefined;
+
+  const lines = parts.flatMap((p) => p.split("\n").map((l) => l.trimEnd()));
+
+  if (lines.length === 1 && !lines[0].startsWith("@")) {
+    return `${indent}/** ${lines[0]} */`;
+  }
+
+  return [
+    `${indent}/**`,
+    ...lines.map((line) => `${indent} *${line ? ` ${line}` : ""}`),
+    `${indent} */`,
+  ].join("\n");
 }
 
 function isInternalProjectSymbol(symbol: ts.Symbol | undefined, program: ts.Program): boolean {
@@ -222,7 +313,7 @@ function inspectEntryPoint(
   for (const exp of sortedExports) {
     const target = exp.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
     const decl = target.declarations?.[0];
-    const doc = getJSDocSummary(exp) ?? getJSDocSummary(target);
+    const doc = formatJSDoc(exp, checker) ?? formatJSDoc(target, checker);
 
     // 1. Functions (with overload support)
     const funcDecls = target.declarations?.filter(ts.isFunctionDeclaration);
@@ -232,6 +323,7 @@ function inspectEntryPoint(
 
       if (callSignatures.length > 0) {
         for (const sig of callSignatures) {
+          const sigDoc = formatSignatureJSDoc(sig, checker) ?? doc;
           const sigStr = checker.signatureToString(
             sig,
             sourceFile,
@@ -241,7 +333,7 @@ function inspectEntryPoint(
             name: exp.name,
             category: "function",
             signature: cleanTypeString(`export function ${exp.name}${sigStr};`),
-            doc,
+            doc: sigDoc,
           });
 
           checkSignatureTypes(
@@ -276,6 +368,10 @@ function inspectEntryPoint(
       const members: string[] = [];
 
       for (const sig of constructorType.getConstructSignatures()) {
+        const sigDoc = formatSignatureJSDoc(sig, checker, "  ");
+        if (sigDoc) {
+          members.push(sigDoc);
+        }
         const sigStr = checker.signatureToString(sig, sourceFile, ts.TypeFormatFlags.NoTruncation);
         members.push(`  constructor${cleanTypeString(sigStr)};`);
       }
@@ -298,6 +394,7 @@ function inspectEntryPoint(
           );
           if (!isStatic && (isPrivate || prop.name.startsWith("_"))) continue;
 
+          const memberDoc = formatJSDoc(prop, checker, "  ");
           const isReadonly =
             !isStatic && modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword);
           const propType = checker.getTypeOfSymbolAtLocation(prop, propDecl);
@@ -306,6 +403,10 @@ function inspectEntryPoint(
           if (propSigs.length > 0) {
             const prefix = isStatic ? "static " : "";
             for (const s of propSigs) {
+              const sigDoc = formatSignatureJSDoc(s, checker, "  ") ?? memberDoc;
+              if (sigDoc) {
+                members.push(sigDoc);
+              }
               const sigStr = checker.signatureToString(
                 s,
                 sourceFile,
@@ -314,6 +415,9 @@ function inspectEntryPoint(
               members.push(`  ${prefix}${prop.name}${cleanTypeString(sigStr)};`);
             }
           } else {
+            if (memberDoc) {
+              members.push(memberDoc);
+            }
             const prefix = isStatic ? "static " : isReadonly ? "readonly " : "";
             const typeStr = checker.typeToString(
               propType,
@@ -420,6 +524,23 @@ function inspectEntryPoint(
   };
 }
 
+const ENTRY_POINT_DESCRIPTIONS: Record<string, string> = {
+  stageroutine:
+    "Primary entry point providing the stage director, built-in components, motion transitions, decorators, and layout functions.",
+  "stageroutine/backgrounds":
+    "Procedural WebGL and canvas background renderers, packaged separately to keep 2D presentations lightweight.",
+  "stageroutine/overlays":
+    "Interactive presentation overlays mounted above the stage, including laser pointer and navigation controls.",
+  "stageroutine/presenter":
+    "Presenter console synchronization client over BroadcastChannel and in-browser screen recorder.",
+  "stageroutine/jsx-runtime":
+    "Production JSX factory compiling TSX markup directly into native DOM elements without a virtual DOM.",
+  "stageroutine/jsx-dev-runtime":
+    "Development JSX factory providing element creation with debugging metadata and source inspection.",
+  "stageroutine/vite":
+    "Vite plugin configuring JSX transforms, automatic icon resolution, and presenter view routing.",
+};
+
 export function generateApiReport(): { content: string; warningCount: number } {
   const configPath = ts.findConfigFile(ROOT_DIR, ts.sys.fileExists, "tsconfig.json");
   if (!configPath) {
@@ -463,10 +584,18 @@ export function generateApiReport(): { content: string; warningCount: number } {
   );
 
   const lines: string[] = [
+    "<!-- Generated by scripts/api-report.ts. Do not edit directly. -->",
+    "",
     "# StageRoutine Public API Surface",
     "",
-    "> Canonical snapshot of all exported runtime symbols and types.",
+    "> Canonical snapshot of all exported runtime symbols, types, and documentation.",
     "> Run `pnpm api:report` to refresh.",
+    "",
+    "## How to Read This Document",
+    "",
+    "This document records all public symbols exported by StageRoutine. Each chapter documents one package entry point.",
+    "Exports within a chapter are grouped into functions, classes, interfaces, types, and constants.",
+    "Signatures define type constraints and parameters. JSDoc comments explain runtime behavior, options, default values, and measurement units.",
     "",
   ];
 
@@ -499,8 +628,11 @@ export function generateApiReport(): { content: string; warningCount: number } {
 
   // Detailed entry point blocks
   for (const r of results) {
-    lines.push("---", "");
     lines.push(`## \`${r.name}\``, "");
+    const description =
+      ENTRY_POINT_DESCRIPTIONS[r.name] ??
+      `Exports and types available from the \`${r.name}\` entry point.`;
+    lines.push(description, "");
 
     for (const { title, category, includeDoc } of sections) {
       const categoryItems = r.items.filter((i) => i.category === category);
@@ -508,9 +640,15 @@ export function generateApiReport(): { content: string; warningCount: number } {
 
       lines.push(`### ${title}`, "", "```ts");
       let lastPrintedName = "";
+      let lastPrintedDoc = "";
       for (const item of categoryItems) {
-        if (includeDoc && item.doc && item.name !== lastPrintedName) {
-          lines.push(`/** ${item.doc} */`);
+        if (
+          includeDoc &&
+          item.doc &&
+          (item.name !== lastPrintedName || item.doc !== lastPrintedDoc)
+        ) {
+          lines.push(item.doc);
+          lastPrintedDoc = item.doc;
         }
         lastPrintedName = item.name;
         lines.push(item.signature, "");

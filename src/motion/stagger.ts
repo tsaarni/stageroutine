@@ -13,9 +13,13 @@ import { to } from "./transitions";
  * @category Motion
  */
 export interface StaggerOptions {
+  /** Animation duration in seconds for each element (default: 0.4s). */
   duration?: number;
+  /** Overlap trigger milestone between consecutive elements (default: 0.5). */
   overlap?: AnimationMilestone;
+  /** Easing curve for each element transition (default: "quartOut"). */
   ease?: BuiltinEase | EaseCurve;
+  /** Animated target properties for each element (default: `{ opacity: 1, x: 0 }`). */
   props?: Record<string, unknown>;
 }
 

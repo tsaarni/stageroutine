@@ -35,7 +35,7 @@ function createVignetteElement(options: VignetteOptions): HTMLDivElement {
 }
 
 /**
- * Universal decorator: Adds a soft radial dark vignette to any Element, Card, or Background.
+ * Decorates an element or background with a radial dark vignette.
  * @category Decorators
  */
 export function vignette(options: VignetteOptions = {}) {

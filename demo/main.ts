@@ -372,7 +372,7 @@ const decoratorHeading = Title("Element Decorators", {
 });
 
 const decoratorGradientDemo = Title("Gradient Flow in Action", {
-  serif: true,
+  variant: "serif",
   opacity: 0,
 }).decorate(
   gradient({

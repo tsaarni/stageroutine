@@ -48,11 +48,11 @@ export interface PulseSequenceStep {
   connector: ConnectorElement;
   /** Duration in seconds for this pulse traversal (default: 0.45s). */
   duration?: number;
-  /** Particle color override. */
+  /** Particle color override (default: connector stroke color). */
   color?: string;
-  /** Particle diameter in pixels. */
+  /** Particle diameter in pixels (default: 8px). */
   size?: number;
-  /** Optional pause delay in seconds before the next connector pulses. */
+  /** Optional pause delay in seconds before the next connector pulses (default: 0s). */
   delayAfter?: number;
 }
 
@@ -65,7 +65,7 @@ export interface PulseSequenceOptions {
   loop?: boolean;
   /** Pause in seconds after the final connector finishes before restarting the cycle (default: 1.45s). */
   pauseAfter?: number;
-  /** Initial delay in seconds before the first pulse begins (e.g. while nodes settle). */
+  /** Initial delay in seconds before the first pulse begins (default: 0s). */
   startDelay?: number;
 }
 
@@ -291,8 +291,6 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   dotted?: boolean;
   /** Whether dotted strokes stream continuously in a traveling particle animation. */
   traveling?: boolean;
-  /** Alias for traveling animation. */
-  animated?: boolean;
   /** Head marker at the start/origin endpoint (defaults to "none"). */
   startHead?: ConnectorHeadType;
   /** Head marker at the end/destination endpoint (defaults to "arrow"). */
@@ -318,8 +316,6 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   toPadding?: number;
   /** Continuous periodic pulse configuration or interval in seconds (e.g. 1.5 or { interval: 2.0, color: '#38bdf8' }). */
   pulseInterval?: number | PeriodicPulseOptions;
-  /** Alias for pulseInterval. */
-  periodicPulse?: boolean | number | PeriodicPulseOptions;
   /** Vertical alignment Y coordinate for sequence diagram horizontal messages. */
   messageY?: ReactiveProp<number | string>;
 }
@@ -411,7 +407,7 @@ export class ConnectorElement extends DOMElement {
     svg.setAttribute("viewBox", "0 0 1920 1080");
     svg.setAttribute("preserveAspectRatio", "none");
 
-    if (options.traveling || options.animated) {
+    if (options.traveling) {
       svg.classList.add("sr-connector-traveling-dots");
     }
 
@@ -531,14 +527,12 @@ export class ConnectorElement extends DOMElement {
     if (options.messageY !== undefined) this.messageY = options.messageY;
     if (options.y !== undefined) this.messageY = options.y;
 
-    const periodic = options.pulseInterval ?? options.periodicPulse;
+    const periodic = options.pulseInterval;
     if (periodic) {
       if (typeof periodic === "number") {
         this.periodicOptions = { interval: periodic };
       } else if (typeof periodic === "object") {
         this.periodicOptions = { ...periodic };
-      } else if (periodic === true) {
-        this.periodicOptions = { interval: 2.0 };
       }
     }
 
@@ -1125,9 +1119,7 @@ export class ConnectorElement extends DOMElement {
   }
 
   /**
-   * Immediately cancels and removes all in-flight pulse packets on this connector.
-   * Note: Paused Web Animations do not fire onfinish handlers.
-   * Explicit cancellation ensures no orphan SVG nodes remain.
+   * Cancels and removes all in-flight pulse packets on this connector.
    */
   cancelPulses(): this {
     for (const dot of Array.from(this.activePulseDots)) {
@@ -1243,9 +1235,7 @@ export class ConnectorElement extends DOMElement {
 }
 
 /**
- * Orchestrates a sequential pulse relay across multiple connectors.
- * Uses onComplete event callbacks instead of independent interval timers.
- * This prevents timer drift and guarantees exactly one pulse is active at a time.
+ * Orchestrates a sequential packet pulse chain across multiple connectors.
  * @category Motion
  */
 export function pulseSequence(
@@ -1348,12 +1338,12 @@ export function pulseSequence(
  * Creates a reactive visual connector / arrow between two nodes or coordinate points.
  * @category Components
  */
-export const Connector = (
+export function Connector(
   from: ConnectorTarget,
   to: ConnectorTarget,
   options?: ConnectorOptions,
-): ConnectorElement => {
+): ConnectorElement {
   const stage = getActiveStage();
   const el = new ConnectorElement(from, to, options);
   return stage.registerElement(el) as ConnectorElement;
-};
+}

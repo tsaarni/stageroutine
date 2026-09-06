@@ -10,7 +10,9 @@ import type { ElementOptions } from "../element";
  * @category Components
  */
 export interface TextOptions extends ElementOptions {
+  /** Foreground text color. */
   color?: string;
+  /** Additional CSS class name. */
   className?: string;
 }
 

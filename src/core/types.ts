@@ -125,49 +125,65 @@ export interface StepData {
   theme?: ThemeConfig;
 }
 
-// ---------------------------------------------------------------------------
-// Unified Namespaced Event System
-//
-// Naming convention:
-//   domain:action
-//
-// Commands (imperative verbs) — actions triggered by user, overlay, or presenter:
-//   nav:nextStep, nav:prevStep, nav:nextScene, nav:prevScene,
-//   nav:gotoStep, nav:gotoScene, pointer:toggle, stage:requestState
-//
-// Notifications (past tense) — state changes emitted by core:
-//   nav:stepChanged, nav:sceneChanged, pointer:toggled,
-//   stage:resized, stage:stateChanged
-//
-// All events flow through a single typed bus. BroadcastChannel is a transparent
-// bridge that serializes events to other windows using the same names.
-// ---------------------------------------------------------------------------
-
+/**
+ * Event payload emitted when the active presentation step changes.
+ * @category Core
+ */
 export interface NavStepChangedEvent {
+  /** 0-based index of the active step. */
   index: number;
+  /** Total number of steps in the presentation. */
   total: number;
+  /** Name of the active scene. */
   scene: string;
 }
 
+/**
+ * Event payload emitted when the active scene changes.
+ * @category Core
+ */
 export interface NavSceneChangedEvent {
+  /** Name of the previous scene. */
   from: string;
+  /** Name of the incoming scene. */
   to: string;
+  /** 0-based index of the incoming scene. */
   index: number;
 }
 
+/**
+ * Command event payload to jump directly to a step index.
+ * @category Core
+ */
 export interface NavGotoStepEvent {
+  /** 0-based target step index. */
   index: number;
 }
 
+/**
+ * Command event payload to jump directly to a scene index.
+ * @category Core
+ */
 export interface NavGotoSceneEvent {
+  /** 0-based target scene index. */
   index: number;
 }
 
+/**
+ * Event payload emitted when the stage viewport dimensions change.
+ * @category Core
+ */
 export interface StageResizedEvent {
+  /** New viewport width in virtual canvas pixels. */
   width: number;
+  /** New viewport height in virtual canvas pixels. */
   height: number;
 }
 
+/**
+ * Complete state snapshot emitted whenever presentation state changes.
+ * @category Core
+ */
 export interface StageStateChangedEvent {
   step: number;
   total: number;
@@ -182,7 +198,12 @@ export interface StageStateChangedEvent {
   steps: { stepIndex: number; sceneName: string }[];
 }
 
+/**
+ * Event payload emitted when the pointer overlay active state toggles.
+ * @category Core
+ */
 export interface PointerToggledEvent {
+  /** Whether the pointer overlay is currently active. */
   active: boolean;
 }
 
@@ -320,7 +341,7 @@ export interface Background {
  * @category Core
  */
 export interface StageOptions {
-  /** Target HTML container or CSS selector to mount into. */
+  /** Target HTML container or CSS selector to mount into (default: `document.body`). */
   target?: string | HTMLElement;
   /** Virtual stage width in pixels (default: `1920`). */
   width?: number;
@@ -328,7 +349,7 @@ export interface StageOptions {
   height?: number;
   /** Default transition duration in seconds (default: `0.6`). */
   defaultDuration?: number;
-  /** Initial theme color overrides. */
+  /** Initial theme color overrides (default: `defaultDark`). */
   theme?: ThemeConfig;
   /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
   logLevel?: import("./logger").LogLevel;

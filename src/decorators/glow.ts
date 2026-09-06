@@ -10,7 +10,7 @@ import { appendAnimation } from "./gradient";
  * @category Decorators
  */
 export interface GlowOptions {
-  /** Whether the glow breathes/animates (default: true). */
+  /** Whether the glow pulses continuously (default: true). */
   pulse?: boolean;
   /** Animation cycle duration in seconds if pulse is enabled (default: 4). */
   duration?: number;
@@ -36,7 +36,7 @@ const PEAK_FILTER =
   "drop-shadow(0 0 10px rgba(192, 132, 252, 0.85)) drop-shadow(0 0 32px rgba(167, 139, 250, 0.6)) drop-shadow(0 0 65px rgba(147, 51, 234, 0.35))";
 
 /**
- * Decorates an element with the exact multi-layered neon glow effect with optional breathing animation.
+ * Decorates an element with a glowing neon aura and optional pulse animation.
  * @category Decorators
  */
 export function glow(options: GlowOptions = {}): ElementDecorator {

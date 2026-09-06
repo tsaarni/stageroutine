@@ -48,7 +48,7 @@ export interface TypewriterOptions {
 }
 
 /**
- * Decorates an element with human-like, realistic typing cadence, typo corrections, and blinking cursor.
+ * Decorates an element with simulated typing cadence, backspacing, and a blinking cursor.
  *
  * All duration and timing values are expressed in **seconds** (float).
  *

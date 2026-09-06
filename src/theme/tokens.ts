@@ -8,40 +8,61 @@
  * @category Theme
  */
 export interface ThemeConfig {
-  /* --- Canvas & Palette --- */
+  /** Stage canvas background color or CSS gradient. */
   background?: string;
+  /** Primary text color. */
   text?: string;
+  /** Primary brand accent color. */
   primary?: string;
+  /** Secondary accent or highlight color. */
   accent?: string;
 
-  /* --- Secondary Text --- */
+  /** Muted secondary text color. */
   textMuted?: string;
+  /** Dim tertiary text color. */
   textDim?: string;
 
-  /* --- Surfaces & Borders --- */
+  /** Component surface background color. */
   surface?: string;
+  /** Component surface border stroke. */
   surfaceBorder?: string;
+  /** Subtle surface highlight color. */
   surfaceHighlight?: string;
+  /** Box shadow applied to raised surfaces. */
   surfaceShadow?: string;
+  /** Backdrop overlay behind elevated layers. */
   surfaceBackdrop?: string;
 
-  /* --- Spatial Scale --- */
+  /** Base border radius (e.g. "12px"). */
   radius?: string;
+  /** Extra-small spacing token. */
   spaceXs?: string;
+  /** Small spacing token. */
   spaceSm?: string;
+  /** Medium spacing token. */
   spaceMd?: string;
+  /** Large spacing token. */
   spaceLg?: string;
+  /** Extra-large spacing token. */
   spaceXl?: string;
 
-  /* --- Typography Hierarchy --- */
+  /** Sans-serif font family. */
   fontSans?: string;
+  /** Serif font family. */
   fontSerif?: string;
+  /** Monospace font family. */
   fontMono?: string;
+  /** Hero title typography scale. */
   fontHero?: string;
+  /** Title typography scale. */
   fontTitle?: string;
+  /** Lead paragraph typography scale. */
   fontLead?: string;
+  /** Body paragraph typography scale. */
   fontBody?: string;
+  /** Code snippet typography scale. */
   fontCode?: string;
+  /** Kicker label typography scale. */
   fontKicker?: string;
 }
 

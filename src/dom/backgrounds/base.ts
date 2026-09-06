@@ -15,9 +15,9 @@ export interface BackgroundOptions extends ElementOptions {
 }
 
 /**
- * Base reactive element for procedural GPU/WebGL backgrounds.
- * Handles automatic resize observation, full-bleed viewport positioning,
- * and automatic render loop pausing when invisible (0% GPU waste).
+ * Base reactive element for procedural WebGL and canvas backgrounds.
+ * Handles resize observation, full-bleed viewport positioning,
+ * and automatic render loop pausing when invisible.
  * @internal
  */
 export abstract class BackgroundElement extends DOMElement {
@@ -92,7 +92,7 @@ export abstract class BackgroundElement extends DOMElement {
   /** Starts or resumes the continuous WebGL render loop */
   abstract resume(): void;
 
-  /** Pauses the continuous WebGL render loop to save 100% GPU/CPU when hidden */
+  /** Pauses the continuous WebGL render loop when hidden */
   abstract pause(): void;
 
   /** Clean up WebGL resources, geometries, textures, and observers */

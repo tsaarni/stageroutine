@@ -368,7 +368,7 @@ function createLayoutRule(
 }
 
 /**
- * Layout helper providing procedural positioning engines (hstack, vstack, grid, split, circle, relational).
+ * Layout helper providing procedural positioning engines (hstack, vstack, grid, circle, relational).
  * @category Layout
  */
 export const layout = {

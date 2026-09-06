@@ -118,7 +118,7 @@ interface RawPoint {
 }
 
 /**
- * WebGL-accelerated virtual laser pointer overlay with dynamic glowing comet tail.
+ * Laser pointer overlay with glowing trail and keyboard toggle.
  *
  * Manages its own pointer event listeners, cursor visibility, and keyboard toggle.
  * Toggle with the L key (configurable) or programmatically via the returned controller.

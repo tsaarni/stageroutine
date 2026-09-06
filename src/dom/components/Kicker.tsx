@@ -10,7 +10,9 @@ import type { ElementOptions } from "../element";
  * @category Components
  */
 export interface KickerOptions extends ElementOptions {
+  /** Foreground label color. */
   color?: string;
+  /** Additional CSS class name. */
   className?: string;
 }
 

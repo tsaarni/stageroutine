@@ -6,7 +6,7 @@ import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
-import { type ElementHost, createReactiveProxy } from "./proxy";
+import { createReactiveProxy } from "./proxy";
 import type {
   AnimationMilestone,
   Background,
@@ -82,7 +82,7 @@ class SceneBuilder {
  * Presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  * @category Core
  */
-export class Stage implements ElementHost {
+export class Stage {
   private options: StageOptions;
   private container: HTMLElement | null = null;
   private viewport: HTMLElement | null = null;
@@ -518,7 +518,7 @@ export class Stage implements ElementHost {
     return createReactiveProxy(element, this);
   }
 
-  // --- Scene & Pause Authoring API ---
+  /** Declares a new presentation scene and returns a builder to populate its elements. */
   scene(name: string): SceneBuilder {
     return new SceneBuilder(this, name);
   }
@@ -606,19 +606,23 @@ export class Stage implements ElementHost {
     this.activeElementIds = ids;
   }
 
+  /** Loads a full markdown presenter notes document for the presentation. */
   setNotesDocument(doc: string): this {
     this.notesDoc = doc;
     return this;
   }
 
+  /** Loads a full markdown presenter notes document for the presentation (alias for setNotesDocument). */
   notes(doc: string): this {
     return this.setNotesDocument(doc);
   }
 
+  /** Sets presenter speaker notes for the current step. */
   setNotes(text: string | string[]): void {
     this.currentStepNotes = Array.isArray(text) ? text.join("\n") : text;
   }
 
+  /** Completes the current presentation step, recording pending mutations and transitions into a snapshot. */
   pause(): void {
     // Flush any pending motion builders (e.g. stagger without .when())
     for (const flush of this.pendingMotionFlushes) {
@@ -660,6 +664,7 @@ export class Stage implements ElementHost {
   }
 
   // --- Mount & Playback Engine ---
+  /** Mounts the presentation stage into the target container element and begins playback. */
   mount(target?: string | HTMLElement): this {
     if (typeof window === "undefined") return this;
 

@@ -13,10 +13,13 @@ import { attachRangeSelection } from "../interaction";
  * @category Components
  */
 export interface BulletListOptions extends ElementOptions {
+  /** Vertical spacing between bullet items in pixels (default: 16). */
   itemSpacing?: number;
+  /** Foreground text and bullet dot color. */
   color?: string;
+  /** Additional CSS class name. */
   className?: string;
-  /** Whether clicking or dragging bullet items focuses them interactively. Defaults to true. */
+  /** Whether clicking or dragging bullet items focuses them interactively (default: true). */
   interactive?: boolean;
 }
 

@@ -10,7 +10,7 @@ import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 let nextId = 1;
 
 /**
- * Callback function to decorate or style a Stage DOMElement instance.
+ * Callback function that applies visual effects or behavior to a stage element.
  * @category Decorators
  */
 export type ElementDecorator = (element: DOMElement) => void;

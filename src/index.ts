@@ -104,15 +104,19 @@ export type {
   TextOptions,
   ImageOptions,
   ImageFit,
+  ImageElement,
   VideoOptions,
   VideoElement,
   WebcamOptions,
+  WebcamElement,
   CameraDevice,
   ShapeOptions,
   ShapeKind,
   ShapeVariant,
+  ShapeElement,
   IconOptions,
   IconDefinition,
+  IconElement,
   KickerOptions,
   CodeBlockOptions,
   CodeBlockElement,
@@ -126,6 +130,9 @@ export type {
   ConnectorElement,
   ConnectorTarget,
   ConnectorHeadType,
+  LabelOffset,
+  LabelPlacement,
+  PeriodicPulseOptions,
   PulseOptions,
   PulseSequenceStep,
   PulseSequenceOptions,
@@ -170,6 +177,7 @@ export { BackgroundElement, CSSBackground } from "./dom/backgrounds/index";
 export type {
   BackgroundOptions,
   CSSBackgroundOptions,
+  CSSBackgroundElement,
 } from "./dom/backgrounds/index";
 
 // --- Overlays ---

@@ -5,10 +5,6 @@
 import * as THREE from "three";
 import { BackgroundElement, type BackgroundOptions } from "./base";
 
-// ---------------------------------------------------------------------------
-// Configuration Interfaces
-// ---------------------------------------------------------------------------
-
 /**
  * @internal
  */

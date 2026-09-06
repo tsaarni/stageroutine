@@ -30,6 +30,7 @@ export class PresenterRecorder {
     this.onStateChange = callback;
   }
 
+  /** Toggles microphone audio track capture on or off. */
   toggleMic(): void {
     this.isMicEnabled = !this.isMicEnabled;
     if (this.micTrack) {
@@ -38,6 +39,7 @@ export class PresenterRecorder {
     this._emit();
   }
 
+  /** Prompts for display capture and starts screen recording. */
   async start(): Promise<void> {
     if (this.isRecording) return;
 
@@ -116,6 +118,7 @@ export class PresenterRecorder {
     }
   }
 
+  /** Stops recording and downloads the captured video. */
   stop(): void {
     if (!this.isRecording || !this.mediaRecorder) return;
     this.mediaRecorder.stop();
@@ -129,6 +132,7 @@ export class PresenterRecorder {
     this._emit();
   }
 
+  /** Starts recording if currently stopped, or stops if currently recording. */
   toggle(): void {
     if (this.isRecording) {
       this.stop();
@@ -137,6 +141,7 @@ export class PresenterRecorder {
     }
   }
 
+  /** Returns the current recording state snapshot. */
   getRecordingState(): {
     isRecording: boolean;
     isMicEnabled: boolean;

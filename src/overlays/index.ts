@@ -4,3 +4,4 @@
 
 export { LaserPointer, type LaserPointerOptions, type LaserPointerController } from "./laser";
 export { NavigationOverlay, type NavigationOverlayOptions } from "./navigation";
+export type { OverlayPlugin, OverlayContext } from "../core/types";

@@ -11,7 +11,7 @@ import type { DOMElement } from "../dom/element";
 export interface GrainOptions {
   /** Film grain opacity from 0 to 1 (default: 0.12). */
   opacity?: number;
-  /** Granularity scale factor in pixels (default: 1. Higher numbers produce larger, chunkier grain blocks). */
+  /** Granularity scale factor in pixels (default: 1). Higher values produce larger grain blocks. */
   granularity?: number;
   /** Noise tile size in pixels (default: 512). */
   size?: number;
@@ -93,7 +93,7 @@ function createGrainContainer(
 }
 
 /**
- * Universal decorator: Adds tactile analog film grain texture to any Element, Card, or Background.
+ * Decorates an element or background with a film grain texture.
  * @category Decorators
  */
 export function grain(options: GrainOptions = {}) {

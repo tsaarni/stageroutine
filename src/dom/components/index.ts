@@ -8,16 +8,17 @@
 
 export { Title, type TitleOptions, type TitleVariant } from "./Title";
 export { Text, type TextOptions } from "./Text";
-export { Image, type ImageOptions, type ImageFit } from "./Image";
+export { Image, type ImageOptions, type ImageFit, type ImageElement } from "./Image";
 export {
   Icon,
   defineIcons,
   resolveIconSvg,
   type IconOptions,
   type IconDefinition,
+  type IconElement,
 } from "./Icon";
 export { Video, type VideoOptions, type VideoElement } from "./Video";
-export { Webcam, type WebcamOptions, type CameraDevice } from "./Webcam";
+export { Webcam, type WebcamOptions, type WebcamElement, type CameraDevice } from "./Webcam";
 export {
   Shape,
   Card,
@@ -27,6 +28,7 @@ export {
   type ShapeOptions,
   type ShapeKind,
   type ShapeVariant,
+  type ShapeElement,
 } from "./Shape";
 export { Kicker, type KickerOptions } from "./Kicker";
 export { CodeBlock, type CodeBlockOptions, type CodeBlockElement } from "./CodeBlock";
@@ -44,6 +46,9 @@ export {
   type ConnectorOptions,
   type ConnectorTarget,
   type ConnectorHeadType,
+  type LabelOffset,
+  type LabelPlacement,
+  type PeriodicPulseOptions,
   type PulseOptions,
   type PulseSequenceStep,
   type PulseSequenceOptions,

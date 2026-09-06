@@ -68,15 +68,18 @@ StageRoutine separates element options from geometric points:
 
 ## Anchors
 
-The `anchor` property defines which point on the element aligns with `(x, y)`. Anchors accept named keywords or `[x, y]` percentage tuples:
+The `anchor` property defines which point on the element aligns with `(x, y)`. All elements default to `"top-left"` unless specified.
+Anchors accept named keywords or `[x, y]` percentage tuples:
 
-| Anchor | Description | Default For |
+![StageRoutine Element Anchors](/img/anchors.svg)
+
+| Anchor | Description | Typical Use |
 |---|---|---|
-| `"top-left"` | Alignment relative to element's top-left corner | `Text`, `CodeBlock`, `Table` |
-| `"center"` | Alignment relative to element's exact center | `Title`, `Circle`, `Pill`, `Shape` |
-| `"top"` | Top center | Headers |
-| `"bottom"` | Bottom center | Footers |
-| `[x, y]` | Custom percentage point on the element (e.g. `[100, 50]` for right edge) | Custom |
+| `"top-left"` | Alignment relative to top-left corner *(default)* | Body text, code blocks, tables |
+| `"center"` | Alignment relative to exact center | Centered titles, shapes, badges, icons |
+| `"top"` | Top center | Slide headers |
+| `"bottom"` | Bottom center | Slide footers, bottom bars |
+| `[x, y]` | Custom percentage point on the element (e.g. `[100, 50]`) | Custom alignment |
 
 ```typescript
 const title = Title("Centered Title", {

@@ -41,15 +41,12 @@
   },
   "scripts": {
     "dev": "vite",
-    "chrome-dev": "\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --remote-debugging-port=9222 --user-data-dir=.chrome-profile http://localhost:5173",
     "build": "vite build",
-    "preview": "vite preview",
-    "check": "biome check .",
-    "format": "biome format --write .",
-    "typecheck": "tsc --noEmit",
+    "verify": "biome check --write . && tsc --noEmit",
+    "chrome-dev": "node scripts/chrome-dev.js",
+    "api:report": "node scripts/api-report.ts",
     "docs:serve": "pnpm --filter stageroutine-docs start",
-    "docs:build": "pnpm --filter stageroutine-docs build",
-    "docs:version": "pnpm --filter stageroutine-docs docs:version"
+    "docs:build": "pnpm --filter stageroutine-docs build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

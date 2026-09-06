@@ -94,22 +94,37 @@ layout.grid([
 
 ## Relative Positioning
 
-Use relative helpers to position one element next to another element.
-These helpers change only one coordinate axis.
+Use relative helpers to position elements relative to a target element.
+You can pass a single element (`item`) or an array of elements (`[item1, item2]`), with optional configuration for gap, alignment, and animation.
+If omitted, `gap` defaults to `2` percentage units.
 
 ```typescript
-// Place caption 2 units below chart
-layout.below(caption, chart, 2);
+// Place a single element below a target (default gap: 2)
+layout.below(caption, chart);
 
-// Place details 4 units to the right of card
-layout.rightOf(details, card, 4);
+// Place multiple elements below a target with custom gap and animation
+layout.below([item1, item2, item3], title, {
+  gap: 3,          // Space between elements (default: 2)
+  align: "start",  // "start" (default), "center", or "end"
+  animate: (coord, el, index) =>
+    to(coord).duration(0.6).delay(index * 0.1),
+});
+
+// Place details to the right of card
+layout.rightOf(details, card, { gap: 4, align: "center" });
 ```
 
 Available helpers:
-- `layout.below(element, target, gap)`: sets `y` below the target.
-- `layout.above(element, target, gap)`: sets `y` above the target.
-- `layout.rightOf(element, target, gap)`: sets `x` to the right of the target.
-- `layout.leftOf(element, target, gap)`: sets `x` to the left of the target.
+- `layout.below(elements, target, options?)`: positions elements below the target.
+- `layout.above(elements, target, options?)`: positions elements above the target.
+- `layout.rightOf(elements, target, options?)`: positions elements to the right of the target.
+- `layout.leftOf(elements, target, options?)`: positions elements to the left of the target.
+
+Options:
+- `gap`: Spacing between elements and the target in percentage units (default: `2`).
+- `align`: Perpendicular alignment: `"start"` (default), `"center"`, or `"end"`.
+- `stack`: When passing multiple elements, whether they chain sequentially (default: `true`). Set `false` to move multiple elements without chaining.
+- `animate`: Position transition builder callback or `true`.
 
 ## Circular Layouts
 
@@ -124,16 +139,19 @@ layout.circle([node1, node2, node3, node4], {
 
 ## Divider Lines
 
-Add `rule: true` to draw lines between elements.
-The layout functions return the created line elements.
-Pass them to `scene.with`:
+Add `rule: true` to draw divider lines in gutters between elements:
 
 ```typescript
-const rules = layout.hstack([[heading, body], codePanel], {
-  rule: { dashed: true, color: "rgba(255, 255, 255, 0.15)" },
-});
+const rules = layout.hstack([col1, col2], { rule: true });
+stage.scene("Overview").with(col1, col2, ...rules);
+```
 
-stage.scene("Overview").with(heading, body, codePanel, ...rules);
+You can also pass an options object to customize `color`, `thickness`, `borderStyle`, or `bracket`:
+
+```typescript
+layout.hstack([col1, col2], {
+  rule: { borderStyle: "dashed", bracket: true },
+});
 ```
 
 ## Animated Transitions

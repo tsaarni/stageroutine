@@ -11,19 +11,19 @@ Enhance elements and the stage with built-in decorators, WebGL backgrounds, and 
 Decorators add visual effects to elements via `.decorate()` without modifying their positioning or layout.
 
 ```typescript
-import { Title, CodeBlock, gradient, glow, rail, bracket, typewriter } from "stageroutine";
+import { Title, CodeBlock, gradient, glow, rule, bracket, typewriter } from "stageroutine";
 
 // Apply visual styles
 const title = Title("StageRoutine").decorate(gradient()).decorate(glow());
 
-// Add technical rail lines and brackets to code blocks
-const terminal = CodeBlock(["pnpm dev"]).decorate(rail()).decorate(bracket());
+// Add technical divider rules and brackets to code blocks
+const terminal = CodeBlock(["pnpm dev"]).decorate(rule()).decorate(bracket());
 ```
 
 ### Built-in Decorators
 - `gradient()`: Text or container gradient fills
 - `glow()`: Neon glowing drop-shadows
-- `rail()`: Left accent line
+- `rule()`: Accent rule / divider line (straight, dashed, or bracketed)
 - `bracket()`: Technical framing brackets
 - `typewriter()`: Animated typewriter text reveal
 

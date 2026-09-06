@@ -68,7 +68,6 @@ export type {
   RelativeAlign,
   GridSlot,
   LayoutElement,
-  RuleOptions,
 } from "./dom/layout";
 
 // --- Base class & option types for custom components ---
@@ -147,7 +146,7 @@ export {
   grain,
   scrim,
   typewriter,
-  rail,
+  rule,
   bracket,
 } from "./decorators/index";
 export type {
@@ -158,7 +157,7 @@ export type {
   ScrimOptions,
   TypewriterOptions,
   TypewriterStep,
-  RailOptions,
+  RuleOptions,
   BracketOptions,
   BracketStyle,
 } from "./decorators/index";

@@ -6,11 +6,10 @@
 |---|---|
 | `pnpm dev` | Start Vite dev server |
 | `pnpm build` | Build production bundles for stage and presenter console |
-| `pnpm preview` | Preview production build |
-| `pnpm typecheck` | Run TypeScript check (`tsc --noEmit`) |
-| `pnpm check` | Run Biome linter and formatter check |
-| `pnpm format` | Format files with Biome |
-| `pnpm chrome-dev` | Launch Chrome with remote debugging on port 9222 |
+| `pnpm verify` | Format code, fix safe issues, and run TypeScript check |
+| `pnpm chrome-dev` | Launch Chrome with remote debugging on port 9222 (macOS & Linux) |
+| `pnpm docs:serve` | Start local documentation server |
+| `pnpm docs:build` | Build production documentation site |
 
 ## Troubleshooting with Chrome DevTools MCP
 

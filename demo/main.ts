@@ -25,7 +25,7 @@ import {
   gradient,
   layout,
   pulseSequence,
-  rail,
+  rule,
   to,
   typewriter,
   vignette,
@@ -120,14 +120,14 @@ const codePanel = CodeBlock(
     opacity: 0,
     width: "44cqw",
   },
-).decorate(rail());
+).decorate(rule());
 
 const [planeRule] = layout.hstack([[leftHeading, leftBody], codePanel], {
   x: 6,
   y: 23,
   gap: 4,
   width: [42, 44],
-  rule: { color: "rgba(255, 255, 255, 0.12)", dashed: true },
+  rule: { color: "rgba(255, 255, 255, 0.12)", borderStyle: "dashed" },
 });
 if (planeRule) planeRule.opacity = 0;
 codePanel.x = 110;
@@ -605,7 +605,7 @@ const topologyNote = Card(
     width: "24cqw",
     opacity: 0,
   },
-).decorate(rail({ side: "right" }));
+).decorate(rule({ side: "right" }));
 
 // Position topology nodes via wider 2D matrix grid shifted to the right
 layout.grid(
@@ -915,7 +915,7 @@ layout.circle([stateInitial, stateIdle, stateAuthenticating, stateRejected, stat
 });
 
 // Active sits directly above Authenticating (left edges aligned)
-layout.above(stateActive, stateAuthenticating, 30);
+layout.above(stateActive, stateAuthenticating, { gap: 30 });
 
 // Elegant Single-Curvature Arc Transitions
 const tStart = Connector(stateInitial, stateIdle, {
@@ -1243,7 +1243,7 @@ const [aiRule] = layout.hstack(
     y: 18,
     gap: 4,
     width: [29, 57],
-    rule: { color: "rgba(255, 255, 255, 0.22)", strokeWidth: 2.5, dashed: false },
+    rule: { color: "rgba(255, 255, 255, 0.22)", thickness: 2.5 },
   },
 );
 if (aiRule) aiRule.opacity = 0;
@@ -1373,7 +1373,7 @@ const legacyCard = Card(
     opacity: 0,
     width: "42cqw",
   },
-).decorate(rail({ color: "#f43f5e" }));
+).decorate(rule({ color: "#f43f5e" }));
 
 const reactiveCard = Card(
   [
@@ -1384,7 +1384,7 @@ const reactiveCard = Card(
     opacity: 0,
     width: "42cqw",
   },
-).decorate(rail({ color: "#38bdf8" }));
+).decorate(rule({ color: "#38bdf8" }));
 
 const crossfadeCode = CodeBlock(
   [

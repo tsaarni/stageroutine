@@ -1,7 +1,14 @@
-import type { Point, ReactiveElementBase, TransitionDescriptor } from "../core/index";
+import {
+  type Point,
+  type ReactiveElementBase,
+  type TransitionDescriptor,
+  getActiveStage,
+} from "../core/index";
+import { type RuleOptions, applyRuleStyles } from "../decorators/rule";
 import { to } from "../motion/transitions";
-import { Connector, type ConnectorElement } from "./components/Connector";
-import type { DOMElement } from "./element";
+import { DOMElement } from "./element";
+
+export type { RuleOptions };
 
 /**
  * @internal
@@ -38,22 +45,6 @@ export type LayoutAnimation =
     ) => TransitionDescriptor<unknown>);
 
 /**
- * @internal
- */
-export interface RuleOptions {
-  /** Line stroke color (defaults to "rgba(255, 255, 255, 0.12)"). */
-  color?: string;
-  /** Stroke width in pixels (defaults to 1). */
-  strokeWidth?: number;
-  /** Whether the line is styled with dashed strokes. */
-  dashed?: boolean;
-  /** Whether the line is styled with dotted strokes. */
-  dotted?: boolean;
-  /** Inset padding from endpoints in virtual canvas units (defaults to 0). */
-  inset?: number;
-}
-
-/**
  * A slot in a stack layout: either a single element or a nested array of elements (column/row).
  * @category Layout
  */
@@ -72,7 +63,7 @@ export interface LayoutOptions {
   width?: number | string | (number | string)[];
   /** Height constraint in stage height percentage units (`cqh`, 0..100), CSS unit string, or array per row. */
   height?: number | string | (number | string)[];
-  /** Gutter spacing shorthand along the primary axis in stage percentage units (`cqw` horizontally, `cqh` vertically). */
+  /** Gutter spacing shorthand along the primary axis in stage percentage units (`cqw` horizontally, `cqh` vertically). Defaults to 4 for hstack, 3 for vstack, and 2 for relative layouts. */
   gap?: number;
   /** Horizontal gutter spacing in stage width percentage units (`cqw`, 0..100). */
   gapX?: number;
@@ -87,6 +78,10 @@ export interface LayoutOptions {
   duration?: number;
   /** Optional divider rule(s) placed in gutters between elements or columns/rows. */
   rule?: boolean | RuleOptions;
+  /** Perpendicular alignment for relative placement: "start" (default), "center", or "end". */
+  align?: RelativeAlign;
+  /** Whether multiple relative elements stack sequentially (default: true). */
+  stack?: boolean;
 }
 
 /**
@@ -235,56 +230,141 @@ function applyPosition(
 }
 
 /**
- * Shared engine for directional placement: positions `element` on the given side
- * of `target`, separated by `gap`, with perpendicular `align` (start/center/end).
+ * Shared engine for directional placement: positions `elements` on the given side
+ * of `target`, separated by `gap`, with perpendicular `align` (start/center/end)
+ * and optional animated transitions.
  */
 function positionRelative(
-  element: LayoutElement,
+  elements: LayoutElement | LayoutElement[],
   target: LayoutElement,
   placement: RelativePlacement,
-  gap: number,
-  align: RelativeAlign,
+  options: LayoutOptions = {},
 ): void {
-  const targetM = measureElement(target);
-  const elM = measureElement(element);
+  const list = Array.isArray(elements) ? elements : [elements];
+  if (list.length === 0) return;
 
+  const gap = options.gap ?? 2;
+  const align = options.align ?? "start";
+  const shouldStack = options.stack ?? true;
+
+  const targetM = measureElement(target);
   const targetX = typeof target.x === "number" ? target.x : 0;
   const targetY = typeof target.y === "number" ? target.y : 0;
 
-  let computedX = targetX;
-  let computedY = targetY;
-
   if (placement === "bottom") {
-    computedY = targetY + targetM.heightCqh + gap;
-    if (align === "center") {
-      computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
-    } else if (align === "end") {
-      computedX = targetX + targetM.widthCqw - elM.widthCqw;
-    }
+    let refY = targetY;
+    let refHeight = targetM.heightCqh;
+    list.forEach((el, index) => {
+      const elM = measureElement(el);
+      const computedY = refY + refHeight + gap;
+      let computedX = targetX;
+      if (!shouldStack && typeof el.x === "number") {
+        computedX = el.x;
+      } else if (align === "center") {
+        computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+      } else if (align === "end") {
+        computedX = targetX + targetM.widthCqw - elM.widthCqw;
+      }
+      applyPosition(el, computedX, computedY, options, index);
+      if (shouldStack) {
+        refY = computedY;
+        refHeight = elM.heightCqh;
+      }
+    });
   } else if (placement === "top") {
-    computedY = targetY - elM.heightCqh - gap;
-    if (align === "center") {
-      computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
-    } else if (align === "end") {
-      computedX = targetX + targetM.widthCqw - elM.widthCqw;
+    if (!shouldStack) {
+      list.forEach((el, index) => {
+        const elM = measureElement(el);
+        const computedY = targetY - elM.heightCqh - gap;
+        const computedX = typeof el.x === "number" ? el.x : targetX;
+        applyPosition(el, computedX, computedY, options, index);
+      });
+    } else {
+      let refY = targetY;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const el = list[i];
+        const elM = measureElement(el);
+        const computedY = refY - elM.heightCqh - gap;
+        let computedX = targetX;
+        if (align === "center") {
+          computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+        } else if (align === "end") {
+          computedX = targetX + targetM.widthCqw - elM.widthCqw;
+        }
+        applyPosition(el, computedX, computedY, options, i);
+        refY = computedY;
+      }
     }
   } else if (placement === "right") {
-    computedX = targetX + targetM.widthCqw + gap;
-    if (align === "center") {
-      computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
-    } else if (align === "end") {
-      computedY = targetY + targetM.heightCqh - elM.heightCqh;
-    }
+    let refX = targetX;
+    let refWidth = targetM.widthCqw;
+    list.forEach((el, index) => {
+      const elM = measureElement(el);
+      const computedX = refX + refWidth + gap;
+      let computedY = targetY;
+      if (!shouldStack && typeof el.y === "number") {
+        computedY = el.y;
+      } else if (align === "center") {
+        computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+      } else if (align === "end") {
+        computedY = targetY + targetM.heightCqh - elM.heightCqh;
+      }
+      applyPosition(el, computedX, computedY, options, index);
+      if (shouldStack) {
+        refX = computedX;
+        refWidth = elM.widthCqw;
+      }
+    });
   } else if (placement === "left") {
-    computedX = targetX - elM.widthCqw - gap;
-    if (align === "center") {
-      computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
-    } else if (align === "end") {
-      computedY = targetY + targetM.heightCqh - elM.heightCqh;
+    if (!shouldStack) {
+      list.forEach((el, index) => {
+        const elM = measureElement(el);
+        const computedX = targetX - elM.widthCqw - gap;
+        const computedY = typeof el.y === "number" ? el.y : targetY;
+        applyPosition(el, computedX, computedY, options, index);
+      });
+    } else {
+      let refX = targetX;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const el = list[i];
+        const elM = measureElement(el);
+        const computedX = refX - elM.widthCqw - gap;
+        let computedY = targetY;
+        if (align === "center") {
+          computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+        } else if (align === "end") {
+          computedY = targetY + targetM.heightCqh - elM.heightCqh;
+        }
+        applyPosition(el, computedX, computedY, options, i);
+        refX = computedX;
+      }
     }
   }
+}
 
-  applyPosition(element, computedX, computedY);
+function createLayoutRule(
+  x: number,
+  y: number,
+  width: string,
+  height: string,
+  options: RuleOptions,
+): DOMElement {
+  const node = document.createElement("span");
+  if (options.className) {
+    node.className = options.className;
+  }
+  node.style.width = "100%";
+  node.style.height = "100%";
+  node.style.display = "block";
+  applyRuleStyles(node, options);
+
+  const el = new DOMElement("rule", node, {
+    x,
+    y,
+    width,
+    height,
+  });
+  return getActiveStage().registerElement(el) as DOMElement;
 }
 
 /**
@@ -293,15 +373,11 @@ function positionRelative(
  */
 export const layout = {
   /**
-   * Arranges elements into a horizontal row (horizontal stack).
-   * Returns any created divider rules if options.rule is enabled.
-   */
-  /**
    * Arranges elements or columns horizontally (horizontal stack).
    * Slots can be single elements or nested arrays of elements (columns stacked vertically).
    * Returns any created divider rules if options.rule is enabled.
    */
-  hstack(elements: StackSlot[], options: LayoutOptions = {}): ConnectorElement[] {
+  hstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
     if (elements.length === 0) return [];
 
     const gapX = options.gapX ?? options.gap ?? 4;
@@ -327,24 +403,27 @@ export const layout = {
 
       if (Array.isArray(slot)) {
         const colElements = slot;
-        const colWidth = explicitWidth !== undefined ? explicitWidth : autoColWidth;
+        const totalGapsY = Math.max(0, colElements.length - 1) * gapY;
+        const colWidthVal =
+          typeof explicitWidth === "number"
+            ? explicitWidth
+            : typeof explicitWidth === "string"
+              ? Number.parseFloat(explicitWidth) || autoColWidth
+              : autoColWidth;
 
         for (const el of colElements) {
           if ((el as Record<string, unknown>).width === undefined) {
-            (el as Record<string, unknown>).width =
-              typeof colWidth === "number" ? `${colWidth}cqw` : colWidth;
+            (el as Record<string, unknown>).width = `${colWidthVal}cqw`;
           }
         }
 
         const items = colElements.map((el) => {
-          const m = measureElement(el, colWidth);
+          const m = measureElement(el, colWidthVal);
           return { el, widthCqw: m.widthCqw, heightCqh: m.heightCqh };
         });
 
-        const totalH =
-          items.reduce((sum, it) => sum + it.heightCqh, 0) + Math.max(0, items.length - 1) * gapY;
-        const maxW =
-          typeof colWidth === "number" ? colWidth : Math.max(...items.map((it) => it.widthCqw));
+        const maxW = Math.max(...items.map((it) => it.widthCqw));
+        const totalH = items.reduce((sum, it) => sum + it.heightCqh, 0) + totalGapsY;
 
         slotMeasurements.push({
           widthCqw: maxW,
@@ -353,7 +432,14 @@ export const layout = {
           items,
         });
       } else {
-        const m = measureElement(slot, explicitWidth);
+        const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
+        const elWidth = (slot as Record<string, unknown>).width;
+        const m =
+          explicitW !== undefined
+            ? measureElement(slot, explicitW)
+            : elWidth !== undefined
+              ? measureElement(slot)
+              : measureElement(slot, autoColWidth);
         slotMeasurements.push({
           widthCqw: m.widthCqw,
           heightCqh: m.heightCqh,
@@ -363,10 +449,11 @@ export const layout = {
       }
     });
 
-    const totalWidth = slotMeasurements.reduce((sum, sm) => sum + sm.widthCqw, 0) + totalGapsX;
-
     let currentX: number;
     if (options.x === "center") {
+      const totalWidth =
+        slotMeasurements.reduce((sum, sm) => sum + sm.widthCqw, 0) +
+        Math.max(0, slotMeasurements.length - 1) * gapX;
       currentX = Math.max(0, (100 - totalWidth) / 2);
     } else if (typeof options.x === "number") {
       currentX = options.x;
@@ -377,7 +464,7 @@ export const layout = {
     const y = options.y ?? 24;
     const yNum = typeof y === "number" ? y : 24;
     const maxH = Math.max(...slotMeasurements.map((sm) => sm.heightCqh));
-    const rules: ConnectorElement[] = [];
+    const rules: DOMElement[] = [];
     let itemIdx = 0;
 
     slotMeasurements.forEach((sm, index) => {
@@ -407,19 +494,29 @@ export const layout = {
 
       if (options.rule && index < slotMeasurements.length - 1) {
         const ruleX = currentX + sm.widthCqw + gapX / 2;
-        const inset =
-          typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
-        const startY = yNum + inset;
-        const endY = yNum + maxH - inset;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const ruleConn = Connector([ruleX, startY], [ruleX, endY], {
-          color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-          strokeWidth: cfg.strokeWidth ?? 1,
-          dashed: cfg.dashed,
-          dotted: cfg.dotted,
-          endHead: "none",
+        const inset =
+          typeof cfg.inset === "number"
+            ? cfg.inset
+            : typeof cfg.inset === "string"
+              ? Number.parseFloat(cfg.inset) || 0
+              : 0;
+        const thickness = cfg.thickness ?? 2;
+        const isBracketed = !!cfg.bracket;
+        const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
+
+        const ruleWidth = isBracketed
+          ? `${bracketLength}px`
+          : typeof thickness === "number"
+            ? `${thickness}px`
+            : String(thickness);
+        const ruleHeight = `${maxH - 2 * inset}cqh`;
+
+        const ruleEl = createLayoutRule(ruleX, yNum + inset, ruleWidth, ruleHeight, {
+          ...cfg,
+          side: cfg.side ?? "left",
         });
-        rules.push(ruleConn);
+        rules.push(ruleEl);
       }
 
       currentX += sm.widthCqw + gapX;
@@ -433,7 +530,7 @@ export const layout = {
    * Slots can be single elements or nested arrays of elements (rows laid out horizontally).
    * Returns any created divider rules if options.rule is enabled.
    */
-  vstack(elements: StackSlot[], options: LayoutOptions = {}): ConnectorElement[] {
+  vstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
     if (elements.length === 0) return [];
 
     const x = options.x ?? 10;
@@ -526,7 +623,7 @@ export const layout = {
       currentY = 20;
     }
 
-    const rules: ConnectorElement[] = [];
+    const rules: DOMElement[] = [];
     let itemIdx = 0;
     const widthNum =
       typeof effectiveWidth === "number"
@@ -570,19 +667,29 @@ export const layout = {
 
       if (options.rule && index < slotMeasurements.length - 1) {
         const ruleY = currentY + sm.heightCqh + gapY / 2;
-        const inset =
-          typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
-        const startX = xNum + inset;
-        const endX = xNum + widthNum - inset;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const ruleConn = Connector([startX, ruleY], [endX, ruleY], {
-          color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-          strokeWidth: cfg.strokeWidth ?? 1,
-          dashed: cfg.dashed,
-          dotted: cfg.dotted,
-          endHead: "none",
+        const inset =
+          typeof cfg.inset === "number"
+            ? cfg.inset
+            : typeof cfg.inset === "string"
+              ? Number.parseFloat(cfg.inset) || 0
+              : 0;
+        const thickness = cfg.thickness ?? 2;
+        const isBracketed = !!cfg.bracket;
+        const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
+
+        const ruleHeight = isBracketed
+          ? `${bracketLength}px`
+          : typeof thickness === "number"
+            ? `${thickness}px`
+            : String(thickness);
+        const ruleWidth = `${widthNum - 2 * inset}cqw`;
+
+        const ruleEl = createLayoutRule(xNum + inset, ruleY, ruleWidth, ruleHeight, {
+          ...cfg,
+          side: cfg.side ?? "top",
         });
-        rules.push(ruleConn);
+        rules.push(ruleEl);
       }
 
       currentY += sm.heightCqh + gapY;
@@ -596,7 +703,7 @@ export const layout = {
    * Supports `null` or `undefined` for empty matrix slots.
    * Returns divider rules placed in grid gutters if options.rule is enabled.
    */
-  grid(matrix: GridSlot[][], options: LayoutOptions = {}): ConnectorElement[] {
+  grid(matrix: GridSlot[][], options: LayoutOptions = {}): DOMElement[] {
     if (matrix.length === 0) return [];
 
     const cols = Math.max(...matrix.map((row) => (Array.isArray(row) ? row.length : 0)));
@@ -654,33 +761,51 @@ export const layout = {
       });
     });
 
-    const rules: ConnectorElement[] = [];
+    const rules: DOMElement[] = [];
     if (options.rule) {
       const cfg = typeof options.rule === "object" ? options.rule : {};
-      const inset = typeof options.rule === "object" && options.rule.inset ? options.rule.inset : 0;
+      const inset =
+        typeof cfg.inset === "number"
+          ? cfg.inset
+          : typeof cfg.inset === "string"
+            ? Number.parseFloat(cfg.inset) || 0
+            : 0;
+      const thickness = cfg.thickness ?? 2;
+      const isBracketed = !!cfg.bracket;
+      const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
+
+      const vertWidth = isBracketed
+        ? `${bracketLength}px`
+        : typeof thickness === "number"
+          ? `${thickness}px`
+          : String(thickness);
+      const vertHeight = `${totalGridHeight - 2 * inset}cqh`;
+
       // Vertical column dividers
       for (let c = 0; c < cols - 1; c++) {
         const ruleX = startX + (c + 1) * maxColWidth + c * gapX + gapX / 2;
         rules.push(
-          Connector([ruleX, startY + inset], [ruleX, startY + totalGridHeight - inset], {
-            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-            strokeWidth: cfg.strokeWidth ?? 1,
-            dashed: cfg.dashed,
-            dotted: cfg.dotted,
-            endHead: "none",
+          createLayoutRule(ruleX, startY + inset, vertWidth, vertHeight, {
+            ...cfg,
+            side: cfg.side ?? "left",
           }),
         );
       }
+
+      const horizHeight = isBracketed
+        ? `${bracketLength}px`
+        : typeof thickness === "number"
+          ? `${thickness}px`
+          : String(thickness);
+      const horizWidth = `${totalGridWidth - 2 * inset}cqw`;
+
       // Horizontal row dividers
       for (let r = 0; r < matrix.length - 1; r++) {
         const ruleY = startY + (r + 1) * maxRowHeight + r * gapY + gapY / 2;
         rules.push(
-          Connector([startX + inset, ruleY], [startX + totalGridWidth - inset, ruleY], {
-            color: cfg.color ?? "rgba(255, 255, 255, 0.12)",
-            strokeWidth: cfg.strokeWidth ?? 1,
-            dashed: cfg.dashed,
-            dotted: cfg.dotted,
-            endHead: "none",
+          createLayoutRule(startX + inset, ruleY, horizWidth, horizHeight, {
+            ...cfg,
+            side: cfg.side ?? "top",
           }),
         );
       }
@@ -690,59 +815,55 @@ export const layout = {
   },
 
   /**
-   * Positions an element above a target element, separated by `gap`.
-   * @param gap Vertical separation distance in stage height percentage units (`cqh`, 0..100; default: 2).
-   * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
+   * Positions one or more elements above a target element.
+   * Multiple elements chain sequentially upwards by default (reading order maintained).
+   * @param options Layout options for gap, alignment, and animated transitions.
    */
   above(
-    element: LayoutElement,
+    elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    gap = 2,
-    align: RelativeAlign = "start",
+    options: LayoutOptions = {},
   ): void {
-    positionRelative(element, target, "top", gap, align);
+    positionRelative(elements, target, "top", options);
   },
 
   /**
-   * Positions an element below a target element, separated by `gap`.
-   * @param gap Vertical separation distance in stage height percentage units (`cqh`, 0..100; default: 2).
-   * @param align Horizontal alignment: "start" (left edges, default), "center", or "end" (right edges).
+   * Positions one or more elements below a target element.
+   * Multiple elements chain sequentially downwards by default.
+   * @param options Layout options for gap, alignment, and animated transitions.
    */
   below(
-    element: LayoutElement,
+    elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    gap = 2,
-    align: RelativeAlign = "start",
+    options: LayoutOptions = {},
   ): void {
-    positionRelative(element, target, "bottom", gap, align);
+    positionRelative(elements, target, "bottom", options);
   },
 
   /**
-   * Positions an element to the right of a target element, separated by `gap`.
-   * @param gap Horizontal separation distance in stage width percentage units (`cqw`, 0..100; default: 2).
-   * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
+   * Positions one or more elements to the right of a target element.
+   * Multiple elements chain sequentially rightwards by default.
+   * @param options Layout options for gap, alignment, and animated transitions.
    */
   rightOf(
-    element: LayoutElement,
+    elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    gap = 2,
-    align: RelativeAlign = "start",
+    options: LayoutOptions = {},
   ): void {
-    positionRelative(element, target, "right", gap, align);
+    positionRelative(elements, target, "right", options);
   },
 
   /**
-   * Positions an element to the left of a target element, separated by `gap`.
-   * @param gap Horizontal separation distance in stage width percentage units (`cqw`, 0..100; default: 2).
-   * @param align Vertical alignment: "start" (top edges, default), "center", or "end" (bottom edges).
+   * Positions one or more elements to the left of a target element.
+   * Multiple elements chain sequentially leftwards by default (reading order maintained).
+   * @param options Layout options for gap, alignment, and animated transitions.
    */
   leftOf(
-    element: LayoutElement,
+    elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    gap = 2,
-    align: RelativeAlign = "start",
+    options: LayoutOptions = {},
   ): void {
-    positionRelative(element, target, "left", gap, align);
+    positionRelative(elements, target, "left", options);
   },
 
   /**

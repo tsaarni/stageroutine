@@ -18,7 +18,7 @@
  * fluent builder classes, and engine internals are intentionally not public.
  */
 
-// --- Core runtime ---
+// Core runtime
 export { Stage, logger } from "./core/index";
 export type { LogLevel } from "./core/logger";
 export type {
@@ -48,7 +48,7 @@ export type {
   ElementAnchor,
 } from "./core/types";
 
-// --- Motion ---
+// Motion
 export { to, stagger, crossfade, cubicBezier } from "./motion/index";
 export type {
   StaggerOptions,
@@ -57,7 +57,7 @@ export type {
   CrossfadeBuilder,
 } from "./motion/index";
 
-// --- Layout ---
+// Layout
 export { layout } from "./dom/layout";
 export type {
   LayoutOptions,
@@ -70,11 +70,11 @@ export type {
   LayoutElement,
 } from "./dom/layout";
 
-// --- Base class & option types for custom components ---
+// Base class & option types for custom components
 export { DOMElement } from "./dom/element";
 export type { ElementOptions, ElementDecorator } from "./dom/element";
 
-// --- Components ---
+// Components
 export {
   Title,
   Text,
@@ -145,7 +145,7 @@ export type {
   SequenceDiagramOptions,
 } from "./dom/components/index";
 
-// --- Decorators ---
+// Decorators
 export {
   gradient,
   glow,
@@ -169,7 +169,7 @@ export type {
   BracketStyle,
 } from "./decorators/index";
 
-// --- Backgrounds ---
+// Backgrounds
 // Lightweight base & CSS backgrounds are exported at root.
 // Full-screen WebGL / Three.js backgrounds (Starfield, AsciiFluid, GradientFluid)
 // are imported from "stageroutine/backgrounds" to prevent bundling Three.js in 2D decks.
@@ -180,7 +180,7 @@ export type {
   CSSBackgroundElement,
 } from "./dom/backgrounds/index";
 
-// --- Overlays ---
+// Overlays
 export { LaserPointer, NavigationOverlay } from "./overlays/index";
 export type {
   LaserPointerOptions,
@@ -188,8 +188,8 @@ export type {
   NavigationOverlayOptions,
 } from "./overlays/index";
 
-// --- Presenter ---
+// Presenter
 export { PresenterClient, PresenterRecorder } from "./presenter/index";
 
-// --- Theming ---
+// Theming
 export { themes, defaultDark, defaultLight, dracula, tokyoNight, cyberpunk } from "./theme/index";

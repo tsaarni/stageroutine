@@ -423,7 +423,7 @@ export class Stage {
     }));
   }
 
-  // --- ElementHost Implementation ---
+  // ElementHost Implementation
   recordMutation(
     elementId: string,
     property: string,
@@ -663,7 +663,7 @@ export class Stage {
     this.currentStepNotes = undefined;
   }
 
-  // --- Mount & Playback Engine ---
+  // Mount & Playback Engine
   /** Mounts the presentation stage into the target container element and begins playback. */
   mount(target?: string | HTMLElement): this {
     if (typeof window === "undefined") return this;

@@ -1,0 +1,92 @@
+---
+sidebar_position: 3
+---
+
+# Custom Decorators
+
+Decorators enhance stage elements with reusable visual effects and badges using `.decorate()`.
+
+## What is a Decorator?
+
+A decorator is a function with the `ElementDecorator` signature:
+
+```typescript
+type ElementDecorator = (element: DOMElement) => void;
+```
+
+When you call `element.decorate(myDecorator())`, StageRoutine passes the target element into your function. Your decorator can modify styles, append child DOM/SVG elements, or hook into the element's lifecycle.
+
+## Example 1: Visual Decorator
+
+A decorator can append decorative DOM nodes and apply styling:
+
+```typescript
+import type { DOMElement, ElementDecorator } from "stageroutine";
+
+export interface CornerTagOptions {
+  text: string;
+  color?: string;
+}
+
+export function cornerTag(options: CornerTagOptions): ElementDecorator {
+  return (element: DOMElement) => {
+    const badge = document.createElement("span");
+    badge.innerText = options.text;
+    badge.style.position = "absolute";
+    badge.style.top = "-0.6rem";
+    badge.style.right = "-0.6rem";
+    badge.style.fontSize = "0.75rem";
+    badge.style.padding = "0.2rem 0.5rem";
+    badge.style.borderRadius = "9999px";
+    badge.style.background = options.color ?? "var(--sr-primary)";
+    badge.style.color = "var(--sr-surface)";
+
+    element.domElement.style.position = "relative";
+    element.domElement.appendChild(badge);
+  };
+}
+```
+
+Use it in your presentation:
+
+```typescript
+import { Card } from "stageroutine";
+import { cornerTag } from "./cornerTag";
+
+const card = Card("System Architecture").decorate(
+  cornerTag({ text: "v2.0", color: "#38bdf8" })
+);
+```
+
+## Example 2: Lifecycle-Aware Decorator
+
+If your decorator manages active resources (like an interval or stream), hook into the element's lifecycle:
+
+```typescript
+import type { DOMElement, ElementDecorator } from "stageroutine";
+
+export function pulseBorder(): ElementDecorator {
+  return (element: DOMElement) => {
+    let intervalId: number | null = null;
+    let lit = false;
+
+    element.onActivate(() => {
+      intervalId = window.setInterval(() => {
+        lit = !lit;
+        element.domElement.style.borderColor = lit
+          ? "var(--sr-primary)"
+          : "var(--sr-surface-border)";
+      }, 500);
+    });
+
+    element.onDeactivate(() => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    });
+  };
+}
+```
+
+This guarantees that all timers stop when the element is not visible, preserving the zero GPU at rest guarantee.

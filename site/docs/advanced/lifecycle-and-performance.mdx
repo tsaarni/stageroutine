@@ -1,0 +1,78 @@
+---
+sidebar_position: 2
+---
+
+# Lifecycle & Performance
+
+StageRoutine manages element lifecycles to keep presentations responsive and preserve laptop battery during talks.
+
+## Element Lifecycle
+
+Every element, decorator, and background follows four lifecycle events:
+
+![Component Lifecycle](/img/component-lifecycle.svg)
+
+* **`onMount`**: Runs once when the element is added to the stage.
+* **`onActivate`**: Runs when the element enters the current scene. Use this to start or resume active media and timers.
+* **`onDeactivate`**: Runs when the element leaves the scene and is no longer visible. Use this to pause active media and timers.
+* **`onUnmount`**: Runs when the presentation closes or the stage is destroyed. Clean up global event listeners here.
+
+## Resource Efficiency at Rest
+
+Presentations spend most of their time at rest between steps while the speaker talks. StageRoutine helps preserve system resources automatically:
+
+### Automatic Animation Pausing
+CSS keyframe animations (such as pulsing borders or rotating icons) pause automatically when an element leaves the screen, and resume when it reappears. You do not need to write cleanup code for CSS animations.
+
+### Managing Custom Timers and Streams
+The engine cannot automatically stop custom JavaScript intervals, video playback, or webcam feeds. Use `onActivate` and `onDeactivate` to start and pause them:
+
+```tsx
+/** @jsxImportSource stageroutine */
+import { DOMElement, type ElementOptions } from "stageroutine";
+
+export interface SecondsCounterOptions extends ElementOptions {
+  initialSeconds?: number;
+}
+
+export function SecondsCounter(options: SecondsCounterOptions = {}): DOMElement {
+  const { initialSeconds = 0, ...restOptions } = options;
+  let seconds = initialSeconds;
+  let label: HTMLElement;
+  let timerId: number | null = null;
+
+  return new DOMElement(
+    "SecondsCounter",
+    (
+      <div className="seconds-counter">
+        <span ref={(el) => (label = el)}>{seconds}s</span>
+      </div>
+    ),
+    {
+      ...restOptions,
+      onActivate: () => {
+        // Resume counting when entering the scene
+        timerId = window.setInterval(() => {
+          seconds += 1;
+          label.innerText = `${seconds}s`;
+        }, 1000);
+      },
+      onDeactivate: () => {
+        // Pause counting when leaving the scene
+        if (timerId !== null) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+      },
+    },
+  );
+}
+```
+
+Use the component in your presentation:
+
+```typescript
+const counter = SecondsCounter({ x: "center", y: 40 });
+
+stage.scene("Live Demo").with(counter);
+```

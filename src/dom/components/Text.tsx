@@ -1,9 +1,6 @@
-/**
- * Body copy paragraph component formatted for high-legibility presentation slides.
- */
-
 import "./Text.css";
-import type { ElementOptions } from "../element";
+import { getActiveStage } from "../../core/stage";
+import { DOMElement, type ElementOptions } from "../element";
 
 /**
  * Configuration options for the Text component.
@@ -17,10 +14,10 @@ export interface TextOptions extends ElementOptions {
 }
 
 /**
- * Body copy paragraph component formatted for high-legibility presentation slides.
+ * Body copy paragraph component formatted for high-legibility stage presentations.
  * @category Components
  */
-export function Text(text: string, options: TextOptions = {}) {
+export function Text(text: string, options: TextOptions = {}): DOMElement {
   const { className, color, style: customStyle, ...restOptions } = options;
   const classes = ["sr-text", className].filter(Boolean).join(" ");
   const mergedStyle = {
@@ -28,9 +25,13 @@ export function Text(text: string, options: TextOptions = {}) {
     ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
   };
 
-  return (
-    <p className={classes} style={mergedStyle} {...restOptions}>
+  const p = (
+    <p className={classes} style={mergedStyle}>
       {text}
     </p>
   );
+
+  const stage = getActiveStage();
+  const el = new DOMElement("Text", p, restOptions);
+  return stage.registerElement(el);
 }

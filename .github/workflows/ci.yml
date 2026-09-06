@@ -21,7 +21,6 @@ jobs:
 
       - uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
 
-      - run: pnpm check
-      - run: pnpm typecheck
+      - run: pnpm verify
       - run: pnpm build
       - run: pnpm docs:build

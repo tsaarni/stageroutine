@@ -101,7 +101,6 @@ const [planeRule] = layout.hstack([[leftHeading, leftBody], codePanel], {
   x: 6,
   y: 23,
   width: [42, 44],
-  rule: { color: "rgba(255, 255, 255, 0.12)", borderStyle: "dashed" },
 });
 if (planeRule) planeRule.opacity = 0;
 codePanel.x = 110;
@@ -115,8 +114,8 @@ brandTitle.y = to(6).ease("cubicInOut");
 brandTitle.scale = to(0.6).ease("cubicInOut");
 
 // Choreographed exit for intro lead
-editorialLead.y = 62;
-editorialLead.opacity = 0;
+editorialLead.y = to(62);
+editorialLead.opacity = to(0);
 
 // Milestone triggers chain animations to start after another element completes.
 leftHeading.opacity = to(1).after(brandTitle);
@@ -161,11 +160,11 @@ stage
   .with(brandTitle, codePanel, rightHeading, rightBody, featureChecklist);
 
 // Slide left column off-screen.
-leftHeading.opacity = 0;
-leftHeading.x = -50;
-leftBody.opacity = 0;
-leftBody.x = -50;
-if (planeRule) planeRule.opacity = 0;
+leftHeading.opacity = to(0);
+leftHeading.x = to(-50);
+leftBody.opacity = to(0);
+leftBody.x = to(-50);
+if (planeRule) planeRule.opacity = to(0);
 
 // Move code panel from the right column over to the left column.
 codePanel.x = to(brandTitle.x).ease("cubicInOut");
@@ -201,7 +200,7 @@ stage
 
 // Slide code block upward off-screen and lift terminal up from below.
 codePanel.y = to(-50).ease("cubicInOut");
-codePanel.opacity = 0;
+codePanel.opacity = to(0);
 
 terminalPanel.y = to(19).when(codePanel, "halfway");
 terminalPanel.opacity = to(1).when(codePanel, "halfway");
@@ -216,12 +215,13 @@ const customPill = Pill("Reactive", {
   background: "rgba(56, 189, 248, 0.1)",
   borderColor: "rgba(56, 189, 248, 0.25)",
 });
-const showcaseIcon = Sparkles({ size: 24, color: "#f59e0b" });
 
-layout.hstack([showcaseKicker, showcasePill, customPill, showcaseIcon], {
+layout.hstack([showcaseKicker, showcasePill, customPill], {
   x: 6,
   y: 18,
   gap: 2,
+  align: "center",
+  animate: true,
 });
 
 const showcaseTitle = Title("Component Primitives");
@@ -252,7 +252,7 @@ layout.hstack(
     [showcaseTitle, showcaseText, showcaseCard, showcaseList],
     [showcaseCode, showcaseTerminal],
   ],
-  { x: 6, y: 25, width: [42, 44] },
+  { x: 6, y: 25, width: [42, 44], animate: true },
 );
 
 stage
@@ -262,7 +262,6 @@ stage
     showcaseKicker,
     showcasePill,
     customPill,
-    showcaseIcon,
     showcaseTitle,
     showcaseText,
     showcaseCard,
@@ -273,7 +272,7 @@ stage
 
 // Animate previous terminal panel off-screen
 terminalPanel.y = to(120).ease("cubicInOut");
-terminalPanel.opacity = 0;
+terminalPanel.opacity = to(0);
 stage.pause();
 
 // Scene: Element Decorators
@@ -324,7 +323,7 @@ layout.hstack(
     [decoratorKicker, decoratorHeading, decoratorGradientDemo, decoratorTypewriterDemo],
     decoratorCode,
   ],
-  { x: 6, y: 18, width: [42, 44] },
+  { x: 6, y: 18, width: [42, 44], animate: true },
 );
 
 stage
@@ -387,8 +386,8 @@ const tableCode = CodeBlock(
     "metrics.focusRows(1); // highlights degraded service",
   ],
   {
-    x: 110,
-    y: 18,
+    x: 52,
+    y: 0,
     opacity: 0,
     width: "42cqw",
   },
@@ -399,8 +398,8 @@ stage
   .with(brandTitle, tableKicker, tableHeading, tableText, serviceMetricsTable, tableCode);
 
 // Animate previous code panel off-screen
-decoratorCode.opacity = 0;
-decoratorCode.x = to(-50);
+decoratorCode.opacity = to(0);
+decoratorCode.y = to(80);
 
 // Reveal table elements with staggered spatial entrance
 tableKicker.opacity = to(1).when(brandTitle, "start");
@@ -414,7 +413,7 @@ serviceMetricsTable.y = to(48).when(tableText, "start");
 serviceMetricsTable.reveal().when(tableText, 0.5);
 
 // Glide code panel in from the right edge
-tableCode.x = to(52).when(tableText, "halfway");
+tableCode.y = to(18).when(tableText, "halfway");
 tableCode.opacity = to(1).when(tableText, "halfway");
 stage.pause();
 
@@ -1014,7 +1013,7 @@ const reactiveCard = Card(
     Kicker("STAGE ROUTINE"),
     Text("Deterministic snapshot graph with fluent, zero-boilerplate choreography."),
   ],
-  { width: "42cqw" },
+  { width: "42cqw", opacity: 0 },
 ).decorate(rule({ color: "#38bdf8" }));
 
 const crossfadeCode = CodeBlock(
@@ -1027,6 +1026,8 @@ layout.hstack([[motionKicker, motionHeading, motionDescription, legacyCard], cro
   y: 18,
   width: [42, 44],
 });
+reactiveCard.x = legacyCard.x;
+reactiveCard.y = legacyCard.y;
 
 stage
   .scene("Motion & Crossfade")

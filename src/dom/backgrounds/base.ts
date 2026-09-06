@@ -2,32 +2,41 @@
  * Base class for full-screen backgrounds with automatic resizing and render loop management.
  */
 
-import type { StageContext } from "../../core/types";
-import { DOMElement, type ElementOptions } from "../element";
+import type { Background, BackgroundDecorator, StageContext } from "../../core/types";
+
+let nextBgId = 1;
 
 /**
  * Base options for background elements.
  * @category Backgrounds
  */
-export interface BackgroundOptions extends ElementOptions {
+export interface BackgroundOptions {
+  id?: string;
+  className?: string;
   /** Optional initial opacity (default: 1). */
   opacity?: number;
 }
 
 /**
- * Base reactive element for procedural WebGL and canvas backgrounds.
- * Handles resize observation, full-bleed viewport positioning,
+ * Base element for procedural WebGL and canvas backgrounds.
+ * Handles resize observation, full-bleed container positioning,
  * and automatic render loop pausing when invisible.
  * @internal
  */
-export abstract class BackgroundElement extends DOMElement {
+export abstract class BackgroundElement implements Background {
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
   protected isRunning = false;
   private resizeObserver: ResizeObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
 
   constructor(kind: string, options: BackgroundOptions = {}) {
+    this.id = options.id || `bg-${kind.toLowerCase()}-${nextBgId++}`;
+    this.kind = kind;
+
     const container = document.createElement("div");
-    container.className = `sr-background sr-bg-${kind.toLowerCase()}`;
+    container.className = `sr-background sr-bg-${kind.toLowerCase()}${options.className ? ` ${options.className}` : ""}`;
     container.style.position = "absolute";
     container.style.inset = "0";
     container.style.width = "100%";
@@ -35,19 +44,10 @@ export abstract class BackgroundElement extends DOMElement {
     container.style.pointerEvents = "none";
     container.style.zIndex = "0";
     container.style.overflow = "hidden";
-
-    super(kind, container, {
-      ...options,
-      x: options.x ?? 0,
-      y: options.y ?? 0,
-      opacity: 1,
-    });
-
-    // Reset transform since background is full-bleed and outside container query context
-    this.domElement.style.transform = "none";
-    this.domElement.style.transformOrigin = "0 0";
-    this.domElement.style.zIndex = "0";
-    this.domElement.style.pointerEvents = "none";
+    if (options.opacity !== undefined) {
+      container.style.opacity = `${options.opacity}`;
+    }
+    this.domElement = container;
 
     // Auto-pause continuous RAF loop when invisible (0% GPU/CPU waste)
     this.mutationObserver = new MutationObserver(() => {
@@ -65,15 +65,6 @@ export abstract class BackgroundElement extends DOMElement {
       attributeFilter: ["style"],
     });
 
-    // Hook into element lifecycle to resume / pause the WebGL render loop
-    this.onActivate(() => {
-      this.resume();
-    });
-
-    this.onDeactivate(() => {
-      this.pause();
-    });
-
     // Self-contained ResizeObserver
     this.resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -86,6 +77,15 @@ export abstract class BackgroundElement extends DOMElement {
     this.resizeObserver.observe(this.domElement);
   }
 
+  decorate(decorator: BackgroundDecorator): this {
+    decorator(this);
+    return this;
+  }
+
+  play(): void {
+    this.resume();
+  }
+
   /** Called when container dimensions change */
   abstract onResize(width: number, height: number): void;
 
@@ -96,7 +96,12 @@ export abstract class BackgroundElement extends DOMElement {
   abstract pause(): void;
 
   /** Clean up WebGL resources, geometries, textures, and observers */
-  abstract dispose(): void;
+  dispose(): void {
+    this.pause();
+    this.mutationObserver?.disconnect();
+    this.resizeObserver?.disconnect();
+    this.domElement.remove();
+  }
 
   /** Lifecycle attach hook invoked when the background is attached to a stage */
   attach(stage: StageContext): void {

@@ -2,11 +2,13 @@
  * The main presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  */
 
+import { builtinEasings } from "../motion/transitions";
 import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
 import { createReactiveProxy } from "./proxy";
+import { getReactiveKeys } from "./reactive";
 import type {
   AnimationMilestone,
   Background,
@@ -46,11 +48,18 @@ class SceneBuilder {
     for (const el of elements) {
       if (!el || typeof el !== "object") continue;
       if ("id" in el && "domElement" in el) {
-        flattened.push(el as ReactiveElementBase);
+        const reactiveEl = el as ReactiveElementBase;
+        if (!this.stage.hasElement(reactiveEl.id)) {
+          this.stage.registerElement(reactiveEl);
+        }
+        flattened.push(reactiveEl);
       }
       if ("items" in el && Array.isArray((el as { items?: ReactiveElementBase[] }).items)) {
         for (const item of (el as { items: ReactiveElementBase[] }).items) {
           if (item && typeof item === "object" && "id" in item && "domElement" in item) {
+            if (!this.stage.hasElement(item.id)) {
+              this.stage.registerElement(item);
+            }
             flattened.push(item);
           }
         }
@@ -58,6 +67,9 @@ class SceneBuilder {
       if ("rows" in el && Array.isArray((el as { rows?: ReactiveElementBase[] }).rows)) {
         for (const row of (el as { rows: ReactiveElementBase[] }).rows) {
           if (row && typeof row === "object" && "id" in row && "domElement" in row) {
+            if (!this.stage.hasElement(row.id)) {
+              this.stage.registerElement(row);
+            }
             flattened.push(row);
           }
         }
@@ -233,6 +245,9 @@ export class Stage {
    */
   constructor(options: StageOptions = {}) {
     activeStage = this;
+    if (typeof window !== "undefined") {
+      (window as unknown as { __stage?: Stage }).__stage = this;
+    }
     this.options = {
       width: 1920,
       height: 1080,
@@ -436,6 +451,10 @@ export class Stage {
     triggerMilestone?: AnimationMilestone,
     triggerProperty?: string,
   ): void {
+    if (from === to) {
+      return;
+    }
+
     this.currentStepTransitions.push({
       elementId,
       property,
@@ -461,46 +480,52 @@ export class Stage {
       this.propertyState.set(elementId, elProps);
     }
     elProps[property] = value;
+
+    // Update baseline properties if this element has not yet been snapshotted in any step
+    const hasSnapshot = this.snapshots.some((s) => s.activeElementIds.has(elementId));
+    if (!hasSnapshot) {
+      const init = this.initialProperties.get(elementId);
+      if (init) {
+        init[property] = value;
+      }
+    }
+
+    const el = this.elementRegistry.get(elementId);
+    if (el) {
+      try {
+        (el as unknown as Record<string, unknown>)[property] = value;
+      } catch {
+        // ignore read-only
+      }
+      if (!this.isAnimating) {
+        this._applyStyles(el, elProps, false);
+      }
+    }
+  }
+
+  /** Checks whether an element is already registered with the stage. */
+  hasElement(id: string): boolean {
+    return this.elementRegistry.has(id);
   }
 
   registerElement<T extends ReactiveElementBase>(element: T): T {
+    if (this.elementRegistry.has(element.id)) {
+      return createReactiveProxy(this.elementRegistry.get(element.id) as T, this);
+    }
     this.elementRegistry.set(element.id, element);
 
-    // Baseline property snapshot
-    const initialProps: Record<string, unknown> = {
-      anchor: element.anchor,
-      x: element.x,
-      y: element.y,
-      width: (element as Record<string, unknown>).width,
-      height: (element as Record<string, unknown>).height,
-      scale: element.scale,
-      rotation: element.rotation,
-      opacity: element.opacity,
-      blur: element.blur,
-      brightness: element.brightness,
-      color: element.color,
-    };
+    // Baseline property snapshot - captures only declared @reactive properties
+    const initialProps: Record<string, unknown> = {};
+    const reactiveKeys = getReactiveKeys(element);
 
-    const proto = Object.getPrototypeOf(element);
-    const allKeys = new Set([
-      ...Object.keys(element),
-      ...(proto ? Object.getOwnPropertyNames(proto) : []),
-    ]);
-
-    for (const key of allKeys) {
-      if (
-        key !== "constructor" &&
-        key !== "id" &&
-        key !== "kind" &&
-        key !== "domElement" &&
-        !(key in initialProps) &&
-        typeof (element as Record<string, unknown>)[key] !== "function"
-      ) {
-        try {
-          initialProps[key] = (element as Record<string, unknown>)[key];
-        } catch {
-          // ignore getters that fail
+    for (const key of reactiveKeys) {
+      try {
+        const val = (element as Record<string, unknown>)[key];
+        if (val !== undefined && typeof val !== "function") {
+          initialProps[key] = val;
         }
+      } catch {
+        // ignore getters that fail
       }
     }
 
@@ -555,6 +580,11 @@ export class Stage {
    * ```
    */
   background(bg: string | Background | ReactiveElementBase): this {
+    if (this.backgroundSource !== null) {
+      throw new Error(
+        "[StageRoutine] Stage background has already been configured. Setting multiple backgrounds is not supported.",
+      );
+    }
     this.backgroundSource = bg;
     if (this.container) {
       this._attachBackground(bg);
@@ -594,15 +624,16 @@ export class Stage {
   _setActiveScene(name: string, elements: ReactiveElementBase[]): void {
     this.currentSceneName = name;
     const ids = new Set<string>();
-    for (const e of elements) {
-      ids.add(e.id);
-      const items = (e as unknown as { items?: ReactiveElementBase[] }).items;
-      if (Array.isArray(items)) {
-        for (const child of items) {
-          ids.add(child.id);
+    const collect = (list: ReactiveElementBase[]) => {
+      for (const e of list) {
+        ids.add(e.id);
+        const items = (e as unknown as { items?: ReactiveElementBase[] }).items;
+        if (Array.isArray(items)) {
+          collect(items);
         }
       }
-    }
+    };
+    collect(elements);
     this.activeElementIds = ids;
   }
 
@@ -965,7 +996,15 @@ export class Stage {
       if (!el) continue;
 
       const props = snap.properties.get(id) || this.initialProperties.get(id) || {};
+      for (const [key, val] of Object.entries(props)) {
+        try {
+          (el as unknown as Record<string, unknown>)[key] = val;
+        } catch {
+          // ignore read-only
+        }
+      }
       this._applyStyles(el, props);
+      el.update?.();
     }
 
     // Apply snapshot theme if present
@@ -1001,12 +1040,6 @@ export class Stage {
     this.isAnimating = true;
     const startTime = performance.now();
 
-    if (step.actions) {
-      for (const action of step.actions) {
-        action();
-      }
-    }
-
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
 
     // Reset local propertyState to the state right before this step
@@ -1016,8 +1049,78 @@ export class Stage {
       this.propertyState.set(id, { ...baseProps });
     }
 
+    // Combine explicit transitions with automatic scene enter/exit transitions
+    const stepTransitions = [...step.transitions];
+
+    if (prevSnap) {
+      const explicitOpacityElementIds = new Set(
+        step.transitions.filter((t) => t.property === "opacity").map((t) => t.elementId),
+      );
+      const defaultDurationMs = (this.options.defaultDuration || 0.6) * 1000;
+
+      // 1. Exiting elements: active in previous step, but omitted in this step
+      for (const id of prevSnap.activeElementIds) {
+        if (!step.activeElementIds.has(id) && !explicitOpacityElementIds.has(id)) {
+          const el = this.elementRegistry.get(id);
+          if (!el) continue;
+          if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+            continue;
+          }
+          el._deactivate?.();
+          const currentOpacity = (this.propertyState.get(id)?.opacity as number) ?? 1;
+          if (currentOpacity > 0) {
+            const exitDurationSec = el.exitDuration ?? this.options.defaultDuration ?? 0.6;
+            if (exitDurationSec <= 0) {
+              this.setCurrentPropertyValue(id, "opacity", 0);
+              this._applyStyles(el, { opacity: 0 });
+              continue;
+            }
+            stepTransitions.push({
+              elementId: id,
+              property: "opacity",
+              from: currentOpacity,
+              to: 0,
+              durationMs: exitDurationSec * 1000,
+              delayMs: 0,
+              curve: builtinEasings.quartOut,
+            });
+          }
+        }
+      }
+
+      // 2. Entering elements: active in this step, but was not active in previous step
+      for (const id of step.activeElementIds) {
+        if (!prevSnap.activeElementIds.has(id) && !explicitOpacityElementIds.has(id)) {
+          const el = this.elementRegistry.get(id);
+          if (!el) continue;
+          if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+            continue;
+          }
+          const enterDurationSec = el.enterDuration ?? this.options.defaultDuration ?? 0.6;
+          if (enterDurationSec <= 0) {
+            continue;
+          }
+          const targetProps =
+            this.snapshots[stepIdx]?.properties.get(id) || this.propertyState.get(id) || {};
+          const targetOpacity = (targetProps.opacity as number) ?? 1;
+          if (targetOpacity > 0) {
+            this.setCurrentPropertyValue(id, "opacity", 0);
+            stepTransitions.push({
+              elementId: id,
+              property: "opacity",
+              from: 0,
+              to: targetOpacity,
+              durationMs: enterDurationSec * 1000,
+              delayMs: 0,
+              curve: builtinEasings.quartOut,
+            });
+          }
+        }
+      }
+    }
+
     // Elements with active transitions in this step
-    const transitioningIds = new Set(step.transitions.map((t) => t.elementId));
+    const transitioningIds = new Set(stepTransitions.map((t) => t.elementId));
 
     // Resolve start/end offsets with lifecycle milestone triggers (.when()) and delays (.delay())
     interface ScheduledTransition extends TransitionRecord {
@@ -1026,7 +1129,7 @@ export class Stage {
       endOffsetMs: number;
     }
 
-    const scheduledTransitions: ScheduledTransition[] = step.transitions.map((t) => {
+    const scheduledTransitions: ScheduledTransition[] = stepTransitions.map((t) => {
       const liveVal = this.getCurrentPropertyValue(t.elementId, t.property);
       const startFrom = t.from !== undefined ? t.from : liveVal;
       this.setCurrentPropertyValue(t.elementId, t.property, startFrom);
@@ -1053,6 +1156,12 @@ export class Stage {
       if (!el) continue;
       const props = this.propertyState.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
+    }
+
+    if (step.actions) {
+      for (const action of step.actions) {
+        action();
+      }
     }
 
     for (let pass = 0; pass < 6; pass++) {
@@ -1146,7 +1255,12 @@ export class Stage {
 
         // Render to DOM
         const props = this.propertyState.get(t.elementId) || {};
-        this._applyStyles(el, props);
+        this._applyStyles(el, props, step.activeElementIds.has(t.elementId));
+      }
+
+      // Update active elements so reactive layouts and paths follow moving elements during transition
+      for (const id of step.activeElementIds) {
+        this.elementRegistry.get(id)?.update?.();
       }
 
       if (elapsed < maxDuration) {
@@ -1174,7 +1288,11 @@ export class Stage {
     element._deactivate?.();
   }
 
-  private _applyStyles(element: ReactiveElementBase, props: Record<string, unknown>): void {
+  private _applyStyles(
+    element: ReactiveElementBase,
+    props: Record<string, unknown>,
+    triggerLifecycle = true,
+  ): void {
     const node = element.domElement;
     if (!node) return;
 
@@ -1194,19 +1312,26 @@ export class Stage {
 
     const { transform, transformOrigin } = computeTransformAndOrigin(x, y, scale, rotation, anchor);
 
-    node.style.transform = transform;
-    node.style.transformOrigin = transformOrigin;
+    const isCustomPositioned =
+      Boolean(element.isCustomPositioned) ||
+      node instanceof SVGElement ||
+      node.tagName.toLowerCase() === "svg";
+    if (!isCustomPositioned) {
+      node.style.transform = transform;
+      node.style.transformOrigin = transformOrigin;
+    }
+    const defaultPointerEvents =
+      element._defaultPointerEvents ??
+      (node instanceof SVGElement || node.tagName.toLowerCase() === "svg" ? "none" : "auto");
+    node.style.pointerEvents = opacity === 0 ? "none" : defaultPointerEvents;
     node.style.opacity = `${opacity}`;
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
-    if (element.kind === "Connector" || node.tagName.toLowerCase() === "svg") {
-      node.style.pointerEvents = "none";
-    } else {
-      node.style.pointerEvents = opacity === 0 ? "none" : "auto";
-    }
-    if (opacity > 0) {
-      element._activate?.();
-    } else {
-      element._deactivate?.();
+    if (triggerLifecycle) {
+      if (opacity > 0) {
+        element._activate?.();
+      } else {
+        element._deactivate?.();
+      }
     }
     if (blur > 0 || brightness !== 1) {
       const filters: string[] = [];
@@ -1253,6 +1378,10 @@ export class Stage {
           // ignore read-only properties
         }
       }
+    }
+
+    if (typeof (element as { update?: () => void }).update === "function") {
+      (element as { update: () => void }).update();
     }
   }
 
@@ -1360,7 +1489,9 @@ let activeStage: Stage | null = null;
  */
 export function getActiveStage(): Stage {
   if (!activeStage) {
-    activeStage = new Stage();
+    throw new Error(
+      "[StageRoutine] No active Stage found. Call `new Stage()` before creating stage elements.",
+    );
   }
   return activeStage;
 }

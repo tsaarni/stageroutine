@@ -25,10 +25,103 @@ export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
 /**
  * @internal
  */
-export interface CodeBlockElement extends DOMElement {
-  readonly focusedRange: [number, number] | null;
-  focusLines(start: number, end?: number): this;
-  unfocus(): this;
+export class CodeBlockElement extends DOMElement {
+  private controller: ReturnType<typeof attachRangeSelection>;
+
+  get focusedRange(): [number, number] | null {
+    return this.controller.focusedRange;
+  }
+
+  get focusedIndex(): number | null {
+    return this.controller.focusedIndex;
+  }
+
+  constructor(snippet: string | string[], options: CodeBlockOptions = {}) {
+    const lang = options.lang || "typescript";
+    const shikiTheme = typeof options.theme === "string" ? options.theme : "vitesse-dark";
+    const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
+    const isInteractive = options.interactive ?? true;
+
+    const rawSnippet = Array.isArray(snippet) ? snippet.join("\n") : snippet;
+    const trimmed = rawSnippet.trim();
+
+    const preEl = document.createElement("pre");
+    preEl.className = classes;
+
+    const codeEl = document.createElement("code");
+    preEl.appendChild(codeEl);
+
+    let lineElements: HTMLElement[] = [];
+
+    const setupLineElements = () => {
+      // Remove whitespace text nodes between block line spans that cause double spacing
+      for (const child of Array.from(codeEl.childNodes)) {
+        if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
+          child.remove();
+        }
+      }
+
+      const rawLines = Array.from(codeEl.querySelectorAll<HTMLElement>(".line"));
+      if (rawLines.length > 0) {
+        lineElements = rawLines;
+      } else {
+        // Fallback if shiki spans are not rendered yet
+        const lines = trimmed.split("\n");
+        codeEl.innerHTML = "";
+        lineElements = lines.map((lineText) => {
+          const span = document.createElement("span");
+          span.className = "line";
+          span.textContent = lineText || " ";
+          codeEl.appendChild(span);
+          return span;
+        });
+      }
+
+      for (const line of lineElements) {
+        line.classList.add("sr-code-line");
+      }
+    };
+
+    // Initial fallback lines while Shiki loads
+    setupLineElements();
+
+    const controller = attachRangeSelection({
+      container: preEl,
+      getItems: () => lineElements,
+      interactive: isInteractive,
+    });
+
+    // Highlight with Shiki TextMate engine
+    codeToHtml(trimmed, { lang, theme: shikiTheme })
+      .then((html) => {
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        const innerCode = temp.querySelector("code");
+        if (innerCode) {
+          codeEl.innerHTML = innerCode.innerHTML;
+          setupLineElements();
+          controller.refresh();
+        }
+      })
+      .catch(() => {
+        // Graceful fallback
+      });
+
+    const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
+    super("CodeBlock", preEl, { ...options, theme: elementTheme });
+
+    this.controller = controller;
+  }
+
+  focusLines(start: number, end: number = start): this {
+    this.controller.focus(start, end);
+    return this;
+  }
+
+  unfocus(): this {
+    this.controller.unfocus();
+    return this;
+  }
 }
 
 /**
@@ -40,97 +133,7 @@ export function CodeBlock(
   snippet: string | string[],
   options: CodeBlockOptions = {},
 ): CodeBlockElement {
-  const lang = options.lang || "typescript";
-  const shikiTheme = typeof options.theme === "string" ? options.theme : "vitesse-dark";
-  const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
-  const isInteractive = options.interactive ?? true;
-
-  const rawSnippet = Array.isArray(snippet) ? snippet.join("\n") : snippet;
-  const trimmed = rawSnippet.trim();
-
-  const preEl = document.createElement("pre");
-  preEl.className = classes;
-
-  const codeEl = document.createElement("code");
-  preEl.appendChild(codeEl);
-
-  let lineElements: HTMLElement[] = [];
-
-  const setupLineElements = () => {
-    // Remove whitespace text nodes between block line spans that cause double spacing
-    for (const child of Array.from(codeEl.childNodes)) {
-      if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
-        child.remove();
-      }
-    }
-
-    const rawLines = Array.from(codeEl.querySelectorAll<HTMLElement>(".line"));
-    if (rawLines.length > 0) {
-      lineElements = rawLines;
-    } else {
-      // Fallback if shiki spans are not rendered yet
-      const lines = trimmed.split("\n");
-      codeEl.innerHTML = "";
-      lineElements = lines.map((lineText) => {
-        const span = document.createElement("span");
-        span.className = "line";
-        span.textContent = lineText || " ";
-        codeEl.appendChild(span);
-        return span;
-      });
-    }
-
-    for (const line of lineElements) {
-      line.classList.add("sr-code-line");
-    }
-  };
-
-  // Initial fallback lines while Shiki loads
-  setupLineElements();
-
-  const controller = attachRangeSelection({
-    container: preEl,
-    getItems: () => lineElements,
-    interactive: isInteractive,
-  });
-
-  // Highlight with Shiki TextMate engine
-  codeToHtml(trimmed, { lang, theme: shikiTheme })
-    .then((html) => {
-      const temp = document.createElement("div");
-      temp.innerHTML = html;
-      const innerCode = temp.querySelector("code");
-      if (innerCode) {
-        codeEl.innerHTML = innerCode.innerHTML;
-        setupLineElements();
-        controller.refresh();
-      }
-    })
-    .catch(() => {
-      // Graceful fallback
-    });
-
   const stage = getActiveStage();
-  const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
-  const domEl = new DOMElement("CodeBlock", preEl, { ...options, theme: elementTheme });
-  const el = stage.registerElement(domEl) as unknown as CodeBlockElement;
-
-  el.focusLines = function (start: number, end: number = start) {
-    controller.focus(start, end);
-    return this;
-  };
-
-  el.unfocus = function () {
-    controller.unfocus();
-    return this;
-  };
-
-  Object.defineProperty(el, "focusedRange", {
-    get() {
-      return controller.focusedRange;
-    },
-    enumerable: true,
-  });
-
-  return el;
+  const el = new CodeBlockElement(snippet, options);
+  return stage ? (stage.registerElement(el) as CodeBlockElement) : el;
 }

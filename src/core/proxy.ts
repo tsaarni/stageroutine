@@ -2,7 +2,8 @@
  * Reactive property proxy that intercepts element assignments (like el.x = 200) and schedules animations.
  */
 
-import { builtinEasings, isTransitionDescriptor } from "../motion/transitions";
+import { isTransitionDescriptor } from "../motion/transitions";
+import { isReactiveProperty } from "./reactive";
 import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
 
 export interface ElementHost {
@@ -28,7 +29,11 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
 ): T {
   return new Proxy(element, {
     has(target, prop) {
-      if (typeof prop === "string" && host.getCurrentPropertyValue(target.id, prop) !== undefined) {
+      if (
+        typeof prop === "string" &&
+        isReactiveProperty(target, prop) &&
+        host.getCurrentPropertyValue(target.id, prop) !== undefined
+      ) {
         return true;
       }
       return Reflect.has(target, prop);
@@ -39,7 +44,14 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return Reflect.get(target, prop, receiver);
       }
 
-      if (prop === "size") {
+      const propName = prop as string;
+
+      // Non-reactive properties (lifecycle flags, DOM nodes, methods) bypass the stage engine
+      if (!isReactiveProperty(target, propName)) {
+        return Reflect.get(target, prop, receiver);
+      }
+
+      if (propName === "size") {
         const w =
           host.getCurrentPropertyValue(target.id, "width") ??
           (target as Record<string, unknown>).width;
@@ -50,7 +62,7 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       }
 
       // Check current staged property value first
-      const val = host.getCurrentPropertyValue(target.id, prop as string);
+      const val = host.getCurrentPropertyValue(target.id, propName);
       if (val !== undefined) {
         return val;
       }
@@ -65,68 +77,71 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
 
       const propName = prop as string;
 
+      // Non-reactive properties (lifecycle flags, DOM nodes, methods) bypass the stage engine
+      if (!isReactiveProperty(target, propName)) {
+        return Reflect.set(target, prop, value, receiver);
+      }
+
+      if (typeof value === "function") {
+        return Reflect.set(target, prop, value, receiver);
+      }
+
       if (propName === "size") {
         (receiver as Record<string, unknown>).width = value;
         (receiver as Record<string, unknown>).height = value;
         return true;
       }
 
-      let from: unknown =
-        host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
-
-      if (
-        from === undefined &&
-        "domElement" in target &&
-        (target as { domElement?: HTMLElement }).domElement
-      ) {
-        const dom = (target as { domElement: HTMLElement }).domElement;
-        if (propName === "width") {
-          from = dom.offsetWidth || undefined;
-        } else if (propName === "height") {
-          from = dom.offsetHeight || undefined;
-        }
-      }
-
-      let targetVal = value;
-      let durationMs = 600;
-      let delayMs = 0;
-      let triggerElementId: string | undefined;
-      let triggerMilestone: AnimationMilestone | undefined;
-      let triggerProperty: string | undefined;
-      let curve: EaseCurve = builtinEasings.quartOut;
-
       if (isTransitionDescriptor(value)) {
-        targetVal = value.target;
-        durationMs = value.durationMs;
-        delayMs = value.delayMs;
+        let from: unknown =
+          host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
+
+        if (
+          from === undefined &&
+          "domElement" in target &&
+          (target as { domElement?: HTMLElement }).domElement
+        ) {
+          const dom = (target as { domElement: HTMLElement }).domElement;
+          if (propName === "width") {
+            from = dom.style.width || undefined;
+          } else if (propName === "height") {
+            from = dom.style.height || undefined;
+          }
+        }
+
+        let triggerElementId: string | undefined;
         if (value.triggerTarget) {
           triggerElementId =
             typeof value.triggerTarget === "string"
               ? value.triggerTarget
               : (value.triggerTarget as ReactiveElementBase).id;
         }
-        triggerMilestone = value.triggerMilestone;
-        triggerProperty = value.triggerProperty;
-        curve = value.curve;
+
+        host.setCurrentPropertyValue(target.id, propName, value.target);
+        host.recordMutation(
+          target.id,
+          propName,
+          from,
+          value.target,
+          value.durationMs,
+          value.delayMs,
+          value.curve,
+          triggerElementId,
+          value.triggerMilestone,
+          value.triggerProperty,
+        );
+
+        return true;
       }
 
-      // Update state
-      host.setCurrentPropertyValue(target.id, propName, targetVal);
-
-      // Record in current step
-      host.recordMutation(
-        target.id,
-        propName,
-        from,
-        targetVal,
-        durationMs,
-        delayMs,
-        curve,
-        triggerElementId,
-        triggerMilestone,
-        triggerProperty,
-      );
-
+      // Static direct assignment: update property state without scheduling a transition
+      host.setCurrentPropertyValue(target.id, propName, value);
+      try {
+        Reflect.set(target, prop, value, receiver);
+      } catch {
+        // ignore read-only
+      }
+      (target as { update?: () => void }).update?.();
       return true;
     },
   });

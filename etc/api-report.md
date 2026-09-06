@@ -11,6 +11,11 @@ This document records all public symbols exported by StageRoutine. Each chapter 
 Exports within a chapter are grouped into functions, classes, interfaces, types, and constants.
 Signatures define type constraints and parameters. JSDoc comments explain runtime behavior, options, default values, and measurement units.
 
+## Diagnostics & Forgotten Exports
+
+- `[stageroutine/backgrounds]` Class `BackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
+- `[stageroutine/backgrounds]` Class `CSSBackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
+
 ## Summary
 
 | Entry Point | Exports |
@@ -90,7 +95,7 @@ export function glow(options?: GlowOptions): ElementDecorator;
 export function gradient(options?: GradientOptions): ElementDecorator;
 
 /** Decorates an element or background with a film grain texture. */
-export function grain(options?: GrainOptions): (target: DOMElement | HTMLElement) => void;
+export function grain(options?: GrainOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => void;
 
 /**
  * Creates a reactive Icon element on stage.
@@ -118,7 +123,7 @@ export function Icon(nameOrOptions?: string | IconOptions, maybeOptions?: IconOp
 export function Image(srcOrOptions?: string | ImageOptions, maybeOptions?: ImageOptions): ImageElement;
 
 /** Micro-label component used for chapter indices and section category tags. */
-export function Kicker(label: string, options?: KickerOptions): JSX.Element;
+export function Kicker(label: string, options?: KickerOptions): DOMElement;
 
 /**
  * Laser pointer overlay with glowing trail and keyboard toggle.
@@ -173,11 +178,11 @@ export function Table(options: TableOptions): TableElement;
 /** Terminal window component with macOS-style window controls and line-by-line interactive focus. */
 export function TerminalWindow(props?: TerminalWindowProps): TerminalWindowElement;
 
-/** Body copy paragraph component formatted for high-legibility presentation slides. */
-export function Text(text: string, options?: TextOptions): JSX.Element;
+/** Body copy paragraph component formatted for high-legibility stage presentations. */
+export function Text(text: string, options?: TextOptions): DOMElement;
 
 /** Headline typography component supporting default title, hero, and serif editorial variants. */
-export function Title(text: string, options?: TitleOptions): JSX.Element;
+export function Title(text: string, options?: TitleOptions): DOMElement;
 
 /**
  * Creates a fluent transition modifier.
@@ -232,7 +237,7 @@ export function typewriter(optionsOrScript?: TypewriterOptions | TypewriterStep[
 export function Video(srcOrOptions?: string | VideoOptions, maybeOptions?: VideoOptions): VideoElement;
 
 /** Decorates an element or background with a radial dark vignette. */
-export function vignette(options?: VignetteOptions): (target: DOMElement | HTMLElement) => void;
+export function vignette(options?: VignetteOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => void;
 
 /**
  * Creates a live reactive Webcam element on stage.
@@ -255,24 +260,38 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
 /** Execution activation bar element attached to a lifeline. */
 export class ActivationBarElement extends DOMElement {
   constructor(lifeline: LifelineElement, options?: ActivationOptions): ActivationBarElement;
+  static reactiveKeys: ReadonlySet<string>;
   lifeline: LifelineElement;
-  relY: number;
-  barHeight: number;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -290,12 +309,17 @@ export class ActivationBarElement extends DOMElement {
 }
 
 /**
- * Base reactive element for procedural WebGL and canvas backgrounds.
- * Handles resize observation, full-bleed viewport positioning,
+ * Base element for procedural WebGL and canvas backgrounds.
+ * Handles resize observation, full-bleed container positioning,
  * and automatic render loop pausing when invisible.
  */
-export abstract class BackgroundElement extends DOMElement {
+export abstract class BackgroundElement implements Background {
   constructor(kind: string, options?: BackgroundOptions): BackgroundElement;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  decorate(decorator: BackgroundDecorator): BackgroundElement;
+  play(): void;
   /** Called when container dimensions change */
   onResize(width: number, height: number): void;
   /** Starts or resumes the continuous WebGL render loop */
@@ -306,23 +330,50 @@ export abstract class BackgroundElement extends DOMElement {
   dispose(): void;
   /** Lifecycle attach hook invoked when the background is attached to a stage */
   attach(stage: StageContext): void;
+}
+
+export class BulletListElement extends DOMElement {
+  constructor(items: string[], options?: BulletListOptions): BulletListElement;
+  static reactiveKeys: ReadonlySet<string>;
+  readonly items: DOMElement[];
+  focusedRange: [number, number] | null;
+  focusedIndex: number | null;
+  focus(index: number): BulletListElement;
+  focusItems(start: number, end?: number): BulletListElement;
+  unfocus(): BulletListElement;
+  reveal(options?: StaggerOptions): StaggerBuilder;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Registers a callback triggered when this element is mounted into the DOM. */
   onMount(fn: () => void): () => void;
   /** Registers a callback triggered when this element is unmounted from the DOM. */
@@ -332,13 +383,67 @@ export abstract class BackgroundElement extends DOMElement {
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
   /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): BackgroundElement;
+  onClick(handler: (event: MouseEvent) => void): BulletListElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): BackgroundElement;
+  decorate(decorator: ElementDecorator): BulletListElement;
+}
+
+export class CodeBlockElement extends DOMElement {
+  constructor(snippet: string | string[], options?: CodeBlockOptions): CodeBlockElement;
+  static reactiveKeys: ReadonlySet<string>;
+  focusedRange: [number, number] | null;
+  focusedIndex: number | null;
+  focusLines(start: number, end?: number): CodeBlockElement;
+  unfocus(): CodeBlockElement;
+  reactiveKeys: ReadonlySet<string>;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
+  x: ReactiveProp<string | number>;
+  y: ReactiveProp<string | number>;
+  width: ReactiveProp<string | number> | undefined;
+  height: ReactiveProp<string | number> | undefined;
+  scale: ReactiveProp<number>;
+  rotation: ReactiveProp<number>;
+  opacity: ReactiveProp<number>;
+  blur: ReactiveProp<number>;
+  brightness: ReactiveProp<number>;
+  color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
+  isMounted: boolean;
+  isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  /** Registers a callback triggered when this element is mounted into the DOM. */
+  onMount(fn: () => void): () => void;
+  /** Registers a callback triggered when this element is unmounted from the DOM. */
+  onUnmount(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
+  onActivate(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
+  onDeactivate(fn: () => void): () => void;
+  /** Registers a click interaction handler on this element. */
+  onClick(handler: (event: MouseEvent) => void): CodeBlockElement;
+  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
+  decorate(decorator: ElementDecorator): CodeBlockElement;
 }
 
 export class ConnectorElement extends DOMElement {
   constructor(from: ConnectorTarget, to: ConnectorTarget, options?: ConnectorOptions): ConnectorElement;
+  static reactiveKeys: ReadonlySet<string>;
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
   connectorStyle: "straight" | "corner" | "bezier" | "arc";
@@ -370,7 +475,10 @@ export class ConnectorElement extends DOMElement {
   labelText: SVGTextElement | null;
   start: ReactiveProp<number>;
   end: ReactiveProp<number>;
-  messageY: ReactiveProp<string | number> | undefined;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
   update(): void;
   /**
    * Spawns a glowing data packet particle traveling along the connector path.
@@ -383,21 +491,31 @@ export class ConnectorElement extends DOMElement {
   startPeriodicPulse(options?: number | PeriodicPulseOptions): ConnectorElement;
   /** Stops repeating glowing packet pulses. */
   stopPeriodicPulse(): ConnectorElement;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -435,59 +553,55 @@ export class CrossfadeBuilder {
 }
 
 /** Full-bleed DOM background element styled with standard CSS. */
-export class CSSBackgroundElement extends DOMElement {
+export class CSSBackgroundElement implements Background {
   constructor(options?: CSSBackgroundOptions): CSSBackgroundElement;
   readonly id: string;
-  readonly kind: string;
+  readonly kind: "CSSBackground";
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): CSSBackgroundElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): CSSBackgroundElement;
+  decorate(decorator: BackgroundDecorator): CSSBackgroundElement;
+  attach(stage: StageContext): void;
+  dispose(): void;
 }
 
-/** Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage. */
+/**
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
+ */
 export class DOMElement implements ReactiveElementBase {
   constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
+  static reactiveKeys: ReadonlySet<string>;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Registers a callback triggered when this element is mounted into the DOM. */
   onMount(fn: () => void): () => void;
   /** Registers a callback triggered when this element is unmounted from the DOM. */
@@ -505,22 +619,38 @@ export class DOMElement implements ReactiveElementBase {
 /** Reactive Icon element wrapping an SVG icon on the presentation stage. */
 export class IconElement extends DOMElement {
   constructor(nameOrOptions?: string | IconOptions, maybeOptions?: IconOptions): IconElement;
+  static reactiveKeys: ReadonlySet<string>;
   name: string;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -540,25 +670,41 @@ export class IconElement extends DOMElement {
 /** Reactive Image element wrapping a native <img> DOM node. */
 export class ImageElement extends DOMElement {
   constructor(srcOrOptions?: string | ImageOptions, maybeOptions?: ImageOptions): ImageElement;
+  static reactiveKeys: ReadonlySet<string>;
   readonly imgElement: HTMLImageElement;
   fit: ImageFit;
   src: string;
   alt: string;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -578,28 +724,44 @@ export class ImageElement extends DOMElement {
 /** Vertical dashed lifeline element rendered below its participant actor. */
 export class LifelineElement extends DOMElement {
   constructor(actor: DOMElement, options?: LifelineOptions): LifelineElement;
+  static reactiveKeys: ReadonlySet<string>;
   actor: DOMElement;
   length: number;
   color: string;
   activations: ActivationBarElement[];
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Sets the visual length of the dashed lifeline in pixels. */
   setLength(length: number): void;
   activate(options?: ActivationOptions): ActivationBarElement;
   hasActivationAt(y1080: number): boolean;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -671,24 +833,41 @@ export class SequenceDiagramElement {
 
 export class ShapeElement extends DOMElement {
   constructor(childrenOrOptions?: unknown, maybeOptions?: ShapeOptions): ShapeElement;
+  static reactiveKeys: ReadonlySet<string>;
   readonly kind: ShapeKind;
   readonly variant: ShapeVariant;
+  readonly items: ReactiveElementBase[];
   active: boolean;
   doubleBorder: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -734,6 +913,8 @@ export class Stage {
   recordMutation(elementId: string, property: string, from: unknown, to: unknown, durationMs: number, delayMs: number, curve: EaseCurve, triggerElementId?: string, triggerMilestone?: AnimationMilestone, triggerProperty?: string): void;
   getCurrentPropertyValue(elementId: string, property: string): unknown;
   setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
+  /** Checks whether an element is already registered with the stage. */
+  hasElement(id: string): boolean;
   registerElement<T extends ReactiveElementBase>(element: T): T;
   /** Declares a new presentation scene and returns a builder to populate its elements. */
   scene(name: string): SceneBuilder;
@@ -788,9 +969,118 @@ export class StaggerBuilder {
   apply(): void;
 }
 
+export class TableElement extends DOMElement {
+  constructor(options: TableOptions): TableElement;
+  static reactiveKeys: ReadonlySet<string>;
+  readonly rows: DOMElement[];
+  focusedRange: [number, number] | null;
+  focusedIndex: number | null;
+  focusRows(start: number, end?: number): TableElement;
+  unfocus(): TableElement;
+  reveal(options?: StaggerOptions): StaggerBuilder;
+  reactiveKeys: ReadonlySet<string>;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
+  x: ReactiveProp<string | number>;
+  y: ReactiveProp<string | number>;
+  width: ReactiveProp<string | number> | undefined;
+  height: ReactiveProp<string | number> | undefined;
+  scale: ReactiveProp<number>;
+  rotation: ReactiveProp<number>;
+  opacity: ReactiveProp<number>;
+  blur: ReactiveProp<number>;
+  brightness: ReactiveProp<number>;
+  color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
+  isMounted: boolean;
+  isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  /** Registers a callback triggered when this element is mounted into the DOM. */
+  onMount(fn: () => void): () => void;
+  /** Registers a callback triggered when this element is unmounted from the DOM. */
+  onUnmount(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
+  onActivate(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
+  onDeactivate(fn: () => void): () => void;
+  /** Registers a click interaction handler on this element. */
+  onClick(handler: (event: MouseEvent) => void): TableElement;
+  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
+  decorate(decorator: ElementDecorator): TableElement;
+}
+
+export class TerminalWindowElement extends DOMElement {
+  constructor(props?: TerminalWindowProps): TerminalWindowElement;
+  static reactiveKeys: ReadonlySet<string>;
+  focusedRange: [number, number] | null;
+  focusedIndex: number | null;
+  focusLines(start: number, end?: number): TerminalWindowElement;
+  unfocus(): TerminalWindowElement;
+  reactiveKeys: ReadonlySet<string>;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
+  x: ReactiveProp<string | number>;
+  y: ReactiveProp<string | number>;
+  width: ReactiveProp<string | number> | undefined;
+  height: ReactiveProp<string | number> | undefined;
+  scale: ReactiveProp<number>;
+  rotation: ReactiveProp<number>;
+  opacity: ReactiveProp<number>;
+  blur: ReactiveProp<number>;
+  brightness: ReactiveProp<number>;
+  color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
+  isMounted: boolean;
+  isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  /** Registers a callback triggered when this element is mounted into the DOM. */
+  onMount(fn: () => void): () => void;
+  /** Registers a callback triggered when this element is unmounted from the DOM. */
+  onUnmount(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
+  onActivate(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
+  onDeactivate(fn: () => void): () => void;
+  /** Registers a click interaction handler on this element. */
+  onClick(handler: (event: MouseEvent) => void): TerminalWindowElement;
+  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
+  decorate(decorator: ElementDecorator): TerminalWindowElement;
+}
+
 /** Reactive Video element wrapping a native <video> DOM node. */
 export class VideoElement extends DOMElement {
   constructor(srcOrOptions?: string | VideoOptions, maybeOptions?: VideoOptions): VideoElement;
+  static reactiveKeys: ReadonlySet<string>;
   readonly videoElement: HTMLVideoElement;
   fit: ImageFit;
   src: string;
@@ -800,21 +1090,36 @@ export class VideoElement extends DOMElement {
   volume: number;
   muted: boolean;
   loop: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -836,31 +1141,47 @@ export class WebcamElement extends DOMElement {
   constructor(options?: WebcamOptions): WebcamElement;
   /** Discovers and lists all connected video input cameras. */
   static getCameras(): Promise<CameraDevice[]>;
+  static reactiveKeys: ReadonlySet<string>;
   readonly videoElement: HTMLVideoElement;
   fit: ImageFit;
   mirror: boolean;
   deviceId: string | undefined;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Starts the webcam video stream. */
   start(): Promise<void>;
   /** Stops the webcam video stream and releases the camera hardware. */
   stop(): void;
   /** Cycles to the next connected camera. */
   cycleCamera(): Promise<void>;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
   /** Registers a callback triggered when this element is mounted into the DOM. */
@@ -904,6 +1225,7 @@ export interface ActivationOptions extends ElementOptions {
  * @category Backgrounds
  */
 export interface Background {
+    readonly domElement?: HTMLElement;
     attach(stage: StageContext): void;
     dispose?(): void;
     decorate?(decorator: BackgroundDecorator): this;
@@ -915,7 +1237,9 @@ export interface Background {
  * Base options for background elements.
  * @category Backgrounds
  */
-export interface BackgroundOptions extends ElementOptions {
+export interface BackgroundOptions {
+    id?: string;
+    className?: string;
     /** Optional initial opacity (default: 1). */
     opacity?: number;
 }
@@ -949,22 +1273,6 @@ export interface BracketOptions {
     glow?: boolean | string;
     /** Additional CSS class name. */
     className?: string;
-}
-
-/**
- * @internal
- */
-export interface BulletListElement extends DOMElement {
-    items: DOMElement[];
-    readonly focusedRange: [
-        number,
-        number
-    ] | null;
-    readonly focusedIndex: number | null;
-    focus(index: number): this;
-    focusItems(start: number, end?: number): this;
-    unfocus(): this;
-    reveal(options?: StaggerOptions): StaggerBuilder;
 }
 
 /**
@@ -1015,18 +1323,6 @@ export interface CircleLayoutOptions {
     animate?: LayoutAnimation;
     /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
     duration?: number;
-}
-
-/**
- * @internal
- */
-export interface CodeBlockElement extends DOMElement {
-    readonly focusedRange: [
-        number,
-        number
-    ] | null;
-    focusLines(start: number, end?: number): this;
-    unfocus(): this;
 }
 
 /**
@@ -1102,8 +1398,6 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     toPadding?: number;
     /** Continuous periodic pulse configuration or interval in seconds (e.g. 1.5 or { interval: 2.0, color: '#38bdf8' }). */
     pulseInterval?: number | PeriodicPulseOptions;
-    /** Vertical alignment Y coordinate for sequence diagram horizontal messages. */
-    messageY?: ReactiveProp<number | string>;
 }
 
 /**
@@ -1127,9 +1421,13 @@ export interface CrossfadeOptions {
  * Configuration options for full-bleed CSS backgrounds.
  * @category Backgrounds
  */
-export interface CSSBackgroundOptions extends ElementOptions {
+export interface CSSBackgroundOptions {
+    id?: string;
+    className?: string;
     /** Standard CSS background value (color, gradient, or url). */
     background?: string;
+    /** Optional initial opacity (default: 1). */
+    opacity?: number;
 }
 
 /**
@@ -1154,6 +1452,16 @@ export interface ElementOptions {
     className?: string;
     style?: CSSProperties | Partial<CSSStyleDeclaration>;
     theme?: Partial<ThemeConfig>;
+    /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
+    customPositioned?: boolean;
+    /** Duration in seconds for exiting scene transition. */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition. */
+    enterDuration?: number;
+    onMount?: () => void;
+    onUnmount?: () => void;
+    onActivate?: () => void;
+    onDeactivate?: () => void;
 }
 
 /**
@@ -1520,6 +1828,17 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    /**
+     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+     * When true, Stage does not overwrite `node.style.transform`.
+     * @internal Engine driver
+     */
+    isCustomPositioned?: boolean;
+    /**
+     * Default pointer-events style when element is visible.
+     * @internal Engine driver
+     */
+    _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
@@ -1532,9 +1851,15 @@ export interface ReactiveElementBase {
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
     onUnmount?(fn: () => void): () => void;
+    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+    enterDuration?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
+    /** Recomputes layout or path coordinates on visual changes. */
+    update?(): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -1745,21 +2070,6 @@ export interface StaggerOptions {
 }
 
 /**
- * @internal
- */
-export interface TableElement extends DOMElement {
-    rows: DOMElement[];
-    readonly focusedRange: [
-        number,
-        number
-    ] | null;
-    readonly focusedIndex: number | null;
-    focusRows(start: number, end?: number): this;
-    unfocus(): this;
-    reveal(options?: StaggerOptions): StaggerBuilder;
-}
-
-/**
  * Configuration options for the glassmorphic Table component.
  * @category Components
  */
@@ -1774,18 +2084,6 @@ export interface TableOptions extends ElementOptions {
     className?: string;
     /** Whether clicking or dragging rows focuses them interactively (default: true). */
     interactive?: boolean;
-}
-
-/**
- * @internal
- */
-export interface TerminalWindowElement extends DOMElement {
-    readonly focusedRange: [
-        number,
-        number
-    ] | null;
-    focusLines(start: number, end?: number): this;
-    unfocus(): this;
 }
 
 /**
@@ -2293,12 +2591,17 @@ export function Starfield(options?: StarfieldOptions): StarfieldElement;
 
 ```ts
 /**
- * Base reactive element for procedural WebGL and canvas backgrounds.
- * Handles resize observation, full-bleed viewport positioning,
+ * Base element for procedural WebGL and canvas backgrounds.
+ * Handles resize observation, full-bleed container positioning,
  * and automatic render loop pausing when invisible.
  */
-export abstract class BackgroundElement extends DOMElement {
+export abstract class BackgroundElement implements Background {
   constructor(kind: string, options?: BackgroundOptions): BackgroundElement;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  decorate(decorator: BackgroundDecorator): BackgroundElement;
+  play(): void;
   /** Called when container dimensions change */
   onResize(width: number, height: number): void;
   /** Starts or resumes the continuous WebGL render loop */
@@ -2309,91 +2612,58 @@ export abstract class BackgroundElement extends DOMElement {
   dispose(): void;
   /** Lifecycle attach hook invoked when the background is attached to a stage */
   attach(stage: StageContext): void;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): BackgroundElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): BackgroundElement;
 }
 
 /** Full-bleed DOM background element styled with standard CSS. */
-export class CSSBackgroundElement extends DOMElement {
+export class CSSBackgroundElement implements Background {
   constructor(options?: CSSBackgroundOptions): CSSBackgroundElement;
   readonly id: string;
-  readonly kind: string;
+  readonly kind: "CSSBackground";
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): CSSBackgroundElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): CSSBackgroundElement;
+  decorate(decorator: BackgroundDecorator): CSSBackgroundElement;
+  attach(stage: StageContext): void;
+  dispose(): void;
 }
 
-/** Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage. */
+/**
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
+ */
 export class DOMElement implements ReactiveElementBase {
   constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
+  static reactiveKeys: ReadonlySet<string>;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Registers a callback triggered when this element is mounted into the DOM. */
   onMount(fn: () => void): () => void;
   /** Registers a callback triggered when this element is unmounted from the DOM. */
@@ -2418,37 +2688,13 @@ export class FluidBackgroundElement extends BackgroundElement {
   pause(): void;
   /** Clean up WebGL resources, geometries, textures, and observers */
   dispose(): void;
-  /** Lifecycle attach hook invoked when the background is attached to a stage */
-  attach(stage: StageContext): void;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): FluidBackgroundElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): FluidBackgroundElement;
+  decorate(decorator: BackgroundDecorator): FluidBackgroundElement;
+  play(): void;
+  /** Lifecycle attach hook invoked when the background is attached to a stage */
+  attach(stage: StageContext): void;
 }
 
 export class StarfieldElement extends BackgroundElement {
@@ -2466,32 +2712,8 @@ export class StarfieldElement extends BackgroundElement {
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): StarfieldElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): StarfieldElement;
+  decorate(decorator: BackgroundDecorator): StarfieldElement;
+  play(): void;
 }
 
 ```
@@ -2516,7 +2738,9 @@ export interface AsciiFluidOptions extends BaseFluidOptions {
  * Base options for background elements.
  * @category Backgrounds
  */
-export interface BackgroundOptions extends ElementOptions {
+export interface BackgroundOptions {
+    id?: string;
+    className?: string;
     /** Optional initial opacity (default: 1). */
     opacity?: number;
 }
@@ -2537,9 +2761,13 @@ export interface BaseFluidOptions extends BackgroundOptions {
  * Configuration options for full-bleed CSS backgrounds.
  * @category Backgrounds
  */
-export interface CSSBackgroundOptions extends ElementOptions {
+export interface CSSBackgroundOptions {
+    id?: string;
+    className?: string;
     /** Standard CSS background value (color, gradient, or url). */
     background?: string;
+    /** Optional initial opacity (default: 1). */
+    opacity?: number;
 }
 
 /**
@@ -2564,6 +2792,16 @@ export interface ElementOptions {
     className?: string;
     style?: CSSProperties | Partial<CSSStyleDeclaration>;
     theme?: Partial<ThemeConfig>;
+    /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
+    customPositioned?: boolean;
+    /** Duration in seconds for exiting scene transition. */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition. */
+    enterDuration?: number;
+    onMount?: () => void;
+    onUnmount?: () => void;
+    onActivate?: () => void;
+    onDeactivate?: () => void;
 }
 
 /**
@@ -2594,6 +2832,17 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    /**
+     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+     * When true, Stage does not overwrite `node.style.transform`.
+     * @internal Engine driver
+     */
+    isCustomPositioned?: boolean;
+    /**
+     * Default pointer-events style when element is visible.
+     * @internal Engine driver
+     */
+    _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
@@ -2606,9 +2855,15 @@ export interface ReactiveElementBase {
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
     onUnmount?(fn: () => void): () => void;
+    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+    enterDuration?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
+    /** Recomputes layout or path coordinates on visual changes. */
+    update?(): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -2981,26 +3236,45 @@ export function jsx(type: string | typeof Fragment | ComponentFunction, props?: 
 ### Classes
 
 ```ts
-/** Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage. */
+/**
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
+ */
 export class DOMElement implements ReactiveElementBase {
   constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
+  static reactiveKeys: ReadonlySet<string>;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Registers a callback triggered when this element is mounted into the DOM. */
   onMount(fn: () => void): () => void;
   /** Registers a callback triggered when this element is unmounted from the DOM. */
@@ -3029,6 +3303,17 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    /**
+     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+     * When true, Stage does not overwrite `node.style.transform`.
+     * @internal Engine driver
+     */
+    isCustomPositioned?: boolean;
+    /**
+     * Default pointer-events style when element is visible.
+     * @internal Engine driver
+     */
+    _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
@@ -3041,9 +3326,15 @@ export interface ReactiveElementBase {
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
     onUnmount?(fn: () => void): () => void;
+    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+    enterDuration?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
+    /** Recomputes layout or path coordinates on visual changes. */
+    update?(): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -3165,26 +3456,45 @@ export function jsx(type: string | typeof Fragment | ComponentFunction, props?: 
 ### Classes
 
 ```ts
-/** Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage. */
+/**
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
+ */
 export class DOMElement implements ReactiveElementBase {
   constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
+  static reactiveKeys: ReadonlySet<string>;
+  reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
   x: ReactiveProp<string | number>;
   y: ReactiveProp<string | number>;
   width: ReactiveProp<string | number> | undefined;
   height: ReactiveProp<string | number> | undefined;
-  size: ReactiveProp<string | number> | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
   /** Registers a callback triggered when this element is mounted into the DOM. */
   onMount(fn: () => void): () => void;
   /** Registers a callback triggered when this element is unmounted from the DOM. */
@@ -3213,6 +3523,17 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    /**
+     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+     * When true, Stage does not overwrite `node.style.transform`.
+     * @internal Engine driver
+     */
+    isCustomPositioned?: boolean;
+    /**
+     * Default pointer-events style when element is visible.
+     * @internal Engine driver
+     */
+    _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
@@ -3225,9 +3546,15 @@ export interface ReactiveElementBase {
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
     onUnmount?(fn: () => void): () => void;
+    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+    exitDuration?: number;
+    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+    enterDuration?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
+    /** Recomputes layout or path coordinates on visual changes. */
+    update?(): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */

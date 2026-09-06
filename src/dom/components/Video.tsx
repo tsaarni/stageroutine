@@ -123,6 +123,14 @@ export class VideoElement extends DOMElement {
     this.videoElement.loop = val;
   }
 
+  override update(): void {
+    if (this.videoElement) {
+      if (this._fit && this.videoElement.style.objectFit !== this._fit) {
+        this.videoElement.style.objectFit = this._fit;
+      }
+    }
+  }
+
   constructor(srcOrOptions: string | VideoOptions = {}, maybeOptions: VideoOptions = {}) {
     const options =
       typeof srcOrOptions === "string" ? { ...maybeOptions, src: srcOrOptions } : srcOrOptions;

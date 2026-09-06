@@ -59,10 +59,19 @@ export interface SequenceDiagramOptions {
  * @internal
  */
 export class LifelineElement extends DOMElement {
+  static override reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement.reactiveKeys,
+    "length",
+  ]);
+
   actor: DOMElement;
   length: number;
   color: string;
   activations: ActivationBarElement[] = [];
+
+  override update(): void {
+    this.domElement.style.height = `${this.length}px`;
+  }
 
   constructor(actor: DOMElement, options: LifelineOptions = {}) {
     const el = document.createElement("div");
@@ -73,7 +82,13 @@ export class LifelineElement extends DOMElement {
     el.style.pointerEvents = "none";
     el.style.zIndex = "1";
 
-    super("Lifeline", el, { ...options, opacity: options.opacity ?? 0, x: 0, y: 0 });
+    super("Lifeline", el, {
+      ...options,
+      opacity: options.opacity ?? 0,
+      x: 0,
+      y: 0,
+      customPositioned: true,
+    });
 
     this.actor = actor;
     (actor as unknown as { lifeline?: LifelineElement }).lifeline = this;
@@ -106,7 +121,10 @@ export class LifelineElement extends DOMElement {
     const el = new ActivationBarElement(this, options);
     this.activations.push(el);
 
-    const needed = (el.relY + el.barHeight) * 10.8 + 48;
+    const yNum = typeof el.y === "number" ? el.y : Number.parseFloat(String(el.y)) || 0;
+    const hNum =
+      typeof el.height === "number" ? el.height : Number.parseFloat(String(el.height)) || 0;
+    const needed = (yNum + hNum) * 10.8 + 48;
     if (needed > this.length) {
       this.setLength(needed);
     }
@@ -128,8 +146,11 @@ export class LifelineElement extends DOMElement {
     const yPct = (y1080 / 1080) * 100;
 
     for (const act of this.activations) {
-      const actTopPct = lifelineTopPct + act.relY;
-      const actBottomPct = actTopPct + act.barHeight;
+      const actY = typeof act.y === "number" ? act.y : Number.parseFloat(String(act.y)) || 0;
+      const actH =
+        typeof act.height === "number" ? act.height : Number.parseFloat(String(act.height)) || 0;
+      const actTopPct = lifelineTopPct + actY;
+      const actBottomPct = actTopPct + actH;
       if (actTopPct - 1 <= yPct && yPct <= actBottomPct + 1) {
         return true;
       }
@@ -144,8 +165,14 @@ export class LifelineElement extends DOMElement {
  */
 export class ActivationBarElement extends DOMElement {
   lifeline: LifelineElement;
-  relY: number;
-  barHeight: number;
+
+  override update(): void {
+    const yNum = typeof this.y === "number" ? this.y : Number.parseFloat(String(this.y)) || 0;
+    const hNum =
+      typeof this.height === "number" ? this.height : Number.parseFloat(String(this.height)) || 0;
+    this.domElement.style.top = `calc(100% + ${yNum}cqh)`;
+    this.domElement.style.height = `${hNum}cqh`;
+  }
 
   constructor(lifeline: LifelineElement, options: ActivationOptions = {}) {
     const color = options.color || "#38bdf8";
@@ -161,10 +188,6 @@ export class ActivationBarElement extends DOMElement {
     bar.style.zIndex = "2";
     bar.style.pointerEvents = "none";
 
-    super("ActivationBar", bar, { ...options, opacity: options.opacity ?? 0, x: 0, y: 0 });
-
-    this.lifeline = lifeline;
-
     let computedY = options.y;
     let computedHeight = options.height;
 
@@ -172,19 +195,15 @@ export class ActivationBarElement extends DOMElement {
       const fromYRaw =
         typeof options.from === "number"
           ? options.from
-          : typeof (options.from as { messageY?: number })?.messageY === "number"
-            ? (options.from as { messageY: number }).messageY
-            : typeof options.from?.y === "number"
-              ? options.from.y
-              : 36;
+          : typeof options.from?.y === "number"
+            ? options.from.y
+            : 36;
       const toYRaw =
         typeof options.to === "number"
           ? options.to
-          : typeof (options.to as { messageY?: number })?.messageY === "number"
-            ? (options.to as { messageY: number }).messageY
-            : typeof options.to?.y === "number"
-              ? options.to.y
-              : fromYRaw + 20;
+          : typeof options.to?.y === "number"
+            ? options.to.y
+            : fromYRaw + 20;
 
       const fromYPct = fromYRaw > 100 ? (fromYRaw / 1080) * 100 : fromYRaw;
       const toYPct = toYRaw > 100 ? (toYRaw / 1080) * 100 : toYRaw;
@@ -198,12 +217,22 @@ export class ActivationBarElement extends DOMElement {
       computedHeight = Math.max(2, toYPct - fromYPct + 1.6);
     }
 
-    this.relY = computedY ?? 4;
-    this.barHeight = computedHeight ?? 20;
+    const yVal = computedY ?? 4;
+    const heightVal = computedHeight ?? 20;
+
+    super("ActivationBar", bar, {
+      ...options,
+      opacity: options.opacity ?? 0,
+      x: 0,
+      y: yVal,
+      height: heightVal,
+      customPositioned: true,
+    });
+
+    this.lifeline = lifeline;
     this.domElement.style.left = "calc(50% - 7px)";
-    this.domElement.style.top = `calc(100% + ${this.relY}cqh)`;
-    this.domElement.style.height = `${this.barHeight}cqh`;
     this.domElement.style.transform = "none";
+    this.update();
 
     if (lifeline.actor.domElement) {
       lifeline.actor.domElement.appendChild(this.domElement);
@@ -262,12 +291,7 @@ export class SequenceDiagramElement {
       const actorBottomPx = actorYPx + actorHeightPx;
 
       for (const msg of this.messages) {
-        const msgYRaw =
-          typeof msg.y === "number" || typeof msg.y === "string"
-            ? msg.y
-            : typeof msg.messageY === "number" || typeof msg.messageY === "string"
-              ? msg.messageY
-              : 0;
+        const msgYRaw = typeof msg.y === "number" || typeof msg.y === "string" ? msg.y : 0;
         const msgYPx =
           typeof msgYRaw === "number"
             ? msgYRaw > 100
@@ -286,7 +310,10 @@ export class SequenceDiagramElement {
       }
 
       for (const act of this.activations) {
-        const actBottomPx = (act.relY + act.barHeight) * 10.8 + this.paddingBottom;
+        const actY = typeof act.y === "number" ? act.y : Number.parseFloat(String(act.y)) || 0;
+        const actH =
+          typeof act.height === "number" ? act.height : Number.parseFloat(String(act.height)) || 0;
+        const actBottomPx = (actY + actH) * 10.8 + this.paddingBottom;
         if (actBottomPx > maxNeeded) {
           maxNeeded = actBottomPx;
         }

@@ -1,5 +1,5 @@
 /**
- * Public surface of the standard slide component library (Title, Text, Shape, CodeBlock, etc.).
+ * Public surface of the standard component library (Title, Text, Shape, CodeBlock, etc.).
  *
  * Implementation element classes (`TitleElement`, `ConnectorElement`, ...) are intentionally
  * not exported; users interact with the reactive proxies returned by the factories and type

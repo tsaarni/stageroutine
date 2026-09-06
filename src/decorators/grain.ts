@@ -1,7 +1,8 @@
 /**
- * Adds an animated film grain texture overlay to give slides a tactile, cinematic look.
+ * Adds an animated film grain texture overlay to give the stage a tactile, cinematic look.
  */
 
+import type { Background, ReactiveElementBase } from "../core/types";
 import type { DOMElement } from "../dom/element";
 
 /**
@@ -99,7 +100,7 @@ function createGrainContainer(
 export function grain(options: GrainOptions = {}) {
   const { granularity = 1, size = 512 } = options;
 
-  return (target: DOMElement | HTMLElement) => {
+  return (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => {
     // Pre-generate 3 unique high-entropy random noise frames
     const frames = [
       generateNoiseTile(size, granularity),
@@ -107,7 +108,8 @@ export function grain(options: GrainOptions = {}) {
       generateNoiseTile(size, granularity),
     ];
 
-    const el = "domElement" in target ? target.domElement : target;
+    const el =
+      "domElement" in target && target.domElement ? target.domElement : (target as HTMLElement);
     const { element } = createGrainContainer(options, frames);
     el.style.position = el.style.position || "relative";
     el.appendChild(element);

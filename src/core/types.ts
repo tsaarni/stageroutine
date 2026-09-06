@@ -329,6 +329,7 @@ export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void
  * @category Backgrounds
  */
 export interface Background {
+  readonly domElement?: HTMLElement;
   attach(stage: StageContext): void;
   dispose?(): void;
   decorate?(decorator: BackgroundDecorator): this;
@@ -404,6 +405,17 @@ export interface ReactiveElementBase {
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor?: ReactiveProp<ElementAnchor>;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   * @internal Engine driver
+   */
+  isCustomPositioned?: boolean;
+  /**
+   * Default pointer-events style when element is visible.
+   * @internal Engine driver
+   */
+  _defaultPointerEvents?: string;
   opacity: ReactiveProp<number>;
   x: ReactiveProp<number | string>;
   y: ReactiveProp<number | string>;
@@ -416,9 +428,15 @@ export interface ReactiveElementBase {
   readonly isActive?: boolean;
   onMount?(fn: () => void): () => void;
   onUnmount?(fn: () => void): () => void;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration?: number;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration?: number;
   onActivate?(fn: () => void): () => void;
   onDeactivate?(fn: () => void): () => void;
   onClick?(handler: (event: MouseEvent) => void): this;
+  /** Recomputes layout or path coordinates on visual changes. */
+  update?(): void;
   /** @internal Engine driver */
   _mount?(parent: HTMLElement): void;
   /** @internal Engine driver */

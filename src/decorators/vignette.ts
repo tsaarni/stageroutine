@@ -1,7 +1,8 @@
 /**
- * Darkens the edges of the slide to draw viewer attention toward the center.
+ * Darkens the edges of the stage to draw viewer attention toward the center.
  */
 
+import type { Background, ReactiveElementBase } from "../core/types";
 import type { DOMElement } from "../dom/element";
 
 /**
@@ -39,8 +40,9 @@ function createVignetteElement(options: VignetteOptions): HTMLDivElement {
  * @category Decorators
  */
 export function vignette(options: VignetteOptions = {}) {
-  return (target: DOMElement | HTMLElement) => {
-    const el = "domElement" in target ? target.domElement : target;
+  return (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => {
+    const el =
+      "domElement" in target && target.domElement ? target.domElement : (target as HTMLElement);
     const overlay = createVignetteElement(options);
     el.style.position = el.style.position || "relative";
     el.appendChild(overlay);

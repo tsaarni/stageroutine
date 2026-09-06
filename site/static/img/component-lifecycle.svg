@@ -29,8 +29,8 @@
     <text x="76" y="36" fill="#ffffff" font-size="17" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">Activated</text>
     <rect x="16" y="48" width="120" height="26" rx="5" fill="rgba(56, 189, 248, 0.25)" stroke="#38bdf8" stroke-width="1.5" />
     <text x="76" y="66" fill="#38bdf8" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle">onActivate()</text>
-    <text x="76" y="98" fill="#38bdf8" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">opacity &gt; 0</text>
-    <text x="76" y="116" fill="#e0f2fe" font-size="12" font-weight="500" font-family="system-ui, sans-serif" text-anchor="middle">Start render loop</text>
+    <text x="76" y="98" fill="#38bdf8" font-size="13" font-weight="600" font-family="system-ui, sans-serif" text-anchor="middle">Enters Scene</text>
+    <text x="76" y="116" fill="#e0f2fe" font-size="12" font-weight="500" font-family="system-ui, sans-serif" text-anchor="middle">Start media / timers</text>
   </g>
 
   <!-- Dual Transition Arrows: Activated <-> Deactivated -->
@@ -45,8 +45,8 @@
     <text x="76" y="36" fill="#ffffff" font-size="17" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">Deactivated</text>
     <rect x="10" y="48" width="132" height="26" rx="5" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.2" />
     <text x="76" y="66" fill="#a1a1aa" font-size="14" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle">onDeactivate()</text>
-    <text x="76" y="98" fill="#a1a1aa" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace" text-anchor="middle">opacity === 0</text>
-    <text x="76" y="116" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif" text-anchor="middle">Pause render loop</text>
+    <text x="76" y="98" fill="#a1a1aa" font-size="13" font-weight="600" font-family="system-ui, sans-serif" text-anchor="middle">Leaves Scene</text>
+    <text x="76" y="116" fill="#a1a1aa" font-size="12" font-weight="500" font-family="system-ui, sans-serif" text-anchor="middle">Pause media / timers</text>
   </g>
 
   <!-- Arrow: Deactivated -> Unmounted -->

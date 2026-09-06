@@ -1,5 +1,5 @@
 /**
- * Standalone reactive Image element for presentation slides and technical diagrams.
+ * Standalone reactive Image element for stage presentations and technical diagrams.
  */
 
 import "./Media.css";
@@ -61,6 +61,16 @@ export class ImageElement extends DOMElement {
 
   set alt(val: string) {
     this.imgElement.alt = val;
+  }
+
+  override update(): void {
+    if (this.imgElement) {
+      if (this.src && this.imgElement.src !== this.src) this.imgElement.src = this.src;
+      if (this.alt && this.imgElement.alt !== this.alt) this.imgElement.alt = this.alt;
+      if (this._fit && this.imgElement.style.objectFit !== this._fit) {
+        this.imgElement.style.objectFit = this._fit;
+      }
+    }
   }
 
   constructor(srcOrOptions: string | ImageOptions = {}, maybeOptions: ImageOptions = {}) {

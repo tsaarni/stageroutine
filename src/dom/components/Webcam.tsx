@@ -108,6 +108,14 @@ export class WebcamElement extends DOMElement {
     }
   }
 
+  override update(): void {
+    if (this.videoElement) {
+      if (this._fit && this.videoElement.style.objectFit !== this._fit) {
+        this.videoElement.style.objectFit = this._fit;
+      }
+    }
+  }
+
   constructor(options: WebcamOptions = {}) {
     const video = document.createElement("video");
     video.className = ["sr-webcam", options.className].filter(Boolean).join(" ");

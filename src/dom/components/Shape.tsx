@@ -1,5 +1,5 @@
 import "./Shape.css";
-import { getActiveStage } from "../../core/index";
+import { type ReactiveElementBase, getActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 
 /**
@@ -51,27 +51,27 @@ export interface ShapeOptions extends ElementOptions {
 export class ShapeElement extends DOMElement {
   readonly kind: ShapeKind;
   readonly variant: ShapeVariant;
-  private _isActive = false;
+  readonly items: ReactiveElementBase[] = [];
+  private _active = false;
   private _doubleBorder = false;
-  private primaryColor: string;
 
   get active(): boolean {
-    return this._isActive;
+    return this._active;
   }
-
   set active(val: boolean) {
-    this._isActive = val;
+    this._active = !!val;
     this.updateVisualState();
   }
 
   get doubleBorder(): boolean {
     return this._doubleBorder;
   }
-
   set doubleBorder(val: boolean) {
-    this._doubleBorder = val;
+    this._doubleBorder = !!val;
     this.updateVisualState();
   }
+
+  private primaryColor: string;
 
   constructor(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = {}) {
     let children: unknown = childrenOrOptions;
@@ -120,6 +120,8 @@ export class ShapeElement extends DOMElement {
 
     Object.assign(el.style, customStyles);
 
+    const childItems: ReactiveElementBase[] = [];
+
     // Append child content
     if (children !== undefined && children !== null) {
       if (typeof children === "string" || typeof children === "number") {
@@ -129,22 +131,32 @@ export class ShapeElement extends DOMElement {
         el.appendChild(textSpan);
       } else if (children instanceof Node) {
         el.appendChild(children);
-      } else if (children instanceof DOMElement) {
-        children.domElement.style.position = "relative";
-        children.domElement.style.left = "auto";
-        children.domElement.style.top = "auto";
-        children.domElement.style.transform = "none";
-        el.appendChild(children.domElement);
+      } else if (
+        children instanceof DOMElement ||
+        (children && typeof children === "object" && "domElement" in children)
+      ) {
+        const childEl = children as unknown as ReactiveElementBase;
+        childItems.push(childEl);
+        childEl.domElement.style.position = "relative";
+        childEl.domElement.style.left = "auto";
+        childEl.domElement.style.top = "auto";
+        childEl.domElement.style.transform = "none";
+        el.appendChild(childEl.domElement);
       } else if (Array.isArray(children)) {
         for (const child of children) {
           if (child instanceof Node) {
             el.appendChild(child);
-          } else if (child instanceof DOMElement) {
-            child.domElement.style.position = "relative";
-            child.domElement.style.left = "auto";
-            child.domElement.style.top = "auto";
-            child.domElement.style.transform = "none";
-            el.appendChild(child.domElement);
+          } else if (
+            child instanceof DOMElement ||
+            (child && typeof child === "object" && "domElement" in child)
+          ) {
+            const childEl = child as unknown as ReactiveElementBase;
+            childItems.push(childEl);
+            childEl.domElement.style.position = "relative";
+            childEl.domElement.style.left = "auto";
+            childEl.domElement.style.top = "auto";
+            childEl.domElement.style.transform = "none";
+            el.appendChild(childEl.domElement);
           } else if (typeof child === "string" || typeof child === "number") {
             const span = document.createElement("span");
             span.className = "sr-shape-text";
@@ -157,16 +169,22 @@ export class ShapeElement extends DOMElement {
 
     super("Shape", el, options);
 
+    this.items = childItems;
+
     this.kind = kind;
     this.variant = variant;
     this.primaryColor = options.color ?? options.borderColor ?? "#38bdf8";
-    this._isActive = !!options.active;
-    this._doubleBorder = !!options.doubleBorder;
+    if (options.active !== undefined) this.active = !!options.active;
+    if (options.doubleBorder !== undefined) this.doubleBorder = !!options.doubleBorder;
+    this.updateVisualState();
+  }
+
+  override update(): void {
     this.updateVisualState();
   }
 
   private updateVisualState(): void {
-    if (this._isActive) {
+    if (this.active) {
       this.domElement.classList.add("is-active");
       this.domElement.style.borderColor = this.primaryColor;
       this.domElement.style.boxShadow = `0 0 24px ${this.primaryColor}66, inset 0 0 12px ${this.primaryColor}33`;
@@ -175,7 +193,7 @@ export class ShapeElement extends DOMElement {
       this.domElement.style.boxShadow = "";
     }
 
-    if (this._doubleBorder) {
+    if (this.doubleBorder) {
       this.domElement.classList.add("has-double-border");
     } else {
       this.domElement.classList.remove("has-double-border");

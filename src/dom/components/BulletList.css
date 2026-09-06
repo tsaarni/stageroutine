@@ -4,8 +4,13 @@
     flex-direction: column;
     gap: 1.75rem;
 
+    &.has-focus .sr-bullet-item {
+      transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s
+        cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     &.has-focus .sr-bullet-item:not(.is-focused) {
-      opacity: 0.35;
+      opacity: 0.35 !important;
     }
   }
 
@@ -18,15 +23,18 @@
     color: var(--sr-text-muted);
     line-height: 1.55;
     letter-spacing: -0.01em;
-    transition: color 0.25s ease-out;
     border-radius: var(--sr-radius);
     user-select: none;
     -webkit-user-select: none;
 
+    &.sr-clickable {
+      cursor: pointer;
+    }
+
     &.is-focused {
       color: var(--sr-text);
       opacity: 1 !important;
-      transform: translateX(8px);
+      transform: translateX(8px) !important;
 
       & .sr-bullet-dot {
         background-color: var(--sr-primary);
@@ -42,6 +50,7 @@
     background-color: var(--sr-text-dim);
     flex-shrink: 0;
     transform: translateY(-0.25rem);
-    transition: background-color 0.25s ease-out, box-shadow 0.25s ease-out;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s
+      cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

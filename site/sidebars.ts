@@ -118,11 +118,13 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Advanced",
       items: [
-        "advanced/under-the-hood",
-        "advanced/styling-and-theming",
         "advanced/creating-components",
+        "advanced/lifecycle-and-performance",
+        "advanced/custom-decorators",
+        "advanced/styling-and-theming",
         "advanced/overlays-and-events",
         "advanced/icon-sets",
+        "advanced/under-the-hood",
       ],
     },
     {

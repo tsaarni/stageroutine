@@ -29,7 +29,7 @@ Coordinates range from `(0, 0)` (top-left) to `(100, 100)` (bottom-right).
 ```typescript
 import { Title, px } from "stageroutine";
 
-// Percentage positioning (recommended for responsive slides)
+// Percentage positioning (recommended for responsive stage layouts)
 const headline = Title("System Overview", {
   x: "center", // 50%
   y: 20,       // 20%
@@ -77,8 +77,8 @@ Anchors accept named keywords or `[x, y]` percentage tuples:
 |---|---|---|
 | `"top-left"` | Alignment relative to top-left corner *(default)* | Body text, code blocks, tables |
 | `"center"` | Alignment relative to exact center | Centered titles, shapes, badges, icons |
-| `"top"` | Top center | Slide headers |
-| `"bottom"` | Bottom center | Slide footers, bottom bars |
+| `"top"` | Top center | Stage headers |
+| `"bottom"` | Bottom center | Stage footers, bottom bars |
 | `[x, y]` | Custom percentage point on the element (e.g. `[100, 50]`) | Custom alignment |
 
 ```typescript

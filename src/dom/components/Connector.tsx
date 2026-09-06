@@ -316,8 +316,6 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   toPadding?: number;
   /** Continuous periodic pulse configuration or interval in seconds (e.g. 1.5 or { interval: 2.0, color: '#38bdf8' }). */
   pulseInterval?: number | PeriodicPulseOptions;
-  /** Vertical alignment Y coordinate for sequence diagram horizontal messages. */
-  messageY?: ReactiveProp<number | string>;
 }
 
 /**
@@ -333,6 +331,13 @@ export type ConnectorTarget =
  * @internal
  */
 export class ConnectorElement extends DOMElement {
+  static override reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement.reactiveKeys,
+    "start",
+    "end",
+    "labelPlacement",
+  ]);
+
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
   connectorStyle: "straight" | "corner" | "bezier" | "arc";
@@ -365,35 +370,13 @@ export class ConnectorElement extends DOMElement {
   labelBg: SVGRectElement | null = null;
   labelText: SVGTextElement | null = null;
 
-  private _start: ReactiveProp<number> = 0;
-  private _end: ReactiveProp<number> = 1;
-
-  get start(): ReactiveProp<number> {
-    return this._start;
-  }
-  set start(val: ReactiveProp<number>) {
-    this._start = val;
-    if (this.animInterval === null) {
-      this.update();
-    }
-  }
-
-  get end(): ReactiveProp<number> {
-    return this._end;
-  }
-  set end(val: ReactiveProp<number>) {
-    this._end = val;
-    if (this.animInterval === null) {
-      this.update();
-    }
-  }
-
-  messageY?: ReactiveProp<number | string>;
-  private animInterval: number | null = null;
+  start: ReactiveProp<number> = 0;
+  end: ReactiveProp<number> = 1;
   private periodicIntervalTimer: number | null = null;
   private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
   private activePulseDots = new Set<SVGElement>();
+  private activeAnimations = new Set<Animation>();
   constructor(from: ConnectorTarget, to: ConnectorTarget, options: ConnectorOptions = {}) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.style.position = "absolute";
@@ -487,7 +470,16 @@ export class ConnectorElement extends DOMElement {
       | "arc";
     const resolvedCss = typeof optStyle === "object" ? optStyle : undefined;
 
-    super("Connector", svg, { ...domOpts, x: 0, y: 0, style: resolvedCss });
+    super("Connector", svg, {
+      ...domOpts,
+      x: 0,
+      y: options.y ?? 0,
+      style: resolvedCss,
+      customPositioned: true,
+    });
+
+    this.exitDuration = options.exitDuration ?? 0.1;
+    this.enterDuration = options.enterDuration ?? 0;
 
     this.domElement.style.pointerEvents = "none";
     this.fromTarget = from;
@@ -505,13 +497,15 @@ export class ConnectorElement extends DOMElement {
     this.endHeadNode = endMarker?.node ?? null;
     this.startRetract = startMarker?.retract ?? 0;
     this.endRetract = endMarker?.retract ?? 0;
+    this.labelPlacement = options.labelPlacement ?? "center";
+    this.labelOffset = options.labelOffset ?? 0;
+    this.labelOffsetX = options.labelOffsetX ?? 0;
+    this.labelOffsetY = options.labelOffsetY ?? 0;
+    this.fromAnchor = options.fromAnchor ?? "auto";
+    this.toAnchor = options.toAnchor ?? "auto";
+    this.curvature = options.curvature ?? 0.2;
     this.radius = options.radius ?? 12;
     this.padding = options.padding ?? 6;
-    if (options.curvature !== undefined) this.curvature = options.curvature;
-
-    if (options.fromAnchor) this.fromAnchor = options.fromAnchor;
-    if (options.toAnchor) this.toAnchor = options.toAnchor;
-    if (options.labelPlacement !== undefined) this.labelPlacement = options.labelPlacement;
     if (options.labelOffset !== undefined) this.labelOffset = options.labelOffset;
     if (options.labelOffsetX !== undefined) this.labelOffsetX = options.labelOffsetX;
     if (options.labelOffsetY !== undefined) this.labelOffsetY = options.labelOffsetY;
@@ -524,8 +518,6 @@ export class ConnectorElement extends DOMElement {
 
     if (options.start !== undefined) this.start = options.start;
     if (options.end !== undefined) this.end = options.end;
-    if (options.messageY !== undefined) this.messageY = options.messageY;
-    if (options.y !== undefined) this.messageY = options.y;
 
     const periodic = options.pulseInterval;
     if (periodic) {
@@ -538,51 +530,51 @@ export class ConnectorElement extends DOMElement {
 
     this.update();
 
-    const startRaf = () => {
-      if (typeof window === "undefined" || this.animInterval !== null) return;
-      const tick = () => {
-        if (
-          this.domElement?.isConnected &&
-          this.domElement.style.display !== "none" &&
-          this.domElement.style.visibility !== "hidden"
-        ) {
-          this.update();
-          this.animInterval = requestAnimationFrame(tick);
-        } else {
-          this.animInterval = null;
-        }
-      };
-      this.animInterval = requestAnimationFrame(tick);
-    };
-
-    const stopRaf = () => {
-      if (this.animInterval !== null) {
-        cancelAnimationFrame(this.animInterval);
-        this.animInterval = null;
-      }
-    };
-
     this.onActivate(() => {
       this._resumePeriodicPulse();
       this._resumeTravelingDots();
-      startRaf();
+      this.update();
     });
 
     this.onDeactivate(() => {
       this._pausePeriodicPulse();
       this._pauseTravelingDots();
-      stopRaf();
+      this.cancelPulses();
     });
 
-    // Register diagnostics metrics for background loop monitoring
     const stage = getActiveStage();
-    stage.metrics.register(`connector.${this.id}`, () => ({
-      raf_loop_active: this.animInterval !== null ? 1 : 0,
-      periodic_pulse_active: this.periodicIntervalTimer !== null ? 1 : 0,
-      active_pulses_count: this.activePulseDots.size,
-      dom_pulse_packets_count: this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
-      is_mounted: Boolean(this.domElement?.isConnected),
-    }));
+    if (stage && typeof stage.on === "function") {
+      stage.on("stage:resized", () => {
+        if (this.isActive) {
+          this.update();
+        }
+      });
+    }
+
+    // Register diagnostics metrics for background loop monitoring
+    if (stage?.metrics) {
+      stage.metrics.register(`connector.${this.id}`, () => ({
+        raf_loop_active: 0,
+        periodic_pulse_active: this.periodicIntervalTimer !== null ? 1 : 0,
+        active_pulses_count: this.activePulseDots.size,
+        dom_pulse_packets_count: this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
+        is_mounted: Boolean(this.domElement?.isConnected),
+      }));
+    }
+  }
+
+  override _deactivate(): void {
+    this.cancelPulses();
+    this._pausePeriodicPulse();
+    this._pauseTravelingDots();
+    super._deactivate();
+  }
+
+  override _unmount(): void {
+    this.cancelPulses();
+    this._pausePeriodicPulse();
+    this._pauseTravelingDots();
+    super._unmount();
   }
 
   private resolveBoxOrPoint(target: ConnectorTarget): { point: Point; box?: Box } {
@@ -642,6 +634,10 @@ export class ConnectorElement extends DOMElement {
   }
 
   update(): void {
+    if (this.isMounted && !this.isActive) {
+      return;
+    }
+
     const fromResolved = this.resolveBoxOrPoint(this.fromTarget);
     const toResolved = this.resolveBoxOrPoint(this.toTarget);
 
@@ -726,8 +722,12 @@ export class ConnectorElement extends DOMElement {
       endSide = res.side;
     }
 
-    if (typeof this.messageY === "number" && this.messageY !== 0) {
-      const fixedY = this.messageY <= 100 ? (this.messageY / 100) * 1080 : this.messageY;
+    const resolvedY = resolveCoordToPx(
+      typeof this.y === "number" || typeof this.y === "string" ? this.y : 0,
+      1080,
+    );
+    if (resolvedY > 0) {
+      const fixedY = resolvedY;
       let x1 = fromResolved.point[0];
       let x2 = toResolved.point[0];
       const dir = x2 >= x1 ? 1 : -1;
@@ -829,6 +829,13 @@ export class ConnectorElement extends DOMElement {
 
     const d = buildPath(pathStartPt, pathEndPt);
     this.pathNode.setAttribute("d", d);
+    if (this.strokeWidth) {
+      this.pathNode.setAttribute("stroke-width", String(this.strokeWidth));
+    }
+    const currentStroke = (this.color as string | undefined) || this.connectorColor;
+    if (currentStroke) {
+      this.pathNode.setAttribute("stroke", currentStroke);
+    }
 
     if (this.activePulseDots.size > 0) {
       const pathStyle = `path('${d}')`;
@@ -1049,7 +1056,7 @@ export class ConnectorElement extends DOMElement {
     this.cancelPulses();
 
     const opacity = typeof this.opacity === "number" ? this.opacity : 1;
-    if (opacity <= 0.01) return;
+    if (opacity <= 0.01 || !this.isActive) return;
 
     const startVal = typeof this.start === "number" ? this.start : 0;
     const endVal = typeof this.end === "number" ? this.end : 1;
@@ -1102,11 +1109,13 @@ export class ConnectorElement extends DOMElement {
         fill: "forwards",
       },
     );
+    this.activeAnimations.add(anim);
 
     let finished = false;
     const cleanup = (triggerComplete: boolean) => {
       if (finished) return;
       finished = true;
+      this.activeAnimations.delete(anim);
       this.activePulseDots.delete(g);
       g.remove();
       if (triggerComplete) {
@@ -1122,6 +1131,15 @@ export class ConnectorElement extends DOMElement {
    * Cancels and removes all in-flight pulse packets on this connector.
    */
   cancelPulses(): this {
+    for (const anim of Array.from(this.activeAnimations)) {
+      try {
+        anim.cancel();
+      } catch {
+        // ignore
+      }
+    }
+    this.activeAnimations.clear();
+
     for (const dot of Array.from(this.activePulseDots)) {
       for (const a of dot.getAnimations()) {
         a.cancel();
@@ -1132,7 +1150,13 @@ export class ConnectorElement extends DOMElement {
 
     const stray = this.svgRoot.querySelectorAll(".sr-pulse-packet");
     for (let i = 0; i < stray.length; i++) {
-      stray[i].remove();
+      const node = stray[i] as SVGElement;
+      if (typeof node.getAnimations === "function") {
+        for (const a of node.getAnimations()) {
+          a.cancel();
+        }
+      }
+      node.remove();
     }
     return this;
   }
@@ -1260,7 +1284,7 @@ export function pulseSequence(
     }
   };
 
-  const runStep = (idx: number) => {
+  const runStep = (idx: number, retryCount = 0) => {
     if (!running) return;
 
     if (idx >= stepList.length) {
@@ -1283,11 +1307,21 @@ export function pulseSequence(
     const startVal = typeof conn.start === "number" ? conn.start : 0;
     const endVal = typeof conn.end === "number" ? conn.end : 1;
 
-    // Wait until the connector has finished drawing in (end >= 0.98) and is visible
-    if (opacity <= 0.01 || endVal < 0.98 || endVal - startVal < 0.9) {
+    // If connector is inactive or hidden, stop the sequence immediately
+    if (!conn.isActive || opacity <= 0.01) {
+      stop();
+      return;
+    }
+
+    // Wait until the connector has finished drawing in (end >= 0.95), capped at 25 retries (~1.25s)
+    if (endVal < 0.95 || endVal - startVal < 0.8) {
+      if (retryCount >= 25) {
+        stop();
+        return;
+      }
       timer = window.setTimeout(() => {
         timer = null;
-        if (running) runStep(idx);
+        if (running) runStep(idx, retryCount + 1);
       }, 50);
       return;
     }
@@ -1317,12 +1351,25 @@ export function pulseSequence(
     runStep(0);
   };
 
+  // Bind deactivation listeners on all participating connectors
+  for (const s of stepList) {
+    s.connector.onDeactivate(() => {
+      stop();
+    });
+  }
+
+  // Bind activation on first connector to start
   if (stepList.length > 0) {
     const first = stepList[0].connector;
     first.onActivate(() => {
       start();
     });
-    first.onDeactivate(() => {
+  }
+
+  // Listen to stage navigation to ensure sequence stops when scenes change
+  const stage = getActiveStage();
+  if (stage && typeof stage.on === "function") {
+    stage.on("nav:sceneChanged", () => {
       stop();
     });
   }

@@ -1,5 +1,5 @@
 /**
- * Standalone reactive Icon element for presentation slides and technical diagrams.
+ * Standalone reactive Icon element for stage presentations and technical diagrams.
  */
 
 import "./Icon.css";
@@ -122,15 +122,11 @@ export class IconElement extends DOMElement {
 
     super("Icon", container, finalOptions);
 
-    const hasPlacement = options.x !== undefined || options.y !== undefined;
-    if (!hasPlacement) {
-      container.style.position = "relative";
-      container.style.left = "auto";
-      container.style.top = "auto";
-      container.style.transform = "none";
-    }
-
     this._name = options.name ?? "";
+    this.updateSvg();
+  }
+
+  override update(): void {
     this.updateSvg();
   }
 
@@ -168,18 +164,9 @@ export function Icon(
   nameOrOptions: string | IconOptions = {},
   maybeOptions: IconOptions = {},
 ): IconElement {
-  const options =
-    typeof nameOrOptions === "string" ? { ...maybeOptions, name: nameOrOptions } : nameOrOptions;
   const stage = getActiveStage();
   const el = new IconElement(nameOrOptions, maybeOptions);
-  const hasStagePlacement =
-    options.x !== undefined ||
-    options.y !== undefined ||
-    options.id !== undefined ||
-    options.asElement === true;
-
-  if (hasStagePlacement && stage && typeof stage.registerElement === "function") {
-    return stage.registerElement(el) as IconElement;
-  }
-  return el;
+  return stage && typeof stage.registerElement === "function"
+    ? (stage.registerElement(el) as IconElement)
+    : el;
 }

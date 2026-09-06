@@ -26,7 +26,7 @@ Execution Rules:
 - Do not use "---" horizontal rules.
 - Add diagrams whenever they meaningfully help the reader understand.
 - Do not duplicate information. Link to the authoritative source within the documentation.
-- Write from the user's mental model, not framework internals. Avoid mentioning internal classes (like `DOMElement`) unless directly relevant to the user.
+- Write from the user's mental model, not framework internals. Avoid mentioning internal classes unless directly relevant to the user.
 - Document only what is unique to each element. Do not re-explain universal concepts (like decorators or transitions) on every element.
 
 

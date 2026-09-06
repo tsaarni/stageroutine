@@ -198,18 +198,37 @@ function applyPosition(
   } = {},
   index = 0,
 ): void {
+  const stage = getActiveStage();
+  if (
+    stage &&
+    typeof stage.registerElement === "function" &&
+    el &&
+    typeof el === "object" &&
+    "id" in el &&
+    "domElement" in el
+  ) {
+    const reactiveEl = el as ReactiveElementBase;
+    if (typeof stage.hasElement === "function" ? !stage.hasElement(reactiveEl.id) : true) {
+      stage.registerElement(reactiveEl);
+    }
+  }
+
   const target = el as Record<string, unknown>;
   const optWidth = Array.isArray(options.width) ? options.width[0] : options.width;
   const optHeight = Array.isArray(options.height) ? options.height[0] : options.height;
-  if (optWidth !== undefined && target.width === undefined) {
-    target.width = typeof optWidth === "number" ? `${optWidth}cqw` : optWidth;
+  if (optWidth !== undefined) {
+    if (target.width === undefined) {
+      target.width = typeof optWidth === "number" ? `${optWidth}cqw` : optWidth;
+    }
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.width) {
       dom.style.width = typeof optWidth === "number" ? `${optWidth}cqw` : String(optWidth);
     }
   }
-  if (optHeight !== undefined && target.height === undefined) {
-    target.height = typeof optHeight === "number" ? `${optHeight}cqh` : optHeight;
+  if (optHeight !== undefined) {
+    if (target.height === undefined) {
+      target.height = typeof optHeight === "number" ? `${optHeight}cqh` : optHeight;
+    }
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.height) {
       dom.style.height = typeof optHeight === "number" ? `${optHeight}cqh` : String(optHeight);
@@ -413,7 +432,12 @@ export const layout = {
 
         for (const el of colElements) {
           if ((el as Record<string, unknown>).width === undefined) {
-            (el as Record<string, unknown>).width = `${colWidthVal}cqw`;
+            const formatted = `${colWidthVal}cqw`;
+            (el as Record<string, unknown>).width = formatted;
+            const dom = (el as { domElement?: HTMLElement }).domElement;
+            if (dom && !dom.style.width) {
+              dom.style.width = formatted;
+            }
           }
         }
 
@@ -434,12 +458,15 @@ export const layout = {
       } else {
         const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
         const elWidth = (slot as Record<string, unknown>).width;
+        const isEqual = options.width === "equal";
         const m =
-          explicitW !== undefined
+          explicitW !== undefined && explicitW !== "equal"
             ? measureElement(slot, explicitW)
             : elWidth !== undefined
               ? measureElement(slot)
-              : measureElement(slot, autoColWidth);
+              : isEqual
+                ? measureElement(slot, autoColWidth)
+                : measureElement(slot);
         slotMeasurements.push({
           widthCqw: m.widthCqw,
           heightCqh: m.heightCqh,
@@ -463,20 +490,30 @@ export const layout = {
 
     const y = options.y ?? 24;
     const yNum = typeof y === "number" ? y : 24;
+    const align = options.align ?? "start";
     const maxH = Math.max(...slotMeasurements.map((sm) => sm.heightCqh));
     const rules: DOMElement[] = [];
     let itemIdx = 0;
 
     slotMeasurements.forEach((sm, index) => {
       const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
+      let slotY = yNum;
+      if (align === "center") {
+        slotY = yNum + (maxH - sm.heightCqh) / 2;
+      } else if (align === "end") {
+        slotY = yNum + (maxH - sm.heightCqh);
+      }
 
       if (sm.isColumn) {
-        let colY = yNum;
+        let colY = slotY;
         for (const { el, heightCqh } of sm.items) {
           const elWidth = (el as Record<string, unknown>).width as number | string | undefined;
           const appliedOptions = {
             ...options,
-            width: explicitWidth !== undefined ? explicitWidth : (elWidth ?? sm.widthCqw),
+            width:
+              explicitWidth !== undefined && explicitWidth !== "equal"
+                ? explicitWidth
+                : (elWidth ?? sm.widthCqw),
           };
           applyPosition(el, currentX, colY, appliedOptions, itemIdx++);
           colY += heightCqh + gapY;
@@ -486,9 +523,9 @@ export const layout = {
         if (item) {
           const appliedOptions = {
             ...options,
-            width: explicitWidth,
+            width: explicitWidth === "equal" ? autoColWidth : explicitWidth,
           };
-          applyPosition(item.el, currentX, y, appliedOptions, itemIdx++);
+          applyPosition(item.el, currentX, slotY, appliedOptions, itemIdx++);
         }
       }
 

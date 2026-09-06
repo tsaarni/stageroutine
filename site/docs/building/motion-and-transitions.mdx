@@ -66,3 +66,24 @@ import { crossfade } from "stageroutine";
 
 crossfade(oldDiagram, newDiagram, { duration: 0.6 });
 ```
+
+## Custom Easing Curves
+
+In addition to built-in presets (like `"quartOut"` and `"cubicInOut"`), you can supply custom easing functions:
+
+### Cubic Bézier
+Use `cubicBezier(p1x, p1y, p2x, p2y)` to match CSS transition curves:
+
+```typescript
+import { to, cubicBezier } from "stageroutine";
+
+title.x = to(50).ease(cubicBezier(0.25, 0.1, 0.25, 1));
+```
+
+### Custom Math Functions
+Pass any function mapping progress `t` from `0` to `1`:
+
+```typescript
+// Smooth cosine curve
+title.y = to(40).ease((t) => 0.5 * (1 - Math.cos(Math.PI * t)));
+```

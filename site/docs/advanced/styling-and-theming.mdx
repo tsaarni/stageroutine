@@ -1,15 +1,15 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 # Styling & Theming
 
-StageRoutine uses a three-tier styling model where higher levels override lower levels:
+StageRoutine uses a three-tier styling model, moving from broad presentation-wide styles to fine-grained element overrides:
 
-![Styling & Theming Inheritance](/img/style-layers.svg)
+![Styling & Theming Hierarchy](/img/style-layers.svg)
 
-1. **Element Customization**: Local overrides applied directly to an element (`color`, `style`, or container-scoped `theme`).
-2. **Stage Theme**: Presentation-wide palette set via `stage.theme(...)` across all scenes.
+1. **Stage Theming**: Presentation-wide palette set via `stage.theme(...)` across all scenes.
+2. **Element Customization**: Local overrides applied directly to an element (`color`, `style`, or container-scoped `theme`).
 3. **Built-in Defaults**: Fallback appearance used when no theme or custom style is specified.
 
 ## 1. Stage Theming
@@ -122,7 +122,7 @@ StageRoutine wraps all internal component styles inside standard W3C cascade lay
 2. **`sr-components`**: Declares component layout and visual styles.
 
 According to the W3C Cascade Layers specification, **unlayered styles always take precedence over layered styles**. This design acts as a defensive sandbox:
-- Global CSS resets on a host webpage will not break StageRoutine slides.
+- Global CSS resets on a host webpage will not break StageRoutine presentations.
 - Custom utility classes applied via `className: "my-class"` always win over default component styles without needing `!important`.
 
 ### Semantic Design Tokens
@@ -131,7 +131,7 @@ When building custom components, bind colors and metrics to `--sr-*` CSS variabl
 
 | CSS Variable | Default Meaning | Example Usage |
 | :--- | :--- | :--- |
-| `--sr-background` | Canvas backdrop color | Slide background |
+| `--sr-background` | Canvas backdrop color | Stage background |
 | `--sr-text` | Primary foreground text | Headings, hero copy |
 | `--sr-text-muted` | 65% opacity text tint | Paragraphs, descriptions |
 | `--sr-text-dim` | 40% opacity text tint | Kickers, labels, bullet dots |

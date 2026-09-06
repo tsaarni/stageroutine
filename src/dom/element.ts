@@ -4,6 +4,7 @@
 
 import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
+import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import type { ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
 import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 
@@ -37,29 +38,63 @@ export interface ElementOptions {
   className?: string;
   style?: CSSProperties | Partial<CSSStyleDeclaration>;
   theme?: Partial<ThemeConfig>;
+  /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
+  customPositioned?: boolean;
+  /** Duration in seconds for exiting scene transition. */
+  exitDuration?: number;
+  /** Duration in seconds for entering scene transition. */
+  enterDuration?: number;
+  onMount?: () => void;
+  onUnmount?: () => void;
+  onActivate?: () => void;
+  onDeactivate?: () => void;
 }
 
 /**
- * Base reactive element wrapper around an HTML/SVG DOM node on the presentation stage.
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
  * @category Core
  */
 export class DOMElement implements ReactiveElementBase {
+  static reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
+
+  get reactiveKeys(): ReadonlySet<string> {
+    return (this.constructor as typeof DOMElement).reactiveKeys;
+  }
+
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   * @internal Engine driver
+   */
+  isCustomPositioned = false;
+  /** @internal */
+  _defaultPointerEvents = "auto";
 
   x: ReactiveProp<number | string> = 0;
   y: ReactiveProp<number | string> = 0;
   width?: ReactiveProp<number | string>;
   height?: ReactiveProp<number | string>;
-  size?: ReactiveProp<number | string>;
   scale: ReactiveProp<number> = 1;
   rotation: ReactiveProp<number> = 0;
   opacity: ReactiveProp<number> = 1;
   blur: ReactiveProp<number> = 0;
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
+  exitDuration?: number;
+  enterDuration?: number;
+
+  get size(): ReactiveProp<number | string> | undefined {
+    return this.width ?? this.height;
+  }
+  set size(val: ReactiveProp<number | string> | undefined) {
+    this.width = val;
+    this.height = val;
+  }
 
   isMounted = false;
   isActive = false;
@@ -68,6 +103,12 @@ export class DOMElement implements ReactiveElementBase {
   private unmountListeners = new Set<() => void>();
   private activateListeners = new Set<() => void>();
   private deactivateListeners = new Set<() => void>();
+
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void {}
 
   constructor(
     kind: string,
@@ -102,6 +143,11 @@ export class DOMElement implements ReactiveElementBase {
     this.blur = options.blur ?? 0;
     this.brightness = options.brightness ?? 1;
     this.color = options.color;
+    this.exitDuration = options.exitDuration;
+    this.enterDuration = options.enterDuration;
+    if (options.customPositioned) {
+      this.isCustomPositioned = true;
+    }
 
     if (this.width !== undefined) {
       this.domElement.style.width =
@@ -112,25 +158,29 @@ export class DOMElement implements ReactiveElementBase {
         typeof this.height === "number" ? `${this.height}px` : String(this.height);
     }
 
-    // Apply baseline stage positioning styles (Top-Left origin standard)
-    this.domElement.style.position = "absolute";
-    this.domElement.style.left = "0px";
-    this.domElement.style.top = "0px";
     this.domElement.style.willChange = "transform, opacity, filter";
     if (!this.domElement.style.pointerEvents) {
       this.domElement.style.pointerEvents = "auto";
     }
+    this._defaultPointerEvents = this.domElement.style.pointerEvents || "auto";
     this.domElement.style.zIndex = "1";
 
-    const { transform, transformOrigin } = computeTransformAndOrigin(
-      this.x as number | string,
-      this.y as number | string,
-      this.scale as number,
-      this.rotation as number,
-      this.anchor,
-    );
-    this.domElement.style.transform = transform;
-    this.domElement.style.transformOrigin = transformOrigin;
+    if (!this.isCustomPositioned) {
+      // Apply baseline stage positioning styles (Top-Left origin standard)
+      this.domElement.style.position = "absolute";
+      this.domElement.style.left = "0px";
+      this.domElement.style.top = "0px";
+
+      const { transform, transformOrigin } = computeTransformAndOrigin(
+        this.x as number | string,
+        this.y as number | string,
+        this.scale as number,
+        this.rotation as number,
+        this.anchor,
+      );
+      this.domElement.style.transform = transform;
+      this.domElement.style.transformOrigin = transformOrigin;
+    }
     this.domElement.style.opacity = `${this.opacity}`;
 
     if (options.className) {
@@ -148,6 +198,11 @@ export class DOMElement implements ReactiveElementBase {
     if (options.style && typeof options.style === "object") {
       Object.assign(this.domElement.style, options.style);
     }
+
+    if (options.onMount) this.onMount(options.onMount);
+    if (options.onUnmount) this.onUnmount(options.onUnmount);
+    if (options.onActivate) this.onActivate(options.onActivate);
+    if (options.onDeactivate) this.onDeactivate(options.onDeactivate);
   }
 
   /**
@@ -217,6 +272,11 @@ export class DOMElement implements ReactiveElementBase {
    * Notifies registered `onActivate` listeners to start timers, RAF loops, or media streams.
    */
   _activate(): void {
+    if (typeof this.domElement?.getAnimations === "function") {
+      for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        anim.play();
+      }
+    }
     if (this.isActive) return;
     this.isActive = true;
     for (const listener of this.activateListeners) {
@@ -229,6 +289,11 @@ export class DOMElement implements ReactiveElementBase {
    * Notifies registered `onDeactivate` listeners to pause timers, RAF loops, or media streams.
    */
   _deactivate(): void {
+    if (typeof this.domElement?.getAnimations === "function") {
+      for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        anim.pause();
+      }
+    }
     if (!this.isActive) return;
     this.isActive = false;
     for (const listener of this.deactivateListeners) {

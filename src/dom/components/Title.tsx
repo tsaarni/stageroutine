@@ -1,9 +1,6 @@
-/**
- * Headline typography component supporting default title, hero, and serif editorial variants.
- */
-
 import "./Title.css";
-import type { ElementOptions } from "../element";
+import { getActiveStage } from "../../core/stage";
+import { DOMElement, type ElementOptions } from "../element";
 
 /**
  * Visual typography variant for the Title component.
@@ -29,7 +26,7 @@ export interface TitleOptions extends ElementOptions {
  * Headline typography component supporting default title, hero, and serif editorial variants.
  * @category Components
  */
-export function Title(text: string, options: TitleOptions = {}) {
+export function Title(text: string, options: TitleOptions = {}): DOMElement {
   const variant = options.variant ?? "title";
 
   let baseClass = "sr-title";
@@ -46,10 +43,14 @@ export function Title(text: string, options: TitleOptions = {}) {
     ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
   };
 
-  return (
-    <div className={classes} style={mergedStyle} {...restOptions}>
+  const div = (
+    <div className={classes} style={mergedStyle}>
       {options.kicker && <span className="sr-kicker">{options.kicker}</span>}
       {text}
     </div>
   );
+
+  const stage = getActiveStage();
+  const el = new DOMElement("Title", div, restOptions);
+  return stage.registerElement(el);
 }

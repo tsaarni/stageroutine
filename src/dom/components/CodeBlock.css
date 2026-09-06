@@ -31,9 +31,14 @@
     padding: 0 0.6rem;
     margin: 0 -0.6rem;
     border-radius: 0;
-    transition: background-color 0.15s ease-out;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s
+      cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     -webkit-user-select: none;
+
+    &.sr-clickable {
+      cursor: pointer;
+    }
 
     &.is-focused {
       background-color: color-mix(in srgb, var(--sr-text) 8%, transparent);

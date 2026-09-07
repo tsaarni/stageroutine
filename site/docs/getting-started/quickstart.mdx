@@ -52,7 +52,10 @@ yarn dev
   </TabItem>
 </Tabs>
 
-The presentation opens at `http://localhost:5173/` with live hot-reloading as you edit `src/main.ts`.
+The dev server provides two views:
+
+- **Presentation**: `http://localhost:5173/` — live presentation with hot-reloading as you edit `src/main.ts`.
+- **Presenter Console**: `http://localhost:5173/presenter.html` — dual-screen console with speaker notes, upcoming step previews, and a live timer.
 
 ## Controls
 
@@ -64,7 +67,7 @@ The presentation opens at `http://localhost:5173/` with live hot-reloading as yo
 | `Home` / `End` | First / Last step |
 | `L` | Toggle laser pointer |
 
-## Standalone Presentation
+## Building Static Files
 
 Build static files that run without a dev server:
 
@@ -105,4 +108,4 @@ The output is written to `dist/`, ready to upload to any web host or static serv
 
 - [Concepts](./concepts) — Core mental model and differences from slide decks
 - [Scenes & Steps](../building/scenes-and-steps) — Step sequencing and transition triggers
-- [Layout & Positioning](../building/layout-and-positioning) — Responsive canvas coordinates and stacks
+- [Layout](../building/layout) — Responsive canvas coordinates and stacks

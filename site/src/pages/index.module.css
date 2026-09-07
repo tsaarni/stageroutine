@@ -165,3 +165,116 @@
   transform: translateY(-2px);
   text-decoration: none !important;
 }
+
+.demoButton {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  border-top-color: rgba(255, 255, 255, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 0 12px rgba(56, 189, 248, 0.12),
+    0 0 14px -1px rgba(56, 189, 248, 0.42),
+    0 0 32px -4px rgba(56, 189, 248, 0.22),
+    0 0 60px -8px rgba(167, 139, 250, 0.14) !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.demoButton:hover {
+  border-color: rgba(56, 189, 248, 0.75) !important;
+  border-top-color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 16px rgba(56, 189, 248, 0.25),
+    0 0 20px 1px rgba(56, 189, 248, 0.65),
+    0 0 44px 0 rgba(56, 189, 248, 0.35),
+    0 0 75px 2px rgba(167, 139, 250, 0.25) !important;
+  text-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Glass surface specular reflection sweep */
+.demoButton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 75%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.18) 48%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(56, 189, 248, 0.2) 55%,
+    transparent 75%
+  );
+  transform: skewX(-20deg);
+  animation: srLightReflection 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* Top rim specular highlight glint that travels along the curved bevel */
+.demoButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60px;
+  height: 2px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.9) 35%,
+    rgba(56, 189, 248, 0.75) 65%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8));
+  animation: srLightReflection 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* Mouse over immediately triggers a fast reflection sweep */
+.demoButton:hover::after,
+.demoButton:hover::before {
+  animation: srLightReflectionHover 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+@keyframes srLightReflection {
+  0%,
+  25% {
+    left: -120%;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  55% {
+    left: 140%;
+    opacity: 1;
+  }
+  60%,
+  100% {
+    left: 140%;
+    opacity: 0;
+  }
+}
+
+@keyframes srLightReflectionHover {
+  0% {
+    left: -120%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 140%;
+    opacity: 0;
+  }
+}

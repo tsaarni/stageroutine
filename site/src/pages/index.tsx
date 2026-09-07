@@ -15,13 +15,20 @@ function HomepageHeader() {
       <div className={styles.heroContent}>
         <h1 className={styles.heroTitle}>{siteConfig.title}</h1>
         <p className={styles.heroSubtitle}>
-          <span>Reactive, step-driven presentations and technical motion graphics.</span>
+          <span>Code-driven presentations built for the stage.</span>
         </p>
         <div className={styles.buttons}>
-          <Link className={styles.primaryButton} to="/docs/getting-started/quickstart">
-            Get Started
+          <Link className={styles.secondaryButton} to="/docs/intro">
+            Introduction
           </Link>
-          <a className={styles.secondaryButton} href={demoUrl} target="_top">
+          <Link className={styles.secondaryButton} to="/docs/getting-started/quickstart">
+            Quick Start
+          </Link>
+          <a
+            className={`${styles.secondaryButton} ${styles.demoButton}`}
+            href={demoUrl}
+            target="_top"
+          >
             Live Demo
           </a>
           <Link className={styles.secondaryButton} to="/docs/api/">

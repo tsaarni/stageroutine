@@ -61,7 +61,7 @@ const editorialLead = Title("Program state. Watch motion.", {
   .decorate(gradient())
   .decorate(glow());
 
-const heroBody = Text("A framework for programmers to build seamless, animated presentations.", {
+const heroBody = Text("Code-driven presentations built for the stage.", {
   x: "center",
   y: 65,
   width: "65cqw",

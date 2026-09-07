@@ -46,7 +46,7 @@ function stageRoutineDemoPlugin(): Plugin {
 
 const config: Config = {
   title: "StageRoutine",
-  tagline: "Stage-based animation library",
+  tagline: "Code-driven presentations built for the stage",
   favicon: "img/favicon.ico",
 
   url: "https://tsaarni.github.io",

@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Motion & Transitions
+# Animation
 
 StageRoutine makes animations declarative. You define target values with `to()` and link transitions with milestones.
 
@@ -20,7 +20,7 @@ title.opacity = to(1).duration(0.5);
 - **Spatial**: `x`, `y`, `scale`, `rotation`, `width`, `height`
 - **Visual**: `opacity`, `blur`, `brightness`, `color`
 
-## Milestone Chaining
+## Milestone Synchronization
 
 Synchronize animations relative to other elements without doing millisecond math:
 
@@ -42,7 +42,7 @@ kicker.opacity = to(1).when(title, "end");
 - `"halfway"` (or `0.5`): Starts when target reaches 50% progress
 - `"end"` (or `"complete"`): Starts when target finishes
 
-## Staggering Collections
+## Staggered Animations
 
 Cascade property changes across an array of elements with `stagger()`:
 

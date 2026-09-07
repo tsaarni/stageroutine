@@ -2,11 +2,11 @@
 sidebar_position: 2
 ---
 
-# Lifecycle & Performance
+# Element Lifecycle
 
 StageRoutine manages element lifecycles to keep presentations responsive and preserve laptop battery during talks.
 
-## Element Lifecycle
+## Lifecycle Events
 
 Every element, decorator, and background follows four lifecycle events:
 
@@ -24,7 +24,7 @@ Presentations spend most of their time at rest between steps while the speaker t
 ### Automatic Animation Pausing
 CSS keyframe animations (such as pulsing borders or rotating icons) pause automatically when an element leaves the screen, and resume when it reappears. You do not need to write cleanup code for CSS animations.
 
-### Managing Custom Timers and Streams
+### Managing Timers and Streams
 The engine cannot automatically stop custom JavaScript intervals, video playback, or webcam feeds. Use `onActivate` and `onDeactivate` to start and pause them:
 
 ```tsx

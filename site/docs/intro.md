@@ -4,43 +4,46 @@ sidebar_position: 1
 
 # Introduction
 
-Welcome to **StageRoutine** — a stage-based presentation and technical motion graphics framework.
+Welcome to **StageRoutine** — code-driven presentations built for the stage.
 
-StageRoutine lets you build declarative, step-driven presentations and graphics where elements animate smoothly across continuous scenes instead of jumping through discrete slide pages.
+StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.
 
-## Why StageRoutine?
+## Key Features
 
-- **Continuous Canvas**: Elements persist and morph between scenes instead of abruptly disappearing.
-- **Declarative Motion**: Animate spatial and visual properties with `to()` and synchronize transitions with `.when()` without manual millisecond math.
-- **Presenter Ready**: Built-in presenter console with dual-screen sync, speaker notes, live timer, and screen recording.
+- **Scene Transitions**: Elements shared between scenes move smoothly to their new positions, while unused elements exit cleanly.
+- **Step-Driven Playback**: Group animations into click steps. You can step forward or backward cleanly.
+- **Automatic Layout**: Arrange elements into rows, columns, and grids without manual positioning.
+- **Ready-to-Use Components**: Text, syntax-highlighted code, terminal windows, and architecture diagrams.
+- **Extensible**: Build custom components, visual decorators, and icon sets.
+- **Presenter Tools**: Dual-screen presenter view with speaker notes, live timer, and laser pointer.
 
-## Quick Example
+## How It Works
+
+Create elements once, assign them to scenes, and update properties between presenter pauses:
 
 ```typescript
-import { Stage, Title, Kicker, to, AsciiFluid, vignette } from "stageroutine";
+import { Stage, Title, CodeBlock, to } from "stageroutine";
 
-// 1. Initialize stage
-const stage = new Stage().background(AsciiFluid().decorate(vignette()));
+const stage = new Stage();
+const title = Title("Architecture", { x: "center", y: "center" });
+const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 60, opacity: 0 });
 
-// 2. Create elements
-const kicker = Kicker("01 / ARCHITECTURE", { x: "center", y: 35, opacity: 0 });
-const title = Title("StageRoutine", { variant: "hero", x: "center", y: 45, opacity: 0 });
-
-// 3. Declare scene & animate
-stage.scene("Intro").with(kicker, title);
-kicker.opacity = to(1);
-title.opacity = to(1).when(kicker, "halfway");
-
-// 4. Pause for presenter click
+// Scene 1: Title in the center
+stage.scene("Intro").with(title);
 stage.pause();
 
-// 5. Mount to DOM
+// Scene 2: Title moves up, code appears
+stage.scene("Details").with(title, code);
+title.y = to(15);
+code.opacity = to(1);
+stage.pause();
+
 stage.mount("#stage");
 ```
 
-## How to Learn
+## Documentation Guide
 
 1. **[Quick Start](./getting-started/quickstart)** — Install and run your first presentation.
-2. **[Basic Concepts](./getting-started/concepts)** — Understand the 4 main parts: Stage, Scene, Step, and Element.
-3. **[Building Presentations](./building/canvas-and-coordinates)** — Step-by-step guides for coordinates, scenes, motion, layouts, and visuals.
-4. **[Under the Hood](./advanced/under-the-hood)** — How the internal engine, Proxies, snapshots, and animation loop work.
+2. **[Concepts](./getting-started/concepts)** — Learn the 4 core parts: Stage, Scene, Step, and Element.
+3. **[Building Presentations](./building/coordinates)** — Guides for coordinates, scenes, animation, layout, and visual effects.
+4. **[Under the Hood](./advanced/under-the-hood)** — How the internal engine, snapshots, and animation loop work.

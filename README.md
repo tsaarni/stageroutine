@@ -5,33 +5,46 @@
 [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://tsaarni.github.io/stageroutine/demo/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tsaarni/stageroutine/blob/main/LICENSE)
 
-StageRoutine is a presentation framework in TypeScript and TSX for building continuous presentations, where elements animate smoothly on screen as you advance without discrete slide boundaries.
+**Code-driven presentations built for the stage.**
+
+StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.
 
 [Documentation](https://tsaarni.github.io/stageroutine/) &middot; [Live Demo](https://tsaarni.github.io/stageroutine/demo/)
 
 ## Example
 
 ```typescript
-import { Stage, Title, Kicker, to, vignette } from "stageroutine";
-import { AsciiFluid } from "stageroutine/backgrounds";
+import { Stage, Title, CodeBlock, to } from "stageroutine";
 
-// 1. Initialize stage with dynamic background
-const stage = new Stage().background(AsciiFluid().decorate(vignette()));
+const stage = new Stage();
+const title = Title("Architecture", { x: "center", y: "center" });
+const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 60, opacity: 0 });
 
-// 2. Create reactive elements
-const kicker = Kicker("01 / ARCHITECTURE", { x: "center", y: 35, opacity: 0 });
-const title = Title("StageRoutine", { variant: "hero", x: "center", y: 45, opacity: 0 });
-
-// 3. Declare scene & animate
-stage.scene("Intro").with(kicker, title);
-kicker.opacity = to(1);
-title.opacity = to(1).when(kicker, "halfway");
-
-// 4. Pause for presenter click
+// Scene 1: Title in the center
+stage.scene("Intro").with(title);
 stage.pause();
+
+// Scene 2: Title moves up, code appears
+stage.scene("Details").with(title, code);
+title.y = to(15);
+code.opacity = to(1);
+stage.pause();
+
+stage.mount("#stage");
 ```
 
 ## Quick Start
+
+Create a new presentation using the starter template:
+
+```bash
+pnpm dlx giget gh:tsaarni/stageroutine/starter my-presentation
+cd my-presentation
+pnpm install
+pnpm dev
+```
+
+Or run the repository demo locally:
 
 ```bash
 git clone https://github.com/tsaarni/stageroutine.git
@@ -40,10 +53,12 @@ pnpm install
 pnpm dev
 ```
 
-- **Main presentation**: `http://localhost:5173/`
+The dev server provides two views:
+
+- **Presentation**: `http://localhost:5173/`
 - **Presenter console**: `http://localhost:5173/presenter.html`
 
-See [demo/main.ts](demo/main.ts) for a full presentation example.
+See [demo/main.ts](demo/main.ts) for the demo source code.
 
 ## Contributing
 

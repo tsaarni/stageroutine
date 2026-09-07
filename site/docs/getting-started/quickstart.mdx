@@ -1,0 +1,108 @@
+---
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Quick Start
+
+Download the starter template and launch the dev server:
+
+<Tabs groupId="package-manager">
+  <TabItem value="pnpm" label="pnpm" default>
+
+```bash
+pnpm dlx giget gh:tsaarni/stageroutine/starter my-presentation
+cd my-presentation
+pnpm install
+pnpm dev
+```
+
+  </TabItem>
+  <TabItem value="npm" label="npm">
+
+```bash
+npx giget gh:tsaarni/stageroutine/starter my-presentation
+cd my-presentation
+npm install
+npm run dev
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```bash
+bunx giget gh:tsaarni/stageroutine/starter my-presentation
+cd my-presentation
+bun install
+bun dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn dlx giget gh:tsaarni/stageroutine/starter my-presentation
+cd my-presentation
+yarn install
+yarn dev
+```
+
+  </TabItem>
+</Tabs>
+
+The presentation opens at `http://localhost:5173/` with live hot-reloading as you edit `src/main.ts`.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| `→` / `Space` / `PageDown` | Next step |
+| `←` / `PageUp` | Previous step |
+| `Shift+→` / `Shift+←` | Next / Previous scene |
+| `Home` / `End` | First / Last step |
+| `L` | Toggle laser pointer |
+
+## Standalone Presentation
+
+Build static files that run without a dev server:
+
+<Tabs groupId="package-manager">
+  <TabItem value="pnpm" label="pnpm" default>
+
+```bash
+pnpm build
+```
+
+  </TabItem>
+  <TabItem value="npm" label="npm">
+
+```bash
+npm run build
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```bash
+bun run build
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn build
+```
+
+  </TabItem>
+</Tabs>
+
+The output is written to `dist/`, ready to upload to any web host or static server.
+
+## Next Steps
+
+- [Concepts](./concepts) — Core mental model and differences from slide decks
+- [Scenes & Steps](../building/scenes-and-steps) — Step sequencing and transition triggers
+- [Layout & Positioning](../building/layout-and-positioning) — Responsive canvas coordinates and stacks

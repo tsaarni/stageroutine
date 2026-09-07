@@ -8,14 +8,14 @@ A StageRoutine presentation is built from four main parts:
 
 ![StageRoutine Concepts](/img/mental-model.svg)
 
-## 1. Stage
+## Stage
 The **Stage** is the presentation canvas and engine. It manages the `1920x1080` screen, hosts the background, and runs animations.
 
 ```typescript
 const stage = new Stage();
 ```
 
-## 2. Scenes
+## Scenes
 A **Scene** is a visual chapter of your presentation. You specify which elements are visible using `.with(...)`:
 
 ```typescript
@@ -24,7 +24,7 @@ stage.scene("Architecture").with(title, codeBlock);
 
 When changing scenes, elements shared between them smoothly animate to their new positions instead of disappearing.
 
-## 3. Steps
+## Steps
 A **Step** is a pause point. Calling `stage.pause()` groups all previous property changes into a click step:
 
 ```typescript
@@ -32,7 +32,7 @@ title.opacity = to(1);
 stage.pause(); // Pauses playback until you press Next
 ```
 
-## 4. Elements
+## Elements
 An **Element** is an animated component on screen (`Title`, `CodeBlock`, `Table`, etc.). Each element wraps a real DOM node with reactive properties (`x`, `y`, `scale`, `opacity`).
 
 ```typescript

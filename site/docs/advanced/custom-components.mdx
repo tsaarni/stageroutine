@@ -57,9 +57,9 @@ export function Card({ title, content, ...options }) {
 
 ## Component Styling Best Practices
 
-When creating custom components, follow these 4 standards for maintainability and seamless theming:
+When creating custom components, follow these standards for maintainability and seamless theming:
 
-### 1. Colocate Component Styles
+### Colocate Component Styles
 Keep CSS in a companion file right next to your component and import it directly:
 
 ```
@@ -74,7 +74,7 @@ import "./Badge.css";
 import { DOMElement, type ElementOptions } from "stageroutine";
 ```
 
-### 2. Wrap Styles in `@layer sr-components`
+### Wrap Styles in `@layer sr-components`
 Always declare styles inside the `sr-components` cascade layer so users can override your component's CSS without needing `!important`:
 
 ```css
@@ -91,10 +91,10 @@ Always declare styles inside the `sr-components` cascade layer so users can over
 }
 ```
 
-### 3. Use Semantic Tokens
+### Use Semantic Tokens
 Always bind colors and geometry to `--sr-*` CSS variables instead of hardcoded hex values. This ensures your component automatically adapts when a user changes themes or calls `stage.theme(...)`.
 
-### 4. Extend `ElementOptions`
+### Extend `ElementOptions`
 When your options interface extends `ElementOptions`, your component automatically inherits:
 - **`style`**: Typed inline CSS overrides via `csstype`.
 - **`theme`**: Localized token overrides (`{ surface: "...", primary: "..." }`).

@@ -6,7 +6,7 @@ sidebar_position: 1
 
 This guide explains what happens behind the scenes when you build and run a StageRoutine presentation: how the DOM is constructed, how reactive property mutations are captured, and how the animation loop renders frames.
 
-## 1. The Two-Phase Execution Model
+## Two-Phase Execution Model
 
 StageRoutine runs in two separate phases:
 
@@ -15,7 +15,7 @@ StageRoutine runs in two separate phases:
 1. **Recording Phase**: When the page loads, your TypeScript code runs once from top to bottom. It creates DOM elements and records property changes into step queues.
 2. **Playback Phase**: When you call `stage.mount()`, the stage displays elements in a virtual viewport and starts the interactive presentation engine.
 
-## 2. Virtual Viewport
+## Virtual Viewport
 
 StageRoutine renders all content inside a fixed virtual viewport (by default `1920x1080` pixels).
 
@@ -44,7 +44,7 @@ node.style.transformOrigin = "50% 50%";
 node.style.transform = "translate(50cqw, 40cqh) scale(1) rotate(0deg)";
 ```
 
-## 3. Reactive Proxies
+## Reactive Proxies
 
 To animate properties easily without boilerplate, elements are wrapped in a standard JavaScript `Proxy`.
 
@@ -68,7 +68,7 @@ host.recordMutation(
 );
 ```
 
-## 4. Steps vs. Snapshots
+## Steps vs. Snapshots
 
 Whenever you call `stage.pause()`, StageRoutine commits the recorded transitions and takes a state snapshot:
 
@@ -94,7 +94,7 @@ this.snapshots.push({
 - **Moving Forward (`nextStep`)**: The stage animates transitions smoothly over time using the frame loop.
 - **Moving Backward or Scrubbing (`prevStep`, `gotoStep`)**: The stage instantly restores exact property values from the snapshot. This keeps navigation fast and free of accumulated floating-point errors.
 
-## 5. The Animation Loop
+## Animation Loop
 
 Animations are driven by `requestAnimationFrame`. 
 

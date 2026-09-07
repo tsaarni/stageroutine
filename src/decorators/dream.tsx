@@ -24,6 +24,37 @@ export interface DreamOptions {
 }
 
 let filterCounter = 0;
+let isShaderWarmedUp = false;
+
+/**
+ * Renders an offscreen canvas pixel during idle time.
+ * Compiles GPU filter shaders in advance to avoid first-frame animation stutter.
+ */
+function warmUpDreamShader(filterId: string): void {
+  if (isShaderWarmedUp || typeof document === "undefined") return;
+  isShaderWarmedUp = true;
+
+  const run = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 4;
+      canvas.height = 4;
+      const ctx = canvas.getContext("2d");
+      if (ctx && "filter" in ctx) {
+        ctx.filter = `blur(4px) url(#${filterId})`;
+        ctx.fillRect(0, 0, 4, 4);
+      }
+    } catch {
+      // Non-blocking fallback if canvas filter is restricted
+    }
+  };
+
+  if (typeof requestIdleCallback !== "undefined") {
+    requestIdleCallback(run);
+  } else {
+    setTimeout(run, 50);
+  }
+}
 
 /**
  * Decorates an element with an optical liquid dream entrance.
@@ -135,6 +166,7 @@ export function dream(options: DreamOptions = {}): ElementDecorator {
     );
 
     document.body.appendChild(svg);
+    warmUpDreamShader(filterId);
 
     const reset = () => {
       el.style.filter = "";

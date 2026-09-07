@@ -11,7 +11,7 @@ import type { PluginOption } from "vite";
  * Options for configuring the StageRoutine Vite plugin.
  */
 export interface StageRoutinePluginOptions {
-  /** Base public path for production builds (e.g. "/my-slides/"). Defaults to process.env.BASE_URL or "/". */
+  /** Base public path for production builds (e.g. "/my-presentation/"). Defaults to process.env.BASE_URL or "/". */
   base?: string;
   /** Output directory for production build. Defaults to "dist". */
   outDir?: string;

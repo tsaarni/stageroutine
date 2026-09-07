@@ -18,6 +18,14 @@
 @layer sr-base, sr-components;
 
 @layer sr-base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--sr-background);
+  }
+
   :root {
     user-select: none;
     -webkit-user-select: none;

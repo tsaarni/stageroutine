@@ -18,6 +18,9 @@
  * fluent builder classes, and engine internals are intentionally not public.
  */
 
+// Global stylesheet (design tokens, cascade layers, component styling, and body resets)
+import "./dom/style.css";
+
 // Core runtime
 export { Stage, logger } from "./core/index";
 export type { LogLevel } from "./core/logger";

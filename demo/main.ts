@@ -1,5 +1,5 @@
 /**
- * Demo presentation script showing how to build animated slides with StageRoutine.
+ * Demo presentation script showing how to build animated presentations with StageRoutine.
  */
 
 import {
@@ -229,7 +229,7 @@ const showcaseText = Text(
   "Minimalist, typography-first building blocks styled for high-contrast dark canvases.",
 );
 const showcaseCard = Card(
-  Text("A pure surface container for grouping slide elements with frosted glass styling."),
+  Text("A pure surface container for grouping presentation elements with frosted glass styling."),
 );
 const showcaseList = BulletList([
   "Direct-to-DOM zero Virtual DOM architecture",

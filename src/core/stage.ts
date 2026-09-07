@@ -1004,7 +1004,6 @@ export class Stage {
         }
       }
       this._applyStyles(el, props);
-      el.update?.();
     }
 
     // Apply snapshot theme if present
@@ -1075,13 +1074,14 @@ export class Stage {
               this._applyStyles(el, { opacity: 0 });
               continue;
             }
+            const exitDelaySec = el.exitDelay ?? 0;
             stepTransitions.push({
               elementId: id,
               property: "opacity",
               from: currentOpacity,
               to: 0,
               durationMs: exitDurationSec * 1000,
-              delayMs: 0,
+              delayMs: exitDelaySec * 1000,
               curve: builtinEasings.quartOut,
             });
           }
@@ -1100,6 +1100,7 @@ export class Stage {
           if (enterDurationSec <= 0) {
             continue;
           }
+          const enterDelaySec = el.enterDelay ?? 0;
           const targetProps =
             this.snapshots[stepIdx]?.properties.get(id) || this.propertyState.get(id) || {};
           const targetOpacity = (targetProps.opacity as number) ?? 1;
@@ -1111,7 +1112,7 @@ export class Stage {
               from: 0,
               to: targetOpacity,
               durationMs: enterDurationSec * 1000,
-              delayMs: 0,
+              delayMs: enterDelaySec * 1000,
               curve: builtinEasings.quartOut,
             });
           }
@@ -1217,12 +1218,18 @@ export class Stage {
         this.currentFps = 1000 / frameDelta;
       }
 
+      const elementProgress = new Map<string, number>();
+
       // Update active transitions snapshot for on-demand metric queries
       this.activeTransitionsSnapshot = scheduledTransitions.map((t) => {
         let progress = 0;
         if (elapsed <= t.startOffsetMs) progress = 0;
         else if (elapsed >= t.endOffsetMs) progress = 1;
         else progress = (elapsed - t.startOffsetMs) / t.durationMs;
+
+        if (!elementProgress.has(t.elementId) || t.property === "opacity") {
+          elementProgress.set(t.elementId, progress);
+        }
 
         return {
           elementId: t.elementId,
@@ -1253,14 +1260,20 @@ export class Stage {
         // Update local property state
         this.setCurrentPropertyValue(t.elementId, t.property, currentVal);
 
-        // Render to DOM
+        // Render to DOM without dispatching intermediate updates per property
         const props = this.propertyState.get(t.elementId) || {};
-        this._applyStyles(el, props, step.activeElementIds.has(t.elementId));
+        this._applyStyles(el, props, step.activeElementIds.has(t.elementId), false);
       }
 
-      // Update active elements so reactive layouts and paths follow moving elements during transition
-      for (const id of step.activeElementIds) {
-        this.elementRegistry.get(id)?.update?.();
+      // Update participating elements once per frame after all properties have resolved
+      for (const id of participatingIds) {
+        const el = this.elementRegistry.get(id);
+        const progress = elementProgress.get(id) ?? (step.activeElementIds.has(id) ? 1 : 0);
+        if (typeof el?._dispatchUpdate === "function") {
+          el._dispatchUpdate(progress);
+        } else {
+          el?.update?.();
+        }
       }
 
       if (elapsed < maxDuration) {
@@ -1292,6 +1305,7 @@ export class Stage {
     element: ReactiveElementBase,
     props: Record<string, unknown>,
     triggerLifecycle = true,
+    dispatchUpdate = true,
   ): void {
     const node = element.domElement;
     if (!node) return;
@@ -1325,6 +1339,11 @@ export class Stage {
       (node instanceof SVGElement || node.tagName.toLowerCase() === "svg" ? "none" : "auto");
     node.style.pointerEvents = opacity === 0 ? "none" : defaultPointerEvents;
     node.style.opacity = `${opacity}`;
+    try {
+      (element as unknown as { opacity: number }).opacity = opacity;
+    } catch {
+      // ignore read-only properties
+    }
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
     if (triggerLifecycle) {
       if (opacity > 0) {
@@ -1380,8 +1399,12 @@ export class Stage {
       }
     }
 
-    if (typeof (element as { update?: () => void }).update === "function") {
-      (element as { update: () => void }).update();
+    if (dispatchUpdate) {
+      if (typeof element._dispatchUpdate === "function") {
+        element._dispatchUpdate(1);
+      } else if (typeof element.update === "function") {
+        element.update();
+      }
     }
   }
 

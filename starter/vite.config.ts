@@ -8,4 +8,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["stageroutine"],
   },
+  build: {
+    target: "es2022",
+  },
 });

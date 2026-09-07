@@ -141,7 +141,14 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       } catch {
         // ignore read-only
       }
-      (target as { update?: () => void }).update?.();
+      if (
+        typeof (target as { _dispatchUpdate?: (progress?: number) => void })._dispatchUpdate ===
+        "function"
+      ) {
+        (target as { _dispatchUpdate: (progress?: number) => void })._dispatchUpdate(1);
+      } else {
+        (target as { update?: () => void }).update?.();
+      }
       return true;
     },
   });

@@ -430,13 +430,20 @@ export interface ReactiveElementBase {
   onUnmount?(fn: () => void): () => void;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration?: number;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay?: number;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration?: number;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay?: number;
   onActivate?(fn: () => void): () => void;
   onDeactivate?(fn: () => void): () => void;
+  onUpdate?(fn: (progress: number) => void): () => void;
   onClick?(handler: (event: MouseEvent) => void): this;
   /** Recomputes layout or path coordinates on visual changes. */
   update?(): void;
+  /** @internal Engine driver */
+  _dispatchUpdate?(progress?: number): void;
   /** @internal Engine driver */
   _mount?(parent: HTMLElement): void;
   /** @internal Engine driver */

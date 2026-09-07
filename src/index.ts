@@ -20,6 +20,24 @@
 
 // Global stylesheet (design tokens, cascade layers, component styling, and body resets)
 import "./dom/style.css";
+// Browsers load web fonts lazily by default.
+// Layout helpers measure text dimensions immediately when presentation code runs.
+// If fonts are not ready, measurements use fallback font sizes, which causes text to overlap elements later.
+// We eagerly load and wait for all declared fonts here so layout measurements are always accurate.
+if (typeof document !== "undefined" && document.fonts) {
+  const descriptors = new Set<string>();
+  for (const face of document.fonts) {
+    if (face.family) {
+      descriptors.add(`${face.style} ${face.weight} 1rem "${face.family}"`);
+    }
+  }
+  const loads: Promise<unknown>[] = [];
+  for (const desc of descriptors) {
+    loads.push(document.fonts.load(desc));
+  }
+  await Promise.allSettled(loads);
+  await document.fonts.ready;
+}
 
 // Core runtime
 export { Stage, logger } from "./core/index";
@@ -158,6 +176,7 @@ export {
   typewriter,
   rule,
   bracket,
+  dream,
 } from "./decorators/index";
 export type {
   GradientOptions,
@@ -170,6 +189,7 @@ export type {
   RuleOptions,
   BracketOptions,
   BracketStyle,
+  DreamOptions,
 } from "./decorators/index";
 
 // Backgrounds

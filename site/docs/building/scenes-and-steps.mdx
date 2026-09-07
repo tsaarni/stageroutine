@@ -40,6 +40,8 @@ When you switch from Scene 1 to Scene 2:
 
 Because elements are persistent JavaScript objects, you don't need duplicate markup or transition hacks between slides.
 
+Entering and exiting elements automatically animate `opacity` using `enterDuration` and `exitDuration` (default `0.6s`, easing `quartOut`) with `enterDelay` and `exitDelay` (default `0s`), unless you set the `opacity` property explicitly.
+
 ## Step Pauses
 
 Within any scene, you can have multiple sequential reveals or animations. Calling `stage.pause()` creates a click pause for the presenter:

@@ -42,8 +42,12 @@ export interface ElementOptions {
   customPositioned?: boolean;
   /** Duration in seconds for exiting scene transition. */
   exitDuration?: number;
+  /** Delay in seconds before exiting scene transition begins. */
+  exitDelay?: number;
   /** Duration in seconds for entering scene transition. */
   enterDuration?: number;
+  /** Delay in seconds before entering scene transition begins. */
+  enterDelay?: number;
   onMount?: () => void;
   onUnmount?: () => void;
   onActivate?: () => void;
@@ -86,7 +90,9 @@ export class DOMElement implements ReactiveElementBase {
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
   exitDuration?: number;
+  exitDelay?: number;
   enterDuration?: number;
+  enterDelay?: number;
 
   get size(): ReactiveProp<number | string> | undefined {
     return this.width ?? this.height;
@@ -103,12 +109,23 @@ export class DOMElement implements ReactiveElementBase {
   private unmountListeners = new Set<() => void>();
   private activateListeners = new Set<() => void>();
   private deactivateListeners = new Set<() => void>();
+  private updateListeners = new Set<(progress: number) => void>();
 
   /**
    * Component update hook invoked whenever reactive properties are mutated during transitions.
    * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
    */
   update(): void {}
+
+  /**
+   * @internal Dispatches update to the component and all registered onUpdate listeners.
+   */
+  _dispatchUpdate(progress = 1): void {
+    this.update();
+    for (const listener of this.updateListeners) {
+      listener(progress);
+    }
+  }
 
   constructor(
     kind: string,
@@ -144,7 +161,9 @@ export class DOMElement implements ReactiveElementBase {
     this.brightness = options.brightness ?? 1;
     this.color = options.color;
     this.exitDuration = options.exitDuration;
+    this.exitDelay = options.exitDelay;
     this.enterDuration = options.enterDuration;
+    this.enterDelay = options.enterDelay;
     if (options.customPositioned) {
       this.isCustomPositioned = true;
     }
@@ -235,6 +254,15 @@ export class DOMElement implements ReactiveElementBase {
   onDeactivate(fn: () => void): () => void {
     this.deactivateListeners.add(fn);
     return () => this.deactivateListeners.delete(fn);
+  }
+
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void {
+    this.updateListeners.add(fn);
+    return () => this.updateListeners.delete(fn);
   }
 
   /**

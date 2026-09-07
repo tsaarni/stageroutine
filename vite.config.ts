@@ -7,4 +7,7 @@ import { stageRoutinePlugin } from "./src/vite-plugin";
 
 export default defineConfig({
   plugins: [stageRoutinePlugin()],
+  build: {
+    target: "es2022",
+  },
 });

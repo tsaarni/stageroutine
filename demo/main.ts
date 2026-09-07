@@ -21,6 +21,7 @@ import {
   Title,
   bracket,
   crossfade,
+  dream,
   glow,
   gradient,
   layout,
@@ -1042,6 +1043,64 @@ stage.pause();
 
 // Step 2: In-Place Crossfade Animation
 crossfade(legacyCard, reactiveCard);
+stage.pause();
+
+// Scene: Dream Appearance
+
+const dreamKicker = Kicker("11 / Decorators");
+const dreamHeading = Title("Dream Appearance", {
+  variant: "serif",
+});
+const dreamLead = Text(
+  "Custom decorator creating a dream-like entrance with liquid SVG displacement ripples that settle into focus.",
+);
+
+const dreamCard1 = Card(
+  Text("Silky water ripple with optical defocus settling into sharp focus."),
+).decorate(dream({ duration: 1.4, intensity: 56, blur: 6, float: 50 }));
+
+const dreamCard2 = Card(
+  Text("Staggered prismatic dispersion refracting light across fluid ripples."),
+).decorate(
+  dream({
+    duration: 1.5,
+    delay: 0.3,
+    intensity: 54,
+    blur: 8,
+    prismatic: 0.18,
+    float: 50,
+  }),
+);
+
+const dreamCard3 = Card(
+  Text("Deep spectral mirage with chromatic wave aberration and micro-drift."),
+).decorate(
+  dream({
+    duration: 1.8,
+    delay: 0.6,
+    intensity: 52,
+    blur: 10,
+    prismatic: 0.25,
+    float: 50,
+  }),
+);
+
+layout.hstack(
+  [
+    [dreamKicker, dreamHeading, dreamLead],
+    [dreamCard1, dreamCard2, dreamCard3],
+  ],
+  {
+    x: 6,
+    y: 18,
+    width: [38, 50],
+    gap: 3,
+  },
+);
+
+stage
+  .scene("Dream Appearance")
+  .with(brandTitle, dreamKicker, dreamHeading, dreamLead, dreamCard1, dreamCard2, dreamCard3);
 stage.pause();
 
 // Scene: Conclusion

@@ -16,7 +16,7 @@ type ElementDecorator = (element: DOMElement) => void;
 
 When you call `element.decorate(myDecorator())`, StageRoutine passes the target element into your function. Your decorator can modify styles, append child DOM/SVG elements, or hook into the element's lifecycle.
 
-## Example 1: Visual Decorator
+## Visual Decorator
 
 A decorator can append decorative DOM nodes and apply styling:
 
@@ -54,11 +54,11 @@ import { Card } from "stageroutine";
 import { cornerTag } from "./cornerTag";
 
 const card = Card("System Architecture").decorate(
-  cornerTag({ text: "v2.0", color: "#38bdf8" })
+  cornerTag({ text: "v2.0", color: "#38bdf8" }),
 );
 ```
 
-## Example 2: Lifecycle-Aware Decorator
+## Lifecycle-Aware Decorator
 
 If your decorator manages active resources (like an interval or stream), hook into the element's lifecycle:
 
@@ -90,3 +90,44 @@ export function pulseBorder(): ElementDecorator {
 ```
 
 This guarantees that all timers stop when the element is not visible, preserving the zero GPU at rest guarantee.
+
+## Transition-Aware Decorator
+
+Decorators can also animate custom visual properties during scene transitions. By hooking into `element.onUpdate()`, the decorator animates on StageRoutine's central clock without running independent animation frames:
+
+```typescript
+import type { DOMElement, ElementDecorator } from "stageroutine";
+
+export interface BlurEntranceOptions {
+  /** Entrance animation duration in seconds (default: 1.0). */
+  duration?: number;
+  /** Maximum blur radius in pixels at the start of entrance (default: 16). */
+  maxBlur?: number;
+}
+
+export function blurEntrance(options: BlurEntranceOptions = {}): ElementDecorator {
+  const { duration = 1.0, maxBlur = 16 } = options;
+
+  return (element: DOMElement) => {
+    element.enterDuration = duration;
+
+    element.onUpdate((progress) => {
+      // Clear filters when fully visible or hidden to preserve system resources
+      if (progress <= 0 || progress >= 1) {
+        element.domElement.style.filter = "";
+        return;
+      }
+
+      // Smoothly resolve blur as entrance progresses
+      const currentBlur = maxBlur * (1 - progress);
+      element.domElement.style.filter = `blur(${currentBlur.toFixed(1)}px)`;
+    });
+
+    element.onDeactivate(() => {
+      element.domElement.style.filter = "";
+    });
+  };
+}
+```
+
+Because `element.onUpdate()` runs synchronously with the stage transition, the effect automatically rests when the step completes and restores previous states cleanly when navigating backward.

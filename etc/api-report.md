@@ -20,7 +20,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 148 symbols |
+| `stageroutine` | 150 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 2 symbols |
@@ -87,6 +87,14 @@ export function defineIcons(def: IconDefinition): void;
 
 /** 45-degree rotated diamond decision node. */
 export function Diamond(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
+
+/**
+ * Decorates an element with an optical liquid dream entrance.
+ *
+ * The element materializes through undulating liquid ripples, prismatic dispersion,
+ * and a soft optical blur that settles into razor-sharp focus.
+ */
+export function dream(options?: DreamOptions): ElementDecorator;
 
 /** Decorates an element with a glowing neon aura and optional pulse animation. */
 export function glow(options?: GlowOptions): ElementDecorator;
@@ -289,8 +297,12 @@ export class ActivationBarElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -302,6 +314,11 @@ export class ActivationBarElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): ActivationBarElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -364,8 +381,12 @@ export class BulletListElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -382,6 +403,11 @@ export class BulletListElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): BulletListElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -417,8 +443,12 @@ export class CodeBlockElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -435,6 +465,11 @@ export class CodeBlockElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): CodeBlockElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -513,8 +548,12 @@ export class ConnectorElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -526,6 +565,11 @@ export class ConnectorElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): ConnectorElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -592,8 +636,12 @@ export class DOMElement implements ReactiveElementBase {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -610,6 +658,11 @@ export class DOMElement implements ReactiveElementBase {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -648,8 +701,12 @@ export class IconElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -661,6 +718,11 @@ export class IconElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): IconElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -702,8 +764,12 @@ export class ImageElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -715,6 +781,11 @@ export class ImageElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): ImageElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -759,8 +830,12 @@ export class LifelineElement extends DOMElement {
   brightness: ReactiveProp<number>;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -772,6 +847,11 @@ export class LifelineElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): LifelineElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -865,8 +945,12 @@ export class ShapeElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -878,6 +962,11 @@ export class ShapeElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): ShapeElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -1000,8 +1089,12 @@ export class TableElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1018,6 +1111,11 @@ export class TableElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): TableElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -1053,8 +1151,12 @@ export class TerminalWindowElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1071,6 +1173,11 @@ export class TerminalWindowElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): TerminalWindowElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -1117,8 +1224,12 @@ export class VideoElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1130,6 +1241,11 @@ export class VideoElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): VideoElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -1179,8 +1295,12 @@ export class WebcamElement extends DOMElement {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1192,6 +1312,11 @@ export class WebcamElement extends DOMElement {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): WebcamElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -1431,6 +1556,25 @@ export interface CSSBackgroundOptions {
 }
 
 /**
+ * Configuration options for the dream liquid decorator.
+ * @category Decorators
+ */
+export interface DreamOptions {
+    /** Entrance animation duration in seconds (default: 1.4). */
+    duration?: number;
+    /** Delay before entrance animation starts in seconds (default: 0). */
+    delay?: number;
+    /** Initial liquid displacement wave height in pixels (default: 32). */
+    intensity?: number;
+    /** Optical defocus blur in pixels that resolves into sharp focus (default: 8). */
+    blur?: number;
+    /** Prismatic chromatic dispersion strength (default: 0.15). Set to false or 0 to disable. */
+    prismatic?: boolean | number;
+    /** Vertical micro-drift distance in pixels (default: 12). Set to 0 to disable. */
+    float?: number;
+}
+
+/**
  * Base positioning and visual options shared across all Stage elements.
  * @category Core
  */
@@ -1456,8 +1600,12 @@ export interface ElementOptions {
     customPositioned?: boolean;
     /** Duration in seconds for exiting scene transition. */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins. */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition. */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins. */
+    enterDelay?: number;
     onMount?: () => void;
     onUnmount?: () => void;
     onActivate?: () => void;
@@ -1853,13 +2001,20 @@ export interface ReactiveElementBase {
     onUnmount?(fn: () => void): () => void;
     /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins (defaults to 0). */
+    enterDelay?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
+    onUpdate?(fn: (progress: number) => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
     /** Recomputes layout or path coordinates on visual changes. */
     update?(): void;
+    /** @internal Engine driver */
+    _dispatchUpdate?(progress?: number): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -2654,8 +2809,12 @@ export class DOMElement implements ReactiveElementBase {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -2672,6 +2831,11 @@ export class DOMElement implements ReactiveElementBase {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -2796,8 +2960,12 @@ export interface ElementOptions {
     customPositioned?: boolean;
     /** Duration in seconds for exiting scene transition. */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins. */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition. */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins. */
+    enterDelay?: number;
     onMount?: () => void;
     onUnmount?: () => void;
     onActivate?: () => void;
@@ -2857,13 +3025,20 @@ export interface ReactiveElementBase {
     onUnmount?(fn: () => void): () => void;
     /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins (defaults to 0). */
+    enterDelay?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
+    onUpdate?(fn: (progress: number) => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
     /** Recomputes layout or path coordinates on visual changes. */
     update?(): void;
+    /** @internal Engine driver */
+    _dispatchUpdate?(progress?: number): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -3265,8 +3440,12 @@ export class DOMElement implements ReactiveElementBase {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -3283,6 +3462,11 @@ export class DOMElement implements ReactiveElementBase {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -3328,13 +3512,20 @@ export interface ReactiveElementBase {
     onUnmount?(fn: () => void): () => void;
     /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins (defaults to 0). */
+    enterDelay?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
+    onUpdate?(fn: (progress: number) => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
     /** Recomputes layout or path coordinates on visual changes. */
     update?(): void;
+    /** @internal Engine driver */
+    _dispatchUpdate?(progress?: number): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */
@@ -3485,8 +3676,12 @@ export class DOMElement implements ReactiveElementBase {
   color: ReactiveProp<string> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
   /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
   enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -3503,6 +3698,11 @@ export class DOMElement implements ReactiveElementBase {
   onActivate(fn: () => void): () => void;
   /** Registers a callback triggered whenever this element becomes inactive / hidden. */
   onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
   onClick(handler: (event: MouseEvent) => void): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
@@ -3548,13 +3748,20 @@ export interface ReactiveElementBase {
     onUnmount?(fn: () => void): () => void;
     /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
     exitDuration?: number;
+    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+    exitDelay?: number;
     /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
     enterDuration?: number;
+    /** Delay in seconds before entering scene transition begins (defaults to 0). */
+    enterDelay?: number;
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
+    onUpdate?(fn: (progress: number) => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
     /** Recomputes layout or path coordinates on visual changes. */
     update?(): void;
+    /** @internal Engine driver */
+    _dispatchUpdate?(progress?: number): void;
     /** @internal Engine driver */
     _mount?(parent: HTMLElement): void;
     /** @internal Engine driver */

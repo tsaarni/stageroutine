@@ -10,3 +10,4 @@ export { scrim, type ScrimOptions } from "./scrim";
 export { typewriter, type TypewriterOptions, type TypewriterStep } from "./typewriter";
 export { rule, type RuleOptions } from "./rule";
 export { bracket, type BracketOptions, type BracketStyle } from "./bracket";
+export { dream, type DreamOptions } from "./dream";

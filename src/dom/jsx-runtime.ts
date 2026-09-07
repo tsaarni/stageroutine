@@ -2,65 +2,78 @@
  * Direct-to-DOM JSX runtime compiling TSX tags directly into native DOM nodes with zero Virtual DOM overhead.
  */
 
-import { getActiveStage } from "../core/index";
 import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
-import { DOMElement, type ElementOptions } from "./element";
+import type { DOMElement, ElementOptions } from "./element";
 
 export const Fragment = Symbol("StageRoutine.Fragment");
 
 const SVG_TAGS = new Set([
+  // Structure & shapes
   "svg",
-  "path",
-  "circle",
-  "rect",
   "g",
-  "line",
-  "text",
-  "polygon",
-  "polyline",
-  "ellipse",
   "defs",
+  "desc",
+  "metadata",
+  "symbol",
   "use",
-  "clipPath",
+  "marker",
+  "clippath",
   "mask",
-  "linearGradient",
-  "radialGradient",
-  "stop",
   "pattern",
   "image",
-]);
+  "switch",
+  "foreignobject",
+  "view",
+  "circle",
+  "ellipse",
+  "line",
+  "path",
+  "polygon",
+  "polyline",
+  "rect",
+  "text",
+  "tspan",
+  "textpath",
 
-const MOTION_PROP_KEYS = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "scale",
-  "rotation",
-  "opacity",
-  "blur",
-  "brightness",
-  "anchor",
-  "asElement",
-]);
+  // Gradients
+  "lineargradient",
+  "radialgradient",
+  "stop",
 
-const ALL_STAGE_OPTION_KEYS = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "scale",
-  "rotation",
-  "opacity",
-  "blur",
-  "brightness",
-  "anchor",
-  "color",
-  "className",
-  "style",
-  "theme",
-  "id",
-  "asElement",
+  // Animation (SMIL)
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "mpath",
+  "set",
+
+  // Filter & filter primitives
+  "filter",
+  "feblend",
+  "fecolormatrix",
+  "fecomponenttransfer",
+  "fecomposite",
+  "feconvolvematrix",
+  "fediffuselighting",
+  "fedisplacementmap",
+  "fedistantlight",
+  "fedropshadow",
+  "feflood",
+  "fefunca",
+  "fefuncb",
+  "fefuncg",
+  "fefuncr",
+  "fegaussianblur",
+  "feimage",
+  "femerge",
+  "femergenode",
+  "femorphology",
+  "feoffset",
+  "fepointlight",
+  "fespecularlighting",
+  "fespotlight",
+  "fetile",
+  "feturbulence",
 ]);
 
 function appendChild(parent: Node, child: unknown): void {
@@ -107,59 +120,8 @@ export function jsx(
     return fragment;
   }
 
-  // Check if stage motion props were passed
-  let hasMotionProps = false;
-  for (const key of Object.keys(props)) {
-    if (MOTION_PROP_KEYS.has(key) && props[key] !== undefined) {
-      hasMotionProps = true;
-      break;
-    }
-  }
-
   if (typeof type === "function") {
-    if (!hasMotionProps) {
-      return type(props);
-    }
-
-    // Split stage options from component props
-    const stageOptions: ElementOptions = {};
-    const componentProps: JSXProps = {};
-
-    for (const [key, value] of Object.entries(props)) {
-      if (ALL_STAGE_OPTION_KEYS.has(key)) {
-        (stageOptions as Record<string, unknown>)[key] = value;
-      } else {
-        componentProps[key] = value;
-      }
-    }
-
-    const result = type(componentProps);
-
-    // Direct DOM element or already-wrapped element guard
-    if (
-      result instanceof HTMLElement ||
-      result instanceof SVGElement ||
-      result instanceof DOMElement ||
-      (typeof result === "object" && result !== null && "domElement" in result)
-    ) {
-      if (hasMotionProps) {
-        const kind = typeof type === "function" && type.name ? type.name.toLowerCase() : "custom";
-        const domEl =
-          result instanceof DOMElement
-            ? result
-            : new DOMElement(kind, result as HTMLElement | SVGElement, stageOptions);
-        return getActiveStage().registerElement(domEl);
-      }
-      return result;
-    }
-
-    if (hasMotionProps) {
-      const kind = typeof type === "function" && type.name ? type.name.toLowerCase() : "custom";
-      const domEl = new DOMElement(kind, result, stageOptions);
-      return getActiveStage().registerElement(domEl);
-    }
-
-    return result;
+    return type(props);
   }
 
   const isSvg = SVG_TAGS.has(type.toLowerCase());
@@ -168,15 +130,6 @@ export function jsx(
     : document.createElement(type);
 
   for (const [key, value] of Object.entries(props)) {
-    if (
-      hasMotionProps &&
-      ALL_STAGE_OPTION_KEYS.has(key) &&
-      key !== "className" &&
-      key !== "style"
-    ) {
-      continue;
-    }
-
     if (key === "children") {
       appendChild(element, value);
       continue;
@@ -230,17 +183,6 @@ export function jsx(
     if (value !== undefined && value !== null) {
       element.setAttribute(key, String(value));
     }
-  }
-
-  if (hasMotionProps) {
-    const stageOptions: ElementOptions = {};
-    for (const [key, value] of Object.entries(props)) {
-      if (ALL_STAGE_OPTION_KEYS.has(key)) {
-        (stageOptions as Record<string, unknown>)[key] = value;
-      }
-    }
-    const domEl = new DOMElement(type, element, stageOptions);
-    return getActiveStage().registerElement(domEl);
   }
 
   return element;

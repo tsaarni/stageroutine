@@ -53,7 +53,7 @@ const brandTitle = Title("StageRoutine", {
   y: 40,
 });
 
-const editorialLead = Title("Program state. Watch motion.", {
+const editorialLead = Title("Code-driven presentations built for the stage.", {
   variant: "serif",
   x: "center",
   y: 52,
@@ -61,11 +61,9 @@ const editorialLead = Title("Program state. Watch motion.", {
   .decorate(gradient())
   .decorate(glow());
 
-const heroBody = Text("Code-driven presentations built for the stage.", {
+const heroBody = Text("An open-source presentation runtime for developers.", {
   x: "center",
-  y: 65,
-  width: "65cqw",
-  style: { textAlign: "center" },
+  y: 64,
 });
 
 // Declare which elements are active in this scene.

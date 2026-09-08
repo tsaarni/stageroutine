@@ -1,6 +1,6 @@
 import "./Connector.css";
 import { getActiveStage, resolveCoordToPx } from "../../core/index";
-import type { ElementAnchor, ReactiveProp } from "../../core/types";
+import type { ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
   type Box,
@@ -289,8 +289,8 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   dashed?: boolean;
   /** Whether the line is styled with dotted strokes. */
   dotted?: boolean;
-  /** Whether dotted strokes stream continuously in a traveling particle animation. */
-  traveling?: boolean;
+  /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
+  flow?: FlowEffect;
   /** Head marker at the start/origin endpoint (defaults to "none"). */
   startHead?: ConnectorHeadType;
   /** Head marker at the end/destination endpoint (defaults to "arrow"). */
@@ -335,8 +335,30 @@ export class ConnectorElement extends DOMElement {
     ...DOMElement.reactiveKeys,
     "start",
     "end",
+    "flow",
     "labelPlacement",
   ]);
+
+  private _flow: FlowEffect = "none";
+  private _flowPingActive = false;
+
+  get flow(): FlowEffect {
+    return this._flow;
+  }
+  set flow(val: FlowEffect) {
+    const prev = this._flow;
+    this._flow = val ?? "none";
+    if (this._flow === "ping") {
+      if (this.periodicIntervalTimer === null && this.periodicTimeoutTimer === null) {
+        this._flowPingActive = true;
+        this.startPeriodicPulse();
+      }
+    } else if (prev === "ping" && this._flowPingActive) {
+      this._flowPingActive = false;
+      this.stopPeriodicPulse();
+    }
+    this.update();
+  }
 
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
@@ -389,10 +411,6 @@ export class ConnectorElement extends DOMElement {
     svg.style.overflow = "visible";
     svg.setAttribute("viewBox", "0 0 1920 1080");
     svg.setAttribute("preserveAspectRatio", "none");
-
-    if (options.traveling) {
-      svg.classList.add("sr-connector-traveling-dots");
-    }
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     const color = options.color || "#38bdf8";
@@ -518,6 +536,7 @@ export class ConnectorElement extends DOMElement {
 
     if (options.start !== undefined) this.start = options.start;
     if (options.end !== undefined) this.end = options.end;
+    if (options.flow !== undefined) this.flow = options.flow;
 
     const periodic = options.pulseInterval;
     if (periodic) {
@@ -532,13 +551,13 @@ export class ConnectorElement extends DOMElement {
 
     this.onActivate(() => {
       this._resumePeriodicPulse();
-      this._resumeTravelingDots();
+      this._resumeFlowAnimation();
       this.update();
     });
 
     this.onDeactivate(() => {
       this._pausePeriodicPulse();
-      this._pauseTravelingDots();
+      this._pauseFlowAnimation();
       this.cancelPulses();
     });
 
@@ -566,14 +585,14 @@ export class ConnectorElement extends DOMElement {
   override _deactivate(): void {
     this.cancelPulses();
     this._pausePeriodicPulse();
-    this._pauseTravelingDots();
+    this._pauseFlowAnimation();
     super._deactivate();
   }
 
   override _unmount(): void {
     this.cancelPulses();
     this._pausePeriodicPulse();
-    this._pauseTravelingDots();
+    this._pauseFlowAnimation();
     super._unmount();
   }
 
@@ -844,10 +863,13 @@ export class ConnectorElement extends DOMElement {
       }
     }
 
+    this.updateFlowClasses();
+
     // Apply trim paths (start..end) — preserve consistent dash spacing throughout animation
     const startVal = typeof this.start === "number" ? this.start : 0;
     const endVal = typeof this.end === "number" ? this.end : 1;
-    const isTraveling = this.svgRoot.classList.contains("sr-connector-traveling-dots");
+    const flowVal = typeof this.flow === "string" ? this.flow : "none";
+    const isFlowing = flowVal && flowVal !== "none";
 
     // Always work in actual path length units so dash spacing is identical
     // during draw-in animation and at rest. Measure the path once per update.
@@ -858,14 +880,17 @@ export class ConnectorElement extends DOMElement {
       // not yet mounted; skip
     }
 
-    if (endVal < 1 || startVal > 0) {
+    if (isFlowing && flowVal !== "ping") {
+      this.pathNode.style.opacity = "1";
+      this.pathNode.style.strokeDasharray = "";
+      this.pathNode.style.strokeDashoffset = "";
+    } else if (endVal < 1 || startVal > 0) {
       const visiblePx = (endVal - startVal) * actualLen;
       if (visiblePx <= 0.1) {
         this.pathNode.style.opacity = "0";
       } else {
         this.pathNode.style.opacity = "1";
       }
-      // Remove pathLength so all values below are in actual SVG user units
       this.pathNode.removeAttribute("pathLength");
       const offsetPx = -startVal * actualLen;
 
@@ -887,10 +912,7 @@ export class ConnectorElement extends DOMElement {
     } else {
       this.pathNode.style.opacity = "1";
       this.pathNode.removeAttribute("pathLength");
-      if (isTraveling) {
-        this.pathNode.style.strokeDasharray = "";
-        this.pathNode.style.strokeDashoffset = "";
-      } else if (this.isDotted) {
+      if (this.isDotted) {
         this.pathNode.style.strokeDasharray = "4 10";
         this.pathNode.style.strokeDashoffset = "0";
       } else if (this.isDashed) {
@@ -1238,8 +1260,30 @@ export class ConnectorElement extends DOMElement {
     }
   }
 
-  private _resumeTravelingDots(): void {
-    if (this.svgRoot.classList.contains("sr-connector-traveling-dots")) {
+  private updateFlowClasses(): void {
+    const flowVal = typeof this.flow === "string" ? this.flow : "none";
+    this.svgRoot.classList.remove(
+      "sr-flow-traveling",
+      "sr-flow-chase",
+      "sr-flow-pulse",
+      "sr-flow-ping",
+    );
+
+    if (flowVal && flowVal !== "none") {
+      this.svgRoot.classList.add(`sr-flow-${flowVal}`);
+      if (flowVal === "chase") {
+        this.pathNode.setAttribute("pathLength", "100");
+      } else {
+        this.pathNode.removeAttribute("pathLength");
+      }
+    } else {
+      this.pathNode.removeAttribute("pathLength");
+    }
+  }
+
+  private _resumeFlowAnimation(): void {
+    const flowVal = typeof this.flow === "string" ? this.flow : "none";
+    if (flowVal && flowVal !== "none") {
       this.domElement.style.animationPlayState = "running";
       this.pathNode.style.animationPlayState = "running";
       for (const anim of this.pathNode.getAnimations()) {
@@ -1248,8 +1292,9 @@ export class ConnectorElement extends DOMElement {
     }
   }
 
-  private _pauseTravelingDots(): void {
-    if (this.svgRoot.classList.contains("sr-connector-traveling-dots")) {
+  private _pauseFlowAnimation(): void {
+    const flowVal = typeof this.flow === "string" ? this.flow : "none";
+    if (flowVal && flowVal !== "none") {
       this.pathNode.style.animationPlayState = "paused";
       for (const anim of this.pathNode.getAnimations()) {
         anim.pause();

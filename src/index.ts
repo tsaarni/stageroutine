@@ -63,6 +63,7 @@ export type {
   EaseCurve,
   BuiltinEase,
   AnimationMilestone,
+  FlowEffect,
   TransitionDescriptor,
   Point,
   AnchorKeyword,

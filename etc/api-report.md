@@ -20,7 +20,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 150 symbols |
+| `stageroutine` | 151 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 2 symbols |
@@ -479,6 +479,7 @@ export class CodeBlockElement extends DOMElement {
 export class ConnectorElement extends DOMElement {
   constructor(from: ConnectorTarget, to: ConnectorTarget, options?: ConnectorOptions): ConnectorElement;
   static reactiveKeys: ReadonlySet<string>;
+  flow: FlowEffect;
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
   connectorStyle: "straight" | "corner" | "bezier" | "arc";
@@ -917,6 +918,11 @@ export class ShapeElement extends DOMElement {
   readonly kind: ShapeKind;
   readonly variant: ShapeVariant;
   readonly items: ReactiveElementBase[];
+  start: ReactiveProp<number>;
+  end: ReactiveProp<number>;
+  flow: ReactiveProp<FlowEffect>;
+  text: string | undefined;
+  borderColor: ReactiveProp<string> | undefined;
   active: boolean;
   doubleBorder: boolean;
   /**
@@ -1496,8 +1502,8 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     dashed?: boolean;
     /** Whether the line is styled with dotted strokes. */
     dotted?: boolean;
-    /** Whether dotted strokes stream continuously in a traveling particle animation. */
-    traveling?: boolean;
+    /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
+    flow?: FlowEffect;
     /** Head marker at the start/origin endpoint (defaults to "none"). */
     startHead?: ConnectorHeadType;
     /** Head marker at the end/destination endpoint (defaults to "arrow"). */
@@ -2101,7 +2107,9 @@ export interface ShapeOptions extends ElementOptions {
     /** Explicit height in pixels or container units. */
     height?: number | string;
     /** Border stroke color. */
-    borderColor?: string;
+    borderColor?: ReactiveProp<string>;
+    /** Optional text content inside the shape container. */
+    text?: string;
     /** Background fill color. */
     background?: string;
     /** Foreground text / accent color. */
@@ -2112,6 +2120,14 @@ export interface ShapeOptions extends ElementOptions {
     doubleBorder?: boolean;
     /** Content alignment inside the shape container ("left" | "center" | "right"). */
     align?: "left" | "center" | "right";
+    /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
+    start?: ReactiveProp<number>;
+    /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
+    end?: ReactiveProp<number>;
+    /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
+    flow?: ReactiveProp<FlowEffect>;
+    /** Stroke outline width in virtual canvas pixels (default: 1.5). */
+    strokeWidth?: number;
     /** Optional child elements or text nodes. */
     children?: unknown;
 }
@@ -2536,6 +2552,12 @@ export type ElementAnchor = AnchorKeyword | Point;
  * @category Decorators
  */
 export type ElementDecorator = (element: DOMElement) => void;
+
+/**
+ * Continuous ambient stroke animations supported across shapes and connectors.
+ * @category Motion
+ */
+export type FlowEffect = "none" | "traveling" | "chase" | "ping";
 
 /**
  * @internal

@@ -1144,6 +1144,23 @@ export class Stage {
 
     const participatingIds = new Set([...step.activeElementIds, ...transitioningIds]);
 
+    // For any property that has an explicit new value in targetSnap but NO transition scheduled in this step,
+    // apply it immediately at the start of the step so discrete changes (like text, flow, etc.) are not delayed.
+    const transitioningKeys = new Set(stepTransitions.map((t) => `${t.elementId}:${t.property}`));
+    const targetSnap = this.snapshots[stepIdx];
+    if (targetSnap) {
+      for (const [id, targetProps] of targetSnap.properties.entries()) {
+        const currentProps = this.propertyState.get(id);
+        if (currentProps) {
+          for (const [prop, val] of Object.entries(targetProps)) {
+            if (!transitioningKeys.has(`${id}:${prop}`)) {
+              currentProps[prop] = val;
+            }
+          }
+        }
+      }
+    }
+
     // Hide any element in registry that is neither active in the new step nor transitioning
     for (const [id, el] of this.elementRegistry.entries()) {
       if (!participatingIds.has(id)) {

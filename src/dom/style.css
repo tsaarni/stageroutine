@@ -16,4 +16,5 @@
 @import "./components/BulletList.css";
 @import "./components/SequenceDiagram.css";
 @import "./components/Connector.css";
+@import "./components/Flow.css";
 @import "../overlays/navigation.css";

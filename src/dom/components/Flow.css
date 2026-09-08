@@ -1,0 +1,29 @@
+@layer sr-components {
+  .sr-flow-traveling path {
+    stroke-dasharray: 6px 8px !important;
+    animation: sr-flow-traveling-kf 1s linear infinite !important;
+  }
+
+  @keyframes sr-flow-traveling-kf {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: -28px;
+    }
+  }
+
+  .sr-flow-chase path {
+    stroke-dasharray: 25 75 !important;
+    animation: sr-flow-chase-kf 1.5s linear infinite !important;
+  }
+
+  @keyframes sr-flow-chase-kf {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: -100;
+    }
+  }
+}

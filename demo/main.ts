@@ -488,7 +488,7 @@ const connGatewayRedis = Connector(apiGateway, redisCache, {
 
 const noteConnector = Connector(topologyNote, authService, {
   dotted: true,
-  traveling: true,
+  flow: "traveling",
   endHead: "none",
   color: "rgba(255, 255, 255, 0.25)",
   fromAnchor: "right",
@@ -811,6 +811,7 @@ const morphCircle = Circle("100%", {
   size: 110,
   color: "#a855f7",
   borderColor: "#a855f7",
+  end: 0,
 });
 
 const morphDiamond = Diamond("Verify", {
@@ -819,11 +820,11 @@ const morphDiamond = Diamond("Verify", {
   borderColor: "#f59e0b",
 });
 
-const morphPill = Pill("Cluster Active", {
+const morphPill = Pill("Cluster Inactive", {
   width: 170,
   height: 54,
-  color: "#10b981",
-  borderColor: "#10b981",
+  color: "#ef4444",
+  borderColor: "#ef4444",
 });
 
 layout.grid(
@@ -866,8 +867,13 @@ stage
     connDiamondPill,
   );
 
+stage.pause();
+
+// Step 1: Draw circle perimeter & activate diamond tail-chase
 connBoxCircle.end = to(1).duration(0.4);
 connDiamondPill.end = to(1).duration(0.4);
+morphCircle.end = to(1).duration(0.8).ease("linear");
+morphDiamond.flow = "chase";
 stage.pause();
 
 // Step 2: Reactive Sizing & Live Text Reflow Animation
@@ -876,6 +882,10 @@ morphBox.height = to(68).ease("cubicInOut");
 morphCircle.size = to(160).ease("cubicInOut");
 morphDiamond.size = to(165).ease("cubicInOut");
 morphPill.width = to(280).ease("cubicInOut");
+morphPill.color = to("#10b981");
+morphPill.borderColor = to("#10b981");
+morphPill.text = "Cluster Active";
+morphPill.flow = "ping";
 
 connBoxCircle.pulse();
 stage.pause();

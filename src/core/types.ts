@@ -40,6 +40,12 @@ export type BuiltinEase =
 export type AnimationMilestone = "start" | "halfway" | "end" | "complete" | number;
 
 /**
+ * Continuous ambient stroke animations supported across shapes and connectors.
+ * @category Motion
+ */
+export type FlowEffect = "none" | "traveling" | "chase" | "ping";
+
+/**
  * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
  * @category Motion
  */

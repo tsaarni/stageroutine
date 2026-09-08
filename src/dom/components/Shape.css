@@ -55,8 +55,6 @@
     background: var(--sr-surface);
     backdrop-filter: var(--sr-surface-backdrop);
     -webkit-backdrop-filter: var(--sr-surface-backdrop);
-    border: var(--sr-surface-border);
-    border-top-color: var(--sr-surface-highlight);
     box-shadow: var(--sr-surface-shadow);
   }
 
@@ -72,7 +70,6 @@
   /* Solid variant (opaque filled background) */
   .sr-shape-solid {
     background: #18181b;
-    border: 1px solid color-mix(in srgb, var(--sr-text) 15%, transparent);
     box-shadow: 0 1rem 3rem -0.5rem rgba(0, 0, 0, 0.5);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -90,7 +87,7 @@
     text-align: center;
     padding: 0 !important;
 
-    & > * {
+    & > *:not(.sr-shape-stroke-svg) {
       position: relative;
       z-index: 1;
       max-width: 72%;
@@ -127,8 +124,6 @@
       background: var(--sr-surface);
       backdrop-filter: var(--sr-surface-backdrop);
       -webkit-backdrop-filter: var(--sr-surface-backdrop);
-      border: var(--sr-surface-border);
-      border-top-color: var(--sr-surface-highlight);
       border-radius: calc(var(--sr-radius) * 0.75);
       box-shadow: var(--sr-surface-shadow);
       transform: rotate(45deg);
@@ -136,7 +131,7 @@
       transition: border-color 0.35s ease, box-shadow 0.35s ease;
     }
 
-    & > * {
+    & > *:not(.sr-shape-stroke-svg) {
       position: relative;
       z-index: 1;
       max-width: 72%;
@@ -147,14 +142,34 @@
     }
   }
 
-  .sr-shape.has-double-border:not(.sr-shape-diamond),
+  .sr-shape-stroke-svg {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    pointer-events: none !important;
+    overflow: visible !important;
+    z-index: 0 !important;
+  }
+
+  .sr-shape-path-main,
+  .sr-shape-path-inner {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.35s ease, filter 0.35s ease;
+  }
+
+  .sr-shape.is-active .sr-shape-path-main,
+  .sr-shape.is-active .sr-shape-path-inner {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
   .sr-state-node.has-double-border {
     outline: 2px solid color-mix(in srgb, var(--sr-text) 20%, transparent);
     outline-offset: 4px;
-
-    &.is-active:not(.sr-shape-diamond) {
-      outline-color: inherit;
-    }
   }
 
   /* UML State Pseudostates (initial & final) */

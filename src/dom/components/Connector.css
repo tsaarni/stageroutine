@@ -35,20 +35,6 @@
     }
   }
 
-  .sr-connector-traveling-dots path {
-    stroke-dasharray: 4px 10px !important;
-    animation: sr-marching-dots 0.8s linear infinite !important;
-  }
-
-  @keyframes sr-marching-dots {
-    from {
-      stroke-dashoffset: 0;
-    }
-    to {
-      stroke-dashoffset: -14px;
-    }
-  }
-
   .sr-connector-label-group {
     user-select: none;
     -webkit-user-select: none;

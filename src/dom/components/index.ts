@@ -37,7 +37,12 @@ export {
   type TerminalWindowProps,
   type TerminalWindowElement,
 } from "./TerminalWindow";
-export { BulletList, type BulletListOptions, type BulletListElement } from "./BulletList";
+export {
+  BulletList,
+  type BulletListOptions,
+  type BulletListElement,
+  type BulletItemInput,
+} from "./BulletList";
 export { Table, type TableOptions, type TableElement } from "./Table";
 export {
   Connector,

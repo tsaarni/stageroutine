@@ -146,6 +146,7 @@ export type {
   TerminalWindowElement,
   BulletListOptions,
   BulletListElement,
+  BulletItemInput,
   TableOptions,
   TableElement,
   ConnectorOptions,

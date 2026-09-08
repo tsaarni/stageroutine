@@ -231,8 +231,9 @@ const showcaseCard = Card(
   Text("A pure surface container for grouping presentation elements with frosted glass styling."),
 );
 const showcaseList = BulletList([
-  "Direct-to-DOM zero Virtual DOM architecture",
-  "High-precision numerical cubic curve solvers",
+  "Direct-to-DOM zero VDOM",
+  ["Sub-pixel layout fidelity", "Pure reactive element state"],
+  "High-precision curve solvers",
 ]);
 const showcaseCode = CodeBlock([
   "// Type-safe UI primitives",

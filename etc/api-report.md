@@ -20,7 +20,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 151 symbols |
+| `stageroutine` | 152 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 2 symbols |
@@ -39,7 +39,7 @@ Primary entry point providing the stage director, built-in components, motion tr
 export function bracket(options?: BracketOptions): ElementDecorator;
 
 /** Bullet list component with individual bullet point animation and interactive click-and-drag focus. */
-export function BulletList(items: string[], options?: BulletListOptions): BulletListElement;
+export function BulletList(items: BulletItemInput[], options?: BulletListOptions): BulletListElement;
 
 /** Rectangular card container. */
 export function Card(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
@@ -350,7 +350,7 @@ export abstract class BackgroundElement implements Background {
 }
 
 export class BulletListElement extends DOMElement {
-  constructor(items: string[], options?: BulletListOptions): BulletListElement;
+  constructor(items: BulletItemInput[], options?: BulletListOptions): BulletListElement;
   static reactiveKeys: ReadonlySet<string>;
   readonly items: DOMElement[];
   focusedRange: [number, number] | null;
@@ -1411,7 +1411,9 @@ export interface BracketOptions {
 export interface BulletListOptions extends ElementOptions {
     /** Vertical spacing between bullet items in pixels (default: 16). */
     itemSpacing?: number;
-    /** Foreground text and bullet dot color. */
+    /** Marker symbol(s) for bullet points (default: "–"). Can be a single symbol or an array per depth level. */
+    marker?: string | string[];
+    /** Foreground text and bullet marker color. */
     color?: string;
     /** Additional CSS class name. */
     className?: string;
@@ -2514,6 +2516,12 @@ export type BracketStyle = "curly" | "square" | "round" | "corners";
  * @category Motion
  */
 export type BuiltinEase = "linear" | "cubicOut" | "cubicInOut" | "quartOut" | "quartInOut" | "quintOut" | "quintInOut" | "expoOut" | "expoInOut" | "smooth" | "gentle" | "outQuad" | "inOutQuad" | "outExpo" | "inOutExpo";
+
+/**
+ * Item specification for a bullet list. Can be a string or a nested array of items.
+ * @category Components
+ */
+export type BulletItemInput = string | BulletItemInput[];
 
 /**
  * Head marker decoration types at the endpoints of a Connector line.

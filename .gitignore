@@ -7,7 +7,9 @@ site/build
 site/.docusaurus
 site/static/assets
 site/static/demo
+site/static/previews
 site/static/presenter.html
+site/.cache
 
 # Generated API reference (docusaurus-plugin-typedoc, from src/index.ts)
 site/docs/api

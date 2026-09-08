@@ -3,6 +3,7 @@ import {
   type ReactiveElementBase,
   type TransitionDescriptor,
   getActiveStage,
+  tryGetActiveStage,
 } from "../core/index";
 import { type RuleOptions, applyRuleStyles } from "../decorators/rule";
 import { to } from "../motion/transitions";
@@ -129,8 +130,9 @@ function measureElement(
   const dom = (el as { domElement?: HTMLElement }).domElement;
   if (!dom) return { widthCqw: 15, heightCqh: 8 };
 
-  const BASE_WIDTH = 1920;
-  const BASE_HEIGHT = 1080;
+  const stage = tryGetActiveStage();
+  const BASE_WIDTH = stage?.width ?? 1920;
+  const BASE_HEIGHT = stage?.height ?? 1080;
 
   const prevWidth = dom.style.width;
 
@@ -931,8 +933,11 @@ export const layout = {
     const radius = options.radius ?? 18;
     // cqw vs cqh scale differently (1920 vs 1080 per 100 units);
     // flatten 0 keeps a true pixel circle, higher values squash vertically.
+    const stage = tryGetActiveStage();
+    const stageW = stage?.width ?? 1920;
+    const stageH = stage?.height ?? 1080;
     const rx = radius;
-    const ry = radius * (1920 / 1080) * (1 - (options.flatten ?? 0));
+    const ry = radius * (stageW / stageH) * (1 - (options.flatten ?? 0));
     const startAngleDeg = options.startAngle ?? -90; // Default 12 o'clock top
     const spanDeg = options.span ?? 360;
     const centerElements = options.centerElements ?? true;

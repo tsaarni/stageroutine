@@ -1,0 +1,46 @@
+---
+title: CodeBlock
+sidebar_position: 5
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# CodeBlock
+
+The `CodeBlock` component formats code snippets with syntax highlighting and interactive line selection.
+
+<DemoFrame src="/stageroutine/previews/code-block.html" height={280} />
+
+```typescript preview="code-block.html"
+import { CodeBlock, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const code = CodeBlock('const x = 1;\nconsole.log(x);', {
+  x: "center",
+  y: "center",
+});
+
+stage.scene("CodeBlock").with(code);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Line Selection
+
+Clicking or dragging lines highlights selected rows and dims unselected lines.
+
+You can also focus lines programmatically with `focusLines(start, end)`:
+
+```typescript
+// Focus line 1
+code.focusLines(1);
+
+// Clear focus
+code.unfocus();
+```
+
+## API Reference
+
+For configuration options, see the [`CodeBlock`](../api/functions/CodeBlock.md) reference.

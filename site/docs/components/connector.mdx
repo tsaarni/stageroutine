@@ -1,0 +1,61 @@
+---
+title: Connector
+sidebar_position: 8
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Connector
+
+The `Connector` component renders dynamic connecting lines between elements or coordinates.
+
+<DemoFrame src="/stageroutine/previews/connector.html" height={280} />
+
+```typescript preview="connector.html"
+import { Card, Connector, layout, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const a = Card("A", { width: 140, height: 90 });
+const b = Card("B", { width: 140, height: 90 });
+
+layout.hstack([a, b], {
+  x: "center",
+  y: "center",
+  gap: 24,
+});
+
+const link = Connector(a, b);
+
+stage.scene("Connector").with(a, b, link);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Routing Styles
+
+Connectors support four path routing styles via `routing`:
+
+- `"straight"` (default): Direct line between attachment points.
+- `"corner"`: Orthogonal 90° turns.
+- `"bezier"`: Smooth cubic Bézier curve.
+- `"arc"`: Curved circular arc with adjustable `curvature`.
+
+```typescript
+const curved = Connector(a, b, {
+  routing: "bezier",
+  endHead: "arrow",
+});
+```
+
+## Head Markers
+
+Choose from several endpoint marker styles via `startHead` and `endHead`:
+
+`"arrow"`, `"open"`, `"dot"`, `"circle"`, `"diamond"`, `"diamond-open"`, `"bar"`, `"crow"`, and `"none"`.
+
+## API Reference
+
+- [`Connector`](../api/functions/Connector.md)
+- [`pulseSequence`](../api/functions/pulseSequence.md)

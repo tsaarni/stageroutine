@@ -1,0 +1,54 @@
+---
+title: Icon
+sidebar_position: 9
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Icon
+
+The `Icon` component renders scalable vector icons on the stage.
+
+<DemoFrame src="/stageroutine/previews/icon.html" height={280} />
+
+```typescript preview="icon.html"
+import { Icon, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const icon = Icon(
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  {
+    x: "center",
+    y: "center",
+    size: 80,
+  },
+);
+
+stage.scene("Icon").with(icon);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Icon Sets
+
+You can register custom icon namespaces with `defineIcons`:
+
+```typescript
+import { defineIcons } from "stageroutine";
+
+defineIcons({
+  prefix: "app",
+  icons: {
+    check: '<svg viewBox="0 0 24 24" ...>...</svg>',
+  },
+});
+
+const icon = Icon("app:check");
+```
+
+## API Reference
+
+- [`Icon`](../api/functions/Icon.md)
+- [`defineIcons`](../api/functions/defineIcons.md)

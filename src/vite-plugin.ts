@@ -17,6 +17,12 @@ export interface StageRoutinePluginOptions {
   outDir?: string;
   /** Main HTML entry path. Automatically detected from root or demo/ if omitted. */
   entry?: string;
+  /**
+   * BroadcastChannel name for dual-screen presenter synchronization.
+   * Pass `false` to disable presenter sync (e.g. for component preview builds).
+   * Defaults to `"stageroutine-channel"`.
+   */
+  channel?: string | false;
   /** Enable automatic on-demand icon resolution (defaults to true). */
   icons?: boolean;
   /** Additional custom options forwarded to unplugin-icons. */
@@ -76,17 +82,17 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
 
       return {
         base: userConfig.base ?? defaultBase,
+        define: {
+          __STAGEROUTINE_CHANNEL__: JSON.stringify(options.channel ?? "stageroutine-channel"),
+          ...userConfig.define,
+        },
         build: {
           outDir: userConfig.build?.outDir ?? options.outDir ?? "dist",
           emptyOutDir: userConfig.build?.emptyOutDir ?? true,
           rollupOptions: {
-            input: {
+            input: userConfig.build?.rollupOptions?.input ?? {
               main: resolveMainEntry(),
               presenter: presenterHtmlPath,
-              ...((typeof userConfig.build?.rollupOptions?.input === "object" &&
-              !Array.isArray(userConfig.build?.rollupOptions?.input)
-                ? userConfig.build.rollupOptions.input
-                : {}) as Record<string, string>),
             },
           },
         },

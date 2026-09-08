@@ -23,7 +23,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 | `stageroutine` | 152 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
-| `stageroutine/presenter` | 2 symbols |
+| `stageroutine/presenter` | 11 symbols |
 | `stageroutine/jsx-runtime` | 16 symbols |
 | `stageroutine/jsx-dev-runtime` | 16 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -809,7 +809,7 @@ export class LifelineElement extends DOMElement {
   /** Sets the visual length of the dashed lifeline in pixels. */
   setLength(length: number): void;
   activate(options?: ActivationOptions): ActivationBarElement;
-  hasActivationAt(y1080: number): boolean;
+  hasActivationAt(yPx: number): boolean;
   reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
@@ -864,7 +864,7 @@ export class LifelineElement extends DOMElement {
  * via BroadcastChannel.
  */
 export class PresenterClient {
-  constructor(): PresenterClient;
+  constructor(channelName?: string): PresenterClient;
   /**
    * Registers a callback invoked whenever the presentation state changes.
    * @param callback Receives the latest {@link StageStateChangedEvent} payload.
@@ -878,6 +878,8 @@ export class PresenterClient {
   gotoStep(stepIndex: number): void;
   /** Jumps directly to a scene by 0-based index. */
   gotoScene(sceneIndex: number): void;
+  /** Closes the presenter communication channel. */
+  close(): void;
 }
 
 /** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
@@ -1005,6 +1007,10 @@ export class Stage {
   overlay(plugin: OverlayPlugin): Stage;
   on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
   emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]): void;
+  /** Virtual stage canvas width in pixels (default: 1920). */
+  width: number;
+  /** Virtual stage canvas height in pixels (default: 1080). */
+  height: number;
   recordMutation(elementId: string, property: string, from: unknown, to: unknown, durationMs: number, delayMs: number, curve: EaseCurve, triggerElementId?: string, triggerMilestone?: AnimationMilestone, triggerProperty?: string): void;
   getCurrentPropertyValue(elementId: string, property: string): unknown;
   setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
@@ -1042,6 +1048,8 @@ export class Stage {
   pause(): void;
   /** Mounts the presentation stage into the target container element and begins playback. */
   mount(target?: string | HTMLElement): Stage;
+  /** Disposes the stage, closing communication channels, clearing listeners, and stopping animation loops. */
+  dispose(): void;
 }
 
 export class StaggerBuilder {
@@ -2087,6 +2095,8 @@ export interface SequenceDiagramOptions {
     lifelineLength?: number;
     /** Stroke color of participant lifelines (default: "rgba(148, 163, 184, 0.7)"). */
     lifelineColor?: string;
+    /** Initial opacity of participant lifelines (default: 1). Set to 0 if animating lifelines in. */
+    lifelineOpacity?: number;
     /** Padding in pixels below the lowest message or activation (default: 48). */
     paddingBottom?: number;
 }
@@ -2186,6 +2196,12 @@ export interface StageOptions {
     theme?: ThemeConfig;
     /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
     logLevel?: LogLevel;
+    /**
+     * BroadcastChannel name for dual-screen presenter console synchronization.
+     * Pass `false` to disable presenter sync (recommended for embedded component previews and unit tests).
+     * Default: `"stageroutine-channel"`.
+     */
+    channel?: string | false;
 }
 
 /**
@@ -3389,7 +3405,7 @@ Presenter console synchronization client over BroadcastChannel and in-browser sc
  * via BroadcastChannel.
  */
 export class PresenterClient {
-  constructor(): PresenterClient;
+  constructor(channelName?: string): PresenterClient;
   /**
    * Registers a callback invoked whenever the presentation state changes.
    * @param callback Receives the latest {@link StageStateChangedEvent} payload.
@@ -3403,6 +3419,22 @@ export class PresenterClient {
   gotoStep(stepIndex: number): void;
   /** Jumps directly to a scene by 0-based index. */
   gotoScene(sceneIndex: number): void;
+  /** Closes the presenter communication channel. */
+  close(): void;
+}
+
+/**
+ * Manages the presentation host's connection to the dual-screen presenter console.
+ * Strictly asymmetric: receives PresenterCommands from PresenterClient and emits
+ * PresenterNotifications (stage:stateChanged).
+ */
+export class PresenterHost {
+  constructor(target: PresenterHostTarget, channelName: string): PresenterHost;
+  messagesSent: number;
+  messagesReceived: number;
+  lastMsgTime: number;
+  /** Closes the presenter communication channel and disconnects event listeners. */
+  dispose(): void;
 }
 
 /** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
@@ -3420,6 +3452,122 @@ export class PresenterRecorder {
   /** Returns the current recording state snapshot. */
   getRecordingState(): { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; };
 }
+
+```
+
+### Interfaces
+
+```ts
+/**
+ * Minimal event bus target satisfied by the Stage.
+ * @internal
+ */
+export interface PresenterHostTarget {
+    on<K extends keyof StageEventMap>(event: K, listener: (data: StageEventMap[K]) => void): () => void;
+    emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [
+    ] : [
+        data: StageEventMap[K]
+    ]): void;
+}
+
+/**
+ * Scene metadata included in presenter state payloads.
+ * @internal
+ */
+export interface PresenterSceneInfo {
+    sceneIndex: number;
+    sceneName: string;
+    startStepIndex: number;
+    stepCount: number;
+}
+
+/**
+ * Step metadata included in presenter state payloads.
+ * @internal
+ */
+export interface PresenterStepInfo {
+    stepIndex: number;
+    sceneName: string;
+}
+
+/**
+ * Complete state snapshot emitted whenever presentation state changes.
+ * @category Core
+ */
+export interface StageStateChangedEvent {
+    step: number;
+    total: number;
+    sceneIndex: number;
+    totalScenes: number;
+    scene: string;
+    notes: string;
+    notesDoc?: string;
+    nextScene: string;
+    nextNotes: string;
+    scenes: {
+        sceneIndex: number;
+        sceneName: string;
+        startStepIndex: number;
+        stepCount: number;
+    }[];
+    steps: {
+        stepIndex: number;
+        sceneName: string;
+    }[];
+}
+
+```
+
+### Types
+
+```ts
+/**
+ * All messages transmitted over the presenter BroadcastChannel.
+ * @internal
+ */
+export type PresenterChannelMessage = PresenterCommand | PresenterNotification;
+
+/**
+ * Commands sent by PresenterClient to control the presentation Stage.
+ * @internal
+ */
+export type PresenterCommand = {
+    event: "stage:requestState";
+} | {
+    event: "nav:nextStep";
+} | {
+    event: "nav:prevStep";
+} | {
+    event: "nav:nextScene";
+} | {
+    event: "nav:prevScene";
+} | {
+    event: "nav:gotoStep";
+    data: {
+        index: number;
+    };
+} | {
+    event: "nav:gotoScene";
+    data: {
+        index: number;
+    };
+};
+
+/**
+ * Message payload received by the presenter from the stage via BroadcastChannel.
+ * Mirrors the StageStateChangedEvent shape.
+ * @internal
+ */
+export type PresenterMessage = StageStateChangedEvent;
+
+/**
+ * Notifications sent by Stage to inform PresenterClient of state updates.
+ * @internal
+ */
+export type PresenterNotification = {
+    event: "stage:stateChanged";
+    data: StageStateChangedEvent;
+};
 
 ```
 
@@ -3927,6 +4075,12 @@ export interface StageRoutinePluginOptions {
     outDir?: string;
     /** Main HTML entry path. Automatically detected from root or demo/ if omitted. */
     entry?: string;
+    /**
+     * BroadcastChannel name for dual-screen presenter synchronization.
+     * Pass `false` to disable presenter sync (e.g. for component preview builds).
+     * Defaults to `"stageroutine-channel"`.
+     */
+    channel?: string | false;
     /** Enable automatic on-demand icon resolution (defaults to true). */
     icons?: boolean;
     /** Additional custom options forwarded to unplugin-icons. */

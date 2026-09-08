@@ -1,6 +1,17 @@
 {
-  "extends": "@docusaurus/module-type-aliases/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "."
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@site/*": ["./*"]
+    }
   }
 }

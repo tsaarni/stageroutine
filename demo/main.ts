@@ -560,6 +560,7 @@ sequenceKicker.y = 18;
 // Initialize sequence diagram helper with participants
 const seq = SequenceDiagram({
   participants: [clientCard, apiGateway, authService],
+  lifelineOpacity: 0,
 });
 
 // Auto-spaced protocol messages
@@ -599,8 +600,13 @@ const msg5 = seq.message(apiGateway, clientCard, {
 });
 
 // Activation execution blocks bound automatically to message intervals
-const gatewayActive = seq.activate(apiGateway, { from: msg1, to: msg5 });
-const authActive = seq.activate(authService, { from: msg2, to: msg4, color: "#a855f7" });
+const gatewayActive = seq.activate(apiGateway, { from: msg1, to: msg5, opacity: 0 });
+const authActive = seq.activate(authService, {
+  from: msg2,
+  to: msg4,
+  color: "#a855f7",
+  opacity: 0,
+});
 
 stage
   .scene("Sequence Protocol Flow")

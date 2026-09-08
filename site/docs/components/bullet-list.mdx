@@ -1,0 +1,58 @@
+---
+title: BulletList
+sidebar_position: 4
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# BulletList
+
+The `BulletList` component formats lists with customizable bullet markers and interactive row selection.
+
+<DemoFrame src="/stageroutine/previews/bullet-list.html" height={280} />
+
+```typescript preview="bullet-list.html"
+import { BulletList, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const list = BulletList(["Item 1", "Item 2", "Item 3"], {
+  x: "center",
+  y: "center",
+});
+
+stage.scene("BulletList").with(list);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Nested Lists
+
+Pass nested arrays to create indented sub-items:
+
+```typescript
+const list = BulletList([
+  "Item 1",
+  ["Sub-item A", "Sub-item B"],
+  "Item 2",
+]);
+```
+
+## Item Selection
+
+Clicking or dragging bullet items highlights selected rows and dims unselected items.
+
+You can also focus items programmatically with `focus(start, end)`:
+
+```typescript
+// Focus the first item (1-indexed)
+list.focus(1);
+
+// Clear focus
+list.unfocus();
+```
+
+## API Reference
+
+For configuration options, see the [`BulletList`](../api/functions/BulletList.md) reference.

@@ -1,0 +1,52 @@
+---
+title: Table
+sidebar_position: 7
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Table
+
+The `Table` component formats structured tabular data with column alignment and row-level selection.
+
+<DemoFrame src="/stageroutine/previews/table.html" height={280} />
+
+```typescript preview="table.html"
+import { Stage, Table } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const table = Table({
+  x: "center",
+  y: "center",
+  width: 520,
+  headers: ["A", "B", "C"],
+  rows: [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+  ],
+});
+
+stage.scene("Table").with(table);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Row Selection
+
+Clicking or dragging table rows highlights selected rows and dims unselected rows.
+
+You can also focus rows programmatically with `focusRows(start, end)`:
+
+```typescript
+// Focus the first row (1-indexed)
+table.focusRows(1);
+
+// Clear focus
+table.unfocus();
+```
+
+## API Reference
+
+For configuration options, see the [`Table`](../api/functions/Table.md) reference.

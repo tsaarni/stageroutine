@@ -32,7 +32,9 @@
       "site/build",
       "site/docs/api",
       "site/static/assets",
-      "site/static/demo"
+      "site/static/demo",
+      "site/static/previews",
+      "site/.cache"
     ]
   }
 }

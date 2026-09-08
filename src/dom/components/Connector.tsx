@@ -1,5 +1,5 @@
 import "./Connector.css";
-import { getActiveStage, resolveCoordToPx } from "../../core/index";
+import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
 import type { ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
@@ -101,11 +101,8 @@ function resolveOffset(val: number | string | undefined, baseDim: number): numbe
   if (val === undefined) return 0;
   if (typeof val === "number") return val;
   const s = val.trim();
-  if (s.endsWith("cqw") || s.endsWith("%")) {
-    return (Number.parseFloat(s) / 100) * 1920;
-  }
-  if (s.endsWith("cqh")) {
-    return (Number.parseFloat(s) / 100) * 1080;
+  if (s.endsWith("cqw") || s.endsWith("cqh") || s.endsWith("%")) {
+    return (Number.parseFloat(s) / 100) * baseDim;
   }
   if (s.endsWith("rem")) {
     return Number.parseFloat(s) * 16;
@@ -596,7 +593,19 @@ export class ConnectorElement extends DOMElement {
     super._unmount();
   }
 
-  private resolveBoxOrPoint(target: ConnectorTarget): { point: Point; box?: Box } {
+  private getStageDimensions(): { width: number; height: number } {
+    const stage = tryGetActiveStage();
+    return {
+      width: stage?.width ?? 1920,
+      height: stage?.height ?? 1080,
+    };
+  }
+
+  private resolveBoxOrPoint(
+    target: ConnectorTarget,
+    stageW = 1920,
+    stageH = 1080,
+  ): { point: Point; box?: Box } {
     if ("domElement" in target && target.domElement instanceof HTMLElement) {
       const el = target as DOMElement;
       const dom = el.domElement;
@@ -607,7 +616,7 @@ export class ConnectorElement extends DOMElement {
       if (viewport && dom.isConnected) {
         const vRect = viewport.getBoundingClientRect();
         const dRect = dom.getBoundingClientRect();
-        const scale = vRect.width > 0 ? vRect.width / 1920 : 1;
+        const scale = vRect.width > 0 ? vRect.width / stageW : 1;
         const x = (dRect.left - vRect.left) / scale;
         const y = (dRect.top - vRect.top) / scale;
         const width = dRect.width / scale;
@@ -630,11 +639,11 @@ export class ConnectorElement extends DOMElement {
       const height = dom.offsetHeight || 60;
       const rawX = resolveCoordToPx(
         typeof el.x === "number" || typeof el.x === "string" ? el.x : 0,
-        1920,
+        stageW,
       );
       const rawY = resolveCoordToPx(
         typeof el.y === "number" || typeof el.y === "string" ? el.y : 0,
-        1080,
+        stageH,
       );
 
       return {
@@ -644,8 +653,8 @@ export class ConnectorElement extends DOMElement {
     }
 
     if (Array.isArray(target) && target.length >= 2) {
-      const px = resolveCoordToPx(target[0], 1920);
-      const py = resolveCoordToPx(target[1], 1080);
+      const px = resolveCoordToPx(target[0], stageW);
+      const py = resolveCoordToPx(target[1], stageH);
       return { point: [px, py] };
     }
 
@@ -657,8 +666,11 @@ export class ConnectorElement extends DOMElement {
       return;
     }
 
-    const fromResolved = this.resolveBoxOrPoint(this.fromTarget);
-    const toResolved = this.resolveBoxOrPoint(this.toTarget);
+    const { width: stageW, height: stageH } = this.getStageDimensions();
+    this.domElement.setAttribute("viewBox", `0 0 ${stageW} ${stageH}`);
+
+    const fromResolved = this.resolveBoxOrPoint(this.fromTarget, stageW, stageH);
+    const toResolved = this.resolveBoxOrPoint(this.toTarget, stageW, stageH);
 
     let startPt = fromResolved.point;
     let endPt = toResolved.point;
@@ -743,7 +755,7 @@ export class ConnectorElement extends DOMElement {
 
     const resolvedY = resolveCoordToPx(
       typeof this.y === "number" || typeof this.y === "string" ? this.y : 0,
-      1080,
+      stageH,
     );
     if (resolvedY > 0) {
       const fixedY = resolvedY;
@@ -754,7 +766,7 @@ export class ConnectorElement extends DOMElement {
       const vRect =
         this.domElement.parentElement?.getBoundingClientRect() ||
         this.domElement.getBoundingClientRect();
-      const scale = vRect.width > 0 ? vRect.width / 1920 : 1;
+      const scale = vRect.width > 0 ? vRect.width / stageW : 1;
       const activationOffset = 7 / scale + 2;
       const lifelineGap = 4 / scale;
 
@@ -1015,17 +1027,17 @@ export class ConnectorElement extends DOMElement {
           ratio = 0.75;
         }
 
-        let offX = resolveOffset(this.labelOffsetX as number | string | undefined, 1920);
+        let offX = resolveOffset(this.labelOffsetX as number | string | undefined, stageW);
         let offY = 0;
 
         if (this.labelOffsetY !== undefined) {
-          offY = resolveOffset(this.labelOffsetY as number | string | undefined, 1080);
+          offY = resolveOffset(this.labelOffsetY as number | string | undefined, stageH);
         } else if (this.labelOffset !== undefined) {
           if (Array.isArray(this.labelOffset)) {
-            offX += resolveOffset(this.labelOffset[0], 1920);
-            offY += resolveOffset(this.labelOffset[1], 1080);
+            offX += resolveOffset(this.labelOffset[0], stageW);
+            offY += resolveOffset(this.labelOffset[1], stageH);
           } else {
-            offY = resolveOffset(this.labelOffset as number | string, 1080);
+            offY = resolveOffset(this.labelOffset as number | string, stageH);
           }
         } else {
           // Default offset above the connector path

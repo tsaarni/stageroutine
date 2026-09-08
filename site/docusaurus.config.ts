@@ -1,47 +1,55 @@
-import { execSync } from "node:child_process";
-import { cpSync, mkdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type * as Preset from "@docusaurus/preset-classic";
-import type { Config, Plugin } from "@docusaurus/types";
+import type { Config, PluginConfig } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
+import { componentPreviewsPlugin } from "./plugins/component-previews";
+import { demoPresentationPlugin } from "./plugins/demo-presentation";
 
-function stageRoutineDemoPlugin(): Plugin {
-  return {
-    name: "stageroutine-demo-plugin",
-    async loadContent() {
-      const rootDir = resolve(__dirname, "..");
-      const siteStaticDir = resolve(__dirname, "static");
-      const distDir = resolve(rootDir, "dist");
+const isDevStart = process.argv.includes("start");
+const apiDocsExist = existsSync(resolve(__dirname, "docs/api/typedoc-sidebar.cjs"));
+const shouldGenerateTypedoc = !isDevStart || !apiDocsExist;
 
-      execSync("pnpm --filter stageroutine build", {
-        cwd: rootDir,
-        stdio: "inherit",
-      });
+const plugins: PluginConfig[] = [componentPreviewsPlugin, demoPresentationPlugin];
 
-      mkdirSync(resolve(siteStaticDir, "demo"), { recursive: true });
-      cpSync(resolve(distDir, "demo/index.html"), resolve(siteStaticDir, "demo/index.html"));
-      cpSync(
-        resolve(distDir, "src/presenter/presenter.html"),
-        resolve(siteStaticDir, "presenter.html"),
-      );
-      cpSync(
-        resolve(distDir, "src/presenter/presenter.html"),
-        resolve(siteStaticDir, "demo/presenter.html"),
-      );
-      cpSync(resolve(distDir, "assets"), resolve(siteStaticDir, "assets"), { recursive: true });
+if (shouldGenerateTypedoc) {
+  plugins.push([
+    "docusaurus-plugin-typedoc",
+    {
+      entryPoints: ["../src/index.ts"],
+      tsconfig: "../tsconfig.json",
+      out: "docs/api",
+      readme: "none",
+      excludeInternal: true,
+      categorizeByGroup: true,
+      categoryOrder: [
+        "Core",
+        "Components",
+        "Motion",
+        "Decorators",
+        "Backgrounds",
+        "Layout",
+        "Presenter",
+        "*",
+      ],
+      sanitizeComments: true,
+      disableSources: true,
+      expandParameters: true,
+      parametersFormat: "table",
+      propertiesFormat: "table",
+      typeDeclarationFormat: "table",
+      enumMembersFormat: "table",
+      tableColumnSettings: {
+        hideSources: true,
+        hideModifiers: true,
+        hideOverrides: true,
+        hideInherited: true,
+      },
+      sidebar: {
+        autoConfiguration: true,
+      },
     },
-    async postBuild({ outDir }) {
-      const distDir = resolve(__dirname, "../dist");
-      mkdirSync(resolve(outDir, "demo"), { recursive: true });
-      cpSync(resolve(distDir, "demo/index.html"), resolve(outDir, "demo/index.html"));
-      cpSync(resolve(distDir, "src/presenter/presenter.html"), resolve(outDir, "presenter.html"));
-      cpSync(
-        resolve(distDir, "src/presenter/presenter.html"),
-        resolve(outDir, "demo/presenter.html"),
-      );
-      cpSync(resolve(distDir, "assets"), resolve(outDir, "assets"), { recursive: true });
-    },
-  };
+  ]);
 }
 
 const config: Config = {
@@ -132,46 +140,7 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
 
-  plugins: [
-    stageRoutineDemoPlugin,
-    [
-      "docusaurus-plugin-typedoc",
-      {
-        entryPoints: ["../src/index.ts"],
-        tsconfig: "../tsconfig.json",
-        out: "docs/api",
-        readme: "none",
-        excludeInternal: true,
-        categorizeByGroup: true,
-        categoryOrder: [
-          "Core",
-          "Components",
-          "Motion",
-          "Decorators",
-          "Backgrounds",
-          "Layout",
-          "Presenter",
-          "*",
-        ],
-        sanitizeComments: true,
-        disableSources: true,
-        expandParameters: true,
-        parametersFormat: "table",
-        propertiesFormat: "table",
-        typeDeclarationFormat: "table",
-        enumMembersFormat: "table",
-        tableColumnSettings: {
-          hideSources: true,
-          hideModifiers: true,
-          hideOverrides: true,
-          hideInherited: true,
-        },
-        sidebar: {
-          autoConfiguration: true,
-        },
-      },
-    ],
-  ],
+  plugins,
 };
 
 export default config;

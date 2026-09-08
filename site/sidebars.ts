@@ -117,6 +117,23 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Components",
+      items: [
+        "components/text",
+        "components/card",
+        "components/shapes",
+        "components/bullet-list",
+        "components/code-block",
+        "components/terminal-window",
+        "components/table",
+        "components/connector",
+        "components/icon",
+        "components/media",
+        "components/sequence-diagram",
+      ],
+    },
+    {
+      type: "category",
       label: "Advanced",
       items: [
         "advanced/custom-components",

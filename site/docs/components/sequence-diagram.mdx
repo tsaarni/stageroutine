@@ -1,0 +1,76 @@
+---
+title: SequenceDiagram
+sidebar_position: 11
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# SequenceDiagram
+
+The `SequenceDiagram` coordinator manages lifelines, protocol messages, and execution activations across stage participants.
+
+<DemoFrame src="/stageroutine/previews/sequence-diagram.html" height={320} />
+
+```typescript preview="sequence-diagram.html"
+import { Card, layout, SequenceDiagram, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 450 });
+
+const a = Card("A", { width: 140, height: 60 });
+const b = Card("B", { width: 140, height: 60 });
+
+layout.hstack([a, b], {
+  x: "center",
+  y: 15,
+  gap: 24,
+});
+
+const diag = SequenceDiagram({
+  participants: [a, b],
+  startY: 38,
+  gapY: 22,
+  lifelineLength: 240,
+});
+
+const msg1 = diag.message(a, b, "Message 1");
+const msg2 = diag.message(b, a, "Message 2");
+diag.activate(b, { from: msg1, to: msg2 });
+
+stage.scene("Sequence").with(a, b, ...diag.elements);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Participants and Lifelines
+
+Pass participant elements to `SequenceDiagram({ participants })`. Each participant receives a vertical dashed lifeline:
+
+```typescript
+const seq = SequenceDiagram({
+  participants: [client, service],
+  startY: 36,
+  gapY: 10,
+});
+```
+
+Lifelines automatically extend their length to fit all registered messages and activation bars.
+
+## Messages and Activations
+
+Create messages between actors using `diag.message(from, to, options)`:
+
+- Messages are spaced automatically along the vertical axis using `startY` and `gapY`.
+- Pass `{ from, to }` message handles or `{ y, height }` to `diag.activate(actor, ...)` to place an activation bar.
+
+## Scene Registration
+
+Include `...diag.elements` in your scene to register all generated lifelines, activations, and connectors:
+
+```typescript
+stage.scene("Protocol").with(a, b, ...diag.elements);
+```
+
+## API Reference
+
+- [`SequenceDiagram`](../api/functions/SequenceDiagram.md)

@@ -3,6 +3,7 @@
  */
 
 import { builtinEasings } from "../motion/transitions";
+import { PresenterHost } from "../presenter/host";
 import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
@@ -24,6 +25,19 @@ import type {
   ThemeConfig,
   TransitionRecord,
 } from "./types";
+
+declare const __STAGEROUTINE_CHANNEL__: string | false | undefined;
+
+function resolveDefaultChannel(): string | false {
+  if (typeof __STAGEROUTINE_CHANNEL__ !== "undefined") {
+    return __STAGEROUTINE_CHANNEL__;
+  }
+  if (typeof window !== "undefined" && "__STAGEROUTINE_CHANNEL__" in window) {
+    return (window as unknown as { __STAGEROUTINE_CHANNEL__: string | false })
+      .__STAGEROUTINE_CHANNEL__;
+  }
+  return "stageroutine-channel";
+}
 
 class SceneBuilder {
   private stage: Stage;
@@ -136,7 +150,7 @@ export class Stage {
   private currentStepIndex = 0;
   private isAnimating = false;
   private animFrameId: number | null = null;
-  private broadcastChannel: BroadcastChannel | null = null;
+  private presenterHost: PresenterHost | null = null;
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
 
@@ -253,6 +267,7 @@ export class Stage {
       height: 1080,
       defaultDuration: 0.6,
       theme: { background: "#09090b", text: "#ffffff" },
+      channel: options.channel !== undefined ? options.channel : resolveDefaultChannel(),
       ...options,
     };
 
@@ -277,31 +292,20 @@ export class Stage {
     this.on("nav:gotoStep", (data) => this._gotoStep(data.index));
     this.on("stage:requestState", () => this._broadcastState());
 
-    if (typeof window !== "undefined") {
-      try {
-        this.broadcastChannel = new BroadcastChannel("stageroutine-channel");
-
-        // Incoming: relay BroadcastChannel messages into the event bus
-        this.broadcastChannel.onmessage = (event) => {
-          if (this.steps.length === 0) return;
-          this.syncMessagesReceived++;
-          this.syncLastMsgTime = performance.now();
-          const msg = event.data;
-          if (msg?.event && typeof msg.event === "string") {
-            this.emit(msg.event as keyof StageEventMap, msg.data);
-          }
-        };
-
-        // Outgoing: bridge stage:stateChanged to BroadcastChannel
-        this.on("stage:stateChanged", (data) => {
-          this.syncMessagesSent++;
-          this.syncLastMsgTime = performance.now();
-          this.broadcastChannel?.postMessage({ event: "stage:stateChanged", data });
-        });
-      } catch {
-        // BroadcastChannel optional fallback
-      }
+    const channelName = this.options.channel;
+    if (channelName) {
+      this.presenterHost = new PresenterHost(this, channelName);
     }
+  }
+
+  /** Virtual stage canvas width in pixels (default: 1920). */
+  get width(): number {
+    return this.options.width || 1920;
+  }
+
+  /** Virtual stage canvas height in pixels (default: 1080). */
+  get height(): number {
+    return this.options.height || 1080;
   }
 
   private _registerCoreMetrics(): void {
@@ -430,11 +434,13 @@ export class Stage {
 
     // Multi-Window / Tab Synchronization Metrics
     this.metrics.register("sync", () => ({
-      channel_messages_sent: this.syncMessagesSent,
-      channel_messages_received: this.syncMessagesReceived,
+      channel_messages_sent: this.presenterHost?.messagesSent ?? 0,
+      channel_messages_received: this.presenterHost?.messagesReceived ?? 0,
       state_broadcasts: this.syncStateBroadcasts,
       last_msg_elapsed_ms:
-        this.syncLastMsgTime > 0 ? Math.round(performance.now() - this.syncLastMsgTime) : -1,
+        this.presenterHost && this.presenterHost.lastMsgTime > 0
+          ? Math.round(performance.now() - this.presenterHost.lastMsgTime)
+          : -1,
     }));
   }
 
@@ -840,6 +846,19 @@ export class Stage {
     }
 
     return this;
+  }
+
+  /**
+   * Disposes the stage, closing communication channels, clearing listeners, and stopping animation loops.
+   */
+  dispose(): void {
+    this.presenterHost?.dispose();
+    this.presenterHost = null;
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+    this.listeners.clear();
   }
 
   private _next(): void {
@@ -1529,5 +1548,13 @@ export function getActiveStage(): Stage {
       "[StageRoutine] No active Stage found. Call `new Stage()` before creating stage elements.",
     );
   }
+  return activeStage;
+}
+
+/**
+ * Returns the currently active presentation stage singleton, or null if none is initialized.
+ * @internal
+ */
+export function tryGetActiveStage(): Stage | null {
   return activeStage;
 }

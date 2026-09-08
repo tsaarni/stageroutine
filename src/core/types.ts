@@ -360,6 +360,12 @@ export interface StageOptions {
   theme?: ThemeConfig;
   /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
   logLevel?: import("./logger").LogLevel;
+  /**
+   * BroadcastChannel name for dual-screen presenter console synchronization.
+   * Pass `false` to disable presenter sync (recommended for embedded component previews and unit tests).
+   * Default: `"stageroutine-channel"`.
+   */
+  channel?: string | false;
 }
 
 /**

@@ -1,0 +1,95 @@
+---
+title: Text & Titles
+sidebar_position: 1
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Text & Titles
+
+StageRoutine provides typography components for stage presentations: `Title` for headings, `Text` for body copy, and `Kicker` for category micro-labels.
+
+## Title
+
+The `Title` component formats slide headlines.
+
+<DemoFrame src="/stageroutine/previews/title.html" height={240} />
+
+```typescript preview="title.html"
+import { Stage, Title } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 350 });
+
+const title = Title("Title", {
+  x: "center",
+  y: "center",
+});
+
+stage.scene("Title").with(title);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+### Variants
+
+`Title` supports three visual variants via `variant`:
+
+- `"title"` (default): Bold display heading.
+- `"hero"`: Larger display font for title slides.
+- `"serif"`: Italic serif style.
+
+```typescript
+const hero = Title("Hero heading", { variant: "hero" });
+const serif = Title("Editorial style", { variant: "serif" });
+```
+
+## Text
+
+The `Text` component formats body copy paragraphs.
+
+<DemoFrame src="/stageroutine/previews/text.html" height={240} />
+
+```typescript preview="text.html"
+import { Stage, Text } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 350 });
+
+const text = Text("Body text", {
+  x: "center",
+  y: "center",
+});
+
+stage.scene("Text").with(text);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Kicker
+
+The `Kicker` component renders small uppercase section labels.
+
+<DemoFrame src="/stageroutine/previews/kicker.html" height={200} />
+
+```typescript preview="kicker.html"
+import { Kicker, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 300 });
+
+const kicker = Kicker("KICKER", {
+  x: "center",
+  y: "center",
+});
+
+stage.scene("Kicker").with(kicker);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## API Reference
+
+- [`Title`](../api/functions/Title.md)
+- [`Text`](../api/functions/Text.md)
+- [`Kicker`](../api/functions/Kicker.md)

@@ -1,0 +1,36 @@
+---
+title: Card
+sidebar_position: 2
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Card
+
+Cards group related content together on the stage.
+
+<DemoFrame src="/stageroutine/previews/card.html" height={280} />
+
+## Basic Usage
+
+```typescript preview="card.html"
+import { Card, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const card = Card("Card content", {
+  x: "center",
+  y: "center",
+  width: 320,
+  height: 160,
+});
+
+stage.scene("Card").with(card);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## API Reference
+
+For configuration options, see the [`Card`](../api/functions/Card.md) reference.

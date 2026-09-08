@@ -1,0 +1,103 @@
+---
+title: Shapes
+sidebar_position: 3
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Shapes
+
+StageRoutine provides geometric shape containers for diagrams and layout elements: `Circle`, `Pill`, and `Diamond`.
+
+## Circle
+
+The `Circle` component creates a circular node.
+
+<DemoFrame src="/stageroutine/previews/circle.html" height={280} />
+
+```typescript preview="circle.html"
+import { Circle, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const circle = Circle("Circle", {
+  x: "center",
+  y: "center",
+  size: 180,
+});
+
+stage.scene("Circle").with(circle);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Pill
+
+The `Pill` component creates a capsule-shaped badge or node.
+
+<DemoFrame src="/stageroutine/previews/pill.html" height={240} />
+
+```typescript preview="pill.html"
+import { Pill, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 350 });
+
+const pill = Pill("Pill", {
+  x: "center",
+  y: "center",
+  width: 220,
+  height: 80,
+});
+
+stage.scene("Pill").with(pill);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Diamond
+
+The `Diamond` component creates a 45-degree rotated diamond node.
+
+<DemoFrame src="/stageroutine/previews/diamond.html" height={280} />
+
+```typescript preview="diamond.html"
+import { Diamond, Stage } from "stageroutine";
+
+const stage = new Stage({ width: 800, height: 400 });
+
+const diamond = Diamond("Diamond", {
+  x: "center",
+  y: "center",
+  size: 180,
+});
+
+stage.scene("Diamond").with(diamond);
+stage.pause();
+
+stage.mount("#stage");
+```
+
+## Surface Variants
+
+Shapes support three surface treatments via the `variant` option:
+
+- `"surface"` (default): Translucent glass card with backdrop blur.
+- `"ghost"`: Transparent background with border outline.
+- `"solid"`: Opaque fill background.
+
+```typescript
+const outline = Circle("Ghost", {
+  size: 120,
+  variant: "ghost",
+});
+```
+
+## API Reference
+
+- [`Circle`](../api/functions/Circle.md)
+- [`Pill`](../api/functions/Pill.md)
+- [`Diamond`](../api/functions/Diamond.md)
+- [`Shape`](../api/functions/Shape.md)
+- [`Card`](../api/functions/Card.md)

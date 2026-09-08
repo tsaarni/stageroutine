@@ -2,7 +2,7 @@
  * Exports the core animation engine, stage director, proxies, and state snapshots.
  */
 
-export { getActiveStage, Stage } from "./stage";
+export { getActiveStage, Stage, tryGetActiveStage } from "./stage";
 export {
   interpolateValue,
   lerpNumber,

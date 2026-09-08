@@ -39,7 +39,7 @@ import Sparkles from "~icons/lucide/sparkles";
 import notesDoc from "./notes.md?raw";
 
 // Initialize presentation stage with the ASCII Fluid background
-const stage = new Stage().background(AsciiFluid().decorate(vignette())).notes(notesDoc);
+const stage = new Stage().background(AsciiFluid().decorate(vignette())).notesDocument(notesDoc);
 
 // Scene: Introduction
 

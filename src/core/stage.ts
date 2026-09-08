@@ -638,19 +638,15 @@ export class Stage {
   }
 
   /** Loads a full markdown presenter notes document for the presentation. */
-  setNotesDocument(doc: string): this {
+  notesDocument(doc: string): this {
     this.notesDoc = doc;
     return this;
   }
 
-  /** Loads a full markdown presenter notes document for the presentation (alias for setNotesDocument). */
-  notes(doc: string): this {
-    return this.setNotesDocument(doc);
-  }
-
   /** Sets presenter speaker notes for the current step. */
-  setNotes(text: string | string[]): void {
+  note(text: string | string[]): this {
     this.currentStepNotes = Array.isArray(text) ? text.join("\n") : text;
+    return this;
   }
 
   /** Completes the current presentation step, recording pending mutations and transitions into a snapshot. */

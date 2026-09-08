@@ -65,9 +65,10 @@ const btnNext = document.getElementById("btn-next") as HTMLButtonElement | null;
 const btnPrev = document.getElementById("btn-prev") as HTMLButtonElement | null;
 
 // Mount Header Widgets (Clock & Timer)
+const timerWidget = TimerWidget();
 if (headerRight) {
   headerRight.appendChild(WallClock());
-  headerRight.appendChild(TimerWidget());
+  headerRight.appendChild(timerWidget);
 }
 
 // ============================================================================
@@ -78,9 +79,7 @@ recorder.onUpdate((state) => {
     recordPill.classList.toggle("recording", state.isRecording);
   }
   if (btnRecord) {
-    btnRecord.title = state.isRecording
-      ? "Stop Recording (Key: Alt+R)"
-      : "Record Presentation directly via GPU (Key: Alt+R)";
+    btnRecord.title = state.isRecording ? "Stop Recording" : "Record Presentation directly via GPU";
   }
 
   if (btnMic && micIcon) {
@@ -167,7 +166,7 @@ window.addEventListener("click", (e) => {
   }
 });
 
-import { marked } from "marked";
+import { type Tokens, marked } from "marked";
 
 // ============================================================================
 // 1. Markdown Notes Formatting Helper
@@ -179,20 +178,138 @@ function slugifyScene(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+interface FrontmatterMetadata {
+  title?: string;
+  duration?: number;
+  warning?: number;
+}
+
+function parseDuration(raw: string): number | null {
+  const trimmed = raw.trim().toLowerCase();
+  if (!trimmed) return null;
+  const colonMatch = trimmed.match(/^(\d+):(\d{2})$/);
+  if (colonMatch) {
+    return (
+      Number.parseInt(colonMatch[1] || "0", 10) * 60 + Number.parseInt(colonMatch[2] || "0", 10)
+    );
+  }
+  let totalSec = 0;
+  let matched = false;
+  const hMatch = trimmed.match(/(\d+)\s*h/);
+  if (hMatch) {
+    totalSec += Number.parseInt(hMatch[1] || "0", 10) * 3600;
+    matched = true;
+  }
+  const mMatch = trimmed.match(/(\d+)\s*m(?!s)/);
+  if (mMatch) {
+    totalSec += Number.parseInt(mMatch[1] || "0", 10) * 60;
+    matched = true;
+  }
+  const sMatch = trimmed.match(/(\d+)\s*s/);
+  if (sMatch) {
+    totalSec += Number.parseInt(sMatch[1] || "0", 10);
+    matched = true;
+  }
+  if (matched) return totalSec;
+  const numOnly = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(numOnly)) return numOnly * 60;
+  return null;
+}
+
+function extractFrontmatter(doc: string): { meta: FrontmatterMetadata; body: string } {
+  const match = doc.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!match) {
+    return { meta: {}, body: doc };
+  }
+  const rawYaml = match[1] || "";
+  const body = doc.slice(match[0].length);
+  const meta: FrontmatterMetadata = {};
+
+  for (const line of rawYaml.split(/\r?\n/)) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = line.slice(0, colonIdx).trim().toLowerCase();
+    const value = line
+      .slice(colonIdx + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
+    if (!value) continue;
+
+    if (key === "title") {
+      meta.title = value;
+    } else if (key === "duration") {
+      const sec = parseDuration(value);
+      if (sec !== null) meta.duration = sec;
+    } else if (key === "warning") {
+      const sec = parseDuration(value);
+      if (sec !== null) meta.warning = sec;
+    }
+  }
+  return { meta, body };
+}
+
+const CUE_CONFIG: Record<string, { icon: string; label: string }> = {
+  action: { icon: "touch_app", label: "Action" },
+  cue: { icon: "campaign", label: "Cue" },
+  warn: { icon: "warning", label: "Warning" },
+};
+
+marked.use({
+  renderer: {
+    // Custom M3 assist card renderer for callout blockquotes: > [!ACTION], > [!CUE], > [!WARN]
+    blockquote({ tokens }: Tokens.Blockquote) {
+      const body = this.parser.parse(tokens);
+      const match = body.match(
+        /^<p>\[!(ACTION|CUE|WARN)\]\s*(?:<br>|\n)?([\s\S]*?)<\/p>([\s\S]*)$/i,
+      );
+      if (match) {
+        const type = match[1]?.toLowerCase() || "";
+        const config = CUE_CONFIG[type] || { icon: "info", label: type.toUpperCase() };
+        const firstPara = match[2] || "";
+        const rest = match[3] || "";
+        return `
+<div class="presenter-cue cue-${type}">
+  <span class="material-symbols-outlined cue-icon">${config.icon}</span>
+  <div class="cue-content">
+    <div class="cue-header">
+      <span class="cue-label">${config.label}</span>
+    </div>
+    <div class="cue-body"><p>${firstPara}</p>${rest}</div>
+  </div>
+</div>\n`;
+      }
+      return `<blockquote>${body}</blockquote>\n`;
+    },
+  },
+});
+
 function parseMarkdownDocument(doc: string): string {
   if (!doc || !doc.trim()) return "";
 
-  const stepBreakHtml = (stepIdx: number) => `
+  const { meta, body } = extractFrontmatter(doc);
+
+  if (meta.duration !== undefined) {
+    timerWidget.setConfig(meta.duration, meta.warning);
+  }
+  if (meta.title) {
+    document.title = `${meta.title} — Presenter`;
+    const appBrandTitle = document.querySelector(".app-brand span:last-child");
+    if (appBrandTitle) {
+      appBrandTitle.textContent = meta.title;
+    }
+  }
+
+  const stepBreakHtml = (stepIdx: number, label?: string) => `
 <div class="notes-step-break" data-break-index="${stepIdx}">
   <span class="step-break-bullet">▸</span>
-  <span class="step-break-label">Step ${stepIdx + 1}</span>
+  <span class="step-break-label">${label?.trim() ? label.trim() : `Step ${stepIdx + 1}`}</span>
   <span class="kbd">Space</span>
   <span class="step-break-line"></span>
 </div>
 `;
 
   // Split document by ## Scene Headings
-  const sections = doc.split(/(?=^##\s+)/m);
+  const sections = body.split(/(?=^##\s+)/m);
   const renderedSections: string[] = [];
 
   for (const sec of sections) {
@@ -204,8 +321,19 @@ function parseMarkdownDocument(doc: string): string {
     const slug = slugifyScene(sceneTitle);
     const bodyWithoutHeading = trimmed.replace(/^##\s+[^\n]+\n?/, "");
 
-    // Split scene into individual step blocks by <!-- step -->
-    const stepChunks = bodyWithoutHeading.split(/<!--\s*step\s*-->/gi);
+    // Split scene into individual step blocks by > [!STEP] (with optional step label)
+    const stepRegex = />\s*\[!STEP\]\s*([^\n]*)/gi;
+    const stepLabels: string[] = [];
+    let lastIdx = 0;
+    const stepChunks: string[] = [];
+
+    for (const stepMatch of bodyWithoutHeading.matchAll(stepRegex)) {
+      stepChunks.push(bodyWithoutHeading.slice(lastIdx, stepMatch.index));
+      stepLabels.push(stepMatch[1] || "");
+      lastIdx = stepMatch.index + stepMatch[0].length;
+    }
+    stepChunks.push(bodyWithoutHeading.slice(lastIdx));
+
     const renderedBlocks = stepChunks.map((chunk, idx) => {
       const html = marked.parse(chunk.trim()) as string;
       return `<div class="notes-step-block" data-step-index="${idx}">${html}</div>`;
@@ -214,7 +342,7 @@ function parseMarkdownDocument(doc: string): string {
     let bodyHtml = "";
     for (let i = 0; i < renderedBlocks.length; i++) {
       if (i > 0) {
-        bodyHtml += stepBreakHtml(i);
+        bodyHtml += stepBreakHtml(i, stepLabels[i - 1]);
       }
       bodyHtml += renderedBlocks[i];
     }
@@ -413,8 +541,5 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     closeSceneMenu();
     client.prev();
-  } else if ((e.key === "r" || e.key === "R") && (e.altKey || e.metaKey || e.ctrlKey)) {
-    e.preventDefault();
-    recorder.toggle();
   }
 });

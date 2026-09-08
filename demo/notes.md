@@ -1,3 +1,9 @@
+---
+title: StageRoutine Interactive Demo
+duration: 15m
+warning: 3m
+---
+
 ## Introduction
 
 Welcome to StageRoutine. Today, we're exploring a presentation framework designed specifically for programmers. 
@@ -38,46 +44,40 @@ On the left, we showcase animated gradient text and a typewriter effect that sim
 
 Here is our glassmorphic Table component, designed for presenting structured metrics with customizable column alignment.
 
+> [!CUE] Highlight the latency column to show p99 improvements.
+
 Presenters can interactively click and drag across rows to highlight and focus audience attention on critical metrics during a live presentation.
 
 ## Component Topology
 
 Let's walk through an architecture diagram illustrating microservice request flow with dynamic perimeter tracking.
 
-<!-- step -->
-
+> [!STEP] Ingress
 First, incoming client traffic hits the API Gateway over HTTPS.
 
-<!-- step -->
-
+> [!STEP] Cache Validation
 Next, the gateway inspects the Redis cache to validate the session token.
 
-<!-- step -->
-
+> [!STEP] Auth Query
 Then, the gateway dispatches a gRPC request to the Auth Service, which pools queries against PostgreSQL.
 
-<!-- step -->
-
+> [!STEP] Perimeter Tracking
 Dynamic perimeter annotations track and highlight active services in real time.
 
-<!-- step -->
-
+> [!STEP] Reactive Layout
 Notice the client card shifting position downwards while maintaining active connector attachments.
 
-<!-- step -->
-
+> [!STEP] Signal Pulse
 Finally, we trigger a real-time signal pulse across the active HTTPS connection.
 
 ## Sequence Protocol Flow
 
 Now we choreograph a multi-party sequence diagram. Notice how existing component cards seamlessly glide into their participant lifeline positions, followed by the initial login request.
 
-<!-- step -->
-
+> [!STEP] Token Verification
 The API Gateway coordinates with the Auth Service to verify credentials and issue a signed JWT token.
 
-<!-- step -->
-
+> [!STEP] Client Response
 Finally, the gateway returns the 200 OK response with the bearer token to the client.
 
 ## State Machine Transitions
@@ -90,17 +90,28 @@ Watch as the initial pseudostate enters the Idle state, moves through authentica
 
 Shapes in StageRoutine dynamically resize without geometric distortion. Initial compact shapes enter with auto-tracking connectors.
 
-<!-- step -->
-
+> [!STEP] Connector Reflow
 As dimensions change, connectors continuously update their attachment points while internal text naturally reflows across line breaks.
+
+## Edge AI Pipeline
+
+Here we coordinate an AI inference topology spanning edge gateway, vector database, and reasoning agents.
+
+Dynamic connector lines track nodes in real time as cards animate into their designated slots.
 
 ## Motion & Crossfade
 
 Here we demonstrate in-place crossfading between two distinct visual elements. On the left, we have our legacy pipeline card alongside the choreographic code.
 
-<!-- step -->
-
+> [!STEP] In-Place Crossfade
+> [!ACTION] Point out the zero layout shifts during swap.
 With a single crossfade call, StageRoutine smoothly swaps the legacy card with the new reactive card while coordinating opacity and depth scaling.
+
+## Dream Appearance
+
+Here we showcase custom visual decorators using the dream effect.
+
+Liquid SVG displacement ripples create an organic focus-pull entrance with prismatic chromatic aberration.
 
 ## Conclusion
 

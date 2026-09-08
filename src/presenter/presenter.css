@@ -113,6 +113,8 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  height: 54px;
+  box-sizing: border-box;
 }
 
 .header-left,
@@ -313,19 +315,50 @@ header {
 }
 
 .timer-widget {
-  padding: 2px 4px 2px 14px;
+  padding: 2px 6px 2px 14px;
   gap: 8px;
+  height: 34px;
+  box-sizing: border-box;
 }
 .timer-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--md-sys-color-timer-active);
-  min-width: 64px;
-  text-align: center;
+  width: 80px;
+  height: 28px;
+  box-sizing: border-box;
+  flex-shrink: 0;
   cursor: pointer;
   border-radius: var(--md-shape-xs);
-  padding: 1px 4px;
+  padding: 0;
   border: 1px solid transparent;
   transition: color var(--md-motion-short) ease, background-color var(--md-motion-short) ease,
     border-color var(--md-motion-short) ease;
+}
+.timer-sign {
+  display: inline-block;
+  width: 0.6em;
+  text-align: center;
+  visibility: hidden;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1;
+}
+.timer-sign.visible {
+  visibility: visible;
+}
+.timer-digits {
+  font-family: inherit;
+  font-size: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.timer-display.warning {
+  color: #fbbf24;
+}
+.timer-display.overtime {
+  color: #f87171;
 }
 .timer-display:hover {
   background-color: var(--md-sys-hover-overlay);
@@ -346,10 +379,13 @@ header {
   font-weight: inherit;
   letter-spacing: inherit;
   text-align: center;
-  width: 64px;
+  width: 100%;
+  height: 100%;
+  line-height: 26px;
   outline: none;
   padding: 0;
   margin: 0;
+  box-sizing: border-box;
 }
 .timer-display.paused {
   color: var(--md-sys-color-timer-paused);
@@ -441,6 +477,7 @@ main {
   line-height: 1.7;
   color: var(--md-sys-color-on-surface);
   transition: font-size var(--md-motion-short) ease;
+  padding-bottom: 140px;
 }
 
 .notes-scene-section {
@@ -450,6 +487,7 @@ main {
   background-color: transparent;
   opacity: 0.75;
   transition: opacity 0.2s ease;
+  scroll-margin: 30px 0;
 }
 
 .notes-scene-section.active-scene {
@@ -502,6 +540,7 @@ main {
   opacity: 0.75;
   cursor: pointer;
   transition: all 0.2s ease;
+  scroll-margin: 30px 0;
 }
 
 .notes-step-block:hover {
@@ -554,6 +593,77 @@ main {
   padding: 2px 5px;
   border-radius: 4px;
   color: var(--md-sys-color-on-surface);
+}
+
+/* Presenter Cues & Stage Directions (Material Design 3 Assist Card) */
+.presenter-cue {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  border-radius: var(--md-shape-sm);
+  background-color: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-size: 13px;
+  line-height: 1.45;
+  transition: background-color var(--md-motion-short) ease, border-color var(--md-motion-short) ease;
+}
+
+.presenter-cue:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-outline);
+}
+
+.cue-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cue-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cue-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.cue-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.cue-body {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 450;
+}
+
+.cue-body p {
+  margin: 0;
+}
+
+/* Action: Warm Amber */
+.presenter-cue.cue-action .cue-icon,
+.presenter-cue.cue-action .cue-label {
+  color: #fbbf24;
+}
+
+/* Cue: Crisp Cyan / Blue */
+.presenter-cue.cue-cue .cue-icon,
+.presenter-cue.cue-cue .cue-label {
+  color: #38bdf8;
+}
+
+/* Warn: Soft Red */
+.presenter-cue.cue-warn .cue-icon,
+.presenter-cue.cue-warn .cue-label {
+  color: #f87171;
 }
 
 /* Indented Numbered Step Break Indicator */

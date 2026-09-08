@@ -1035,11 +1035,9 @@ export class Stage {
    */
   background(bg: string | Background | ReactiveElementBase): Stage;
   /** Loads a full markdown presenter notes document for the presentation. */
-  setNotesDocument(doc: string): Stage;
-  /** Loads a full markdown presenter notes document for the presentation (alias for setNotesDocument). */
-  notes(doc: string): Stage;
+  notesDocument(doc: string): Stage;
   /** Sets presenter speaker notes for the current step. */
-  setNotes(text: string | string[]): void;
+  note(text: string | string[]): Stage;
   /** Completes the current presentation step, recording pending mutations and transitions into a snapshot. */
   pause(): void;
   /** Mounts the presentation stage into the target container element and begins playback. */

@@ -61,14 +61,15 @@ stage.pause();
 Attach speaker notes inline for specific steps:
 
 ```typescript
-stage.setNotes("Explain the microservices architecture here.");
-stage.pause();
+stage.note("Explain the microservices architecture here.").pause();
 ```
 
-You can also keep notes in a separate Markdown file where headings match scene names:
+You can also keep notes in a separate Markdown file where headings match scene names and steps use `> [!STEP]`:
 
 ```typescript
 import notesDoc from "./notes.md?raw";
 
-stage.notes(notesDoc);
+stage.notesDocument(notesDoc);
 ```
+
+For full documentation on Markdown notes, timing frontmatter, and stage directions, see the [Presenter Console](./presenter-console) guide.

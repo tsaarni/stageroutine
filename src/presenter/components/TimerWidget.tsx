@@ -1,18 +1,25 @@
 /**
- * Interactive timer component with play, pause, reset, and inline click-to-edit features.
+ * Interactive timer component with play, pause, reset, countdown, and inline click-to-edit features.
  */
 
-export function TimerWidget(): HTMLElement {
+export interface TimerWidgetElement extends HTMLElement {
+  setConfig(durationSec: number | null, warningSec?: number | null): void;
+}
+
+export function TimerWidget(): TimerWidgetElement {
+  let targetDurationSec = 0;
+  let warnDurationSec: number | null = null;
   let elapsedSec = 0;
   let isTimerRunning = true;
   let isEditingTimer = false;
   let timerInterval: ReturnType<typeof setInterval> | null = null;
 
   const formatTime = (seconds: number): string => {
-    const m = Math.floor(seconds / 60)
+    const abs = Math.abs(seconds);
+    const m = Math.floor(abs / 60)
       .toString()
       .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
+    const s = (abs % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -36,9 +43,14 @@ export function TimerWidget(): HTMLElement {
     return null;
   };
 
+  const signSpan = (<span class="timer-sign">-</span>) as unknown as HTMLElement;
+
+  const digitsSpan = (<span class="timer-digits">00:00</span>) as unknown as HTMLElement;
+
   const timerDisplay = (
-    <div class="timer-display" title="Elapsed Presentation Timer (Click to edit)">
-      00:00
+    <div class="timer-display" title="Presentation Timer (Click to edit)">
+      {signSpan}
+      {digitsSpan}
     </div>
   ) as unknown as HTMLElement;
 
@@ -48,7 +60,23 @@ export function TimerWidget(): HTMLElement {
 
   const updateDisplay = () => {
     if (!isEditingTimer) {
-      timerDisplay.textContent = formatTime(elapsedSec);
+      const remaining = targetDurationSec - elapsedSec;
+      digitsSpan.textContent = formatTime(remaining);
+
+      if (remaining < 0) {
+        signSpan.classList.add("visible");
+        timerDisplay.classList.remove("warning");
+        timerDisplay.classList.add("overtime");
+      } else {
+        signSpan.classList.remove("visible");
+        timerDisplay.classList.remove("overtime");
+        if (warnDurationSec !== null && remaining <= warnDurationSec) {
+          timerDisplay.classList.add("warning");
+        } else {
+          timerDisplay.classList.remove("warning");
+        }
+      }
+
       if (isTimerRunning) {
         timerDisplay.classList.remove("paused");
       } else {
@@ -100,7 +128,8 @@ export function TimerWidget(): HTMLElement {
       timerInterval = null;
     }
 
-    const currentVal = formatTime(elapsedSec);
+    const remaining = targetDurationSec - elapsedSec;
+    const currentVal = formatTime(remaining);
     timerDisplay.classList.add("editing");
 
     let committed = false;
@@ -113,9 +142,12 @@ export function TimerWidget(): HTMLElement {
       if (commit) {
         const parsed = parseTimeString(input.value);
         if (parsed !== null) {
-          elapsedSec = parsed;
+          targetDurationSec = parsed;
+          elapsedSec = 0;
         }
       }
+
+      timerDisplay.replaceChildren(signSpan, digitsSpan);
 
       if (wasRunning) {
         startTimer();
@@ -152,48 +184,40 @@ export function TimerWidget(): HTMLElement {
     ) as unknown as HTMLInputElement;
 
     timerDisplay.replaceChildren(input);
-    input.focus();
+    input.focus({ preventScroll: true });
     input.select();
   };
 
   timerDisplay.onclick = startEditing;
 
-  // Keyboard shortcut integration for P and R
-  window.addEventListener("keydown", (e) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-    if (e.key === "p" || e.key === "P") {
-      toggleTimer();
-    } else if (e.key === "r" || e.key === "R") {
-      if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-        resetTimer();
-      }
-    }
-  });
-
   // Start on mount
   startTimer();
 
-  return (
+  const root = (
     <div class="timer-widget">
       {timerDisplay}
       <div class="timer-actions">
         <button
           type="button"
           class="m3-icon-btn tonal"
-          title="Pause / Resume Timer (Key: P)"
+          title="Pause / Resume Timer"
           onclick={toggleTimer}
         >
           {toggleIcon}
         </button>
-        <button
-          type="button"
-          class="m3-icon-btn tonal"
-          title="Reset Timer (Key: R)"
-          onclick={resetTimer}
-        >
+        <button type="button" class="m3-icon-btn tonal" title="Reset Timer" onclick={resetTimer}>
           <span class="material-symbols-outlined">replay</span>
         </button>
       </div>
     </div>
-  ) as unknown as HTMLElement;
+  ) as unknown as TimerWidgetElement;
+
+  root.setConfig = (durationSec: number | null, warningSec?: number | null) => {
+    targetDurationSec = durationSec ?? 0;
+    warnDurationSec = warningSec ?? null;
+    elapsedSec = 0;
+    updateDisplay();
+  };
+
+  return root;
 }

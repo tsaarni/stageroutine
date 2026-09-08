@@ -1,0 +1,105 @@
+---
+title: Presenter Console
+description: Dedicated view for speaker notes, live timer, scene navigation, and screen recording.
+---
+
+# Presenter Console
+
+StageRoutine includes a standalone presenter console available at `/presenter.html`.
+
+Open `http://localhost:5173/presenter.html` in a separate browser window alongside your presentation or on an external display. Both windows connect automatically.
+
+## Writing Speaker Notes
+
+Speaker notes are written in a Markdown file:
+
+```markdown
+---
+title: System Architecture Talk
+duration: 20m
+warning: 5m
+---
+
+## Introduction
+
+Welcome everyone to the talk.
+
+## Architecture Overview
+
+Here is our high-level architecture.
+
+> [!STEP] Ingress
+Incoming client traffic hits the API Gateway.
+
+> [!STEP] Cache Validation
+> [!ACTION] Switch to live terminal to run the benchmark
+
+Next, the gateway inspects Redis to validate the token.
+
+> [!CUE] Emphasize sub-millisecond response times.
+```
+
+### Frontmatter Settings
+
+Optional YAML frontmatter at the top of the file configures talk metadata:
+
+| Field | Description | Example |
+| :--- | :--- | :--- |
+| `title` | Talk title displayed in the console header | `title: System Architecture` |
+| `duration` | Total allotted talk duration | `duration: 20m` or `duration: 1200s` |
+| `warning` | Amber alert threshold before time expires | `warning: 5m` |
+
+### Scenes and Steps
+
+Structure notes to mirror your presentation code:
+
+- **`## Scene Name`**: Matches the name passed to `stage.scene("Scene Name")`. In Markdown editors, these form a clickable document outline.
+- **`> [!STEP]`**: Marks each step paused with `stage.pause()`. An optional label can follow, like `> [!STEP] Ingress`.
+
+### Stage Directions
+
+Highlight personal cues so you never read them out loud:
+
+- **`> [!ACTION]`** (Amber): Physical actions and live demo tasks.
+- **`> [!CUE]`** (Blue): Speaking prompts and delivery reminders.
+- **`> [!WARN]`** (Red): Pitfalls and topics to avoid.
+
+All regular text renders as your spoken talking points.
+
+## Loading Notes
+
+Import the Markdown file as raw text and pass it to `stage.notesDocument()`:
+
+```typescript
+import notesDoc from "./notes.md?raw";
+
+stage.notesDocument(notesDoc);
+```
+
+## Console Features
+
+### Live Timer
+
+The timer in the header always counts down toward zero:
+
+- Ticks down to `00:00`, then continues into negative overtime (`-00:01`) with red styling.
+- Turns amber when reaching the `warning` threshold.
+- Starts at `00:00` into negative time if no duration is configured.
+- Click the timer display at any time to set a new time budget (`MM:SS` or minutes).
+
+### Navigation
+
+Notes stay synchronized with slide playback:
+
+- The active scene and step highlight automatically as you advance.
+- Click any scene heading or step block in the notes to jump directly to that point.
+- Use the scene dropdown chip in the top header to jump across chapters.
+
+### Screen Recording
+
+The console includes built-in GPU recording:
+
+1. Click the **Record** button in the header.
+2. Select your presentation screen or window in the browser picker.
+3. Toggle the microphone button to include audio narration.
+4. Click **Stop** to download the recorded `.webm` video.

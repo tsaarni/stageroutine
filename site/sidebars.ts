@@ -109,6 +109,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "building/coordinates",
         "building/scenes-and-steps",
+        "building/presenter-console",
         "building/animation",
         "building/layout",
         "building/visual-effects",

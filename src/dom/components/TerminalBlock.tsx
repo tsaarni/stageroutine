@@ -1,17 +1,17 @@
 /**
- * Terminal window component with macOS-style window controls and line-by-line interactive focus.
+ * Terminal block component with macOS-style window controls and line-by-line interactive focus.
  */
 
-import "./TerminalWindow.css";
+import "./TerminalBlock.css";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
- * Properties for configuring the TerminalWindow component.
+ * Options for configuring the TerminalBlock component.
  * @category Components
  */
-export interface TerminalWindowProps extends ElementOptions {
+export interface TerminalBlockOptions extends ElementOptions {
   /** Window title bar label (default: "bash - 80x24"). */
   title?: string;
   /** Command-line output lines to display. */
@@ -25,7 +25,7 @@ export interface TerminalWindowProps extends ElementOptions {
 /**
  * @internal
  */
-export class TerminalWindowElement extends DOMElement {
+export class TerminalBlockElement extends DOMElement {
   private controller: ReturnType<typeof attachRangeSelection>;
 
   get focusedRange(): [number, number] | null {
@@ -36,14 +36,14 @@ export class TerminalWindowElement extends DOMElement {
     return this.controller.focusedIndex;
   }
 
-  constructor(props: TerminalWindowProps = {}) {
-    const lines = props.lines || [
+  constructor(options: TerminalBlockOptions = {}) {
+    const lines = options.lines || [
       "$ pnpm create stageroutine@latest my-talk",
       "✔ Initialized reactive stage runtime",
       "⚡ Stage live on http://localhost:5173",
     ];
-    const classes = ["sr-terminal-window", props.className].filter(Boolean).join(" ");
-    const isInteractive = props.interactive ?? true;
+    const classes = ["sr-terminal-block", options.className].filter(Boolean).join(" ");
+    const isInteractive = options.interactive ?? true;
 
     const container = document.createElement("div");
     container.className = classes;
@@ -54,7 +54,7 @@ export class TerminalWindowElement extends DOMElement {
       <div class="sr-terminal-dot red"></div>
       <div class="sr-terminal-dot yellow"></div>
       <div class="sr-terminal-dot green"></div>
-      <span class="sr-terminal-title">${props.title || "bash - 80x24"}</span>
+      <span class="sr-terminal-title">${options.title || "bash - 80x24"}</span>
     `;
     container.appendChild(header);
 
@@ -77,7 +77,7 @@ export class TerminalWindowElement extends DOMElement {
       interactive: isInteractive,
     });
 
-    super("TerminalWindow", container, props);
+    super("TerminalBlock", container, options);
 
     this.controller = controller;
   }
@@ -94,11 +94,11 @@ export class TerminalWindowElement extends DOMElement {
 }
 
 /**
- * Terminal window component with macOS-style window controls and line-by-line interactive focus.
+ * Terminal block component with macOS-style window controls and line-by-line interactive focus.
  * @category Components
  */
-export function TerminalWindow(props: TerminalWindowProps = {}): TerminalWindowElement {
+export function TerminalBlock(options: TerminalBlockOptions = {}): TerminalBlockElement {
   const stage = getActiveStage();
-  const el = new TerminalWindowElement(props);
-  return stage ? (stage.registerElement(el) as TerminalWindowElement) : el;
+  const el = new TerminalBlockElement(options);
+  return stage ? (stage.registerElement(el) as TerminalBlockElement) : el;
 }

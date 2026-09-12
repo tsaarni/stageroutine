@@ -1,5 +1,5 @@
 @layer sr-components {
-  .sr-terminal-window {
+  .sr-terminal-block {
     width: 100%;
     max-width: 44cqw;
     background: var(--sr-surface);

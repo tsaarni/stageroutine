@@ -124,7 +124,7 @@ const sidebars: SidebarsConfig = {
         "components/shapes",
         "components/bullet-list",
         "components/code-block",
-        "components/terminal-window",
+        "components/terminal-block",
         "components/table",
         "components/connector",
         "components/icon",

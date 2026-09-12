@@ -189,8 +189,8 @@ export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?
 /** Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus. */
 export function Table(options: TableOptions): TableElement;
 
-/** Terminal window component with macOS-style window controls and line-by-line interactive focus. */
-export function TerminalWindow(props?: TerminalWindowProps): TerminalWindowElement;
+/** Terminal block component with macOS-style window controls and line-by-line interactive focus. */
+export function TerminalBlock(options?: TerminalBlockOptions): TerminalBlockElement;
 
 /** Body copy paragraph component formatted for high-legibility stage presentations. */
 export function Text(text: string, options?: TextOptions): DOMElement;
@@ -1152,13 +1152,13 @@ export class TableElement extends DOMElement {
   decorate(decorator: ElementDecorator): TableElement;
 }
 
-export class TerminalWindowElement extends DOMElement {
-  constructor(props?: TerminalWindowProps): TerminalWindowElement;
+export class TerminalBlockElement extends DOMElement {
+  constructor(options?: TerminalBlockOptions): TerminalBlockElement;
   static reactiveKeys: ReadonlySet<string>;
   focusedRange: [number, number] | null;
   focusedIndex: number | null;
-  focusLines(start: number, end?: number): TerminalWindowElement;
-  unfocus(): TerminalWindowElement;
+  focusLines(start: number, end?: number): TerminalBlockElement;
+  unfocus(): TerminalBlockElement;
   reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
@@ -1210,9 +1210,9 @@ export class TerminalWindowElement extends DOMElement {
    */
   onUpdate(fn: (progress: number) => void): () => void;
   /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): TerminalWindowElement;
+  onClick(handler: (event: MouseEvent) => void): TerminalBlockElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): TerminalWindowElement;
+  decorate(decorator: ElementDecorator): TerminalBlockElement;
 }
 
 /** Reactive Video element wrapping a native <video> DOM node. */
@@ -2295,10 +2295,10 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
 }
 
 /**
- * Properties for configuring the TerminalWindow component.
+ * Options for configuring the TerminalBlock component.
  * @category Components
  */
-export interface TerminalWindowProps extends ElementOptions {
+export interface TerminalBlockOptions extends ElementOptions {
     /** Window title bar label (default: "bash - 80x24"). */
     title?: string;
     /** Command-line output lines to display. */

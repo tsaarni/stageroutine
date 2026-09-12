@@ -16,7 +16,7 @@ import {
   SequenceDiagram,
   Stage,
   Table,
-  TerminalWindow,
+  TerminalBlock,
   Text,
   Title,
   bracket,
@@ -178,8 +178,8 @@ stage.pause();
 
 // Scene: Presenter Telemetry
 
-// TerminalWindow renders a styled macOS terminal component.
-const terminalPanel = TerminalWindow({
+// TerminalBlock renders a styled macOS terminal component.
+const terminalPanel = TerminalBlock({
   title: "stageroutine-dev",
   lines: [
     "$ pnpm dev",
@@ -241,7 +241,7 @@ const showcaseCode = CodeBlock([
   "const custom = Pill('Live', { color: '#38bdf8' });",
   "const card = Card('Frosted surface');",
 ]);
-const showcaseTerminal = TerminalWindow({
+const showcaseTerminal = TerminalBlock({
   title: "stageroutine-cli",
   lines: ["$ pnpm build", "✔ Bundled all components", "⚡ Ready for presentation"],
 });

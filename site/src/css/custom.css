@@ -168,9 +168,10 @@ aside[class*="docSidebarContainer"] {
   font-weight: 600;
 }
 
-/* Uppercase Micro-kickers for Top-Level Categories */
+/* Uppercase Micro-kickers for Top-Level Categories and Links */
 .theme-doc-sidebar-menu > .menu__list-item > .menu__list-item-collapsible .menu__link,
-.theme-doc-sidebar-menu > .menu__list-item > .menu__link--sublist {
+.theme-doc-sidebar-menu > .menu__list-item > .menu__link--sublist,
+.theme-doc-sidebar-menu > .menu__list-item > .menu__link {
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.75rem;
   text-transform: uppercase;

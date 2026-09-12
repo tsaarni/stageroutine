@@ -33,10 +33,10 @@ export {
 export { Kicker, type KickerOptions } from "./Kicker";
 export { CodeBlock, type CodeBlockOptions, type CodeBlockElement } from "./CodeBlock";
 export {
-  TerminalWindow,
-  type TerminalWindowProps,
-  type TerminalWindowElement,
-} from "./TerminalWindow";
+  TerminalBlock,
+  type TerminalBlockOptions,
+  type TerminalBlockElement,
+} from "./TerminalBlock";
 export {
   BulletList,
   type BulletListOptions,

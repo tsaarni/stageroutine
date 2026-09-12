@@ -1,24 +1,24 @@
 ---
-title: TerminalWindow
+title: TerminalBlock
 sidebar_position: 6
 ---
 
 import { DemoFrame } from "@site/src/components/DemoFrame";
 
-# TerminalWindow
+# TerminalBlock
 
-The `TerminalWindow` component displays terminal command-line sessions with window controls and line selection.
+The `TerminalBlock` component displays terminal command-line sessions with window controls and line selection.
 
-<DemoFrame src="/stageroutine/previews/terminal-window.html" />
+<DemoFrame src="/stageroutine/previews/terminal-block.html" />
 
-```typescript preview="terminal-window.html"
+```typescript preview="terminal-block.html"
 // hide-start
 import { Stage } from "stageroutine";
 const stage = new Stage();
 // hide-end
-import { TerminalWindow } from "stageroutine";
+import { TerminalBlock } from "stageroutine";
 
-const terminal = TerminalWindow({
+const terminal = TerminalBlock({
   x: "center",
   y: "center",
   width: 500,
@@ -51,4 +51,4 @@ terminal.unfocus();
 
 ## API Reference
 
-For configuration options, see the [`TerminalWindow`](../api/functions/TerminalWindow.md) reference.
+For configuration options, see the [`TerminalBlock`](../api/functions/TerminalBlock.md) reference.

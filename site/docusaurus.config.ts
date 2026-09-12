@@ -124,11 +124,6 @@ const config: Config = {
           label: "Demo",
           target: "_top",
         },
-        // Version dropdown - shows "main" + any released versions
-        {
-          type: "docsVersionDropdown",
-          position: "right",
-        },
         {
           href: "https://github.com/tsaarni/stageroutine",
           label: "GitHub",

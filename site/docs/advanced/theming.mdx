@@ -96,10 +96,10 @@ const body = Text("System design principles...", {
 You can scope theme tokens to a container or composite component. All child elements inherit the localized theme tokens automatically:
 
 ```typescript
-import { TerminalWindow } from "stageroutine";
+import { TerminalBlock } from "stageroutine";
 
 // A custom terminal with its own localized dark palette
-const terminal = TerminalWindow({
+const terminal = TerminalBlock({
   title: "zsh",
   theme: {
     surface: "#11111b",

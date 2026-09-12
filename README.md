@@ -9,42 +9,42 @@
 
 StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.
 
-[Documentation](https://tsaarni.github.io/stageroutine/) &middot; [Live Demo](https://tsaarni.github.io/stageroutine/demo/)
+**[Live Demo](https://tsaarni.github.io/stageroutine/demo/)** &middot; **[Documentation](https://tsaarni.github.io/stageroutine/)** &middot; **[Quick Start](https://tsaarni.github.io/stageroutine/docs/getting-started/quickstart)**
+
+> [!WARNING]
+> StageRoutine is under active development. The API is not stable and is subject to change.
 
 ## Example
 
 ```typescript
-import { Stage, Title, CodeBlock, to } from "stageroutine";
+import { Card, Stage, Title, to } from "stageroutine";
 
 const stage = new Stage();
-const title = Title("Architecture", { x: "center", y: "center" });
-const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 60, opacity: 0 });
+const title = Title("Hello, World!", {
+  variant: "hero",
+  x: "center",
+  y: 44,
+});
+const card = Card("Press Space to begin", {
+  x: "center",
+  y: 56,
+  opacity: 0,
+});
 
-// Scene 1: Title in the center
-stage.scene("Intro").with(title);
+// Scene 1: Welcome
+stage.scene("Welcome").with(title);
 stage.pause();
 
-// Scene 2: Title moves up, code appears
-stage.scene("Details").with(title, code);
-title.y = to(15);
-code.opacity = to(1);
+// Scene 2: Title glides up, card appears
+stage.scene("Overview").with(title, card);
+title.y = to(12);
+card.opacity = to(1).when(title, "halfway");
 stage.pause();
-
-stage.mount("#stage");
 ```
 
-## Quick Start
+## Demo
 
-Create a new presentation using the starter template:
-
-```bash
-pnpm dlx giget gh:tsaarni/stageroutine/starter my-presentation
-cd my-presentation
-pnpm install
-pnpm dev
-```
-
-Or run the repository demo locally:
+Run the [demo](https://tsaarni.github.io/stageroutine/demo/) in [demo/main.ts](demo/main.ts):
 
 ```bash
 git clone https://github.com/tsaarni/stageroutine.git
@@ -52,13 +52,6 @@ cd stageroutine
 pnpm install
 pnpm dev
 ```
-
-The dev server provides two views:
-
-- **Presentation**: `http://localhost:5173/`
-- **Presenter console**: `http://localhost:5173/presenter.html`
-
-See [demo/main.ts](demo/main.ts) for the demo source code.
 
 ## Contributing
 

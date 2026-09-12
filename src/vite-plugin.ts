@@ -2,8 +2,9 @@
  * Vite dev and preview server plugin that routes presentation, presenter console pages, JSX, and icons.
  */
 
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
 
@@ -27,6 +28,11 @@ export interface StageRoutinePluginOptions {
   width?: number;
   /** Virtual stage height in pixels. Defaults to process.env.STAGEROUTINE_HEIGHT or 1080. */
   height?: number;
+  /**
+   * Enable or disable the built-in presenter console.
+   * Defaults to true. Pass `false` to omit it from builds and the dev server.
+   */
+  presenter?: boolean;
   /** Enable automatic on-demand icon resolution (defaults to true). */
   icons?: boolean;
   /** Additional custom options forwarded to unplugin-icons. */
@@ -41,8 +47,13 @@ export interface StageRoutinePluginOptions {
  * - Dev and preview server route rewriting for presentations and /presenter.html
  * - On-demand, tree-shaken icon imports (~icons/...) with zero config
  */
-export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): PluginOption[] {
+export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOption[] {
   const rootDir = process.cwd();
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const presenterDir = resolve(__dirname, "presenter");
+  const presenterHtmlPath = resolve(presenterDir, "presenter.html");
+  const presenterTsxPath = resolve(presenterDir, "presenter.tsx");
+  const isPresenterEnabled = options.presenter !== false;
 
   const resolveMainEntry = (): string => {
     if (options.entry) return resolve(rootDir, options.entry);
@@ -53,36 +64,10 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
     return rootIndex;
   };
 
-  const presenterHtmlPath = resolve(__dirname, "presenter/presenter.html");
-
-  const rewriteUrl = (url: string | undefined): string | undefined => {
-    if (!url) return url;
-    const [path, query] = url.split("?");
-    const cleanPath = path.replace(/\/$/, "");
-    let target: string | null = null;
-
-    if (cleanPath === "" || cleanPath === "/index.html") {
-      const main = resolveMainEntry();
-      target = main.startsWith(rootDir)
-        ? `/${main.slice(rootDir.length).replace(/^\//, "")}`
-        : "/index.html";
-    } else if (cleanPath === "/presenter.html") {
-      target = presenterHtmlPath.startsWith(rootDir)
-        ? `/${presenterHtmlPath.slice(rootDir.length).replace(/^\//, "")}`
-        : "/src/presenter/presenter.html";
-    }
-
-    if (target) {
-      return query ? `${target}?${query}` : target;
-    }
-    return url;
-  };
-
   const corePlugin: PluginOption = {
     name: "stageroutine-plugin",
     config(userConfig, { command }) {
-      const defaultBase =
-        options.base ?? process.env.BASE_URL ?? (command === "build" ? "/stageroutine/" : "/");
+      const defaultBase = options.base ?? process.env.BASE_URL ?? "/";
       const width = options.width ?? (Number(process.env.STAGEROUTINE_WIDTH) || undefined);
       const height = options.height ?? (Number(process.env.STAGEROUTINE_HEIGHT) || undefined);
 
@@ -94,18 +79,31 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
           ...(height ? { __STAGEROUTINE_HEIGHT__: JSON.stringify(height) } : {}),
           ...userConfig.define,
         },
+        server: {
+          fs: {
+            allow: [rootDir, resolve(__dirname, "..")],
+          },
+          ...userConfig.server,
+        },
         build: {
+          target: userConfig.build?.target ?? "es2022",
           outDir: userConfig.build?.outDir ?? options.outDir ?? "dist",
           emptyOutDir: userConfig.build?.emptyOutDir ?? true,
           rollupOptions: {
             input: userConfig.build?.rollupOptions?.input ?? {
               main: resolveMainEntry(),
-              presenter: presenterHtmlPath,
+              ...(isPresenterEnabled ? { presenter: resolve(rootDir, "presenter.html") } : {}),
             },
           },
         },
         esbuild: {
+          jsx: "automatic",
           jsxImportSource: "stageroutine",
+          ...userConfig.esbuild,
+        },
+        optimizeDeps: {
+          exclude: ["stageroutine", ...(userConfig.optimizeDeps?.exclude || [])],
+          ...userConfig.optimizeDeps,
         },
         resolve: {
           alias: [
@@ -150,22 +148,50 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
       };
     },
     configureServer(server) {
-      server.middlewares.use((req, _res, next) => {
-        if (req.url) {
-          const rewritten = rewriteUrl(req.url);
-          if (rewritten) req.url = rewritten;
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url) return next();
+        const [rawPath] = req.url.split("?");
+        const cleanPath = rawPath.replace(/\/$/, "");
+
+        if (isPresenterEnabled && cleanPath === "/presenter.html") {
+          try {
+            const html = readFileSync(presenterHtmlPath, "utf-8").replace(
+              'src="./presenter.tsx"',
+              `src="/@fs${presenterTsxPath}"`,
+            );
+
+            const transformed = await server.transformIndexHtml(req.url, html);
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+            res.statusCode = 200;
+            res.end(transformed);
+            return;
+          } catch (err) {
+            return next(err);
+          }
+        }
+
+        if (cleanPath === "" || cleanPath === "/index.html") {
+          const main = resolveMainEntry();
+          const rootIndex = resolve(rootDir, "index.html");
+          if (main !== rootIndex && main.startsWith(rootDir)) {
+            req.url = `/${main.slice(rootDir.length).replace(/^\//, "")}`;
+          }
         }
         next();
       });
     },
-    configurePreviewServer(server) {
-      server.middlewares.use((req, _res, next) => {
-        if (req.url) {
-          const rewritten = rewriteUrl(req.url);
-          if (rewritten) req.url = rewritten;
-        }
-        next();
-      });
+    resolveId(id) {
+      if (isPresenterEnabled && (id === "/presenter.html" || id.endsWith("presenter.html"))) {
+        return resolve(rootDir, "presenter.html");
+      }
+    },
+    load(id) {
+      if (isPresenterEnabled && id === resolve(rootDir, "presenter.html")) {
+        return readFileSync(presenterHtmlPath, "utf-8").replace(
+          'src="./presenter.tsx"',
+          `src="${presenterTsxPath}"`,
+        );
+      }
     },
     transformIndexHtml(html, ctx) {
       if (!ctx.server) return html;

@@ -30,12 +30,12 @@ You can define project icon sets in Iconify JSON format and bundle them at build
 
    ```typescript
    import { defineConfig } from "vite";
-   import { stageRoutinePlugin } from "stageroutine/vite";
+   import { stageRoutine } from "stageroutine/vite";
    import mycompanyIcons from "./mycompany-icons.json";
 
    export default defineConfig({
      plugins: [
-       stageRoutinePlugin({
+       stageRoutine({
          iconsOptions: {
            customCollections: {
              mycompany: mycompanyIcons,

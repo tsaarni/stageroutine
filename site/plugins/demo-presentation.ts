@@ -15,11 +15,11 @@ export function demoPresentationPlugin(): Plugin {
   function syncDemoAssets(targetDir: string): void {
     mkdirSync(resolve(targetDir, "demo"), { recursive: true });
     cpSync(resolve(distDir, "demo/index.html"), resolve(targetDir, "demo/index.html"));
-    cpSync(resolve(distDir, "src/presenter/presenter.html"), resolve(targetDir, "presenter.html"));
-    cpSync(
-      resolve(distDir, "src/presenter/presenter.html"),
-      resolve(targetDir, "demo/presenter.html"),
-    );
+    const presenterHtml = existsSync(resolve(distDir, "presenter.html"))
+      ? resolve(distDir, "presenter.html")
+      : resolve(distDir, "src/presenter/presenter.html");
+    cpSync(presenterHtml, resolve(targetDir, "presenter.html"));
+    cpSync(presenterHtml, resolve(targetDir, "demo/presenter.html"));
     cpSync(resolve(distDir, "assets"), resolve(targetDir, "assets"), { recursive: true });
   }
 
@@ -43,6 +43,7 @@ export function demoPresentationPlugin(): Plugin {
       // Build root demo presentation and presenter console
       execSync("pnpm --filter stageroutine build", {
         cwd: rootDir,
+        env: { ...process.env, BASE_URL: "/stageroutine/" },
         stdio: "inherit",
       });
 
@@ -54,6 +55,7 @@ export function demoPresentationPlugin(): Plugin {
       // Ensure root build exists for production site
       execSync("pnpm --filter stageroutine build", {
         cwd: rootDir,
+        env: { ...process.env, BASE_URL: "/stageroutine/" },
         stdio: "inherit",
       });
 

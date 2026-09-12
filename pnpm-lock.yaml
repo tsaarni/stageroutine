@@ -29,6 +29,12 @@ importers:
       three:
         specifier: ^0.185.1
         version: 0.185.1
+      unplugin-icons:
+        specifier: ^23.0.1
+        version: 23.0.1(@svgr/core@8.1.0(typescript@5.9.3))
+      vite:
+        specifier: ^6.2.0
+        version: 6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4
@@ -51,12 +57,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
-      unplugin-icons:
-        specifier: ^23.0.1
-        version: 23.0.1(@svgr/core@8.1.0(typescript@5.9.3))
-      vite:
-        specifier: ^6.2.0
-        version: 6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
 
   site:
     dependencies:

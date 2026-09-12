@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
-import { stageRoutinePlugin } from "../src/vite-plugin";
+import { stageRoutine } from "../src/vite-plugin";
 
 const previewsCacheDir = resolve(__dirname, ".cache/previews");
 
@@ -26,5 +26,5 @@ export default defineConfig({
       input: previewEntries,
     },
   },
-  plugins: [stageRoutinePlugin({ channel: false, width: 800, height: 280 })],
+  plugins: [stageRoutine({ channel: false, width: 800, height: 280 })],
 });

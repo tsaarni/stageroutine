@@ -39,9 +39,12 @@
     },
     "./package.json": "./package.json"
   },
+  "bin": {
+    "stageroutine": "./bin/stageroutine"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "./bin/stageroutine dev",
+    "build": "./bin/stageroutine build",
     "verify": "biome check --write . && tsc --noEmit",
     "chrome-dev": "node scripts/chrome-dev.js",
     "api:report": "node scripts/api-report.ts",
@@ -55,9 +58,7 @@
     "@types/node": "^26.2.0",
     "@types/three": "^0.185.4",
     "csstype": "^3.2.3",
-    "typescript": "^5.7.3",
-    "unplugin-icons": "^23.0.1",
-    "vite": "^6.2.0"
+    "typescript": "^5.7.3"
   },
   "packageManager": "pnpm@11.7.0",
   "dependencies": {
@@ -67,6 +68,8 @@
     "@fontsource/newsreader": "^5.3.0",
     "marked": "^18.0.11",
     "shiki": "^4.4.3",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "unplugin-icons": "^23.0.1",
+    "vite": "^6.2.0"
   }
 }

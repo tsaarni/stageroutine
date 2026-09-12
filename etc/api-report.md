@@ -4091,7 +4091,7 @@ Vite plugin configuring JSX transforms, automatic icon resolution, and presenter
  * - Dev and preview server route rewriting for presentations and /presenter.html
  * - On-demand, tree-shaken icon imports (~icons/...) with zero config
  */
-export function stageRoutinePlugin(options?: StageRoutinePluginOptions): PluginOption[];
+export function stageRoutine(options?: StageRoutinePluginOptions): PluginOption[];
 
 ```
 
@@ -4118,6 +4118,11 @@ export interface StageRoutinePluginOptions {
     width?: number;
     /** Virtual stage height in pixels. Defaults to process.env.STAGEROUTINE_HEIGHT or 1080. */
     height?: number;
+    /**
+     * Enable or disable the built-in presenter console.
+     * Defaults to true. Pass `false` to omit it from builds and the dev server.
+     */
+    presenter?: boolean;
     /** Enable automatic on-demand icon resolution (defaults to true). */
     icons?: boolean;
     /** Additional custom options forwarded to unplugin-icons. */

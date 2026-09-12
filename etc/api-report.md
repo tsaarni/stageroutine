@@ -1741,8 +1741,6 @@ export interface KickerOptions extends ElementOptions {
 export interface LaserPointerController {
     /** Whether the laser pointer is currently active. */
     active: boolean;
-    /** Returns diagnostic metrics for the pointer. */
-    getMetrics(): Record<string, unknown>;
 }
 
 /**
@@ -3326,8 +3324,6 @@ export function NavigationOverlay(options?: NavigationOverlayOptions): OverlayPl
 export interface LaserPointerController {
     /** Whether the laser pointer is currently active. */
     active: boolean;
-    /** Returns diagnostic metrics for the pointer. */
-    getMetrics(): Record<string, unknown>;
 }
 
 /**

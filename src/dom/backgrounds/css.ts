@@ -56,6 +56,15 @@ export class CSSBackgroundElement implements Background {
     }
   }
 
+  /** @internal */
+  _getMetrics(): Record<string, unknown> {
+    return {
+      kind: this.kind,
+      is_mounted: Boolean(this.domElement.isConnected),
+      opacity: Number.parseFloat(this.domElement.style.opacity) || 1,
+    };
+  }
+
   dispose(): void {
     this.domElement.remove();
   }

@@ -164,8 +164,26 @@ export class StarfieldElement extends BackgroundElement {
     }
   }
 
-  dispose(): void {
-    this.pause();
+  override _getMetrics(): Record<string, unknown> {
+    const canvas = this.renderer?.domElement;
+    const width = canvas?.width ?? 0;
+    const height = canvas?.height ?? 0;
+    const totalPixels = width * height;
+
+    return {
+      ...super._getMetrics(),
+      star_count: this.count,
+      canvas_width: width,
+      canvas_height: height,
+      pixel_ratio: this.renderer ? this.renderer.getPixelRatio() : 1,
+      total_pixels: totalPixels,
+      total_megapixels: Number((totalPixels / 1_000_000).toFixed(2)),
+      speed: this.targetSpeed,
+    };
+  }
+
+  override dispose(): void {
+    super.dispose();
     if (this.unbindScene) {
       this.unbindScene();
       this.unbindScene = null;

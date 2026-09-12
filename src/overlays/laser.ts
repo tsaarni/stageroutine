@@ -26,8 +26,6 @@ export interface LaserPointerOptions {
 export interface LaserPointerController {
   /** Whether the laser pointer is currently active. */
   active: boolean;
-  /** Returns diagnostic metrics for the pointer. */
-  getMetrics(): Record<string, unknown>;
 }
 
 const VERTEX_SHADER_SRC = `
@@ -388,21 +386,24 @@ export function LaserPointer(
     }
   };
 
-  return {
-    get active(): boolean {
-      return isActive;
-    },
+  const controller: OverlayPlugin &
+    LaserPointerController & { readonly id?: string; _getMetrics?: () => Record<string, unknown> } =
+    {
+      id: "laser",
+      get active(): boolean {
+        return isActive;
+      },
 
-    set active(value: boolean) {
-      setActive(value);
-    },
+      set active(value: boolean) {
+        setActive(value);
+      },
 
-    mount(context: OverlayContext) {
-      ctx = context;
+      mount(context: OverlayContext) {
+        ctx = context;
 
-      canvas = document.createElement("canvas");
-      canvas.className = "sr-laser-gl-canvas";
-      canvas.style.cssText = `
+        canvas = document.createElement("canvas");
+        canvas.className = "sr-laser-gl-canvas";
+        canvas.style.cssText = `
         position: fixed;
         inset: 0;
         pointer-events: none;
@@ -411,103 +412,106 @@ export function LaserPointer(
         transition: opacity 0.25s ease-out;
       `;
 
-      initGL();
-      resizeCanvas();
+        initGL();
+        resizeCanvas();
 
-      boundOnResize = resizeCanvas;
-      window.addEventListener("resize", boundOnResize);
+        boundOnResize = resizeCanvas;
+        window.addEventListener("resize", boundOnResize);
 
-      ctx.container.appendChild(canvas);
+        ctx.container.appendChild(canvas);
 
-      boundOnPointerMove = (e: PointerEvent) => {
-        updateCursorVisibility();
-        const coords = toPointerCoords(e);
-        if (typeof e.getCoalescedEvents === "function") {
-          const events = e.getCoalescedEvents();
-          if (events && events.length > 0) {
-            for (const ce of events) {
-              const c = toPointerCoords(ce);
-              moveTo(c.screenX, c.screenY, c.virtualX, c.virtualY);
+        boundOnPointerMove = (e: PointerEvent) => {
+          updateCursorVisibility();
+          const coords = toPointerCoords(e);
+          if (typeof e.getCoalescedEvents === "function") {
+            const events = e.getCoalescedEvents();
+            if (events && events.length > 0) {
+              for (const ce of events) {
+                const c = toPointerCoords(ce);
+                moveTo(c.screenX, c.screenY, c.virtualX, c.virtualY);
+              }
+              return;
             }
-            return;
           }
-        }
-        moveTo(coords.screenX, coords.screenY, coords.virtualX, coords.virtualY);
-      };
-      window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
-
-      boundOnPointerDown = (_e: PointerEvent) => {};
-      window.addEventListener("pointerdown", boundOnPointerDown);
-
-      boundOnPointerUp = (_e: PointerEvent) => {};
-      window.addEventListener("pointerup", boundOnPointerUp);
-
-      if (toggleKey !== null) {
-        boundOnKeyDown = (e: KeyboardEvent) => {
-          if (e.key === toggleKey || e.key === toggleKey.toUpperCase()) {
-            ctx?.emit("pointer:toggle");
-          }
+          moveTo(coords.screenX, coords.screenY, coords.virtualX, coords.virtualY);
         };
-        window.addEventListener("keydown", boundOnKeyDown);
-      }
+        window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
 
-      // Listen for pointer:toggle events from any source (keyboard, navigation overlay, presenter)
-      ctx.on("pointer:toggle", () => {
-        setActive(!isActive);
-      });
+        boundOnPointerDown = (_e: PointerEvent) => {};
+        window.addEventListener("pointerdown", boundOnPointerDown);
 
-      if (isActive) {
+        boundOnPointerUp = (_e: PointerEvent) => {};
+        window.addEventListener("pointerup", boundOnPointerUp);
+
+        if (toggleKey !== null) {
+          boundOnKeyDown = (e: KeyboardEvent) => {
+            if (e.key === toggleKey || e.key === toggleKey.toUpperCase()) {
+              ctx?.emit("pointer:toggle");
+            }
+          };
+          window.addEventListener("keydown", boundOnKeyDown);
+        }
+
+        // Listen for pointer:toggle events from any source (keyboard, navigation overlay, presenter)
+        ctx.on("pointer:toggle", () => {
+          setActive(!isActive);
+        });
+
+        if (isActive) {
+          setActive(true);
+        } else {
+          updateCursorVisibility();
+        }
+      },
+
+      show() {
         setActive(true);
-      } else {
-        updateCursorVisibility();
-      }
-    },
+      },
 
-    show() {
-      setActive(true);
-    },
+      hide() {
+        setActive(false);
+      },
 
-    hide() {
-      setActive(false);
-    },
+      destroy() {
+        if (pointerIdleTimer !== null) {
+          window.clearTimeout(pointerIdleTimer);
+          pointerIdleTimer = null;
+        }
+        if (cursorIdleTimer !== null) {
+          window.clearTimeout(cursorIdleTimer);
+          cursorIdleTimer = null;
+        }
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        if (boundOnResize) window.removeEventListener("resize", boundOnResize);
+        if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
+        if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
+        if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
+        if (boundOnKeyDown) window.removeEventListener("keydown", boundOnKeyDown);
+        if (ctx) {
+          ctx.container.classList.remove("sr-pointer-mode");
+          ctx.container.classList.remove("sr-cursor-hidden");
+        }
+        if (canvas) {
+          canvas.remove();
+          canvas = null;
+        }
+        gl = null;
+        ctx = null;
+      },
 
-    destroy() {
-      if (pointerIdleTimer !== null) {
-        window.clearTimeout(pointerIdleTimer);
-        pointerIdleTimer = null;
-      }
-      if (cursorIdleTimer !== null) {
-        window.clearTimeout(cursorIdleTimer);
-        cursorIdleTimer = null;
-      }
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      if (boundOnResize) window.removeEventListener("resize", boundOnResize);
-      if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
-      if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
-      if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
-      if (boundOnKeyDown) window.removeEventListener("keydown", boundOnKeyDown);
-      if (ctx) {
-        ctx.container.classList.remove("sr-pointer-mode");
-        ctx.container.classList.remove("sr-cursor-hidden");
-      }
-      if (canvas) {
-        canvas.remove();
-        canvas = null;
-      }
-      gl = null;
-      ctx = null;
-    },
+      /** @internal */
+      _getMetrics() {
+        return {
+          is_active: isActive ? 1 : 0,
+          raf_loop_active: rafId !== null ? 1 : 0,
+          active_points_count: rawPoints.length,
+          has_canvas: canvas !== null ? 1 : 0,
+        };
+      },
+    };
 
-    getMetrics() {
-      return {
-        is_active: isActive ? 1 : 0,
-        raf_loop_active: rafId !== null ? 1 : 0,
-        active_points_count: rawPoints.length,
-        has_canvas: canvas !== null ? 1 : 0,
-      };
-    },
-  };
+  return controller;
 }

@@ -419,6 +419,15 @@ export class Stage {
         if (runningList.length > 0) {
           result["animations.running"] = runningList;
         }
+
+        const canvases = Array.from(document.querySelectorAll("canvas"));
+        let totalCanvasPixels = 0;
+        for (const c of canvases) {
+          totalCanvasPixels += c.width * c.height;
+        }
+        result["canvas.count"] = canvases.length;
+        result["canvas.total_pixels"] = totalCanvasPixels;
+        result["canvas.total_megapixels"] = Number((totalCanvasPixels / 1_000_000).toFixed(2));
       }
 
       if (typeof performance !== "undefined" && "memory" in performance) {
@@ -430,6 +439,37 @@ export class Stage {
       }
 
       return result;
+    });
+
+    // Background Diagnostics
+    this.metrics.register("background", () => {
+      if (!this.backgroundSource) return null;
+      if (typeof this.backgroundSource === "string") {
+        return { kind: "color", value: this.backgroundSource };
+      }
+      const bg = this.backgroundSource as { _getMetrics?: () => Record<string, unknown> };
+      if (typeof bg._getMetrics === "function") {
+        return bg._getMetrics();
+      }
+      return null;
+    });
+
+    // Overlay Diagnostics
+    this.metrics.register("overlay", () => {
+      if (this.overlays.length === 0) return null;
+      const result: Record<string, unknown> = {};
+      for (const overlay of this.overlays) {
+        const o = overlay as {
+          id?: string;
+          name?: string;
+          _getMetrics?: () => Record<string, unknown>;
+        };
+        if (typeof o._getMetrics === "function") {
+          const key = o.id || o.name || "plugin";
+          result[key] = o._getMetrics();
+        }
+      }
+      return Object.keys(result).length > 0 ? result : null;
     });
 
     // Multi-Window / Tab Synchronization Metrics

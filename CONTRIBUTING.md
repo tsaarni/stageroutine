@@ -21,6 +21,11 @@ window.__STAGEROUTINE_DEV__.getMetrics()
 
 This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `browser.animations.hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor component-specific metrics and active timer keys to confirm background tasks pause when inactive.
 
+### Identifying CPU and GPU consumers
+
+- **GPU load**: Check `browser.canvas.total_megapixels` and `background.<kind>.total_pixels` for large canvas surfaces. Check `browser.animations.running` for continuous SVG or CSS animations.
+- **CPU load**: Check `background.<kind>.is_running` and `stage.active_raf_count` to find continuous render loops. Use `performance_start_trace` to profile main thread execution.
+
 ## Modifying the documentation site
 
 To run the documentation site locally:

@@ -56,7 +56,7 @@ export interface ShapeOptions extends ElementOptions {
   end?: ReactiveProp<number>;
   /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
   flow?: ReactiveProp<FlowEffect>;
-  /** Stroke outline width in virtual canvas pixels (default: 1.5). */
+  /** Stroke outline width in virtual canvas pixels (default: 2). */
   strokeWidth?: number;
   /** Optional child elements or text nodes. */
   children?: unknown;
@@ -256,12 +256,10 @@ export class ShapeElement extends DOMElement {
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("class", "sr-shape-path-main");
-    path.setAttribute("vector-effect", "non-scaling-stroke");
     svg.appendChild(path);
 
     const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     innerPath.setAttribute("class", "sr-shape-path-inner");
-    innerPath.setAttribute("vector-effect", "non-scaling-stroke");
     innerPath.style.display = "none";
     svg.appendChild(innerPath);
 
@@ -335,7 +333,7 @@ export class ShapeElement extends DOMElement {
     this.kind = kind;
     this.variant = variant;
     this.primaryColor = options.color ?? (options.borderColor as string | undefined) ?? "#38bdf8";
-    this.strokeWidth = options.strokeWidth ?? 1.5;
+    this.strokeWidth = options.strokeWidth ?? 2;
     if (options.borderColor !== undefined) {
       this.borderColor = options.borderColor;
     } else if (options.color !== undefined) {

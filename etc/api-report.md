@@ -2159,7 +2159,7 @@ export interface ShapeOptions extends ElementOptions {
     end?: ReactiveProp<number>;
     /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
     flow?: ReactiveProp<FlowEffect>;
-    /** Stroke outline width in virtual canvas pixels (default: 1.5). */
+    /** Stroke outline width in virtual canvas pixels (default: 2). */
     strokeWidth?: number;
     /** Optional child elements or text nodes. */
     children?: unknown;

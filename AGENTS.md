@@ -35,7 +35,7 @@ Execution Rules:
 Execution Rules:
 - Always run `pnpm verify` after making code changes.
 - Run `pnpm docs:build` only when editing documentation site files.
-- Run `pnpm api:report` when modifying public exports to update `etc/api-report.md` and check for unexported types.
+- Run `pnpm api:report` when modifying public exports to update `etc/api-report.md` and check that no unintended symbols are exported.
 - Use Chrome DevTools MCP mainly for troubleshooting difficult issues or reading metrics (`getMetrics()`). Screenshots can catch some static layout issues, but they do not work for troubleshooting animations. Avoid repeated screenshot loops.
 
 

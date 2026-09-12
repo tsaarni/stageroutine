@@ -27,16 +27,30 @@ import type {
 } from "./types";
 
 declare const __STAGEROUTINE_CHANNEL__: string | false | undefined;
+declare const __STAGEROUTINE_WIDTH__: number | undefined;
+declare const __STAGEROUTINE_HEIGHT__: number | undefined;
 
 function resolveDefaultChannel(): string | false {
-  if (typeof __STAGEROUTINE_CHANNEL__ !== "undefined") {
-    return __STAGEROUTINE_CHANNEL__;
-  }
-  if (typeof window !== "undefined" && "__STAGEROUTINE_CHANNEL__" in window) {
-    return (window as unknown as { __STAGEROUTINE_CHANNEL__: string | false })
-      .__STAGEROUTINE_CHANNEL__;
-  }
-  return "stageroutine-channel";
+  return (
+    (globalThis as { __STAGEROUTINE_CHANNEL__?: string | false }).__STAGEROUTINE_CHANNEL__ ??
+    (typeof __STAGEROUTINE_CHANNEL__ !== "undefined"
+      ? __STAGEROUTINE_CHANNEL__
+      : "stageroutine-channel")
+  );
+}
+
+function resolveDefaultWidth(): number {
+  return (
+    Number((globalThis as { __STAGEROUTINE_WIDTH__?: number }).__STAGEROUTINE_WIDTH__) ||
+    (typeof __STAGEROUTINE_WIDTH__ !== "undefined" ? __STAGEROUTINE_WIDTH__ : 1920)
+  );
+}
+
+function resolveDefaultHeight(): number {
+  return (
+    Number((globalThis as { __STAGEROUTINE_HEIGHT__?: number }).__STAGEROUTINE_HEIGHT__) ||
+    (typeof __STAGEROUTINE_HEIGHT__ !== "undefined" ? __STAGEROUTINE_HEIGHT__ : 1080)
+  );
 }
 
 class SceneBuilder {
@@ -262,13 +276,17 @@ export class Stage {
     if (typeof window !== "undefined") {
       (window as unknown as { __stage?: Stage }).__stage = this;
     }
+    const defaultWidth = resolveDefaultWidth();
+    const defaultHeight = resolveDefaultHeight();
+    const defaultChannel = resolveDefaultChannel();
+
     this.options = {
-      width: 1920,
-      height: 1080,
       defaultDuration: 0.6,
       theme: { background: "#09090b", text: "#ffffff" },
-      channel: options.channel !== undefined ? options.channel : resolveDefaultChannel(),
       ...options,
+      width: options.width ?? defaultWidth,
+      height: options.height ?? defaultHeight,
+      channel: options.channel !== undefined ? options.channel : defaultChannel,
     };
 
     this.currentTheme = {

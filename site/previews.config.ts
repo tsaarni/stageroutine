@@ -26,5 +26,5 @@ export default defineConfig({
       input: previewEntries,
     },
   },
-  plugins: [stageRoutinePlugin({ channel: false })],
+  plugins: [stageRoutinePlugin({ channel: false, width: 800, height: 280 })],
 });

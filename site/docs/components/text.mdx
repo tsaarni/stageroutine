@@ -13,22 +13,24 @@ StageRoutine provides typography components for stage presentations: `Title` for
 
 The `Title` component formats slide headlines.
 
-<DemoFrame src="/stageroutine/previews/title.html" height={240} />
+<DemoFrame src="/stageroutine/previews/title.html" />
 
 ```typescript preview="title.html"
-import { Stage, Title } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 350 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Title } from "stageroutine";
 
 const title = Title("Title", {
   x: "center",
   y: "center",
 });
-
+// hide-start
 stage.scene("Title").with(title);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ### Variants
@@ -58,44 +60,48 @@ const rightNote = Text("Confidential", { align: "right" });
 
 The `Text` component formats body copy paragraphs.
 
-<DemoFrame src="/stageroutine/previews/text.html" height={240} />
+<DemoFrame src="/stageroutine/previews/text.html" />
 
 ```typescript preview="text.html"
-import { Stage, Text } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 350 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Text } from "stageroutine";
 
 const text = Text("Body text", {
   x: "center",
   y: "center",
 });
-
+// hide-start
 stage.scene("Text").with(text);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Kicker
 
 The `Kicker` component renders small uppercase section labels.
 
-<DemoFrame src="/stageroutine/previews/kicker.html" height={200} />
+<DemoFrame src="/stageroutine/previews/kicker.html" />
 
 ```typescript preview="kicker.html"
-import { Kicker, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 300 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Kicker } from "stageroutine";
 
 const kicker = Kicker("KICKER", {
   x: "center",
   y: "center",
 });
-
+// hide-start
 stage.scene("Kicker").with(kicker);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## API Reference

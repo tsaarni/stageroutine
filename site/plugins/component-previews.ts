@@ -35,8 +35,10 @@ export function componentPreviewsPlugin(): Plugin {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} Preview</title>
-  <style>body { margin: 0; background: #0c0e12; overflow: hidden; }</style>
-  <script>window.__STAGEROUTINE_CHANNEL__ = false;</script>
+  <style>
+    html { font-size: 13px; }
+    body { margin: 0; background: #0c0e12; overflow: hidden; }
+  </style>
 </head>
 <body>
   <div id="stage"></div>
@@ -44,6 +46,20 @@ export function componentPreviewsPlugin(): Plugin {
 </body>
 </html>
 `;
+  }
+
+  function cleanPreviewCode(code: string): string {
+    const cleaned = code
+      .split("\n")
+      .filter((line) => {
+        return !/^\s*(?:\/\/|\/\*)\s*(?:hide-start|hide-end|hide-next-line)(?:\s*\*\/)?\s*$/i.test(
+          line,
+        );
+      })
+      .map((line) => line.replace(/\s*(?:\/\/|\/\*)\s*hide-line(?:\s*\*\/)?\s*$/i, ""))
+      .join("\n")
+      .trim();
+    return `${cleaned}\n`;
   }
 
   return {
@@ -82,7 +98,8 @@ export function componentPreviewsPlugin(): Plugin {
         const content = readFileSync(filePath, "utf-8");
         for (const match of content.matchAll(previewRegex)) {
           const previewAttr = match[1];
-          const code = `${match[2].trim()}\n`;
+          const rawCode = `${match[2].trim()}\n`;
+          const code = cleanPreviewCode(rawCode);
           const name = previewAttr.replace(/\.html$/, "").replace(/\.ts$/, "");
           extracted.set(name, code);
         }

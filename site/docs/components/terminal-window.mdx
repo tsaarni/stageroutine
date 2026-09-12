@@ -9,12 +9,14 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `TerminalWindow` component displays terminal command-line sessions with window controls and line selection.
 
-<DemoFrame src="/stageroutine/previews/terminal-window.html" height={280} />
+<DemoFrame src="/stageroutine/previews/terminal-window.html" />
 
 ```typescript preview="terminal-window.html"
-import { Stage, TerminalWindow } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { TerminalWindow } from "stageroutine";
 
 const terminal = TerminalWindow({
   x: "center",
@@ -26,11 +28,11 @@ const terminal = TerminalWindow({
     "Output line 2",
   ],
 });
-
+// hide-start
 stage.scene("Terminal").with(terminal);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Line Selection

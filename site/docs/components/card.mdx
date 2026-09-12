@@ -9,14 +9,16 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 Cards group related content together on the stage.
 
-<DemoFrame src="/stageroutine/previews/card.html" height={280} />
+<DemoFrame src="/stageroutine/previews/card.html" />
 
 ## Basic Usage
 
 ```typescript preview="card.html"
-import { Card, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Card } from "stageroutine";
 
 const card = Card("Card content", {
   x: "center",
@@ -24,11 +26,11 @@ const card = Card("Card content", {
   width: 320,
   height: 160,
 });
-
+// hide-start
 stage.scene("Card").with(card);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Content Alignment

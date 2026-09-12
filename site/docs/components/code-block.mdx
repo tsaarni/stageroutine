@@ -9,22 +9,24 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `CodeBlock` component formats code snippets with syntax highlighting and interactive line selection.
 
-<DemoFrame src="/stageroutine/previews/code-block.html" height={280} />
+<DemoFrame src="/stageroutine/previews/code-block.html" />
 
 ```typescript preview="code-block.html"
-import { CodeBlock, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { CodeBlock } from "stageroutine";
 
 const code = CodeBlock('const x = 1;\nconsole.log(x);', {
   x: "center",
   y: "center",
 });
-
+// hide-start
 stage.scene("CodeBlock").with(code);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Line Selection

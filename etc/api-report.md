@@ -2207,9 +2207,9 @@ export interface StageEventMap {
 export interface StageOptions {
     /** Target HTML container or CSS selector to mount into (default: `document.body`). */
     target?: string | HTMLElement;
-    /** Virtual stage width in pixels (default: `1920`). */
+    /** Virtual stage width in pixels (default: `1920` or environment config). */
     width?: number;
-    /** Virtual stage height in pixels (default: `1080`). */
+    /** Virtual stage height in pixels (default: `1080` or environment config). */
     height?: number;
     /** Default transition duration in seconds (default: `0.6`). */
     defaultDuration?: number;
@@ -4114,6 +4114,10 @@ export interface StageRoutinePluginOptions {
      * Defaults to `"stageroutine-channel"`.
      */
     channel?: string | false;
+    /** Virtual stage width in pixels. Defaults to process.env.STAGEROUTINE_WIDTH or 1920. */
+    width?: number;
+    /** Virtual stage height in pixels. Defaults to process.env.STAGEROUTINE_HEIGHT or 1080. */
+    height?: number;
     /** Enable automatic on-demand icon resolution (defaults to true). */
     icons?: boolean;
     /** Additional custom options forwarded to unplugin-icons. */

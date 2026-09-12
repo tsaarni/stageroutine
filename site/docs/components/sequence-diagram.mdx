@@ -9,12 +9,14 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `SequenceDiagram` coordinator manages lifelines, protocol messages, and execution activations across stage participants.
 
-<DemoFrame src="/stageroutine/previews/sequence-diagram.html" height={320} />
+<DemoFrame src="/stageroutine/previews/sequence-diagram.html" />
 
 ```typescript preview="sequence-diagram.html"
-import { Card, layout, SequenceDiagram, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 450 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Card, layout, SequenceDiagram } from "stageroutine";
 
 const a = Card("A", { width: 140, height: 60 });
 const b = Card("B", { width: 140, height: 60 });
@@ -29,17 +31,17 @@ const diag = SequenceDiagram({
   participants: [a, b],
   startY: 38,
   gapY: 22,
-  lifelineLength: 240,
+  lifelineLength: 150,
 });
 
 const msg1 = diag.message(a, b, "Message 1");
 const msg2 = diag.message(b, a, "Message 2");
 diag.activate(b, { from: msg1, to: msg2 });
-
+// hide-start
 stage.scene("Sequence").with(a, b, ...diag.elements);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Participants and Lifelines

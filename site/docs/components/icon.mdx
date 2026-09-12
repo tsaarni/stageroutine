@@ -9,12 +9,14 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `Icon` component renders scalable vector icons on the stage.
 
-<DemoFrame src="/stageroutine/previews/icon.html" height={280} />
+<DemoFrame src="/stageroutine/previews/icon.html" />
 
 ```typescript preview="icon.html"
-import { Icon, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Icon } from "stageroutine";
 
 const icon = Icon(
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
@@ -24,11 +26,11 @@ const icon = Icon(
     size: 80,
   },
 );
-
+// hide-start
 stage.scene("Icon").with(icon);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Icon Sets

@@ -23,6 +23,10 @@ export interface StageRoutinePluginOptions {
    * Defaults to `"stageroutine-channel"`.
    */
   channel?: string | false;
+  /** Virtual stage width in pixels. Defaults to process.env.STAGEROUTINE_WIDTH or 1920. */
+  width?: number;
+  /** Virtual stage height in pixels. Defaults to process.env.STAGEROUTINE_HEIGHT or 1080. */
+  height?: number;
   /** Enable automatic on-demand icon resolution (defaults to true). */
   icons?: boolean;
   /** Additional custom options forwarded to unplugin-icons. */
@@ -79,11 +83,15 @@ export function stageRoutinePlugin(options: StageRoutinePluginOptions = {}): Plu
     config(userConfig, { command }) {
       const defaultBase =
         options.base ?? process.env.BASE_URL ?? (command === "build" ? "/stageroutine/" : "/");
+      const width = options.width ?? (Number(process.env.STAGEROUTINE_WIDTH) || undefined);
+      const height = options.height ?? (Number(process.env.STAGEROUTINE_HEIGHT) || undefined);
 
       return {
         base: userConfig.base ?? defaultBase,
         define: {
           __STAGEROUTINE_CHANNEL__: JSON.stringify(options.channel ?? "stageroutine-channel"),
+          ...(width ? { __STAGEROUTINE_WIDTH__: JSON.stringify(width) } : {}),
+          ...(height ? { __STAGEROUTINE_HEIGHT__: JSON.stringify(height) } : {}),
           ...userConfig.define,
         },
         build: {

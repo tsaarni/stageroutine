@@ -13,12 +13,14 @@ StageRoutine includes components for visual media: `Image`, `Video`, and `Webcam
 
 The `Image` component displays images on the stage.
 
-<DemoFrame src="/stageroutine/previews/media.html" height={280} />
+<DemoFrame src="/stageroutine/previews/media.html" />
 
 ```typescript preview="media.html"
-import { Image, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Image } from "stageroutine";
 
 const svg = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200" viewBox="0 0 360 200"><rect width="360" height="200" rx="8" fill="#1e293b"/><circle cx="180" cy="100" r="40" fill="#38bdf8"/></svg>',
@@ -30,11 +32,11 @@ const image = Image(svg, {
   width: 360,
   height: 200,
 });
-
+// hide-start
 stage.scene("Media").with(image);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Sizing and Fit

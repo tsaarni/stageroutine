@@ -9,12 +9,14 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `Connector` component renders dynamic connecting lines between elements or coordinates.
 
-<DemoFrame src="/stageroutine/previews/connector.html" height={280} />
+<DemoFrame src="/stageroutine/previews/connector.html" />
 
 ```typescript preview="connector.html"
-import { Card, Connector, layout, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Card, Connector, layout } from "stageroutine";
 
 const a = Card("A", { width: 140, height: 90 });
 const b = Card("B", { width: 140, height: 90 });
@@ -26,11 +28,11 @@ layout.hstack([a, b], {
 });
 
 const link = Connector(a, b);
-
+// hide-start
 stage.scene("Connector").with(a, b, link);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Routing Styles

@@ -350,9 +350,9 @@ export interface Background {
 export interface StageOptions {
   /** Target HTML container or CSS selector to mount into (default: `document.body`). */
   target?: string | HTMLElement;
-  /** Virtual stage width in pixels (default: `1920`). */
+  /** Virtual stage width in pixels (default: `1920` or environment config). */
   width?: number;
-  /** Virtual stage height in pixels (default: `1080`). */
+  /** Virtual stage height in pixels (default: `1080` or environment config). */
   height?: number;
   /** Default transition duration in seconds (default: `0.6`). */
   defaultDuration?: number;

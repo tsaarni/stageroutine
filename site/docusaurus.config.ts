@@ -5,6 +5,7 @@ import type { Config, PluginConfig } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 import { componentPreviewsPlugin } from "./plugins/component-previews";
 import { demoPresentationPlugin } from "./plugins/demo-presentation";
+import { remarkHideCodeLines } from "./plugins/remark-hide-code-lines";
 
 const isDevStart = process.argv.includes("start");
 const apiDocsExist = existsSync(resolve(__dirname, "docs/api/typedoc-sidebar.cjs"));
@@ -92,6 +93,7 @@ const config: Config = {
               label: "main",
             },
           },
+          beforeDefaultRemarkPlugins: [remarkHideCodeLines],
         },
         blog: false,
         theme: {

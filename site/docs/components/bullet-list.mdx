@@ -9,35 +9,31 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `BulletList` component formats lists with customizable bullet markers and interactive row selection.
 
-<DemoFrame src="/stageroutine/previews/bullet-list.html" height={280} />
+<DemoFrame src="/stageroutine/previews/bullet-list.html" />
 
 ```typescript preview="bullet-list.html"
-import { BulletList, Stage } from "stageroutine";
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { BulletList } from "stageroutine";
 
-const stage = new Stage({ width: 800, height: 400 });
-
-const list = BulletList(["Item 1", "Item 2", "Item 3"], {
-  x: "center",
-  y: "center",
-});
-
-stage.scene("BulletList").with(list);
-stage.pause();
-
-stage.mount("#stage");
-```
-
-## Nested Lists
-
-Pass nested arrays to create indented sub-items:
-
-```typescript
 const list = BulletList([
   "Item 1",
   ["Sub-item A", "Sub-item B"],
   "Item 2",
-]);
+], {
+  x: "center",
+  y: "center",
+});
+// hide-start
+stage.scene("BulletList").with(list);
+stage.pause();
+stage.mount("#stage");
+// hide-end
 ```
+
+Pass nested arrays to create indented sub-items.
 
 ## Item Selection
 

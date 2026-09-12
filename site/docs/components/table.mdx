@@ -9,12 +9,14 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 The `Table` component formats structured tabular data with column alignment and row-level selection.
 
-<DemoFrame src="/stageroutine/previews/table.html" height={280} />
+<DemoFrame src="/stageroutine/previews/table.html" />
 
 ```typescript preview="table.html"
-import { Stage, Table } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Table } from "stageroutine";
 
 const table = Table({
   x: "center",
@@ -26,11 +28,11 @@ const table = Table({
     ["4", "5", "6"],
   ],
 });
-
+// hide-start
 stage.scene("Table").with(table);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Row Selection

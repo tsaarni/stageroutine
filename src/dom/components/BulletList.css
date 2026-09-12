@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
+    font-size: var(--sr-font-body);
 
     &.has-focus .sr-bullet-item {
       transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s
@@ -44,7 +45,7 @@
     }
 
     &[data-level]:not([data-level="0"]) {
-      font-size: 0.95em;
+      font-size: calc(var(--sr-font-body) * 0.9);
     }
   }
 

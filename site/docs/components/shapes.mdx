@@ -13,35 +13,39 @@ StageRoutine provides geometric shape containers for diagrams and layout element
 
 The `Circle` component creates a circular node.
 
-<DemoFrame src="/stageroutine/previews/circle.html" height={280} />
+<DemoFrame src="/stageroutine/previews/circle.html" />
 
 ```typescript preview="circle.html"
-import { Circle, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Circle } from "stageroutine";
 
 const circle = Circle("Circle", {
   x: "center",
   y: "center",
   size: 180,
 });
-
+// hide-start
 stage.scene("Circle").with(circle);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Pill
 
 The `Pill` component creates a capsule-shaped badge or node.
 
-<DemoFrame src="/stageroutine/previews/pill.html" height={240} />
+<DemoFrame src="/stageroutine/previews/pill.html" />
 
 ```typescript preview="pill.html"
-import { Pill, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 350 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Pill } from "stageroutine";
 
 const pill = Pill("Pill", {
   x: "center",
@@ -49,34 +53,36 @@ const pill = Pill("Pill", {
   width: 220,
   height: 80,
 });
-
+// hide-start
 stage.scene("Pill").with(pill);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Diamond
 
 The `Diamond` component creates a 45-degree rotated diamond node.
 
-<DemoFrame src="/stageroutine/previews/diamond.html" height={280} />
+<DemoFrame src="/stageroutine/previews/diamond.html" />
 
 ```typescript preview="diamond.html"
-import { Diamond, Stage } from "stageroutine";
-
-const stage = new Stage({ width: 800, height: 400 });
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Diamond } from "stageroutine";
 
 const diamond = Diamond("Diamond", {
   x: "center",
   y: "center",
   size: 180,
 });
-
+// hide-start
 stage.scene("Diamond").with(diamond);
 stage.pause();
-
 stage.mount("#stage");
+// hide-end
 ```
 
 ## Surface Variants

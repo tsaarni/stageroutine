@@ -4,7 +4,7 @@
 
 import * as THREE from "three";
 import type { StageContext } from "../../core/types";
-import { BackgroundElement, type BackgroundOptions } from "./base";
+import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./base";
 
 /**
  * Configuration options for the 3D Starfield background.
@@ -22,6 +22,9 @@ export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
   /** Radius of space spread (default: 2000) */
   spread?: number;
 }
+
+const STARFIELD_TARGET_FPS = 30;
+const STARFIELD_FRAME_INTERVAL_MS = 1000 / STARFIELD_TARGET_FPS;
 
 /**
  * @internal
@@ -63,8 +66,8 @@ export class StarfieldElement extends BackgroundElement {
     this.camera.position.z = 1000;
 
     // 2. Renderer
-    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
+    this.renderer.setPixelRatio(1);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     const canvas = this.renderer.domElement;
@@ -132,24 +135,32 @@ export class StarfieldElement extends BackgroundElement {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    const animate = () => {
+    let lastFrameTime = 0;
+
+    const animate = (timestamp: number) => {
       if (!this.isRunning || !this.stars || !this.camera || !this.renderer || !this.scene) return;
 
-      const posAttr = this.stars.geometry.attributes.position;
-      const posArray = posAttr.array as Float32Array;
+      const elapsedDelta = timestamp - lastFrameTime;
+      if (elapsedDelta >= STARFIELD_FRAME_INTERVAL_MS) {
+        lastFrameTime = timestamp - (elapsedDelta % STARFIELD_FRAME_INTERVAL_MS);
 
-      for (let i = 2; i < this.count * 3; i += 3) {
-        posArray[i] += this.targetSpeed * 2.0;
-        if (posArray[i] > 1000) {
-          posArray[i] -= this.spread;
+        const posAttr = this.stars.geometry.attributes.position;
+        const posArray = posAttr.array as Float32Array;
+
+        for (let i = 2; i < this.count * 3; i += 3) {
+          posArray[i] += this.targetSpeed * 2.0;
+          if (posArray[i] > 1000) {
+            posArray[i] -= this.spread;
+          }
         }
+        posAttr.needsUpdate = true;
+
+        this.camera.rotation.x += (this.targetRotX - this.camera.rotation.x) * 0.05;
+        this.camera.rotation.y += (this.targetRotY - this.camera.rotation.y) * 0.05;
+
+        this.renderer.render(this.scene, this.camera);
       }
-      posAttr.needsUpdate = true;
 
-      this.camera.rotation.x += (this.targetRotX - this.camera.rotation.x) * 0.05;
-      this.camera.rotation.y += (this.targetRotY - this.camera.rotation.y) * 0.05;
-
-      this.renderer.render(this.scene, this.camera);
       this.animFrameId = requestAnimationFrame(animate);
     };
 
@@ -165,19 +176,14 @@ export class StarfieldElement extends BackgroundElement {
   }
 
   override _getMetrics(): Record<string, unknown> {
-    const canvas = this.renderer?.domElement;
-    const width = canvas?.width ?? 0;
-    const height = canvas?.height ?? 0;
-    const totalPixels = width * height;
-
     return {
       ...super._getMetrics(),
+      ...getCanvasMetrics(
+        this.renderer?.domElement,
+        this.renderer?.getPixelRatio() ?? 1,
+        STARFIELD_TARGET_FPS,
+      ),
       star_count: this.count,
-      canvas_width: width,
-      canvas_height: height,
-      pixel_ratio: this.renderer ? this.renderer.getPixelRatio() : 1,
-      total_pixels: totalPixels,
-      total_megapixels: Number((totalPixels / 1_000_000).toFixed(2)),
       speed: this.targetSpeed,
     };
   }

@@ -122,3 +122,26 @@ export abstract class BackgroundElement implements Background {
     };
   }
 }
+
+/**
+ * Collects standard canvas surface and frame metrics.
+ * @internal
+ */
+export function getCanvasMetrics(
+  canvas: HTMLCanvasElement | null | undefined,
+  pixelRatio = 1,
+  targetFps?: number,
+): Record<string, unknown> {
+  const width = canvas?.width ?? 0;
+  const height = canvas?.height ?? 0;
+  const totalPixels = width * height;
+
+  return {
+    ...(targetFps !== undefined ? { target_fps: targetFps } : {}),
+    canvas_width: width,
+    canvas_height: height,
+    pixel_ratio: pixelRatio,
+    total_pixels: totalPixels,
+    total_megapixels: Number((totalPixels / 1_000_000).toFixed(2)),
+  };
+}

@@ -145,6 +145,9 @@ function createGlyphAtlas(chars: string): { texture: THREE.CanvasTexture; charCo
   return { texture, charCount };
 }
 
+const FLUID_TARGET_FPS = 30;
+const FLUID_FRAME_INTERVAL_MS = 1000 / FLUID_TARGET_FPS;
+
 export interface AsciiFluidCanvasProps {
   characters?: string;
   cellSize?: number;
@@ -218,16 +221,21 @@ export function AsciiFluidCanvas({
       alpha: false,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(1);
     renderer.setSize(initialDim.width, initialDim.height, false);
 
     let animFrameId: number | null = null;
     const startTimestamp = performance.now();
+    let lastFrameTime = 0;
 
     const renderLoop = (now: number) => {
-      const elapsed = (now - startTimestamp) * 0.001;
-      uniforms.u_time.value = elapsed * waveSpeed;
-      renderer.render(scene, camera);
+      const elapsedDelta = now - lastFrameTime;
+      if (elapsedDelta >= FLUID_FRAME_INTERVAL_MS) {
+        lastFrameTime = now - (elapsedDelta % FLUID_FRAME_INTERVAL_MS);
+        const elapsed = (now - startTimestamp) * 0.001;
+        uniforms.u_time.value = elapsed * waveSpeed;
+        renderer.render(scene, camera);
+      }
       animFrameId = requestAnimationFrame(renderLoop);
     };
 

@@ -3,7 +3,7 @@
  */
 
 import * as THREE from "three";
-import { BackgroundElement, type BackgroundOptions } from "./base";
+import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./base";
 
 /**
  * @internal
@@ -248,11 +248,15 @@ const gradientFragmentShader = `
 // Fluid Background Reactive Element
 // ---------------------------------------------------------------------------
 
+const FLUID_TARGET_FPS = 30;
+const FLUID_FRAME_INTERVAL_MS = 1000 / FLUID_TARGET_FPS;
+
 interface FluidEngineConfig {
   fragmentShader: string;
   uniforms: Record<string, { value: unknown }>;
   waveSpeed: number;
   atlasTexture?: THREE.CanvasTexture;
+  pixelRatio?: number;
 }
 
 /**
@@ -290,8 +294,9 @@ export class FluidBackgroundElement extends BackgroundElement {
     const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material);
     this.scene.add(quad);
 
+    const pixelRatio = config.pixelRatio ?? 1;
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     const canvas = this.renderer.domElement;
@@ -317,12 +322,20 @@ export class FluidBackgroundElement extends BackgroundElement {
     this.isRunning = true;
     this.clock.start();
 
-    const animate = () => {
+    let lastFrameTime = 0;
+
+    const animate = (timestamp: number) => {
       if (!this.isRunning || !this.renderer || !this.material || !this.scene || !this.camera)
         return;
-      const elapsed = this.clock.getElapsedTime();
-      this.material.uniforms.u_time.value = elapsed * this.config.waveSpeed;
-      this.renderer.render(this.scene, this.camera);
+
+      const elapsedDelta = timestamp - lastFrameTime;
+      if (elapsedDelta >= FLUID_FRAME_INTERVAL_MS) {
+        lastFrameTime = timestamp - (elapsedDelta % FLUID_FRAME_INTERVAL_MS);
+        const elapsed = this.clock.getElapsedTime();
+        this.material.uniforms.u_time.value = elapsed * this.config.waveSpeed;
+        this.renderer.render(this.scene, this.camera);
+      }
+
       this.animFrameId = requestAnimationFrame(animate);
     };
 
@@ -339,18 +352,13 @@ export class FluidBackgroundElement extends BackgroundElement {
   }
 
   override _getMetrics(): Record<string, unknown> {
-    const canvas = this.renderer?.domElement;
-    const width = canvas?.width ?? 0;
-    const height = canvas?.height ?? 0;
-    const totalPixels = width * height;
-
     return {
       ...super._getMetrics(),
-      canvas_width: width,
-      canvas_height: height,
-      pixel_ratio: this.renderer ? this.renderer.getPixelRatio() : 1,
-      total_pixels: totalPixels,
-      total_megapixels: Number((totalPixels / 1_000_000).toFixed(2)),
+      ...getCanvasMetrics(
+        this.renderer?.domElement,
+        this.renderer?.getPixelRatio() ?? 1,
+        FLUID_TARGET_FPS,
+      ),
       wave_speed: this.config.waveSpeed,
       cell_size: this.material?.uniforms.u_cellSize
         ? (this.material.uniforms.u_cellSize.value as number)
@@ -402,6 +410,7 @@ export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElem
       fragmentShader: asciiFragmentShader,
       atlasTexture,
       waveSpeed,
+      pixelRatio: 1,
       uniforms: {
         u_atlas: { value: atlasTexture },
         u_cellSize: { value: cellSize },

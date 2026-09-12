@@ -5,7 +5,7 @@
 import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
-import type { ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
+import type { Align, ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
 import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
 
 let nextId = 1;
@@ -23,6 +23,7 @@ export type ElementDecorator = (element: DOMElement) => void;
 export interface ElementOptions {
   id?: string;
   anchor?: ElementAnchor;
+  align?: Align;
   position?: Point;
   x?: ReactiveProp<number | string>;
   y?: ReactiveProp<number | string>;
@@ -94,6 +95,20 @@ export class DOMElement implements ReactiveElementBase {
   enterDuration?: number;
   enterDelay?: number;
 
+  private _align?: Align;
+
+  get align(): Align | undefined {
+    return this._align;
+  }
+  set align(val: Align | undefined) {
+    this._align = val;
+    if (val) {
+      this.domElement.dataset.align = val;
+    } else {
+      delete this.domElement.dataset.align;
+    }
+  }
+
   get size(): ReactiveProp<number | string> | undefined {
     return this.width ?? this.height;
   }
@@ -140,6 +155,10 @@ export class DOMElement implements ReactiveElementBase {
       this.domElement = html.domElement;
       this.id = options.id || html.id;
       this.anchor = options.anchor || html.anchor || "top-left";
+      const initialAlign = options.align ?? html.align;
+      if (initialAlign) {
+        this.align = initialAlign;
+      }
     } else if (typeof html === "string") {
       this.domElement = document.createElement("div");
       this.domElement.innerHTML = html;
@@ -148,6 +167,10 @@ export class DOMElement implements ReactiveElementBase {
       this.domElement.appendChild(html);
     } else {
       this.domElement = html as HTMLElement;
+    }
+
+    if (options.align) {
+      this.align = options.align;
     }
 
     this.x = options.x ?? (options.position ? options.position[0] : 0);

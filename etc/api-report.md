@@ -15,12 +15,18 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 - `[stageroutine/backgrounds]` Class `BackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
 - `[stageroutine/backgrounds]` Class `CSSBackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
+- `[stageroutine/backgrounds]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
+- `[stageroutine/backgrounds]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
+- `[stageroutine/jsx-runtime]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/jsx-runtime`, but exported in `stageroutine`).
+- `[stageroutine/jsx-runtime]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/jsx-runtime`, but exported in `stageroutine`).
+- `[stageroutine/jsx-dev-runtime]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/jsx-dev-runtime`, but exported in `stageroutine`).
+- `[stageroutine/jsx-dev-runtime]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/jsx-dev-runtime`, but exported in `stageroutine`).
 
 ## Summary
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 152 symbols |
+| `stageroutine` | 153 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 11 symbols |
@@ -303,6 +309,7 @@ export class ActivationBarElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -387,6 +394,7 @@ export class BulletListElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -449,6 +457,7 @@ export class CodeBlockElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -555,6 +564,7 @@ export class ConnectorElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -643,6 +653,7 @@ export class DOMElement implements ReactiveElementBase {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -708,6 +719,7 @@ export class IconElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -771,6 +783,7 @@ export class ImageElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -798,6 +811,7 @@ export class LifelineElement extends DOMElement {
   constructor(actor: DOMElement, options?: LifelineOptions): LifelineElement;
   static reactiveKeys: ReadonlySet<string>;
   actor: DOMElement;
+  diagram: SequenceDiagramElement | undefined;
   length: number;
   color: string;
   activations: ActivationBarElement[];
@@ -837,6 +851,7 @@ export class LifelineElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -908,6 +923,7 @@ export class SequenceDiagramElement {
   startY: number;
   gapY: number;
   elements: DOMElement[];
+  updateLifelineLengths(): void;
   addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
   getLifeline(actor: DOMElement): LifelineElement;
   message(from: DOMElement | LifelineElement, to: DOMElement | LifelineElement, options?: ConnectorOptions | string): ConnectorElement;
@@ -959,6 +975,7 @@ export class ShapeElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1107,6 +1124,7 @@ export class TableElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1169,6 +1187,7 @@ export class TerminalWindowElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1242,6 +1261,7 @@ export class VideoElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1313,6 +1333,7 @@ export class WebcamElement extends DOMElement {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -1595,6 +1616,7 @@ export interface DreamOptions {
 export interface ElementOptions {
     id?: string;
     anchor?: ElementAnchor;
+    align?: Align;
     position?: Point;
     x?: ReactiveProp<number | string>;
     y?: ReactiveProp<number | string>;
@@ -1990,6 +2012,7 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
     /**
      * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
      * When true, Stage does not overwrite `node.style.transform`.
@@ -2128,8 +2151,8 @@ export interface ShapeOptions extends ElementOptions {
     active?: boolean;
     /** Double border outline (e.g. for final states, nested rings). */
     doubleBorder?: boolean;
-    /** Content alignment inside the shape container ("left" | "center" | "right"). */
-    align?: "left" | "center" | "right";
+    /** Content alignment inside the shape container (default: "center"). */
+    align?: Align;
     /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
     start?: ReactiveProp<number>;
     /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
@@ -2260,13 +2283,13 @@ export interface StaggerOptions {
  * Configuration options for the glassmorphic Table component.
  * @category Components
  */
-export interface TableOptions extends ElementOptions {
+export interface TableOptions extends Omit<ElementOptions, "align"> {
     /** Column header labels displayed in the table header row. */
     headers?: string[];
     /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
     rows: (string | number | HTMLElement)[][];
-    /** Text alignment per column ("left", "center", or "right", default: "left"). */
-    align?: ("left" | "center" | "right")[];
+    /** Text alignment per column (default: "left"). */
+    align?: Align[];
     /** Additional CSS class name. */
     className?: string;
     /** Whether clicking or dragging rows focuses them interactively (default: true). */
@@ -2506,10 +2529,17 @@ export interface WebcamOptions extends ElementOptions {
 
 ```ts
 /**
+ * 9-position content alignment grid for text and children inside a container.
+ * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
+ * @category Layout
+ */
+export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
+
+/**
  * Standard named position or anchor keyword.
  * @category Core
  */
-export type AnchorKeyword = "top-left" | "center" | "top" | "bottom" | "left" | "right" | "top-right" | "bottom-left" | "bottom-right";
+export type AnchorKeyword = Align;
 
 /**
  * Animation milestone representing progress of another element's transition:
@@ -2859,6 +2889,7 @@ export class DOMElement implements ReactiveElementBase {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -2985,6 +3016,7 @@ export interface CSSBackgroundOptions {
 export interface ElementOptions {
     id?: string;
     anchor?: ElementAnchor;
+    align?: Align;
     position?: Point;
     x?: ReactiveProp<number | string>;
     y?: ReactiveProp<number | string>;
@@ -3044,6 +3076,7 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
     /**
      * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
      * When true, Stage does not overwrite `node.style.transform`.
@@ -3216,7 +3249,7 @@ export interface TransitionDescriptor<T = unknown> {
  * Standard named position or anchor keyword.
  * @category Core
  */
-export type AnchorKeyword = "top-left" | "center" | "top" | "bottom" | "left" | "right" | "top-right" | "bottom-left" | "bottom-right";
+export type AnchorKeyword = Align;
 
 /**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
@@ -3622,6 +3655,7 @@ export class DOMElement implements ReactiveElementBase {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -3663,6 +3697,7 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
     /**
      * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
      * When true, Stage does not overwrite `node.style.transform`.
@@ -3755,7 +3790,7 @@ export interface TransitionDescriptor<T = unknown> {
  * Standard named position or anchor keyword.
  * @category Core
  */
-export type AnchorKeyword = "top-left" | "center" | "top" | "bottom" | "left" | "right" | "top-right" | "bottom-left" | "bottom-right";
+export type AnchorKeyword = Align;
 
 export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
 
@@ -3858,6 +3893,7 @@ export class DOMElement implements ReactiveElementBase {
   enterDuration: number | undefined;
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
+  align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
   isMounted: boolean;
   isActive: boolean;
@@ -3899,6 +3935,7 @@ export interface ReactiveElementBase {
     readonly kind: string;
     readonly domElement: HTMLElement;
     anchor?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
     /**
      * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
      * When true, Stage does not overwrite `node.style.transform`.
@@ -3991,7 +4028,7 @@ export interface TransitionDescriptor<T = unknown> {
  * Standard named position or anchor keyword.
  * @category Core
  */
-export type AnchorKeyword = "top-left" | "center" | "top" | "bottom" | "left" | "right" | "top-right" | "bottom-left" | "bottom-right";
+export type AnchorKeyword = Align;
 
 export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
 

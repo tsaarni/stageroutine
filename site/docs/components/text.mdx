@@ -44,6 +44,16 @@ const hero = Title("Hero heading", { variant: "hero" });
 const serif = Title("Editorial style", { variant: "serif" });
 ```
 
+### Alignment
+
+Typography components default to left alignment (`align: "left"`).
+Use `align` to change text alignment:
+
+```typescript
+const centered = Title("System Status", { align: "center" });
+const rightNote = Text("Confidential", { align: "right" });
+```
+
 ## Text
 
 The `Text` component formats body copy paragraphs.

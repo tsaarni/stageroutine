@@ -388,19 +388,26 @@ export type ReactiveProp<T> = T | TransitionDescriptor<T>;
 export type Point = readonly [x: number, y: number];
 
 /**
+ * 9-position content alignment grid for text and children inside a container.
+ * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
+ * @category Layout
+ */
+export type Align =
+  | "top-left"
+  | "top"
+  | "top-right"
+  | "left"
+  | "center"
+  | "right"
+  | "bottom-left"
+  | "bottom"
+  | "bottom-right";
+
+/**
  * Standard named position or anchor keyword.
  * @category Core
  */
-export type AnchorKeyword =
-  | "top-left"
-  | "center"
-  | "top"
-  | "bottom"
-  | "left"
-  | "right"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right";
+export type AnchorKeyword = Align;
 
 /**
  * Element or connector anchor: either a named keyword or an [x, y] percentage point.
@@ -417,6 +424,7 @@ export interface ReactiveElementBase {
   readonly kind: string;
   readonly domElement: HTMLElement;
   anchor?: ReactiveProp<ElementAnchor>;
+  align?: ReactiveProp<Align>;
   /**
    * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
    * When true, Stage does not overwrite `node.style.transform`.

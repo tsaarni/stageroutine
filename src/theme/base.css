@@ -14,8 +14,8 @@
 @import "@fontsource/newsreader/400.css";
 @import "@fontsource/newsreader/400-italic.css";
 
-/* Declare cascade layers: framework sits in sr-base and sr-components, so user styles always win */
-@layer sr-base, sr-components;
+/* Declare cascade layers: framework sits in sr-base, sr-components, and sr-align, so user styles always win */
+@layer sr-base, sr-components, sr-align;
 
 @layer sr-base {
   html,

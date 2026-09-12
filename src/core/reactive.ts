@@ -17,6 +17,7 @@ export const CORE_REACTIVE_KEYS: ReadonlySet<string> = new Set([
   "brightness",
   "color",
   "anchor",
+  "align",
 ]);
 
 /**

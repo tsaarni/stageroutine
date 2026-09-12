@@ -31,6 +31,21 @@ stage.pause();
 stage.mount("#stage");
 ```
 
+## Content Alignment
+
+Cards center their content by default (`align: "center"`).
+Use `align` to position content along the 9-point grid:
+
+```typescript
+const card = Card("System Status", {
+  width: 320,
+  height: 180,
+  align: "top-left",
+});
+```
+
+For all 9 alignment positions, see [Content Alignment](../building/coordinates#content-alignment).
+
 ## API Reference
 
 For configuration options, see the [`Card`](../api/functions/Card.md) reference.

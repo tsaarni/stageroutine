@@ -66,6 +66,7 @@ export type {
   FlowEffect,
   TransitionDescriptor,
   Point,
+  Align,
   AnchorKeyword,
   ElementAnchor,
 } from "./core/types";

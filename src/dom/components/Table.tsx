@@ -4,21 +4,29 @@
 
 import "./Table.css";
 import { getActiveStage } from "../../core/stage";
+import type { Align } from "../../core/types";
 import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
+
+function resolveColumnTextAlign(align?: Align): "left" | "center" | "right" | undefined {
+  if (!align) return undefined;
+  if (align.includes("right")) return "right";
+  if (align.includes("left")) return "left";
+  return "center";
+}
 
 /**
  * Configuration options for the glassmorphic Table component.
  * @category Components
  */
-export interface TableOptions extends ElementOptions {
+export interface TableOptions extends Omit<ElementOptions, "align"> {
   /** Column header labels displayed in the table header row. */
   headers?: string[];
   /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
   rows: (string | number | HTMLElement)[][];
-  /** Text alignment per column ("left", "center", or "right", default: "left"). */
-  align?: ("left" | "center" | "right")[];
+  /** Text alignment per column (default: "left"). */
+  align?: Align[];
   /** Additional CSS class name. */
   className?: string;
   /** Whether clicking or dragging rows focuses them interactively (default: true). */
@@ -41,8 +49,9 @@ export class TableElement extends DOMElement {
   }
 
   constructor(options: TableOptions) {
-    const isHiddenInitially = options.opacity === 0;
-    const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;
+    const { align: tableAlign, ...elementOpts } = options;
+    const isHiddenInitially = elementOpts.opacity === 0;
+    const containerOptions = isHiddenInitially ? { ...elementOpts, opacity: 1 } : elementOpts;
     const container = document.createElement("div");
     container.className = ["sr-table-container", options.className].filter(Boolean).join(" ");
 
@@ -59,8 +68,9 @@ export class TableElement extends DOMElement {
       options.headers.forEach((h, colIdx) => {
         const th = document.createElement("th");
         th.textContent = h;
-        if (align[colIdx]) {
-          th.style.textAlign = align[colIdx];
+        const colAlign = resolveColumnTextAlign(align[colIdx]);
+        if (colAlign) {
+          th.style.textAlign = colAlign;
         }
         tr.appendChild(th);
       });
@@ -86,8 +96,9 @@ export class TableElement extends DOMElement {
         } else {
           td.textContent = String(cellData);
         }
-        if (align[colIdx]) {
-          td.style.textAlign = align[colIdx];
+        const colAlign = resolveColumnTextAlign(align[colIdx]);
+        if (colAlign) {
+          td.style.textAlign = colAlign;
         }
         tr.appendChild(td);
       });

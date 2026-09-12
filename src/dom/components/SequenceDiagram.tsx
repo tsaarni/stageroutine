@@ -232,7 +232,7 @@ export class LifelineElement extends DOMElement {
     const yPct = (yPx / stageH) * 100;
 
     for (const act of this.activations) {
-      act.recompute();
+      act._recompute();
       const actY = typeof act.y === "number" ? act.y : Number.parseFloat(String(act.y)) || 0;
       const actH =
         typeof act.height === "number" ? act.height : Number.parseFloat(String(act.height)) || 0;
@@ -252,19 +252,22 @@ export class LifelineElement extends DOMElement {
  */
 export class ActivationBarElement extends DOMElement {
   lifeline: LifelineElement;
-  fromTarget?: ConnectorElement | number;
-  toTarget?: ConnectorElement | number;
+  /** @internal */
+  _fromTarget?: ConnectorElement | number;
+  /** @internal */
+  _toTarget?: ConnectorElement | number;
   private isRecomputing = false;
 
-  recompute(): void {
-    if (this.isRecomputing || (this.fromTarget === undefined && this.toTarget === undefined)) {
+  /** @internal */
+  _recompute(): void {
+    if (this.isRecomputing || (this._fromTarget === undefined && this._toTarget === undefined)) {
       return;
     }
     this.isRecomputing = true;
     try {
       const stageH = tryGetActiveStage()?.height ?? 1080;
-      const fromYPct = resolveAnchorYPct(this.fromTarget, stageH, 36);
-      const toYPct = resolveAnchorYPct(this.toTarget, stageH, fromYPct + 20);
+      const fromYPct = resolveAnchorYPct(this._fromTarget, stageH, 36);
+      const toYPct = resolveAnchorYPct(this._toTarget, stageH, fromYPct + 20);
 
       const actorYPct = (getActorYPx(this.lifeline.actor, stageH) / stageH) * 100;
       const actorHeightPct = (getActorHeightPx(this.lifeline.actor, stageH) / stageH) * 100;
@@ -281,7 +284,7 @@ export class ActivationBarElement extends DOMElement {
   }
 
   override update(): void {
-    this.recompute();
+    this._recompute();
     const yNum = typeof this.y === "number" ? this.y : Number.parseFloat(String(this.y)) || 0;
     const hNum =
       typeof this.height === "number" ? this.height : Number.parseFloat(String(this.height)) || 0;
@@ -313,11 +316,11 @@ export class ActivationBarElement extends DOMElement {
     });
 
     this.lifeline = lifeline;
-    this.fromTarget = options.from;
-    this.toTarget = options.to;
+    this._fromTarget = options.from;
+    this._toTarget = options.to;
     this.domElement.style.left = "calc(50% - 7px)";
     this.domElement.style.transform = "none";
-    this.recompute();
+    this._recompute();
     this.update();
 
     if (lifeline.actor.domElement) {

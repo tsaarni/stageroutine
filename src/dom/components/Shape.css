@@ -91,7 +91,7 @@
       position: relative;
       z-index: 1;
       max-width: 72%;
-      text-align: center;
+      text-align: inherit;
       line-height: 1.25;
       overflow-wrap: break-word;
       word-break: normal;

@@ -1,5 +1,6 @@
 import "./Shape.css";
 import {
+  type Align,
   type FlowEffect,
   type ReactiveElementBase,
   type ReactiveProp,
@@ -47,8 +48,8 @@ export interface ShapeOptions extends ElementOptions {
   active?: boolean;
   /** Double border outline (e.g. for final states, nested rings). */
   doubleBorder?: boolean;
-  /** Content alignment inside the shape container ("left" | "center" | "right"). */
-  align?: "left" | "center" | "right";
+  /** Content alignment inside the shape container (default: "center"). */
+  align?: Align;
   /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
   start?: ReactiveProp<number>;
   /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
@@ -245,18 +246,6 @@ export class ShapeElement extends DOMElement {
     if (typeof options.borderColor === "string") customStyles.borderColor = options.borderColor;
     if (options.background) customStyles.backgroundColor = options.background;
     if (options.color) customStyles.color = options.color;
-
-    if (options.align === "center" || kind === "circle" || kind === "diamond") {
-      customStyles.alignItems = "center";
-      customStyles.justifyContent = "center";
-      customStyles.textAlign = "center";
-    } else if (options.align === "right") {
-      customStyles.alignItems = "flex-end";
-      customStyles.textAlign = "right";
-    } else if (options.align === "left") {
-      customStyles.alignItems = "flex-start";
-      customStyles.textAlign = "left";
-    }
 
     Object.assign(el.style, customStyles);
 

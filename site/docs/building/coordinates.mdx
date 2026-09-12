@@ -88,3 +88,29 @@ const title = Title("Centered Title", {
   anchor: "center",
 });
 ```
+
+## Content Alignment
+
+While `anchor` positions the element on the stage, `align` positions text and child elements inside the element's box.
+
+Containers (`Card`, `Shape`) default to `"center"`. Typography elements (`Title`, `Text`) default to `"left"`.
+
+| | Left | Center | Right |
+|---|---|---|---|
+| **Top** | `"top-left"` | `"top"` | `"top-right"` |
+| **Middle** | `"left"` | `"center"` *(default for shapes)* | `"right"` |
+| **Bottom** | `"bottom-left"` | `"bottom"` | `"bottom-right"` |
+
+Single-axis shorthands center along the opposite axis: `"top"` means top-center, and `"left"` means middle-left.
+
+```typescript
+// Anchored at stage center, with contents aligned to the top-left inside
+const card = Card([Title("Metrics"), Text("All systems operational")], {
+  x: "center",
+  y: "center",
+  anchor: "center",
+  width: 360,
+  height: 200,
+  align: "top-left",
+});
+```

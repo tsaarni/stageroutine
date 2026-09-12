@@ -88,7 +88,7 @@ void main() {
   float speckle = (hash(fragCoord + sin(u_time * 12.0)) - 0.5) * 0.12;
 
   float core = exp(-d * 0.32) * 1.6;
-  float halo = exp(-d * 0.04) * 0.6 + exp(-d * 0.012) * 0.2 + speckle * exp(-d * 0.04);
+  float halo = exp(-d * 0.04) * 0.7 + exp(-d * 0.9) * 0.2 + speckle * exp(-d * 0.04);
 
   // 3. Final Additive Composition
   vec3 finalColor = u_color * (halo + ribbonGlow);

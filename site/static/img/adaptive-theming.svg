@@ -10,7 +10,7 @@
   <!-- Outer Canvas Container -->
   <rect x="10" y="10" width="760" height="240" rx="10" fill="rgba(56, 189, 248, 0.02)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5" />
   <text x="30" y="38" fill="#ffffff" font-size="15" font-weight="700" font-family="system-ui, sans-serif">Automatic Palette Derivation</text>
-  <text x="245" y="38" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">— You pick 3 colors; the framework derives the rest</text>
+  <text x="245" y="38" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">- You pick 3 colors; the framework derives the rest</text>
 
   <!-- Input Box (Top Centered) -->
   <g transform="translate(150, 55)">

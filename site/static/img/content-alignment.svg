@@ -3,7 +3,7 @@
 
   <!-- Title & Subtitle -->
   <text x="25" y="32" fill="#ffffff" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Content Alignment</text>
-  <text x="185" y="32" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">— 9-position alignment grid for container children &amp; text</text>
+  <text x="185" y="32" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">- 9-position alignment grid for container children &amp; text</text>
 
   <!-- Column Headers -->
   <text x="200" y="58" fill="#e4e4e7" font-size="14" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle">Left</text>

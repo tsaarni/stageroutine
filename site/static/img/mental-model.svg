@@ -4,7 +4,7 @@
   <!-- 1. STAGE Outer Container -->
   <rect x="10" y="10" width="760" height="260" rx="10" fill="rgba(56, 189, 248, 0.02)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5" />
   <text x="30" y="38" fill="#ffffff" font-size="15" font-weight="700" font-family="system-ui, sans-serif">Stage</text>
-  <text x="80" y="38" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">— The virtual canvas &amp; director</text>
+  <text x="80" y="38" fill="#a1a1aa" font-size="13" font-weight="500" font-family="system-ui, sans-serif">- The virtual canvas &amp; director</text>
 
   <!-- 2. SCENES -->
   <!-- Scene 1 -->

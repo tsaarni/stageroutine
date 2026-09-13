@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Introduction
 
-Welcome to **StageRoutine** — code-driven presentations built for the stage.
+Welcome to **StageRoutine** - code-driven presentations built for the stage.
 
 StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.
 
@@ -22,28 +22,34 @@ StageRoutine is a TypeScript library for creating presentations in code. Instead
 Create elements once, assign them to scenes, and update properties between presenter pauses:
 
 ```typescript
-import { Stage, Title, CodeBlock, to } from "stageroutine";
+import { Card, Stage, Title, to } from "stageroutine";
 
 const stage = new Stage();
-const title = Title("Architecture", { x: "center", y: "center" });
-const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 60, opacity: 0 });
+const title = Title("Hello, World!", {
+  variant: "hero",
+  x: "center",
+  y: 44,
+});
+const card = Card("Press Space to begin", {
+  x: "center",
+  y: 56,
+  opacity: 0,
+});
 
-// Scene 1: Title in the center
-stage.scene("Intro").with(title);
+// Scene 1: Welcome
+stage.scene("Welcome").with(title);
 stage.pause();
 
-// Scene 2: Title moves up, code appears
-stage.scene("Details").with(title, code);
-title.y = to(15);
-code.opacity = to(1);
+// Scene 2: Title glides up, card appears
+stage.scene("Overview").with(title, card);
+title.y = to(12);
+card.opacity = to(1).when(title, "halfway");
 stage.pause();
-
-stage.mount("#stage");
 ```
 
 ## Documentation Guide
 
-1. **[Quick Start](./getting-started/quickstart)** — Install and run your first presentation.
-2. **[Concepts](./getting-started/concepts)** — Learn the 4 core parts: Stage, Scene, Step, and Element.
-3. **[Building Presentations](./building/coordinates)** — Guides for coordinates, scenes, animation, layout, and visual effects.
-4. **[Under the Hood](./advanced/under-the-hood)** — How the internal engine, snapshots, and animation loop work.
+1. **[Quick Start](./getting-started/quickstart)** - Install and run your first presentation.
+2. **[Concepts](./getting-started/concepts)** - Learn the 4 core parts: Stage, Scene, Step, and Element.
+3. **[Building Presentations](./building/coordinates)** - Guides for coordinates, scenes, animation, layout, and visual effects.
+4. **[Under the Hood](./advanced/under-the-hood)** - How the internal engine, snapshots, and animation loop work.

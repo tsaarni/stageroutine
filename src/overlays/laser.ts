@@ -13,8 +13,6 @@ export interface LaserPointerOptions {
   idleTimeoutMs?: number;
   /** Inactivity delay before the cursor is hidden. Defaults to 2000ms. */
   cursorIdleMs?: number;
-  /** Keyboard key to toggle pointer on/off. Defaults to 'l'. Set to null to disable. */
-  toggleKey?: string | null;
   /** Start with the pointer active. Defaults to false. */
   active?: boolean;
 }
@@ -116,10 +114,10 @@ interface RawPoint {
 }
 
 /**
- * Laser pointer overlay with glowing trail and keyboard toggle.
+ * Laser pointer overlay with glowing trail and cursor suppression.
  *
- * Manages its own pointer event listeners, cursor visibility, and keyboard toggle.
- * Toggle with the L key (configurable) or programmatically via the returned controller.
+ * Controlled via stage events (`req:pointer:setState`, `evt:pointer:stateChanged`)
+ * or programmatically via the returned controller. Toggle with the P key or Esc.
  *
  * @example
  * ```ts
@@ -135,7 +133,6 @@ export function LaserPointer(
   const trailDurationMs = options.trailDurationMs ?? 160;
   const idleTimeoutMs = options.idleTimeoutMs ?? 2000;
   const cursorIdleMs = options.cursorIdleMs ?? 2000;
-  const toggleKey = options.toggleKey === undefined ? "l" : options.toggleKey;
 
   let ctx: OverlayContext | null = null;
   let canvas: HTMLCanvasElement | null = null;
@@ -168,7 +165,7 @@ export function LaserPointer(
   let boundOnPointerMove: ((e: PointerEvent) => void) | null = null;
   let boundOnPointerDown: ((e: PointerEvent) => void) | null = null;
   let boundOnPointerUp: ((e: PointerEvent) => void) | null = null;
-  let boundOnKeyDown: ((e: KeyboardEvent) => void) | null = null;
+  let unsubPointerState: (() => void) | null = null;
 
   const initGL = () => {
     if (!canvas) return;
@@ -341,6 +338,7 @@ export function LaserPointer(
   };
 
   const setActive = (active: boolean) => {
+    if (isActive === active) return;
     isActive = active;
     if (active) {
       if (canvas) canvas.style.opacity = "1";
@@ -362,7 +360,6 @@ export function LaserPointer(
       }
     }
     updateCursorVisibility();
-    ctx?.emit("pointer:toggled", { active: isActive });
   };
 
   const moveTo = (screenX: number, screenY: number, virtualX: number, virtualY: number) => {
@@ -370,17 +367,16 @@ export function LaserPointer(
 
     currentX = screenX;
     currentY = screenY;
-    const now = performance.now();
-
-    const last = rawPoints[0];
-    if (!last || Math.hypot(last.x - currentX, last.y - currentY) > 1.0) {
-      rawPoints.unshift({ x: currentX, y: currentY, time: now });
-    }
 
     ctx.viewport.style.setProperty("--sr-pointer-x", `${virtualX}px`);
     ctx.viewport.style.setProperty("--sr-pointer-y", `${virtualY}px`);
 
     if (isActive) {
+      const now = performance.now();
+      const last = rawPoints[0];
+      if (!last || Math.hypot(last.x - currentX, last.y - currentY) > 1.0) {
+        rawPoints.unshift({ x: currentX, y: currentY, time: now });
+      }
       resetPointerIdleTimer();
       startLoop();
     }
@@ -395,7 +391,11 @@ export function LaserPointer(
       },
 
       set active(value: boolean) {
-        setActive(value);
+        if (ctx) {
+          ctx.emit("req:pointer:setState", { active: value });
+        } else {
+          setActive(value);
+        }
       },
 
       mount(context: OverlayContext) {
@@ -443,18 +443,8 @@ export function LaserPointer(
         boundOnPointerUp = (_e: PointerEvent) => {};
         window.addEventListener("pointerup", boundOnPointerUp);
 
-        if (toggleKey !== null) {
-          boundOnKeyDown = (e: KeyboardEvent) => {
-            if (e.key === toggleKey || e.key === toggleKey.toUpperCase()) {
-              ctx?.emit("pointer:toggle");
-            }
-          };
-          window.addEventListener("keydown", boundOnKeyDown);
-        }
-
-        // Listen for pointer:toggle events from any source (keyboard, navigation overlay, presenter)
-        ctx.on("pointer:toggle", () => {
-          setActive(!isActive);
+        unsubPointerState = ctx.on("evt:pointer:stateChanged", ({ active }) => {
+          setActive(active);
         });
 
         if (isActive) {
@@ -465,11 +455,19 @@ export function LaserPointer(
       },
 
       show() {
-        setActive(true);
+        if (ctx) {
+          ctx.emit("req:pointer:setState", { active: true });
+        } else {
+          setActive(true);
+        }
       },
 
       hide() {
-        setActive(false);
+        if (ctx) {
+          ctx.emit("req:pointer:setState", { active: false });
+        } else {
+          setActive(false);
+        }
       },
 
       destroy() {
@@ -489,7 +487,10 @@ export function LaserPointer(
         if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
         if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
         if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
-        if (boundOnKeyDown) window.removeEventListener("keydown", boundOnKeyDown);
+        if (unsubPointerState) {
+          unsubPointerState();
+          unsubPointerState = null;
+        }
         if (ctx) {
           ctx.container.classList.remove("sr-pointer-mode");
           ctx.container.classList.remove("sr-cursor-hidden");

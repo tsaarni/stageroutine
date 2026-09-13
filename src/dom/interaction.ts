@@ -131,7 +131,7 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
     container.addEventListener("pointerover", onContainerPointerOver);
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("click", onWindowClick);
-    unsubStepChange = getActiveStage().on("nav:stepChanged", onStepChange);
+    unsubStepChange = getActiveStage().on("evt:nav:stepChanged", onStepChange);
   }
 
   markClickable();

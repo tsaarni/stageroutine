@@ -81,7 +81,7 @@ export class WebcamElement extends DOMElement {
   set deviceId(val: string | undefined) {
     this._deviceId = val;
     if (val) {
-      storage.set("webcam.deviceId", val);
+      storage.local.set("components.webcam.deviceId", val);
     }
     if (this.stream) {
       this.start();
@@ -136,7 +136,8 @@ export class WebcamElement extends DOMElement {
     this.videoElement = video;
     this._fit = fit;
     this._mirror = mirror;
-    this._deviceId = options.deviceId ?? storage.get<string | undefined>("webcam.deviceId");
+    this._deviceId =
+      options.deviceId ?? storage.local.get<string | undefined>("components.webcam.deviceId");
     this._facingMode = options.facingMode ?? "user";
     this.idealWidth = options.idealWidth ?? 1280;
     this.idealHeight = options.idealHeight ?? 720;
@@ -151,7 +152,7 @@ export class WebcamElement extends DOMElement {
     }
 
     // React to multi-window / presenter console camera switches
-    storage.subscribe<string>("webcam.deviceId", (newId) => {
+    storage.local.subscribe<string>("components.webcam.deviceId", (newId) => {
       if (newId && newId !== this._deviceId) {
         this._deviceId = newId;
         this.start();
@@ -237,7 +238,7 @@ export class WebcamElement extends DOMElement {
     const nextCam = cameras[nextIndex];
     if (nextCam) {
       this._deviceId = nextCam.id;
-      storage.set("webcam.deviceId", nextCam.id);
+      storage.local.set("components.webcam.deviceId", nextCam.id);
       await this.start();
     }
   }

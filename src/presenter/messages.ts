@@ -9,20 +9,20 @@ import type { StageStateChangedEvent } from "../core/types";
  * @internal
  */
 export type PresenterCommand =
-  | { event: "stage:requestState" }
-  | { event: "nav:nextStep" }
-  | { event: "nav:prevStep" }
-  | { event: "nav:nextScene" }
-  | { event: "nav:prevScene" }
-  | { event: "nav:gotoStep"; data: { index: number } }
-  | { event: "nav:gotoScene"; data: { index: number } };
+  | { event: "req:stage:requestState" }
+  | { event: "req:nav:nextStep" }
+  | { event: "req:nav:prevStep" }
+  | { event: "req:nav:nextScene" }
+  | { event: "req:nav:prevScene" }
+  | { event: "req:nav:gotoStep"; data: { index: number } }
+  | { event: "req:nav:gotoScene"; data: { index: number } };
 
 /**
  * Notifications sent by Stage to inform PresenterClient of state updates.
  * @internal
  */
 export type PresenterNotification = {
-  event: "stage:stateChanged";
+  event: "evt:stage:stateChanged";
   data: StageStateChangedEvent;
 };
 

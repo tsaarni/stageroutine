@@ -14,7 +14,13 @@ export {
 export { logger, type LogLevel } from "./logger";
 export { createReactiveProxy } from "./proxy";
 export { MetricRegistry, type MetricMap, type MetricValue, type MetricGetter } from "./metrics";
-export { storage, StageStorage, type StorageOptions, type StorageListener } from "./storage";
+export {
+  storage,
+  StageStorage,
+  StorageScope,
+  type StorageListener,
+  type StorageBackend,
+} from "./storage";
 export {
   CORE_REACTIVE_KEYS,
   isReactiveProperty,

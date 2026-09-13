@@ -560,7 +560,7 @@ export class ConnectorElement extends DOMElement {
 
     const stage = getActiveStage();
     if (stage && typeof stage.on === "function") {
-      stage.on("stage:resized", () => {
+      stage.on("evt:stage:resized", () => {
         if (this.isActive) {
           this.update();
         }
@@ -1426,7 +1426,7 @@ export function pulseSequence(
   // Listen to stage navigation to ensure sequence stops when scenes change
   const stage = getActiveStage();
   if (stage && typeof stage.on === "function") {
-    stage.on("nav:sceneChanged", () => {
+    stage.on("evt:nav:sceneChanged", () => {
       stop();
     });
   }

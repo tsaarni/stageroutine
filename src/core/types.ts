@@ -205,41 +205,50 @@ export interface StageStateChangedEvent {
 }
 
 /**
- * Event payload emitted when the pointer overlay active state toggles.
+ * Event payload emitted when the pointer active state changes.
  * @category Core
  */
-export interface PointerToggledEvent {
+export interface PointerStateChangedEvent {
   /** Whether the pointer overlay is currently active. */
   active: boolean;
 }
 
 /**
- * Complete event map for the stage event bus. Command events are imperative verbs
- * triggered by overlays or the presenter (`nav:nextStep`, ...); notification events
- * are past-tense state changes emitted by core (`nav:stepChanged`, ...).
+ * Command payload to set the pointer active state.
+ * @category Core
+ */
+export interface PointerSetStateEvent {
+  /** New active state for the pointer. */
+  active: boolean;
+}
+
+/**
+ * Complete event map for the stage event bus.
+ * - Requests (`req:*`) are imperative instructions sent to the stage (e.g. `req:nav:nextStep`).
+ * - Events (`evt:*`) are state notifications broadcast by core (e.g. `evt:nav:stepChanged`).
  * @category Core
  */
 export interface StageEventMap {
-  // Navigation commands
-  "nav:nextStep": undefined;
-  "nav:prevStep": undefined;
-  "nav:nextScene": undefined;
-  "nav:prevScene": undefined;
-  "nav:gotoStep": NavGotoStepEvent;
-  "nav:gotoScene": NavGotoSceneEvent;
+  // Navigation requests
+  "req:nav:nextStep": undefined;
+  "req:nav:prevStep": undefined;
+  "req:nav:nextScene": undefined;
+  "req:nav:prevScene": undefined;
+  "req:nav:gotoStep": NavGotoStepEvent;
+  "req:nav:gotoScene": NavGotoSceneEvent;
 
   // Navigation notifications
-  "nav:stepChanged": NavStepChangedEvent;
-  "nav:sceneChanged": NavSceneChangedEvent;
+  "evt:nav:stepChanged": NavStepChangedEvent;
+  "evt:nav:sceneChanged": NavSceneChangedEvent;
 
-  // Pointer commands & notifications
-  "pointer:toggle": undefined;
-  "pointer:toggled": PointerToggledEvent;
+  // Pointer requests & notifications
+  "req:pointer:setState": PointerSetStateEvent;
+  "evt:pointer:stateChanged": PointerStateChangedEvent;
 
   // Stage lifecycle
-  "stage:resized": StageResizedEvent;
-  "stage:requestState": undefined;
-  "stage:stateChanged": StageStateChangedEvent;
+  "evt:stage:resized": StageResizedEvent;
+  "req:stage:requestState": undefined;
+  "evt:stage:stateChanged": StageStateChangedEvent;
 }
 
 /**

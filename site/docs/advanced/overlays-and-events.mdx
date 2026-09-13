@@ -19,29 +19,32 @@ stage.overlay(NavigationOverlay());
 ```
 
 ### Built-in Overlays
-- **`LaserPointer()`**: WebGL glowing laser pointer. Toggle with the `L` key.
-- **`NavigationOverlay()`**: Next/Previous step buttons and scene jumper that appears on mouse hover at the screen bottom.
+- **`LaserPointer()`**: WebGL glowing laser pointer. Toggle with the `P` key (or `Esc` to exit).
+- **`NavigationOverlay()`**: Next/Previous step buttons, scene jumpers, and pointer toggle that appear on hover near the screen bottom.
 
 ## Event System
 
-All communication between the stage, overlays, keyboard shortcuts, and the presenter console flows through a single typed event bus using `domain:action` event names:
+All communication between the stage, overlays, keyboard shortcuts, and the presenter console flows through a single typed event bus using `req:` (requests) and `evt:` (notifications):
 
-| Domain | Commands (Actions you trigger) | Notifications (State updates) |
+| Domain | Requests (`req:*`) | Notifications (`evt:*`) |
 |---|---|---|
-| `nav:` | `nextStep`, `prevStep`, `nextScene`, `gotoStep` | `stepChanged`, `sceneChanged` |
-| `stage:` | `requestState` | `resized`, `stateChanged` |
-| `pointer:` | `toggle` | `toggled` |
+| `nav:` | `req:nav:nextStep`, `req:nav:prevStep`, `req:nav:nextScene`, `req:nav:prevScene`, `req:nav:gotoStep`, `req:nav:gotoScene` | `evt:nav:stepChanged`, `evt:nav:sceneChanged` |
+| `stage:` | `req:stage:requestState` | `evt:stage:resized`, `evt:stage:stateChanged` |
+| `pointer:` | `req:pointer:setState` | `evt:pointer:stateChanged` |
 
 ### Listening and Emitting
 
 ```typescript
 // Listen for navigation step changes
-stage.on("nav:stepChanged", ({ index, total, scene }) => {
+stage.on("evt:nav:stepChanged", ({ index, total, scene }) => {
   console.log(`Step ${index + 1} of ${total} (${scene})`);
 });
 
-// Emit navigation commands programmatically
-stage.emit("nav:nextStep");
+// Emit navigation requests programmatically
+stage.emit("req:nav:nextStep");
+
+// Toggle pointer mode
+stage.emit("req:pointer:setState", { active: true });
 ```
 
 ### Dual-Screen BroadcastChannel

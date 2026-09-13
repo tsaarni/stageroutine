@@ -33,6 +33,8 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
 
   let bar: HTMLDivElement | null = null;
   let boundOnPointerMove: ((e: PointerEvent) => void) | null = null;
+  let unsubPointerState: (() => void) | null = null;
+  let isPointerActive = false;
   let isVisible = false;
 
   const showBar = () => {
@@ -68,33 +70,41 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
 
       btnPrevScene.addEventListener("click", (e) => {
         e.stopPropagation();
-        ctx.emit("nav:prevScene");
+        ctx.emit("req:nav:prevScene");
       });
       btnPrev.addEventListener("click", (e) => {
         e.stopPropagation();
-        ctx.emit("nav:prevStep");
+        ctx.emit("req:nav:prevStep");
       });
       btnPointer.addEventListener("click", (e) => {
         e.stopPropagation();
-        ctx.emit("pointer:toggle");
+        ctx.emit("req:pointer:setState", { active: !isPointerActive });
       });
       btnNext.addEventListener("click", (e) => {
         e.stopPropagation();
-        ctx.emit("nav:nextStep");
+        ctx.emit("req:nav:nextStep");
       });
       btnNextScene.addEventListener("click", (e) => {
         e.stopPropagation();
-        ctx.emit("nav:nextScene");
+        ctx.emit("req:nav:nextScene");
       });
 
-      // Track pointer active state to style the toggle button
-      ctx.on("pointer:toggled", ({ active }) => {
+      // Track pointer active state to style the toggle button and suppress bar
+      unsubPointerState = ctx.on("evt:pointer:stateChanged", ({ active }) => {
+        isPointerActive = active;
         btnPointer.classList.toggle("sr-nav-btn-active", active);
+        if (active) {
+          hideBar();
+        }
       });
 
       ctx.container.appendChild(bar);
 
       boundOnPointerMove = (e: PointerEvent) => {
+        if (isPointerActive) {
+          hideBar();
+          return;
+        }
         const distFromBottom = window.innerHeight - e.clientY;
         if (distFromBottom <= triggerZone) {
           showBar();
@@ -117,6 +127,10 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
       if (boundOnPointerMove) {
         window.removeEventListener("pointermove", boundOnPointerMove);
       }
+      if (unsubPointerState) {
+        unsubPointerState();
+        unsubPointerState = null;
+      }
       bar?.remove();
       bar = null;
     },
@@ -135,7 +149,7 @@ function createButton(label: string, title: string): HTMLButtonElement {
 function createPointerButton(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "sr-nav-btn sr-nav-btn-pointer";
-  btn.title = "Toggle pointer (L)";
+  btn.title = "Toggle pointer (P)";
   btn.setAttribute("aria-label", "Toggle pointer");
   // Diagonal wand/pen with a glowing tip — standard laser pointer iconography
   btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">

@@ -20,12 +20,12 @@ export class PresenterClient {
     this.channel.onmessage = (event: MessageEvent<PresenterChannelMessage>) => {
       const msg = event.data;
       // ONLY listen for state notifications from Stage; ignore commands
-      if (msg?.event === "stage:stateChanged" && msg.data?.total > 0) {
+      if (msg?.event === "evt:stage:stateChanged" && msg.data?.total > 0) {
         this.onUpdateCallback?.(msg.data);
       }
     };
     // Request initial state from active presentation tab
-    this.channel.postMessage({ event: "stage:requestState" } satisfies PresenterCommand);
+    this.channel.postMessage({ event: "req:stage:requestState" } satisfies PresenterCommand);
   }
 
   /**
@@ -38,18 +38,18 @@ export class PresenterClient {
 
   /** Advances the presentation to the next step. */
   next(): void {
-    this.channel.postMessage({ event: "nav:nextStep" } satisfies PresenterCommand);
+    this.channel.postMessage({ event: "req:nav:nextStep" } satisfies PresenterCommand);
   }
 
   /** Returns the presentation to the previous step. */
   prev(): void {
-    this.channel.postMessage({ event: "nav:prevStep" } satisfies PresenterCommand);
+    this.channel.postMessage({ event: "req:nav:prevStep" } satisfies PresenterCommand);
   }
 
   /** Jumps directly to a step by 0-based index. */
   gotoStep(stepIndex: number): void {
     this.channel.postMessage({
-      event: "nav:gotoStep",
+      event: "req:nav:gotoStep",
       data: { index: stepIndex },
     } satisfies PresenterCommand);
   }
@@ -57,7 +57,7 @@ export class PresenterClient {
   /** Jumps directly to a scene by 0-based index. */
   gotoScene(sceneIndex: number): void {
     this.channel.postMessage({
-      event: "nav:gotoScene",
+      event: "req:nav:gotoScene",
       data: { index: sceneIndex },
     } satisfies PresenterCommand);
   }

@@ -62,6 +62,6 @@ step3.opacity = to(1).when(step2, 0.15);
 stage.pause();
 
 // 3. Mount
-// Add navigation controls and laser pointer ('L' key),
+// Add navigation controls and laser pointer ('P' key),
 // then render the presentation into the "#stage" element.
 stage.overlay(NavigationOverlay()).overlay(LaserPointer()).mount("#stage");

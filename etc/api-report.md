@@ -26,7 +26,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 153 symbols |
+| `stageroutine` | 154 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 11 symbols |
@@ -140,10 +140,10 @@ export function Image(srcOrOptions?: string | ImageOptions, maybeOptions?: Image
 export function Kicker(label: string, options?: KickerOptions): DOMElement;
 
 /**
- * Laser pointer overlay with glowing trail and keyboard toggle.
+ * Laser pointer overlay with glowing trail and cursor suppression.
  *
- * Manages its own pointer event listeners, cursor visibility, and keyboard toggle.
- * Toggle with the L key (configurable) or programmatically via the returned controller.
+ * Controlled via stage events (`req:pointer:setState`, `evt:pointer:stateChanged`)
+ * or programmatically via the returned controller. Toggle with the P key or Esc.
  * @example ```ts
  * stage.overlay(LaserPointer());
  * ```
@@ -1756,8 +1756,6 @@ export interface LaserPointerOptions {
     idleTimeoutMs?: number;
     /** Inactivity delay before the cursor is hidden. Defaults to 2000ms. */
     cursorIdleMs?: number;
-    /** Keyboard key to toggle pointer on/off. Defaults to 'l'. Set to null to disable. */
-    toggleKey?: string | null;
     /** Start with the pointer active. Defaults to false. */
     active?: boolean;
 }
@@ -1938,10 +1936,19 @@ export interface PeriodicPulseOptions extends PulseOptions {
 }
 
 /**
- * Event payload emitted when the pointer overlay active state toggles.
+ * Command payload to set the pointer active state.
  * @category Core
  */
-export interface PointerToggledEvent {
+export interface PointerSetStateEvent {
+    /** New active state for the pointer. */
+    active: boolean;
+}
+
+/**
+ * Event payload emitted when the pointer active state changes.
+ * @category Core
+ */
+export interface PointerStateChangedEvent {
     /** Whether the pointer overlay is currently active. */
     active: boolean;
 }
@@ -2175,29 +2182,29 @@ export interface StageContext {
 }
 
 /**
- * Complete event map for the stage event bus. Command events are imperative verbs
- * triggered by overlays or the presenter (`nav:nextStep`, ...); notification events
- * are past-tense state changes emitted by core (`nav:stepChanged`, ...).
+ * Complete event map for the stage event bus.
+ * - Requests (`req:*`) are imperative instructions sent to the stage (e.g. `req:nav:nextStep`).
+ * - Events (`evt:*`) are state notifications broadcast by core (e.g. `evt:nav:stepChanged`).
  * @category Core
  */
 export interface StageEventMap {
-    // Navigation commands
-    "nav:nextStep": undefined;
-    "nav:prevStep": undefined;
-    "nav:nextScene": undefined;
-    "nav:prevScene": undefined;
-    "nav:gotoStep": NavGotoStepEvent;
-    "nav:gotoScene": NavGotoSceneEvent;
+    // Navigation requests
+    "req:nav:nextStep": undefined;
+    "req:nav:prevStep": undefined;
+    "req:nav:nextScene": undefined;
+    "req:nav:prevScene": undefined;
+    "req:nav:gotoStep": NavGotoStepEvent;
+    "req:nav:gotoScene": NavGotoSceneEvent;
     // Navigation notifications
-    "nav:stepChanged": NavStepChangedEvent;
-    "nav:sceneChanged": NavSceneChangedEvent;
-    // Pointer commands & notifications
-    "pointer:toggle": undefined;
-    "pointer:toggled": PointerToggledEvent;
+    "evt:nav:stepChanged": NavStepChangedEvent;
+    "evt:nav:sceneChanged": NavSceneChangedEvent;
+    // Pointer requests & notifications
+    "req:pointer:setState": PointerSetStateEvent;
+    "evt:pointer:stateChanged": PointerStateChangedEvent;
     // Stage lifecycle
-    "stage:resized": StageResizedEvent;
-    "stage:requestState": undefined;
-    "stage:stateChanged": StageStateChangedEvent;
+    "evt:stage:resized": StageResizedEvent;
+    "req:stage:requestState": undefined;
+    "evt:stage:stateChanged": StageStateChangedEvent;
 }
 
 /**
@@ -3290,10 +3297,10 @@ Interactive presentation overlays mounted above the stage, including laser point
 
 ```ts
 /**
- * Laser pointer overlay with glowing trail and keyboard toggle.
+ * Laser pointer overlay with glowing trail and cursor suppression.
  *
- * Manages its own pointer event listeners, cursor visibility, and keyboard toggle.
- * Toggle with the L key (configurable) or programmatically via the returned controller.
+ * Controlled via stage events (`req:pointer:setState`, `evt:pointer:stateChanged`)
+ * or programmatically via the returned controller. Toggle with the P key or Esc.
  * @example ```ts
  * stage.overlay(LaserPointer());
  * ```
@@ -3339,8 +3346,6 @@ export interface LaserPointerOptions {
     idleTimeoutMs?: number;
     /** Inactivity delay before the cursor is hidden. Defaults to 2000ms. */
     cursorIdleMs?: number;
-    /** Keyboard key to toggle pointer on/off. Defaults to 'l'. Set to null to disable. */
-    toggleKey?: string | null;
     /** Start with the pointer active. Defaults to false. */
     active?: boolean;
 }
@@ -3561,22 +3566,22 @@ export type PresenterChannelMessage = PresenterCommand | PresenterNotification;
  * @internal
  */
 export type PresenterCommand = {
-    event: "stage:requestState";
+    event: "req:stage:requestState";
 } | {
-    event: "nav:nextStep";
+    event: "req:nav:nextStep";
 } | {
-    event: "nav:prevStep";
+    event: "req:nav:prevStep";
 } | {
-    event: "nav:nextScene";
+    event: "req:nav:nextScene";
 } | {
-    event: "nav:prevScene";
+    event: "req:nav:prevScene";
 } | {
-    event: "nav:gotoStep";
+    event: "req:nav:gotoStep";
     data: {
         index: number;
     };
 } | {
-    event: "nav:gotoScene";
+    event: "req:nav:gotoScene";
     data: {
         index: number;
     };
@@ -3594,7 +3599,7 @@ export type PresenterMessage = StageStateChangedEvent;
  * @internal
  */
 export type PresenterNotification = {
-    event: "stage:stateChanged";
+    event: "evt:stage:stateChanged";
     data: StageStateChangedEvent;
 };
 

@@ -46,46 +46,46 @@ export class PresenterHost {
         if (!msg || typeof msg.event !== "string") return;
 
         // Discard state notifications from other stages to eliminate loops
-        if (msg.event === "stage:stateChanged") return;
+        if (msg.event === "evt:stage:stateChanged") return;
 
         this.messagesReceived++;
         this.lastMsgTime = performance.now();
 
         switch (msg.event) {
-          case "stage:requestState":
-            target.emit("stage:requestState");
+          case "req:stage:requestState":
+            target.emit("req:stage:requestState");
             break;
-          case "nav:nextStep":
-            target.emit("nav:nextStep");
+          case "req:nav:nextStep":
+            target.emit("req:nav:nextStep");
             break;
-          case "nav:prevStep":
-            target.emit("nav:prevStep");
+          case "req:nav:prevStep":
+            target.emit("req:nav:prevStep");
             break;
-          case "nav:nextScene":
-            target.emit("nav:nextScene");
+          case "req:nav:nextScene":
+            target.emit("req:nav:nextScene");
             break;
-          case "nav:prevScene":
-            target.emit("nav:prevScene");
+          case "req:nav:prevScene":
+            target.emit("req:nav:prevScene");
             break;
-          case "nav:gotoStep":
+          case "req:nav:gotoStep":
             if (typeof msg.data?.index === "number") {
-              target.emit("nav:gotoStep", { index: msg.data.index });
+              target.emit("req:nav:gotoStep", { index: msg.data.index });
             }
             break;
-          case "nav:gotoScene":
+          case "req:nav:gotoScene":
             if (typeof msg.data?.index === "number") {
-              target.emit("nav:gotoScene", { index: msg.data.index });
+              target.emit("req:nav:gotoScene", { index: msg.data.index });
             }
             break;
         }
       };
 
       // Outgoing: publish state changes to PresenterClient
-      this.unbind = target.on("stage:stateChanged", (data) => {
+      this.unbind = target.on("evt:stage:stateChanged", (data) => {
         this.messagesSent++;
         this.lastMsgTime = performance.now();
         this.channel?.postMessage({
-          event: "stage:stateChanged",
+          event: "evt:stage:stateChanged",
           data,
         } satisfies PresenterNotification);
       });

@@ -4,6 +4,7 @@
 
 import { parseArgs } from "node:util";
 import { build, createServer, preview } from "vite";
+import pkg from "../package.json" with { type: "json" };
 import { stageRoutine } from "./vite-plugin.ts";
 
 export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
@@ -20,10 +21,17 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       channel: { type: "string" },
       presenter: { type: "boolean" },
       "no-presenter": { type: "boolean" },
+      version: { type: "boolean", short: "v" },
       help: { type: "boolean" },
     },
     strict: false,
   });
+
+  console.log(`\x1b[37m{\x1b[36m▶\x1b[37m}\x1b[0m stageroutine v${pkg.version}`);
+
+  if (values.version) {
+    return;
+  }
 
   const command = positionals[0] || "dev";
 
@@ -45,6 +53,7 @@ Options:
       --height <number>   Virtual stage height in pixels (default: 1080)
       --channel <name>    BroadcastChannel name for presenter sync
       --no-presenter      Disable presenter console build and routes
+  -v, --version           Show version number
       --help              Show help
 `);
     return;

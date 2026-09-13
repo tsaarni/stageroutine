@@ -14,6 +14,7 @@ import "@fontsource/jetbrains-mono/700.css";
 import "@fontsource/material-symbols-outlined/400.css";
 import "./presenter.css";
 
+import logoUrl from "../../site/static/img/stageroutine-logo-micro.svg";
 import { MetricRegistry } from "../core/metrics";
 import { TimerWidget } from "./components/TimerWidget";
 import { WallClock } from "./components/WallClock";
@@ -46,6 +47,10 @@ metrics.register("presenter", () => ({
 };
 
 // DOM References
+const brandLogo = document.getElementById("app-brand-logo") as HTMLImageElement | null;
+if (brandLogo) {
+  brandLogo.src = logoUrl;
+}
 const sceneText = document.getElementById("scene-text");
 const currentNotes = document.getElementById("current-notes");
 const nextScene = document.getElementById("next-scene");
@@ -55,7 +60,6 @@ const headerRight = document.getElementById("header-right");
 
 const recordPill = document.getElementById("record-pill");
 const btnRecord = document.getElementById("btn-record");
-const recLabel = document.getElementById("rec-label");
 const btnMic = document.getElementById("btn-mic");
 const micIcon = document.getElementById("mic-icon");
 
@@ -285,7 +289,7 @@ marked.use({
 });
 
 function parseMarkdownDocument(doc: string): string {
-  if (!doc || !doc.trim()) return "";
+  if (!doc?.trim()) return "";
 
   const { meta, body } = extractFrontmatter(doc);
 

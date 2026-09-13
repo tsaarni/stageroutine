@@ -36,6 +36,8 @@ Execution Rules:
 - Always run `pnpm verify` after making code changes.
 - Run `pnpm docs:build` only when editing documentation site files.
 - Run `pnpm api:report` when modifying public exports to update `etc/api-report.md` and check that no unintended symbols are exported.
-- Use Chrome DevTools MCP mainly for troubleshooting difficult issues or reading metrics (`getMetrics()`). Screenshots can catch some static layout issues, but they do not work for troubleshooting animations. Avoid repeated screenshot loops.
+- Apply straightforward changes (CSS tweaks, sizing, colors, text edits) directly without pre-emptive browser inspection or screenshotting.
+- Do not use Chrome DevTools MCP or take screenshots unless explicitly requested by the user, or when diagnosing complex runtime bugs that cannot be understood from code.
+- Never enter screenshot loops or inspect pages before making an edit.
 
 

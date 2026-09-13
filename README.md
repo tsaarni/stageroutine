@@ -1,15 +1,22 @@
-# StageRoutine
+<div align="center">
+  <img src="site/static/img/stageroutine-lockup.svg" alt="StageRoutine" width="340" />
+  <p><strong>Code-driven presentations built for the stage.</strong></p>
 
-[![CI](https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml/badge.svg)](https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml)
-[![Documentation](https://img.shields.io/badge/docs-website-blue.svg)](https://tsaarni.github.io/stageroutine/)
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://tsaarni.github.io/stageroutine/demo/)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tsaarni/stageroutine/blob/main/LICENSE)
+  <p>
+    <a href="https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml"><img src="https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+    <a href="https://tsaarni.github.io/stageroutine/"><img src="https://img.shields.io/badge/docs-website-blue.svg" alt="Documentation" /></a>
+    <a href="https://tsaarni.github.io/stageroutine/demo/"><img src="https://img.shields.io/badge/demo-online-brightgreen.svg" alt="Live Demo" /></a>
+    <a href="https://github.com/tsaarni/stageroutine/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache-2.0" /></a>
+  </p>
 
-**Code-driven presentations built for the stage.**
+  <p>
+    <a href="https://tsaarni.github.io/stageroutine/demo/"><strong>Live Demo</strong></a> &middot;
+    <a href="https://tsaarni.github.io/stageroutine/"><strong>Documentation</strong></a> &middot;
+    <a href="https://tsaarni.github.io/stageroutine/docs/getting-started/quickstart"><strong>Quick Start</strong></a>
+  </p>
+</div>
 
 StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.
-
-**[Live Demo](https://tsaarni.github.io/stageroutine/demo/)** &middot; **[Documentation](https://tsaarni.github.io/stageroutine/)** &middot; **[Quick Start](https://tsaarni.github.io/stageroutine/docs/getting-started/quickstart)**
 
 > [!WARNING]
 > StageRoutine is under active development. The API is not stable and is subject to change.

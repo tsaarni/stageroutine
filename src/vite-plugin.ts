@@ -66,7 +66,7 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
 
   const corePlugin: PluginOption = {
     name: "stageroutine-plugin",
-    config(userConfig, { command }) {
+    config(userConfig) {
       const defaultBase = options.base ?? process.env.BASE_URL ?? "/";
       const width = options.width ?? (Number(process.env.STAGEROUTINE_WIDTH) || undefined);
       const height = options.height ?? (Number(process.env.STAGEROUTINE_HEIGHT) || undefined);

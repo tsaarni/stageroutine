@@ -3,20 +3,43 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
 import type React from "react";
+import { useEffect, useState } from "react";
 import { AsciiFluidCanvas } from "../components/AsciiFluidCanvas";
+import { StageLighting } from "../components/StageLighting";
+import StageRoutineLogo from "../components/StageRoutineLogo";
+import { StageSubtitle } from "../components/StageSubtitle";
 import styles from "./index.module.css";
 
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   const demoUrl = useBaseUrl("/demo/");
+  const [fontsReady, setFontsReady] = useState(false);
+
+  useEffect(() => {
+    if (document.fonts) {
+      document.fonts.ready.then(() => setFontsReady(true));
+    } else {
+      setFontsReady(true);
+    }
+  }, []);
+
   return (
     <header className={styles.heroWrapper}>
       <AsciiFluidCanvas color="#38bdf8" backgroundColor="#09090b" opacity={0.38} cellSize={16} />
-      <div className={styles.heroContent}>
+      <div className={styles.heroVignette} aria-hidden="true" />
+      <StageLighting />
+      <div
+        className={styles.heroContent}
+        style={{
+          opacity: fontsReady ? 1 : 0,
+          transition: "opacity 0.25s ease-out",
+        }}
+      >
+        <div className={styles.heroLogoWrapper}>
+          <StageRoutineLogo className={styles.heroLogo} aria-hidden="true" role="img" />
+        </div>
         <h1 className={styles.heroTitle}>{siteConfig.title}</h1>
-        <p className={styles.heroSubtitle}>
-          <span>Code-driven presentations built for the stage.</span>
-        </p>
+        <StageSubtitle>Code-driven presentations built for the stage.</StageSubtitle>
         <div className={styles.buttons}>
           <Link className={styles.secondaryButton} to="/docs/intro">
             Introduction

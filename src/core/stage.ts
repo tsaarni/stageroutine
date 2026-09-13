@@ -175,10 +175,7 @@ export class Stage {
   private lastFrameDurationMs = 0;
   private maxFrameDurationMs = 0;
   private currentFps = 60;
-  private syncMessagesSent = 0;
-  private syncMessagesReceived = 0;
   private syncStateBroadcasts = 0;
-  private syncLastMsgTime = 0;
   private activeTransitionsSnapshot: {
     elementId: string;
     property: string;
@@ -1142,7 +1139,6 @@ export class Stage {
       const explicitOpacityElementIds = new Set(
         step.transitions.filter((t) => t.property === "opacity").map((t) => t.elementId),
       );
-      const defaultDurationMs = (this.options.defaultDuration || 0.6) * 1000;
 
       // 1. Exiting elements: active in previous step, but omitted in this step
       for (const id of prevSnap.activeElementIds) {

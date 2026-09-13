@@ -56,7 +56,7 @@ if (shouldGenerateTypedoc) {
 const config: Config = {
   title: "StageRoutine",
   tagline: "Code-driven presentations built for the stage",
-  favicon: "img/favicon.ico",
+  favicon: "img/stageroutine-logo-micro.svg",
 
   url: "https://tsaarni.github.io",
   baseUrl: "/stageroutine/",
@@ -111,6 +111,12 @@ const config: Config = {
     },
     navbar: {
       title: "StageRoutine",
+      logo: {
+        alt: "StageRoutine Logo",
+        src: "img/stageroutine-logo-micro.svg",
+        width: 24,
+        height: 24,
+      },
       items: [
         {
           type: "docSidebar",
@@ -120,7 +126,7 @@ const config: Config = {
         },
         {
           href: "pathname:///demo/",
-          position: "left",
+          position: "right",
           label: "Demo",
           target: "_top",
         },
@@ -128,6 +134,18 @@ const config: Config = {
           href: "https://github.com/tsaarni/stageroutine",
           label: "GitHub",
           position: "right",
+        },
+      ],
+    },
+    footer: {
+      style: "dark",
+      links: [
+        {
+          html: `© ${new Date().getFullYear()} StageRoutine`,
+        },
+        {
+          label: "Brand Guidelines",
+          to: "/brand",
         },
       ],
     },

@@ -1,0 +1,61 @@
+/**
+ * StageSubtitle styles - direct port of StageRoutine glow() & gradient() decorators.
+ * Kept in sync with src/decorators/glow.ts, src/decorators/gradient.ts, and src/theme/base.css.
+ */
+
+@keyframes srNeonBloom {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
+      drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.85))
+      drop-shadow(0 0 32px rgba(167, 139, 250, 0.6)) drop-shadow(0 0 65px rgba(147, 51, 234, 0.35));
+  }
+}
+
+@keyframes srNeonSweep {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.glowContainer {
+  display: inline-block;
+  font-family: var(--sr-font-serif, "Newsreader", Georgia, serif);
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  margin: 0 auto;
+  max-width: 720px;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65))
+    drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25));
+  animation: srNeonBloom 4s ease-in-out infinite;
+  transition: opacity 0.25s ease-out;
+}
+
+/* Inner span: Firefox renders nothing when background-clip:text shares an
+   element with filter, so the text clip is kept separate from the glow. */
+.gradientText {
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    #a78bfa 0%,
+    #e0e7ff 22%,
+    #ffffff 35%,
+    #bae6fd 48%,
+    #c4b5fd 65%,
+    #a78bfa 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: srNeonSweep 7s linear infinite;
+}

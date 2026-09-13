@@ -151,14 +151,25 @@ header {
 }
 
 .app-brand {
+  display: flex;
+  align-items: center;
   gap: 6px;
   color: var(--md-sys-color-primary);
   font-weight: 700;
+  line-height: 1;
   letter-spacing: 0.2px;
   margin-right: 4px;
 }
-.app-brand .material-symbols-outlined {
-  font-size: 20px;
+.app-brand-logo {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: block;
+}
+@media (prefers-color-scheme: light) {
+  .app-brand-logo {
+    filter: invert(1);
+  }
 }
 
 /* Base Interactive Pills (Chips, Dropdown Button, Record Button) */
@@ -686,6 +697,17 @@ main {
   color: #f87171;
 }
 
+/* Badges & Keystroke Labels */
+.kbd,
+.dropdown-scene-num,
+.dropdown-step-num {
+  font-family: var(--md-font-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: var(--md-shape-xs);
+  background: var(--md-sys-badge-bg);
+}
+
 /* Indented Numbered Step Break Indicator */
 .notes-step-break {
   display: flex;
@@ -846,17 +868,7 @@ footer {
   box-shadow: none;
 }
 
-/* Badges & Jump Dropdown Menu */
-.kbd,
-.dropdown-scene-num,
-.dropdown-step-num {
-  font-family: var(--md-font-mono);
-  font-size: 12px;
-  padding: 1px 5px;
-  border-radius: var(--md-shape-xs);
-  background: var(--md-sys-badge-bg);
-}
-
+/* Jump Dropdown Menu */
 .m3-dropdown-container {
   position: relative;
   display: inline-block;

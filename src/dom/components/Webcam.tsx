@@ -197,7 +197,7 @@ export class WebcamElement extends DOMElement {
       this.stream = stream;
       this.videoElement.srcObject = stream;
       await this.videoElement.play();
-    } catch (err) {
+    } catch {
       // Fallback: try default without strict constraints if exact deviceId failed
       if (this._deviceId) {
         try {

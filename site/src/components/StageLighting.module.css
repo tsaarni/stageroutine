@@ -1,0 +1,37 @@
+.stageLighting {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  contain: strict;
+  transform-origin: 60% 0%;
+  opacity: 0;
+  transform: scaleY(0.15) scaleX(0.6);
+  transition:
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.stageLightingSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stageLightingOn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stageLighting {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

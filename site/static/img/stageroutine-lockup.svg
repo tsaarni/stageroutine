@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 124" width="100%" height="100%" color="#ffffff">
+  <title>StageRoutine</title>
+  <style>
+    :root { color: #ffffff; }
+    @media (prefers-color-scheme: light) {
+      :root { color: #09090b; }
+    }
+    .sr-lockup-mark {
+      color: currentColor;
+    }
+    .sr-lockup-text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Inter, Helvetica, Arial, sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      fill: currentColor;
+    }
+  </style>
+
+  <!-- Centered Display Mark -->
+  <g class="sr-lockup-mark" transform="translate(140, 31) scale(0.1646) translate(-256, -256)">
+    <!-- Left Bracket: 48px stroke, sharp corners, butt caps, miter joins -->
+    <path d="M 142 116 h -20 a 36 36 0 0 0 -36 36 v 50 a 54 54 0 0 1 -54 54 a 54 54 0 0 1 54 54 v 50 a 36 36 0 0 0 36 36 h 20"
+          fill="none" stroke="currentColor" stroke-width="48" stroke-linecap="butt" stroke-linejoin="miter" />
+
+    <!-- Playhead Triangle -->
+    <polygon points="192,175 332,256 192,337" fill="currentColor" />
+
+    <!-- Right Bracket: 48px stroke, sharp corners, butt caps, miter joins -->
+    <path d="M 370 116 h 20 a 36 36 0 0 1 36 36 v 50 a 54 54 0 0 0 54 54 a 54 54 0 0 0 -54 54 v 50 a 36 36 0 0 1 -36 36 h -20"
+          fill="none" stroke="currentColor" stroke-width="48" stroke-linecap="butt" stroke-linejoin="miter" />
+  </g>
+
+  <!-- Wordmark -->
+  <text class="sr-lockup-text" x="140" y="105" text-anchor="middle">StageRoutine</text>
+</svg>

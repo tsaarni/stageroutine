@@ -216,7 +216,7 @@ export function computeBezierPath(
   start: Point,
   end: Point,
   startSide: CardinalSide = "center",
-  endSide: CardinalSide = "center",
+  _endSide: CardinalSide = "center",
 ): string {
   if (startSide === "top" || startSide === "bottom") {
     const dy = (end[1] - start[1]) * 0.5;

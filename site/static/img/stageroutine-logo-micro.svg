@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="100%" height="100%" color="#ffffff">
+  <title>StageRoutine Logo (Micro)</title>
+  <style>
+    :root { color: #ffffff; }
+    @media (prefers-color-scheme: light) {
+      :root { color: #09090b; }
+    }
+  </style>
+
+  <!-- Left Bracket: 1.35px stroke, sharp corners, butt caps, miter joins -->
+  <path class="sr-logo-bracket" d="M 3.25 2.5 H 2.75 A 1.25 1.25 0 0 0 1.5 3.75 V 6.25 A 1.75 1.75 0 0 1 0.25 8 A 1.75 1.75 0 0 1 1.5 9.75 V 12.25 A 1.25 1.25 0 0 0 2.75 13.5 H 3.25"
+        fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="butt" stroke-linejoin="miter" />
+
+  <!-- Playhead Triangle -->
+  <polygon class="sr-logo-playhead" points="6.5,4.5 10.5,8 6.5,11.5" fill="currentColor" />
+
+  <!-- Right Bracket: 1.35px stroke, sharp corners, butt caps, miter joins -->
+  <path class="sr-logo-bracket" d="M 12.75 2.5 H 13.25 A 1.25 1.25 0 0 1 14.5 3.75 V 6.25 A 1.75 1.75 0 0 0 15.75 8 A 1.75 1.75 0 0 0 14.5 9.75 V 12.25 A 1.25 1.25 0 0 1 13.25 13.5 H 12.75"
+        fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="butt" stroke-linejoin="miter" />
+</svg>

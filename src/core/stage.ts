@@ -204,6 +204,8 @@ export class Stage {
     this.overlays.push(plugin);
     if (this.container) {
       plugin.mount(this._createOverlayContext());
+      const initialActive = storage.runtime.get<boolean>("pointer.active", false);
+      this.emit("evt:pointer:stateChanged", { active: initialActive });
     }
     return this;
   }

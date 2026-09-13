@@ -38,6 +38,7 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
   let isVisible = false;
 
   const showBar = () => {
+    if (isPointerActive) return;
     if (isVisible) return;
     isVisible = true;
     bar?.classList.add("sr-nav-visible");
@@ -45,7 +46,6 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
   };
 
   const hideBar = () => {
-    if (!isVisible) return;
     isVisible = false;
     bar?.classList.remove("sr-nav-visible");
     bar?.classList.add("sr-nav-hidden");

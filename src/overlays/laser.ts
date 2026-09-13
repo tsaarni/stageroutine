@@ -448,7 +448,7 @@ export function LaserPointer(
         });
 
         if (isActive) {
-          setActive(true);
+          ctx.emit("req:pointer:setState", { active: true });
         } else {
           updateCursorVisibility();
         }

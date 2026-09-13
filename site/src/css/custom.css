@@ -27,11 +27,12 @@
   --ifm-color-primary-lightest: #e0f2fe;
 
   /* Typography */
-  --ifm-font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --ifm-font-family-monospace: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
-  --ifm-heading-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
+  --ifm-font-family-base:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ifm-font-family-monospace:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --ifm-heading-font-family:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --ifm-font-size-base: 15.5px;
   --ifm-line-height-base: 1.65;
   --ifm-heading-color: #ffffff;
@@ -147,11 +148,17 @@ body {
 
 .theme-doc-sidebar-container,
 aside[class*="docSidebarContainer"] {
-  background: linear-gradient(180deg, rgba(18, 18, 21, 0.72) 0%, rgba(9, 9, 11, 0.82) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 18, 21, 0.72) 0%,
+    rgba(9, 9, 11, 0.82) 100%
+  ) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: inset -1px 0 0 0 rgba(255, 255, 255, 0.04), 4px 0 24px rgba(0, 0, 0, 0.4) !important;
+  box-shadow:
+    inset -1px 0 0 0 rgba(255, 255, 255, 0.04),
+    4px 0 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 .theme-doc-sidebar-menu {
@@ -273,7 +280,9 @@ div[class*="codeBlockContainer"] {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 12px !important;
-  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
   margin-bottom: 1.75rem !important;
   overflow: hidden !important;
 }
@@ -299,7 +308,9 @@ div[class*="codeBlockTitle"]::before {
   height: 9px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.25);
-  box-shadow: 15px 0 0 rgba(255, 255, 255, 0.25), 30px 0 0 rgba(255, 255, 255, 0.25);
+  box-shadow:
+    15px 0 0 rgba(255, 255, 255, 0.25),
+    30px 0 0 rgba(255, 255, 255, 0.25);
   margin-right: 38px;
 }
 
@@ -353,13 +364,19 @@ table {
   display: table !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  ) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
   border-radius: 10px !important;
-  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
   overflow: hidden !important;
   margin: 1.5rem 0 !important;
 }
@@ -422,7 +439,9 @@ table tr:last-child td {
   border-radius: 10px;
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
-  box-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
   color: #e4e4e7;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-top: 1px solid rgba(255, 255, 255, 0.22);
@@ -515,7 +534,9 @@ article {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 10px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
   padding: 1.1rem 1.4rem !important;
   text-decoration: none !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -523,9 +544,15 @@ article {
 
 .pagination-nav__link:hover {
   border-color: rgba(56, 189, 248, 0.45) !important;
-  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.15), inset 0 1px 0 0
-    rgba(255, 255, 255, 0.2) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(56, 189, 248, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  ) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(56, 189, 248, 0.15),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2) !important;
   transform: translateY(-2px) !important;
   text-decoration: none !important;
 }

@@ -31,7 +31,7 @@ let isShaderWarmedUp = false;
  * Compiles GPU filter shaders in advance to avoid first-frame animation stutter.
  */
 function warmUpDreamShader(filterId: string): void {
-  if (isShaderWarmedUp || typeof document === "undefined") return;
+  if (isShaderWarmedUp) return;
   isShaderWarmedUp = true;
 
   const run = () => {
@@ -83,7 +83,6 @@ export function dream(options: DreamOptions = {}): ElementDecorator {
     }
 
     const el = element.domElement;
-    if (typeof document === "undefined") return;
 
     const filterId = `sr-dream-liquid-${++filterCounter}`;
 

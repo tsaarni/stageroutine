@@ -5,7 +5,9 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -52,7 +54,7 @@
     "docs:build": "pnpm --filter stageroutine-docs build"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.5.13",
     "@iconify-json/lucide": "^1.2.127",
     "@iconify/utils": "^3.1.4",
     "@types/node": "^26.2.0",

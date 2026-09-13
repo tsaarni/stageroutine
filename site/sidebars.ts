@@ -1,5 +1,5 @@
 import type { SidebarItem, SidebarsConfig } from "@docusaurus/plugin-content-docs";
-// @ts-ignore
+// @ts-expect-error
 import typedocSidebar from "./docs/api/typedoc-sidebar.cjs";
 
 interface DocItem {

@@ -2,7 +2,7 @@
  * Direct-to-DOM JSX runtime compiling TSX tags directly into native DOM nodes with zero Virtual DOM overhead.
  */
 
-import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
+import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
 import type { DOMElement, ElementOptions } from "./element";
 
 export const Fragment = Symbol("StageRoutine.Fragment");
@@ -215,13 +215,13 @@ export namespace JSX {
   }
 }
 
-export type { DOMElement } from "./element";
 export type {
-  ReactiveElementBase,
-  ElementAnchor,
   AnchorKeyword,
-  Point,
-  TransitionDescriptor,
-  ReactiveProp,
   EaseCurve,
+  ElementAnchor,
+  Point,
+  ReactiveElementBase,
+  ReactiveProp,
+  TransitionDescriptor,
 } from "../core/types";
+export type { DOMElement } from "./element";

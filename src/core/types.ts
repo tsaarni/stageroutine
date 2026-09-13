@@ -105,6 +105,7 @@ export interface TransitionRecord {
  * @category Core
  */
 import type { ThemeConfig } from "../theme/tokens";
+
 export type { ThemeConfig };
 
 /**

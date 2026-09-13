@@ -1,0 +1,8 @@
+`typeof $target` as $expr where {
+  $target <: or {
+    `window`,
+    `document`,
+    `navigator`
+  },
+  register_diagnostic(span=$expr, message="Redundant SSR guard. Do not check typeof window, document, or navigator in StageRoutine.", severity="error")
+}

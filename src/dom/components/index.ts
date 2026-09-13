@@ -6,59 +6,38 @@
  * custom logic against `DOMElement` or the exported option interfaces.
  */
 
-export { Title, type TitleOptions, type TitleVariant } from "./Title";
-export { Text, type TextOptions } from "./Text";
-export { Image, type ImageOptions, type ImageFit, type ImageElement } from "./Image";
 export {
-  Icon,
-  defineIcons,
-  resolveIconSvg,
-  type IconOptions,
-  type IconDefinition,
-  type IconElement,
-} from "./Icon";
-export { Video, type VideoOptions, type VideoElement } from "./Video";
-export { Webcam, type WebcamOptions, type WebcamElement, type CameraDevice } from "./Webcam";
-export {
-  Shape,
-  Card,
-  Circle,
-  Pill,
-  Diamond,
-  type ShapeOptions,
-  type ShapeKind,
-  type ShapeVariant,
-  type ShapeElement,
-} from "./Shape";
-export { Kicker, type KickerOptions } from "./Kicker";
-export { CodeBlock, type CodeBlockOptions, type CodeBlockElement } from "./CodeBlock";
-export {
-  TerminalBlock,
-  type TerminalBlockOptions,
-  type TerminalBlockElement,
-} from "./TerminalBlock";
-export {
-  BulletList,
-  type BulletListOptions,
-  type BulletListElement,
   type BulletItemInput,
+  BulletList,
+  type BulletListElement,
+  type BulletListOptions,
 } from "./BulletList";
-export { Table, type TableOptions, type TableElement } from "./Table";
+export { CodeBlock, type CodeBlockElement, type CodeBlockOptions } from "./CodeBlock";
 export {
   Connector,
-  pulseSequence,
   type ConnectorElement,
+  type ConnectorHeadType,
   type ConnectorOptions,
   type ConnectorTarget,
-  type ConnectorHeadType,
   type LabelOffset,
   type LabelPlacement,
   type PeriodicPulseOptions,
   type PulseOptions,
-  type PulseSequenceStep,
-  type PulseSequenceOptions,
   type PulseSequenceController,
+  type PulseSequenceOptions,
+  type PulseSequenceStep,
+  pulseSequence,
 } from "./Connector";
+export {
+  defineIcons,
+  Icon,
+  type IconDefinition,
+  type IconElement,
+  type IconOptions,
+  resolveIconSvg,
+} from "./Icon";
+export { Image, type ImageElement, type ImageFit, type ImageOptions } from "./Image";
+export { Kicker, type KickerOptions } from "./Kicker";
 /**
  * The sequence diagram system is used through its coordinator: `SequenceDiagram()` returns
  * the `seq` handle with `.message()`, `.activate()`, `.addParticipant()`, `.lifelines`,
@@ -66,11 +45,32 @@ export {
  * coordinator.
  */
 export {
+  type ActivationBarElement,
+  type ActivationOptions,
+  type LifelineElement,
+  type LifelineOptions,
   SequenceDiagram,
   type SequenceDiagramElement,
-  type LifelineElement,
-  type ActivationBarElement,
-  type LifelineOptions,
-  type ActivationOptions,
   type SequenceDiagramOptions,
 } from "./SequenceDiagram";
+export {
+  Card,
+  Circle,
+  Diamond,
+  Pill,
+  Shape,
+  type ShapeElement,
+  type ShapeKind,
+  type ShapeOptions,
+  type ShapeVariant,
+} from "./Shape";
+export { Table, type TableElement, type TableOptions } from "./Table";
+export {
+  TerminalBlock,
+  type TerminalBlockElement,
+  type TerminalBlockOptions,
+} from "./TerminalBlock";
+export { Text, type TextOptions } from "./Text";
+export { Title, type TitleOptions, type TitleVariant } from "./Title";
+export { Video, type VideoElement, type VideoOptions } from "./Video";
+export { type CameraDevice, Webcam, type WebcamElement, type WebcamOptions } from "./Webcam";

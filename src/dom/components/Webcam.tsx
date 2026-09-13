@@ -84,7 +84,7 @@ export class WebcamElement extends DOMElement {
       storage.local.set("components.webcam.deviceId", val);
     }
     if (this.stream) {
-      this.start();
+      void this.start();
     }
   }
 
@@ -92,7 +92,8 @@ export class WebcamElement extends DOMElement {
    * Discovers and lists all connected video input cameras.
    */
   static async getCameras(): Promise<CameraDevice[]> {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+    // mediaDevices is undefined in insecure contexts (non-HTTPS/non-localhost)
+    if (!navigator.mediaDevices?.enumerateDevices) {
       return [];
     }
     try {
@@ -147,7 +148,7 @@ export class WebcamElement extends DOMElement {
       video.title = "Double-click to cycle cameras";
       video.addEventListener("dblclick", (e) => {
         e.stopPropagation();
-        this.cycleCamera();
+        void this.cycleCamera();
       });
     }
 
@@ -155,12 +156,12 @@ export class WebcamElement extends DOMElement {
     storage.local.subscribe<string>("components.webcam.deviceId", (newId) => {
       if (newId && newId !== this._deviceId) {
         this._deviceId = newId;
-        this.start();
+        void this.start();
       }
     });
 
     this.onActivate(() => {
-      this.start();
+      void this.start();
     });
 
     this.onDeactivate(() => {
@@ -172,7 +173,8 @@ export class WebcamElement extends DOMElement {
    * Starts the webcam video stream.
    */
   async start(): Promise<void> {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    // mediaDevices is undefined in insecure contexts (non-HTTPS/non-localhost)
+    if (!navigator.mediaDevices?.getUserMedia) {
       return;
     }
 

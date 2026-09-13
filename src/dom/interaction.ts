@@ -126,7 +126,7 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
 
   let unsubStepChange: (() => void) | null = null;
 
-  if (interactive && typeof window !== "undefined") {
+  if (interactive) {
     container.addEventListener("pointerdown", onContainerPointerDown);
     container.addEventListener("pointerover", onContainerPointerOver);
     window.addEventListener("pointerup", onPointerUp);
@@ -159,7 +159,7 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
       }
     },
     destroy() {
-      if (interactive && typeof window !== "undefined") {
+      if (interactive) {
         container.removeEventListener("pointerdown", onContainerPointerDown);
         container.removeEventListener("pointerover", onContainerPointerOver);
         window.removeEventListener("pointerup", onPointerUp);

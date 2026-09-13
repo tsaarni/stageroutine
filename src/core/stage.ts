@@ -274,9 +274,7 @@ export class Stage {
    */
   constructor(options: StageOptions = {}) {
     activeStage = this;
-    if (typeof window !== "undefined") {
-      (window as unknown as { __stage?: Stage }).__stage = this;
-    }
+    (window as unknown as { __stage?: Stage }).__stage = this;
     const defaultWidth = resolveDefaultWidth();
     const defaultHeight = resolveDefaultHeight();
     const defaultChannel = resolveDefaultChannel();
@@ -393,67 +391,65 @@ export class Stage {
     // Browser Engine stats (strictly reads cached properties, only reports RUNNING animations)
     this.metrics.register("browser", () => {
       const result: Record<string, unknown> = {};
-      if (typeof document !== "undefined") {
-        const allAnimations = document.getAnimations();
-        let runningCount = 0;
-        let hiddenRunningCount = 0;
-        const runningList: Record<string, unknown>[] = [];
+      const allAnimations = document.getAnimations();
+      let runningCount = 0;
+      let hiddenRunningCount = 0;
+      const runningList: Record<string, unknown>[] = [];
 
-        for (const anim of allAnimations) {
-          if (anim.playState !== "running") continue;
-          runningCount++;
+      for (const anim of allAnimations) {
+        if (anim.playState !== "running") continue;
+        runningCount++;
 
-          const target = (anim.effect as { target?: Element } | null)?.target;
-          // Check both HTMLElement and SVGElement; SVG nodes do not inherit HTMLElement.
-          // Check target and parent visibility to detect hidden background animations.
-          const isElement = target instanceof HTMLElement || target instanceof SVGElement;
-          const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
-          const inlineOpacity = targetEl?.style.opacity
-            ? Number.parseFloat(targetEl.style.opacity)
-            : 1;
-          const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
-          const parentOpacity = parentEl?.style.opacity
-            ? Number.parseFloat(parentEl.style.opacity)
-            : 1;
-          const isHidden =
-            targetEl !== null &&
-            (inlineOpacity === 0 ||
-              parentOpacity === 0 ||
-              targetEl.style.display === "none" ||
-              targetEl.style.visibility === "hidden" ||
-              parentEl?.style.display === "none" ||
-              parentEl?.style.visibility === "hidden" ||
-              !targetEl.isConnected);
-          if (isHidden) hiddenRunningCount++;
+        const target = (anim.effect as { target?: Element } | null)?.target;
+        // Check both HTMLElement and SVGElement; SVG nodes do not inherit HTMLElement.
+        // Check target and parent visibility to detect hidden background animations.
+        const isElement = target instanceof HTMLElement || target instanceof SVGElement;
+        const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
+        const inlineOpacity = targetEl?.style.opacity
+          ? Number.parseFloat(targetEl.style.opacity)
+          : 1;
+        const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
+        const parentOpacity = parentEl?.style.opacity
+          ? Number.parseFloat(parentEl.style.opacity)
+          : 1;
+        const isHidden =
+          targetEl !== null &&
+          (inlineOpacity === 0 ||
+            parentOpacity === 0 ||
+            targetEl.style.display === "none" ||
+            targetEl.style.visibility === "hidden" ||
+            parentEl?.style.display === "none" ||
+            parentEl?.style.visibility === "hidden" ||
+            !targetEl.isConnected);
+        if (isHidden) hiddenRunningCount++;
 
-          runningList.push({
-            name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
-            target_tag: target?.tagName,
-            target_class:
-              typeof target?.className === "string"
-                ? target.className
-                : target?.classList?.toString() || undefined,
-            is_hidden: isHidden ? 1 : 0,
-          });
-        }
-
-        const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
-        result["connectors.total_active_pulses"] = pulsePackets.length;
-        result["animations.total_running"] = runningCount;
-        result["animations.hidden_running"] = hiddenRunningCount;
-        if (runningList.length > 0) {
-          result["animations.running"] = runningList;
-        }
-
-        const canvases = Array.from(document.querySelectorAll("canvas"));
-        let totalCanvasPixels = 0;
-        for (const c of canvases) {
-          totalCanvasPixels += c.width * c.height;
-        }
-        result["canvas.count"] = canvases.length;
-        result["canvas.total_pixels"] = totalCanvasPixels;
-        result["canvas.total_megapixels"] = Number((totalCanvasPixels / 1_000_000).toFixed(2));
+        runningList.push({
+          name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
+          target_tag: target?.tagName,
+          target_class:
+            typeof target?.className === "string"
+              ? target.className
+              : target?.classList?.toString() || undefined,
+          is_hidden: isHidden ? 1 : 0,
+        });
       }
+
+      const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
+      result["connectors.total_active_pulses"] = pulsePackets.length;
+      result["animations.total_running"] = runningCount;
+      result["animations.hidden_running"] = hiddenRunningCount;
+      if (runningList.length > 0) {
+        result["animations.running"] = runningList;
+      }
+
+      const canvases = Array.from(document.querySelectorAll("canvas"));
+      let totalCanvasPixels = 0;
+      for (const c of canvases) {
+        totalCanvasPixels += c.width * c.height;
+      }
+      result["canvas.count"] = canvases.length;
+      result["canvas.total_pixels"] = totalCanvasPixels;
+      result["canvas.total_megapixels"] = Number((totalCanvasPixels / 1_000_000).toFixed(2));
 
       if (typeof performance !== "undefined" && "memory" in performance) {
         const mem = (
@@ -764,8 +760,6 @@ export class Stage {
   // Mount & Playback Engine
   /** Mounts the presentation stage into the target container element and begins playback. */
   mount(target?: string | HTMLElement): this {
-    if (typeof window === "undefined") return this;
-
     const el =
       typeof target === "string"
         ? document.querySelector<HTMLElement>(target)
@@ -915,15 +909,13 @@ export class Stage {
     this.isMountedState = true;
 
     // Attach global dev diagnostics hook
-    if (typeof window !== "undefined") {
-      (
-        window as unknown as {
-          __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
-        }
-      ).__STAGEROUTINE_DEV__ = {
-        getMetrics: () => this.metrics.collect(),
-      };
-    }
+    (
+      window as unknown as {
+        __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+      }
+    ).__STAGEROUTINE_DEV__ = {
+      getMetrics: () => this.metrics.collect(),
+    };
 
     return this;
   }
@@ -1525,7 +1517,6 @@ export class Stage {
   }
 
   private _updateHash(): void {
-    if (typeof window === "undefined") return;
     const step = this.steps[this.currentStepIndex];
     if (step) {
       window.location.hash = `#${this._slugifySceneName(step.sceneName)}/${step.stepIndex}`;
@@ -1541,7 +1532,7 @@ export class Stage {
    * - `#/stepIndex` — go to that step by global index
    */
   private _resolveHashTarget(): number {
-    if (typeof window === "undefined" || !window.location.hash) return 0;
+    if (!window.location.hash) return 0;
 
     const raw = window.location.hash.slice(1); // strip leading '#'
 

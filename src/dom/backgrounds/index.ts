@@ -2,29 +2,29 @@
  * Full-screen background elements including WebGL fluid simulations, starfields, and CSS patterns.
  */
 
+export type {
+  AnchorKeyword,
+  EaseCurve,
+  ElementAnchor,
+  Point,
+  ReactiveElementBase,
+  ReactiveProp,
+  ThemeConfig,
+  TransitionDescriptor,
+} from "../../core/types";
+export type { DOMElement, ElementOptions } from "../element";
 export { BackgroundElement, type BackgroundOptions } from "./base";
 export {
   CSSBackground,
-  type CSSBackgroundOptions,
   type CSSBackgroundElement,
+  type CSSBackgroundOptions,
 } from "./css";
-export { Starfield, type StarfieldOptions, type StarfieldElement } from "./starfield";
 export {
   AsciiFluid,
-  GradientFluid,
-  type BaseFluidOptions,
   type AsciiFluidOptions,
-  type GradientFluidOptions,
+  type BaseFluidOptions,
   type FluidBackgroundElement,
+  GradientFluid,
+  type GradientFluidOptions,
 } from "./fluid";
-export type { DOMElement, ElementOptions } from "../element";
-export type {
-  Point,
-  TransitionDescriptor,
-  ThemeConfig,
-  ReactiveElementBase,
-  EaseCurve,
-  ElementAnchor,
-  AnchorKeyword,
-  ReactiveProp,
-} from "../../core/types";
+export { Starfield, type StarfieldElement, type StarfieldOptions } from "./starfield";

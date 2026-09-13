@@ -48,8 +48,9 @@
     );
     --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 10%, transparent);
     --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 20%, transparent);
-    --sr-surface-shadow: 0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6), inset 0 1px 0 0
-      color-mix(in srgb, var(--sr-text) 10%, transparent);
+    --sr-surface-shadow:
+      0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 10%, transparent);
     --sr-surface-backdrop: blur(16px);
 
     /* Spatial Scale & Radius */

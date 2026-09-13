@@ -1,11 +1,11 @@
 import {
+  getActiveStage,
   type Point,
   type ReactiveElementBase,
   type TransitionDescriptor,
-  getActiveStage,
   tryGetActiveStage,
 } from "../core/index";
-import { type RuleOptions, applyRuleStyles } from "../decorators/rule";
+import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
 import { DOMElement } from "./element";
 
@@ -160,7 +160,8 @@ function measureElement(
   let w = dom.offsetWidth;
   let h = dom.offsetHeight;
 
-  if (typeof document !== "undefined" && !dom.isConnected) {
+  // Temporarily attach unmounted elements offscreen to measure computed dimensions.
+  if (!dom.isConnected) {
     const prevVis = dom.style.visibility;
     const prevPos = dom.style.position;
     const prevLeft = dom.style.left;

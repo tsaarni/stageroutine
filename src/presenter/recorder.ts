@@ -137,7 +137,7 @@ export class PresenterRecorder {
     if (this.isRecording) {
       this.stop();
     } else {
-      this.start();
+      void this.start();
     }
   }
 

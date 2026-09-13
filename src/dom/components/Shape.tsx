@@ -2,9 +2,9 @@ import "./Shape.css";
 import {
   type Align,
   type FlowEffect,
+  getActiveStage,
   type ReactiveElementBase,
   type ReactiveProp,
-  getActiveStage,
 } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 import { type PingHandle, spawnPingPacket } from "./ping";
@@ -501,7 +501,6 @@ export class ShapeElement extends DOMElement {
   }
 
   private _startPeriodicPing(): void {
-    if (typeof window === "undefined") return;
     this._stopPeriodicPing();
 
     const opacity = typeof this.opacity === "number" ? this.opacity : 1;
@@ -546,7 +545,6 @@ export class ShapeElement extends DOMElement {
   }
 
   private _emitPing(): void {
-    if (typeof window === "undefined") return;
     const opacity = typeof this.opacity === "number" ? this.opacity : 1;
     if (opacity <= 0.01) return;
 

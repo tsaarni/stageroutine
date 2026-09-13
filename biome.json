@@ -1,5 +1,10 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+  "plugins": [
+    "./.biome/rules/no-browser-guards.grit",
+    "./.biome/rules/enforce-timer-cleanup.grit",
+    "./.biome/rules/enforce-sr-class-prefix.grit"
+  ],
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 2,
@@ -8,10 +13,16 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
+      "complexity": {
+        "noImportantStyles": "off"
+      },
       "correctness": {
         "noUndeclaredDependencies": "off",
         "noUnusedImports": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "error"
       }
     }
   },
@@ -23,18 +34,31 @@
     }
   },
   "files": {
-    "ignore": [
-      "dist",
-      "node_modules",
-      ".vite",
-      ".chrome-profile",
-      "site/.docusaurus",
-      "site/build",
-      "site/docs/api",
-      "site/static/assets",
-      "site/static/demo",
-      "site/static/previews",
-      "site/.cache"
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/.vite",
+      "!**/.chrome-profile",
+      "!**/site/.docusaurus",
+      "!**/site/build",
+      "!**/site/docs/api",
+      "!**/site/static/assets",
+      "!**/site/static/demo",
+      "!**/site/static/previews",
+      "!**/site/.cache"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/**", "!src/vite-plugin.ts", "!src/cli.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noNodejsModules": "error"
+          }
+        }
+      }
+    }
+  ]
 }

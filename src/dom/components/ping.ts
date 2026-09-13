@@ -33,7 +33,7 @@ export function spawnPingPacket(
   pathD: string,
   options: PingPacketOptions = {},
 ): PingHandle | null {
-  if (typeof window === "undefined" || !pathD) return null;
+  if (!pathD) return null;
 
   const duration = (options.duration ?? 0.8) * 1000;
   const color = options.color ?? "#38bdf8";

@@ -182,10 +182,8 @@ export function bracket(options: BracketOptions = {}): ElementDecorator {
     const el = element.domElement;
     if (!el) return;
 
-    if (typeof window !== "undefined" && getComputedStyle(el).position === "static") {
+    if (getComputedStyle(el).position === "static") {
       el.style.position = "relative";
-    } else {
-      el.style.position = el.style.position || "relative";
     }
 
     const container = document.createElement("div");

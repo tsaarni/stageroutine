@@ -20,11 +20,12 @@
 
 // Global stylesheet (design tokens, cascade layers, component styling, and body resets)
 import "./dom/style.css";
+
 // Browsers load web fonts lazily by default.
 // Layout helpers measure text dimensions immediately when presentation code runs.
 // If fonts are not ready, measurements use fallback font sizes, which causes text to overlap elements later.
 // We eagerly load and wait for all declared fonts here so layout measurements are always accurate.
-if (typeof document !== "undefined" && document.fonts) {
+if (document.fonts) {
   const descriptors = new Set<string>();
   for (const face of document.fonts) {
     if (face.family) {
@@ -40,183 +41,176 @@ if (typeof document !== "undefined" && document.fonts) {
 }
 
 // Core runtime
-export { Stage, logger } from "./core/index";
+export { logger, Stage } from "./core/index";
 export type { LogLevel } from "./core/logger";
 export type {
-  StageOptions,
-  ThemeConfig,
-  Background,
-  StageContext,
-  StageEventMap,
-  NavStepChangedEvent,
-  NavSceneChangedEvent,
-  NavGotoStepEvent,
-  NavGotoSceneEvent,
-  StageResizedEvent,
-  StageStateChangedEvent,
-  PointerStateChangedEvent,
-  PointerSetStateEvent,
-  ReactiveElementBase,
-  ReactiveProp,
-  UnwrapTransition,
-  OverlayPlugin,
-  OverlayContext,
-  EaseCurve,
-  BuiltinEase,
-  AnimationMilestone,
-  FlowEffect,
-  TransitionDescriptor,
-  Point,
   Align,
   AnchorKeyword,
+  AnimationMilestone,
+  Background,
+  BuiltinEase,
+  EaseCurve,
   ElementAnchor,
+  FlowEffect,
+  NavGotoSceneEvent,
+  NavGotoStepEvent,
+  NavSceneChangedEvent,
+  NavStepChangedEvent,
+  OverlayContext,
+  OverlayPlugin,
+  Point,
+  PointerSetStateEvent,
+  PointerStateChangedEvent,
+  ReactiveElementBase,
+  ReactiveProp,
+  StageContext,
+  StageEventMap,
+  StageOptions,
+  StageResizedEvent,
+  StageStateChangedEvent,
+  ThemeConfig,
+  TransitionDescriptor,
+  UnwrapTransition,
 } from "./core/types";
-
-// Motion
-export { to, stagger, crossfade, cubicBezier } from "./motion/index";
 export type {
-  StaggerOptions,
-  StaggerBuilder,
-  CrossfadeOptions,
-  CrossfadeBuilder,
-} from "./motion/index";
-
-// Layout
-export { layout } from "./dom/layout";
-export type {
-  LayoutOptions,
-  LayoutAnimation,
-  StackSlot,
-  CircleLayoutOptions,
-  RelativePlacement,
-  RelativeAlign,
-  GridSlot,
-  LayoutElement,
-} from "./dom/layout";
-
-// Base class & option types for custom components
-export { DOMElement } from "./dom/element";
-export type { ElementOptions, ElementDecorator } from "./dom/element";
-
-// Components
-export {
-  Title,
-  Text,
-  Image,
-  Video,
-  Webcam,
-  Shape,
-  Card,
-  Circle,
-  Pill,
-  Diamond,
-  Icon,
-  defineIcons,
-  resolveIconSvg,
-  Kicker,
-  CodeBlock,
-  TerminalBlock,
-  BulletList,
-  Table,
-  Connector,
-  pulseSequence,
-  SequenceDiagram,
-} from "./dom/components/index";
-export type {
-  TitleOptions,
-  TitleVariant,
-  TextOptions,
-  ImageOptions,
-  ImageFit,
-  ImageElement,
-  VideoOptions,
-  VideoElement,
-  WebcamOptions,
-  WebcamElement,
-  CameraDevice,
-  ShapeOptions,
-  ShapeKind,
-  ShapeVariant,
-  ShapeElement,
-  IconOptions,
-  IconDefinition,
-  IconElement,
-  KickerOptions,
-  CodeBlockOptions,
-  CodeBlockElement,
-  TerminalBlockOptions,
-  TerminalBlockElement,
-  BulletListOptions,
-  BulletListElement,
-  BulletItemInput,
-  TableOptions,
-  TableElement,
-  ConnectorOptions,
-  ConnectorElement,
-  ConnectorTarget,
-  ConnectorHeadType,
-  LabelOffset,
-  LabelPlacement,
-  PeriodicPulseOptions,
-  PulseOptions,
-  PulseSequenceStep,
-  PulseSequenceOptions,
-  PulseSequenceController,
-  SequenceDiagramElement,
-  LifelineElement,
-  ActivationBarElement,
-  LifelineOptions,
-  ActivationOptions,
-  SequenceDiagramOptions,
-} from "./dom/components/index";
-
-// Decorators
-export {
-  gradient,
-  glow,
-  vignette,
-  grain,
-  scrim,
-  typewriter,
-  rule,
-  bracket,
-  dream,
-} from "./decorators/index";
-export type {
-  GradientOptions,
-  GlowOptions,
-  VignetteOptions,
-  GrainOptions,
-  ScrimOptions,
-  TypewriterOptions,
-  TypewriterStep,
-  RuleOptions,
   BracketOptions,
   BracketStyle,
   DreamOptions,
+  GlowOptions,
+  GradientOptions,
+  GrainOptions,
+  RuleOptions,
+  ScrimOptions,
+  TypewriterOptions,
+  TypewriterStep,
+  VignetteOptions,
 } from "./decorators/index";
-
+// Decorators
+export {
+  bracket,
+  dream,
+  glow,
+  gradient,
+  grain,
+  rule,
+  scrim,
+  typewriter,
+  vignette,
+} from "./decorators/index";
+export type {
+  BackgroundOptions,
+  CSSBackgroundElement,
+  CSSBackgroundOptions,
+} from "./dom/backgrounds/index";
 // Backgrounds
 // Lightweight base & CSS backgrounds are exported at root.
 // Full-screen WebGL / Three.js backgrounds (Starfield, AsciiFluid, GradientFluid)
 // are imported from "stageroutine/backgrounds" to prevent bundling Three.js in 2D decks.
 export { BackgroundElement, CSSBackground } from "./dom/backgrounds/index";
 export type {
-  BackgroundOptions,
-  CSSBackgroundOptions,
-  CSSBackgroundElement,
-} from "./dom/backgrounds/index";
-
-// Overlays
-export { LaserPointer, NavigationOverlay } from "./overlays/index";
+  ActivationBarElement,
+  ActivationOptions,
+  BulletItemInput,
+  BulletListElement,
+  BulletListOptions,
+  CameraDevice,
+  CodeBlockElement,
+  CodeBlockOptions,
+  ConnectorElement,
+  ConnectorHeadType,
+  ConnectorOptions,
+  ConnectorTarget,
+  IconDefinition,
+  IconElement,
+  IconOptions,
+  ImageElement,
+  ImageFit,
+  ImageOptions,
+  KickerOptions,
+  LabelOffset,
+  LabelPlacement,
+  LifelineElement,
+  LifelineOptions,
+  PeriodicPulseOptions,
+  PulseOptions,
+  PulseSequenceController,
+  PulseSequenceOptions,
+  PulseSequenceStep,
+  SequenceDiagramElement,
+  SequenceDiagramOptions,
+  ShapeElement,
+  ShapeKind,
+  ShapeOptions,
+  ShapeVariant,
+  TableElement,
+  TableOptions,
+  TerminalBlockElement,
+  TerminalBlockOptions,
+  TextOptions,
+  TitleOptions,
+  TitleVariant,
+  VideoElement,
+  VideoOptions,
+  WebcamElement,
+  WebcamOptions,
+} from "./dom/components/index";
+// Components
+export {
+  BulletList,
+  Card,
+  Circle,
+  CodeBlock,
+  Connector,
+  Diamond,
+  defineIcons,
+  Icon,
+  Image,
+  Kicker,
+  Pill,
+  pulseSequence,
+  resolveIconSvg,
+  SequenceDiagram,
+  Shape,
+  Table,
+  TerminalBlock,
+  Text,
+  Title,
+  Video,
+  Webcam,
+} from "./dom/components/index";
+export type { ElementDecorator, ElementOptions } from "./dom/element";
+// Base class & option types for custom components
+export { DOMElement } from "./dom/element";
 export type {
-  LaserPointerOptions,
+  CircleLayoutOptions,
+  GridSlot,
+  LayoutAnimation,
+  LayoutElement,
+  LayoutOptions,
+  RelativeAlign,
+  RelativePlacement,
+  StackSlot,
+} from "./dom/layout";
+// Layout
+export { layout } from "./dom/layout";
+export type {
+  CrossfadeBuilder,
+  CrossfadeOptions,
+  StaggerBuilder,
+  StaggerOptions,
+} from "./motion/index";
+// Motion
+export { crossfade, cubicBezier, stagger, to } from "./motion/index";
+export type {
   LaserPointerController,
+  LaserPointerOptions,
   NavigationOverlayOptions,
 } from "./overlays/index";
+// Overlays
+export { LaserPointer, NavigationOverlay } from "./overlays/index";
 
 // Presenter
 export { PresenterClient, PresenterRecorder } from "./presenter/index";
 
 // Theming
-export { themes, defaultDark, defaultLight, dracula, tokyoNight, cyberpunk } from "./theme/index";
+export { cyberpunk, defaultDark, defaultLight, dracula, themes, tokyoNight } from "./theme/index";

@@ -1,0 +1,7 @@
+JsExpressionStatement(expression=$expr) as $stmt where {
+  $expr <: or {
+    `setInterval($args)`,
+    `window.setInterval($args)`
+  },
+  register_diagnostic(span=$stmt, message="Timer handle must be stored to allow cleanup on step navigation.", severity="error")
+}

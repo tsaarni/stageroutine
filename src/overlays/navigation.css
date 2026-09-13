@@ -24,7 +24,9 @@
     border-top-color: color-mix(in srgb, var(--sr-text) 10%, transparent);
     border-radius: var(--sr-radius);
     box-shadow: 0 0.5rem 2rem -0.5rem rgba(0, 0, 0, 0.3);
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease;
     pointer-events: auto;
 
     &.sr-nav-visible {
@@ -52,7 +54,9 @@
     line-height: 1;
     font-family: var(--sr-font-sans);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
     user-select: none;
     -webkit-user-select: none;
 

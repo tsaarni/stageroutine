@@ -1,0 +1,8 @@
+`$el.className = "$cls"` as $expr where {
+  not $cls <: or {
+    r"^sr-.*",
+    r"^(is|has)-.*",
+    "line"
+  },
+  register_diagnostic(span=$expr, message="StageRoutine element classes should start with 'sr-' prefix.", severity="warn")
+}

@@ -53,7 +53,8 @@ function getActorHeightPx(actor: DOMElement, stageH: number): number {
       }
       return Number.parseFloat(s) || 0;
     }
-    if (typeof document !== "undefined" && !dom.isConnected) {
+    // Temporarily attach unmounted nodes offscreen to measure computed height.
+    if (!dom.isConnected) {
       const prevVis = dom.style.visibility;
       const prevPos = dom.style.position;
       const prevLeft = dom.style.left;

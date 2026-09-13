@@ -5,12 +5,12 @@ import { DOMElement, type ElementOptions } from "../element";
 import {
   type Box,
   type CardinalSide,
-  type Point,
   computeArcPath,
   computeBezierPath,
   computeOrthogonalPath,
   getBoxAnchorPoint,
   getTransformedPerimeterPoint,
+  type Point,
 } from "../geometry";
 
 /**
@@ -1084,8 +1084,6 @@ export class ConnectorElement extends DOMElement {
   }
 
   private _executePulse(options: PulseOptions = {}): void {
-    if (typeof window === "undefined") return;
-
     // Clean up any existing active pulses on THIS connector before spawning a new one
     this.cancelPulses();
 
@@ -1220,7 +1218,6 @@ export class ConnectorElement extends DOMElement {
   }
 
   private _startPeriodicTimer(): void {
-    if (typeof window === "undefined") return;
     this._pausePeriodicPulse();
     if (!this.periodicOptions) return;
 

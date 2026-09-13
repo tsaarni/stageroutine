@@ -2,12 +2,12 @@
  * Visual effects (glow, gradient, grain, scrim, typewriter, and vignette) that can be chained onto elements.
  */
 
-export { gradient, type GradientOptions } from "./gradient";
-export { glow, type GlowOptions } from "./glow";
-export { vignette, type VignetteOptions } from "./vignette";
-export { grain, type GrainOptions } from "./grain";
-export { scrim, type ScrimOptions } from "./scrim";
-export { typewriter, type TypewriterOptions, type TypewriterStep } from "./typewriter";
-export { rule, type RuleOptions } from "./rule";
-export { bracket, type BracketOptions, type BracketStyle } from "./bracket";
-export { dream, type DreamOptions } from "./dream";
+export { type BracketOptions, type BracketStyle, bracket } from "./bracket";
+export { type DreamOptions, dream } from "./dream";
+export { type GlowOptions, glow } from "./glow";
+export { type GradientOptions, gradient } from "./gradient";
+export { type GrainOptions, grain } from "./grain";
+export { type RuleOptions, rule } from "./rule";
+export { type ScrimOptions, scrim } from "./scrim";
+export { type TypewriterOptions, type TypewriterStep, typewriter } from "./typewriter";
+export { type VignetteOptions, vignette } from "./vignette";

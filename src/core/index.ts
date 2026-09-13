@@ -2,28 +2,28 @@
  * Exports the core animation engine, stage director, proxies, and state snapshots.
  */
 
-export { getActiveStage, Stage, tryGetActiveStage } from "./stage";
 export {
   interpolateValue,
-  lerpNumber,
   lerpColor,
+  lerpNumber,
   parseUnitValue,
   px,
   resolveCoordToPx,
 } from "./interpolators";
-export { logger, type LogLevel } from "./logger";
+export { type LogLevel, logger } from "./logger";
+export { type MetricGetter, type MetricMap, MetricRegistry, type MetricValue } from "./metrics";
 export { createReactiveProxy } from "./proxy";
-export { MetricRegistry, type MetricMap, type MetricValue, type MetricGetter } from "./metrics";
-export {
-  storage,
-  StageStorage,
-  StorageScope,
-  type StorageListener,
-  type StorageBackend,
-} from "./storage";
 export {
   CORE_REACTIVE_KEYS,
-  isReactiveProperty,
   getReactiveKeys,
+  isReactiveProperty,
 } from "./reactive";
+export { getActiveStage, Stage, tryGetActiveStage } from "./stage";
+export {
+  StageStorage,
+  type StorageBackend,
+  type StorageListener,
+  StorageScope,
+  storage,
+} from "./storage";
 export * from "./types";

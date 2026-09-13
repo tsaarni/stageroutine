@@ -2,17 +2,17 @@
  * Development JSX entry point re-exporting the JSX runtime for Vite dev mode.
  */
 
-export { Fragment, createElement, jsxDEV, jsx, jsxs } from "./jsx-runtime";
 export type {
-  JSX,
-  JSXProps,
+  AnchorKeyword,
   ComponentFunction,
   DOMElement,
-  ReactiveElementBase,
-  ElementAnchor,
-  AnchorKeyword,
-  Point,
-  TransitionDescriptor,
-  ReactiveProp,
   EaseCurve,
+  ElementAnchor,
+  JSX,
+  JSXProps,
+  Point,
+  ReactiveElementBase,
+  ReactiveProp,
+  TransitionDescriptor,
 } from "./jsx-runtime";
+export { createElement, Fragment, jsx, jsxDEV, jsxs } from "./jsx-runtime";

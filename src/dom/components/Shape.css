@@ -37,7 +37,9 @@
     overflow-wrap: break-word;
     word-break: normal;
     contain: layout style;
-    transition: border-color 0.35s ease, box-shadow 0.35s ease;
+    transition:
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
 
     & .sr-kicker {
       margin-bottom: 0;
@@ -128,7 +130,9 @@
       box-shadow: var(--sr-surface-shadow);
       transform: rotate(45deg);
       z-index: 0;
-      transition: border-color 0.35s ease, box-shadow 0.35s ease;
+      transition:
+        border-color 0.35s ease,
+        box-shadow 0.35s ease;
     }
 
     & > *:not(.sr-shape-stroke-svg) {
@@ -159,7 +163,9 @@
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: stroke 0.35s ease, filter 0.35s ease;
+    transition:
+      stroke 0.35s ease,
+      filter 0.35s ease;
   }
 
   .sr-shape.is-active .sr-shape-path-main,
@@ -202,8 +208,10 @@
       transparent 100%
     );
     border: 1.5px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.14), 0 0 30px rgba(255, 255, 255, 0.07), inset 0 0
-      8px rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 0 12px rgba(255, 255, 255, 0.14),
+      0 0 30px rgba(255, 255, 255, 0.07),
+      inset 0 0 8px rgba(255, 255, 255, 0.06);
 
     &::before {
       content: "";
@@ -216,8 +224,10 @@
       border-radius: 50%;
       background: var(--sr-orb-gradient);
       border: 1px solid rgba(255, 255, 255, 0.25);
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4), 0 0 22px rgba(255, 255, 255, 0.18), inset 0
-        -1px 2px rgba(0, 0, 0, 0.25);
+      box-shadow:
+        0 0 10px rgba(255, 255, 255, 0.4),
+        0 0 22px rgba(255, 255, 255, 0.18),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.25);
     }
   }
 

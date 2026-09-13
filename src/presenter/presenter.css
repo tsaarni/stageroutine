@@ -180,7 +180,9 @@ header {
   padding: 0 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--md-motion-short) ease, border-color var(--md-motion-short) ease,
+  transition:
+    background-color var(--md-motion-short) ease,
+    border-color var(--md-motion-short) ease,
     color var(--md-motion-short) ease;
 }
 .m3-chip:hover {
@@ -247,7 +249,9 @@ header {
   height: 8px;
   border-radius: 50%;
   background-color: var(--md-sys-color-outline);
-  transition: background-color var(--md-motion-short) ease, transform var(--md-motion-medium) ease,
+  transition:
+    background-color var(--md-motion-short) ease,
+    transform var(--md-motion-medium) ease,
     box-shadow var(--md-motion-medium) ease;
 }
 .record-pill.recording .rec-dot {
@@ -287,7 +291,9 @@ header {
   cursor: pointer;
   border-top-right-radius: var(--md-shape-full);
   border-bottom-right-radius: var(--md-shape-full);
-  transition: background-color var(--md-motion-short) ease, color var(--md-motion-short) ease;
+  transition:
+    background-color var(--md-motion-short) ease,
+    color var(--md-motion-short) ease;
 }
 .record-mic-btn:hover {
   background-color: var(--md-sys-hover-overlay);
@@ -341,7 +347,9 @@ header {
   border-radius: var(--md-shape-xs);
   padding: 0;
   border: 1px solid transparent;
-  transition: color var(--md-motion-short) ease, background-color var(--md-motion-short) ease,
+  transition:
+    color var(--md-motion-short) ease,
+    background-color var(--md-motion-short) ease,
     border-color var(--md-motion-short) ease;
 }
 .timer-sign {
@@ -424,7 +432,9 @@ header {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color var(--md-motion-short) ease, color var(--md-motion-short) ease,
+  transition:
+    background-color var(--md-motion-short) ease,
+    color var(--md-motion-short) ease,
     transform 100ms ease;
 }
 .m3-icon-btn:hover {
@@ -568,7 +578,7 @@ main {
 }
 
 .notes-scene-section h3 {
-  font-size: 1.0em;
+  font-size: 1em;
   font-weight: 600;
   color: var(--md-sys-color-on-surface);
   margin-top: 12px;
@@ -615,7 +625,9 @@ main {
   border: 1px solid var(--md-sys-color-outline-variant);
   font-size: 13px;
   line-height: 1.45;
-  transition: background-color var(--md-motion-short) ease, border-color var(--md-motion-short) ease;
+  transition:
+    background-color var(--md-motion-short) ease,
+    border-color var(--md-motion-short) ease;
 }
 
 .presenter-cue:hover {
@@ -794,8 +806,10 @@ footer {
   letter-spacing: 0.1px;
   cursor: pointer;
   border: none;
-  transition: background-color var(--md-motion-short) ease, transform 100ms ease, box-shadow
-    var(--md-motion-short) ease;
+  transition:
+    background-color var(--md-motion-short) ease,
+    transform 100ms ease,
+    box-shadow var(--md-motion-short) ease;
 }
 .m3-btn:active {
   transform: scale(0.96);

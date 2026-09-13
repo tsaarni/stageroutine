@@ -37,15 +37,13 @@ metrics.register("presenter", () => ({
   last_update_elapsed_ms: lastUpdateTime > 0 ? Math.round(performance.now() - lastUpdateTime) : -1,
 }));
 
-if (typeof window !== "undefined") {
-  (
-    window as unknown as {
-      __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
-    }
-  ).__STAGEROUTINE_DEV__ = {
-    getMetrics: () => metrics.collect(),
-  };
-}
+(
+  window as unknown as {
+    __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+  }
+).__STAGEROUTINE_DEV__ = {
+  getMetrics: () => metrics.collect(),
+};
 
 // DOM References
 const sceneText = document.getElementById("scene-text");
@@ -169,7 +167,7 @@ window.addEventListener("click", (e) => {
   }
 });
 
-import { type Tokens, marked } from "marked";
+import { marked, type Tokens } from "marked";
 
 // ============================================================================
 // 1. Markdown Notes Formatting Helper

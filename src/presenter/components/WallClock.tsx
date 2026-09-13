@@ -15,7 +15,7 @@ export function WallClock(): HTMLElement {
   };
 
   update();
-  setInterval(update, 1000);
+  const _clockTimer = setInterval(update, 1000);
 
   return (
     <div class="wall-clock" title="Current Local Time">

@@ -6,7 +6,7 @@ import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import type { Align, ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
-import { type ThemeConfig, applyThemeTokens } from "../theme/tokens";
+import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
 
 let nextId = 1;
 

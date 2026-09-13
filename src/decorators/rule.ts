@@ -138,10 +138,8 @@ export function rule(options: RuleOptions = {}): ElementDecorator {
     const el = element.domElement;
     if (!el) return;
 
-    if (typeof window !== "undefined" && getComputedStyle(el).position === "static") {
+    if (getComputedStyle(el).position === "static") {
       el.style.position = "relative";
-    } else {
-      el.style.position = el.style.position || "relative";
     }
 
     const ruleNode = document.createElement("span");

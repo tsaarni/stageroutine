@@ -35,7 +35,7 @@ export class PresenterHost {
   lastMsgTime = 0;
 
   constructor(target: PresenterHostTarget, channelName: string) {
-    if (typeof window === "undefined" || !channelName) return;
+    if (!channelName) return;
 
     try {
       this.channel = new BroadcastChannel(channelName);

@@ -2,6 +2,6 @@
  * Built-in overlay plugins for the StageRoutine presentation engine.
  */
 
-export { LaserPointer, type LaserPointerOptions, type LaserPointerController } from "./laser";
+export type { OverlayContext, OverlayPlugin } from "../core/types";
+export { LaserPointer, type LaserPointerController, type LaserPointerOptions } from "./laser";
 export { NavigationOverlay, type NavigationOverlayOptions } from "./navigation";
-export type { OverlayPlugin, OverlayContext } from "../core/types";

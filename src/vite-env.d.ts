@@ -11,6 +11,7 @@ declare module "*.module.css" {
 
 declare module "~icons/*" {
   import type { IconElement, IconOptions } from "./dom/components/Icon";
+
   const iconFactory: (options?: IconOptions) => IconElement;
   export default iconFactory;
 }

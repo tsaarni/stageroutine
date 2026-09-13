@@ -19,7 +19,6 @@ export interface GlowOptions {
 let glowCounter = 0;
 
 function injectKeyframes(name: string, body: string) {
-  if (typeof document === "undefined") return;
   let styleTag = document.getElementById("sr-decorators-style") as HTMLStyleElement;
   if (!styleTag) {
     styleTag = document.createElement("style");

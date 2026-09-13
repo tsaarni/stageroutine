@@ -11,7 +11,7 @@ StageRoutine separates geometric silhouettes from visual presentation.
 
 Geometry is defined by reusable path generators in `paths`. You apply geometry to stage elements using two complementary primitives:
 
-- **`Shape`**: Renders styled surfaces, frosted glass cards, diagram nodes, and text labels.
+- **`Shape`**: Renders surface backgrounds, cards, diagram nodes, and text labels.
 - **`Frame`**: Clips visual media, webcam feeds, images, or DOM elements to the path silhouette.
 
 ## Shape
@@ -49,9 +49,9 @@ stage.mount("#stage");
 
 Shapes support three surface treatments via the `variant` option:
 
-- `"surface"` (default): Translucent frosted glass surface with backdrop blur.
+- `"surface"` (default): Translucent background fill.
 - `"ghost"`: Transparent interior with vector border outline.
-- `"solid"`: Opaque fill background.
+- `"solid"`: Opaque background fill.
 
 ```typescript
 const outline = Shape(paths.circle(), "Ghost", {
@@ -62,7 +62,7 @@ const outline = Shape(paths.circle(), "Ghost", {
 
 ## Frame
 
-`Frame` is a dedicated clipping container. It masks its children to an SVG path geometry contour without applying frosted glass backgrounds:
+`Frame` is a dedicated clipping container. It masks its children to an SVG path geometry contour without applying a background fill:
 
 ```typescript
 Frame(path, media, options?)

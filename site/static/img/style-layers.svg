@@ -19,7 +19,7 @@
   <g transform="translate(30, 55)">
     <rect x="0" y="0" width="700" height="54" rx="6" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="1.5" />
     <text x="20" y="24" fill="#ffffff" font-size="14" font-weight="700" font-family="system-ui, sans-serif">1. Stage Theme</text>
-    <text x="145" y="24" fill="#a1a1aa" font-size="13" font-family="system-ui, sans-serif">- Presentation-wide palette: canvas background, accent color, and glass surfaces</text>
+    <text x="145" y="24" fill="#a1a1aa" font-size="13" font-family="system-ui, sans-serif">- Presentation-wide palette: canvas background, accent color, and surface fills</text>
     <text x="20" y="44" fill="#38bdf8" font-size="13" font-weight="600" font-family="JetBrains Mono, monospace">stage.theme(themes.tokyoNight)</text>
   </g>
 

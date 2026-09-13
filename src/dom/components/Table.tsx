@@ -1,5 +1,5 @@
 /**
- * Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus.
+ * Table component with column alignment, row proxies, and interactive row-level focus.
  */
 
 import "./Table.css";
@@ -17,7 +17,7 @@ function resolveColumnTextAlign(align?: Align): "left" | "center" | "right" | un
 }
 
 /**
- * Configuration options for the glassmorphic Table component.
+ * Configuration options for the Table component.
  * @category Components
  */
 export interface TableOptions extends Omit<ElementOptions, "align"> {
@@ -146,7 +146,7 @@ export class TableElement extends DOMElement {
 }
 
 /**
- * Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus.
+ * Table component with column alignment, row proxies, and interactive row-level focus.
  * @category Components
  */
 export function Table(options: TableOptions): TableElement {

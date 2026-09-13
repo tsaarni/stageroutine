@@ -24,7 +24,7 @@ export type ShapeVariant = "surface" | "ghost" | "solid";
  * @category Components
  */
 export interface ShapeOptions extends ElementOptions {
-  /** Surface material preset: "surface" (glass card, default), "ghost" (outline), or "solid" (opaque fill). */
+  /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
   variant?: ShapeVariant;
   /** Uniform width and height shorthand (ideal for circles and diamonds). */
   size?: number | string;

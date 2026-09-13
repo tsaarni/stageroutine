@@ -180,7 +180,7 @@ export function Shape(path: PathFunction, childrenOrOptions?: unknown, options?:
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
 export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerBuilder;
 
-/** Glassmorphic Table component with column alignment, row proxies, and interactive row-level focus. */
+/** Table component with column alignment, row proxies, and interactive row-level focus. */
 export function Table(options: TableOptions): TableElement;
 
 /** Terminal block component with macOS-style window controls and line-by-line interactive focus. */
@@ -2279,7 +2279,7 @@ export interface SequenceDiagramOptions {
  * @category Components
  */
 export interface ShapeOptions extends ElementOptions {
-    /** Surface material preset: "surface" (glass card, default), "ghost" (outline), or "solid" (opaque fill). */
+    /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
     variant?: ShapeVariant;
     /** Uniform width and height shorthand (ideal for circles and diamonds). */
     size?: number | string;
@@ -2448,7 +2448,7 @@ export interface StarPathOptions {
 }
 
 /**
- * Configuration options for the glassmorphic Table component.
+ * Configuration options for the Table component.
  * @category Components
  */
 export interface TableOptions extends Omit<ElementOptions, "align"> {

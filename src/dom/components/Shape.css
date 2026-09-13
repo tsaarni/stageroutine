@@ -20,6 +20,8 @@
 
   .sr-shape,
   .sr-card {
+    position: relative;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -32,11 +34,8 @@
     font-weight: 500;
     line-height: 1.35;
     text-align: center;
-    position: relative;
-    box-sizing: border-box;
     overflow-wrap: break-word;
     word-break: normal;
-    contain: layout style;
     transition:
       border-color 0.35s ease,
       box-shadow 0.35s ease;
@@ -46,53 +45,9 @@
       line-height: 1.25;
     }
 
-    &.is-active {
-      color: #ffffff;
-    }
-  }
-
-  /* Surface variant (default glass container) */
-  .sr-shape-surface,
-  .sr-card {
-    background: var(--sr-surface);
-    backdrop-filter: var(--sr-surface-backdrop);
-    -webkit-backdrop-filter: var(--sr-surface-backdrop);
-    box-shadow: var(--sr-surface-shadow);
-  }
-
-  /* Ghost variant (transparent layout wrapper) */
-  .sr-shape-ghost {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  /* Solid variant (opaque filled background) */
-  .sr-shape-solid {
-    background: #18181b;
-    box-shadow: 0 1rem 3rem -0.5rem rgba(0, 0, 0, 0.5);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  .sr-shape-box {
-    border-radius: var(--sr-radius);
-  }
-
-  .sr-shape-circle {
-    border-radius: 50%;
-    aspect-ratio: 1 / 1;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0 !important;
-
-    & > *:not(.sr-shape-stroke-svg) {
+    & > *:not(.sr-shape-stroke-svg):not(.sr-shape-frost) {
       position: relative;
-      z-index: 1;
-      max-width: 72%;
+      z-index: 2;
       text-align: inherit;
       line-height: 1.25;
       overflow-wrap: break-word;
@@ -100,52 +55,7 @@
     }
   }
 
-  .sr-shape-pill {
-    border-radius: 9999px;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0.5rem 1.5rem;
-  }
-
-  .sr-shape-diamond {
-    aspect-ratio: 1 / 1;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    position: relative;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 14.64%; /* (1 - 1/sqrt(2))/2 to fit inside square */
-      background: var(--sr-surface);
-      backdrop-filter: var(--sr-surface-backdrop);
-      -webkit-backdrop-filter: var(--sr-surface-backdrop);
-      border-radius: calc(var(--sr-radius) * 0.75);
-      box-shadow: var(--sr-surface-shadow);
-      transform: rotate(45deg);
-      z-index: 0;
-      transition:
-        border-color 0.35s ease,
-        box-shadow 0.35s ease;
-    }
-
-    & > *:not(.sr-shape-stroke-svg) {
-      position: relative;
-      z-index: 1;
-      max-width: 72%;
-      text-align: center;
-      line-height: 1.25;
-      overflow-wrap: break-word;
-      word-break: normal;
-    }
-  }
-
+  /* Vector border outline SVG overlay */
   .sr-shape-stroke-svg {
     position: absolute !important;
     inset: 0 !important;
@@ -155,12 +65,13 @@
     max-height: none !important;
     pointer-events: none !important;
     overflow: visible !important;
-    z-index: 0 !important;
+    z-index: 1 !important;
   }
 
   .sr-shape-path-main,
   .sr-shape-path-inner {
     fill: none;
+    stroke: color-mix(in srgb, var(--sr-text) 18%, transparent);
     stroke-linecap: round;
     stroke-linejoin: round;
     transition:
@@ -168,9 +79,51 @@
       filter 0.35s ease;
   }
 
+  /* Frosted glass fill: square HTML div masked by SVG vector silhouette */
+  .sr-shape-frost {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+  }
+
+  /* Surface variant: frosted glass gradient + backdrop blur + shadow */
+  .sr-shape-surface .sr-shape-frost {
+    backdrop-filter: var(--sr-surface-backdrop, blur(16px));
+    -webkit-backdrop-filter: var(--sr-surface-backdrop, blur(16px));
+    background: var(--sr-surface);
+    box-shadow: var(--sr-surface-shadow);
+  }
+
+  /* Solid variant: opaque dark fill */
+  .sr-shape-solid .sr-shape-frost {
+    background: #18181b;
+  }
+
+  /* Ghost variant: transparent fill */
+  .sr-shape-ghost .sr-shape-frost {
+    display: none;
+  }
+
+  /* Drop shadow on vector stroke overlay */
+  .sr-shape-surface .sr-shape-stroke-svg {
+    filter: drop-shadow(0 1.25rem 2.5rem rgba(0, 0, 0, 0.6));
+  }
+
+  .sr-shape-solid .sr-shape-stroke-svg {
+    filter: drop-shadow(0 1rem 3rem rgba(0, 0, 0, 0.5));
+  }
+
+  /* Highlighted / active shape glow */
   .sr-shape.is-active .sr-shape-path-main,
   .sr-shape.is-active .sr-shape-path-inner {
-    filter: drop-shadow(0 0 6px currentColor);
+    filter: drop-shadow(0 0 8px currentColor);
   }
 
   .sr-state-node.has-double-border {
@@ -189,46 +142,50 @@
     );
   }
 
-  .sr-state-initial {
+  /* Initial pseudostate: solid glowing orb (fill lives on the masked frost layer) */
+  .sr-state-initial .sr-shape-frost {
+    display: block !important;
     background: var(--sr-orb-gradient);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    box-shadow:
-      0 0 12px rgba(255, 255, 255, 0.35),
-      0 0 32px rgba(255, 255, 255, 0.16),
-      0 0 64px rgba(255, 255, 255, 0.07),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.28),
-      inset 0 1px 2px rgba(255, 255, 255, 0.55);
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.35))
+      drop-shadow(0 0 32px rgba(255, 255, 255, 0.16));
   }
 
-  .sr-state-final {
+  .sr-state-initial .sr-shape-stroke-svg {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
+  }
+
+  /* Final pseudostate: faint disc, outer ring (SVG stroke), and solid inner dot */
+  .sr-state-final .sr-shape-frost {
+    display: block !important;
     background: radial-gradient(
       circle at 50% 50%,
       rgba(255, 255, 255, 0.08) 0%,
       rgba(255, 255, 255, 0.02) 58%,
       transparent 100%
     );
-    border: 1.5px solid rgba(255, 255, 255, 0.55);
-    box-shadow:
-      0 0 12px rgba(255, 255, 255, 0.14),
-      0 0 30px rgba(255, 255, 255, 0.07),
-      inset 0 0 8px rgba(255, 255, 255, 0.06);
+  }
 
-    &::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 44%;
-      aspect-ratio: 1;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: var(--sr-orb-gradient);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      box-shadow:
-        0 0 10px rgba(255, 255, 255, 0.4),
-        0 0 22px rgba(255, 255, 255, 0.18),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.25);
-    }
+  .sr-state-final .sr-shape-stroke-svg {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.14))
+      drop-shadow(0 0 30px rgba(255, 255, 255, 0.07));
+  }
+
+  .sr-state-final::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--sr-orb-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.4),
+      0 0 22px rgba(255, 255, 255, 0.18),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+    z-index: 2;
   }
 
   .sr-clickable {

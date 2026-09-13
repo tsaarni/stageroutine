@@ -9,7 +9,6 @@ import {
   computeBezierPath,
   computeOrthogonalPath,
   getBoxAnchorPoint,
-  getTransformedPerimeterPoint,
   type Point,
 } from "../geometry";
 
@@ -682,49 +681,20 @@ export class ConnectorElement extends DOMElement {
       targetPt: Point,
       anchorPreference: "auto" | ElementAnchor,
     ): { point: Point; side: CardinalSide } => {
-      let shapeKind = "box";
-      if ("kind" in target && typeof (target as { kind?: string }).kind === "string") {
-        shapeKind = (target as { kind: string }).kind;
-      } else if (
-        "domElement" in target &&
-        (target as DOMElement).domElement instanceof HTMLElement
+      if (
+        anchorPreference === "auto" &&
+        "getPerimeterPoint" in target &&
+        typeof (target as { getPerimeterPoint?: unknown }).getPerimeterPoint === "function"
       ) {
-        const dom = (target as DOMElement).domElement;
-        shapeKind =
-          dom.getAttribute("data-shape") ||
-          (dom.classList.contains("sr-shape-circle") || dom.classList.contains("sr-state-node")
-            ? "circle"
-            : dom.classList.contains("sr-shape-diamond")
-              ? "diamond"
-              : dom.classList.contains("sr-shape-pill")
-                ? "pill"
-                : "box");
-      }
-
-      if (shapeKind === "circle") {
-        const radius = Math.min(box.width, box.height) / 2;
-        return {
-          point: getTransformedPerimeterPoint(box, targetPt, radius, this.padding),
-          side: "center",
-        };
-      }
-
-      if (shapeKind === "diamond") {
-        const diamondSide = Math.min(box.width, box.height) * Math.SQRT1_2;
-        return {
-          point: getTransformedPerimeterPoint(
-            {
-              ...box,
-              width: diamondSide,
-              height: diamondSide,
-              rotation: (box.rotation ?? 0) + 45,
-            },
-            targetPt,
-            6,
-            this.padding,
-          ),
-          side: "center",
-        };
+        return (
+          target as {
+            getPerimeterPoint: (
+              box: Box,
+              target: Point,
+              padding: number,
+            ) => { point: Point; side: CardinalSide };
+          }
+        ).getPerimeterPoint(box, targetPt, this.padding);
       }
 
       const anchor = getBoxAnchorPoint(box, anchorPreference, targetPt, this.padding);

@@ -120,6 +120,8 @@ export type {
   ConnectorHeadType,
   ConnectorOptions,
   ConnectorTarget,
+  FrameElement,
+  FrameOptions,
   IconDefinition,
   IconElement,
   IconOptions,
@@ -139,7 +141,6 @@ export type {
   SequenceDiagramElement,
   SequenceDiagramOptions,
   ShapeElement,
-  ShapeKind,
   ShapeOptions,
   ShapeVariant,
   TableElement,
@@ -158,15 +159,13 @@ export type {
 export {
   BulletList,
   Card,
-  Circle,
   CodeBlock,
   Connector,
-  Diamond,
   defineIcons,
+  Frame,
   Icon,
   Image,
   Kicker,
-  Pill,
   pulseSequence,
   resolveIconSvg,
   SequenceDiagram,
@@ -193,6 +192,20 @@ export type {
 } from "./dom/layout";
 // Layout
 export { layout } from "./dom/layout";
+export type {
+  BoxPathOptions,
+  CirclePathOptions,
+  DiamondPathOptions,
+  HexagonPathOptions,
+  PathContext,
+  PathFunction,
+  PolygonPathOptions,
+  SquirclePathOptions,
+  StarPathOptions,
+  TrianglePathOptions,
+} from "./dom/paths";
+// Geometry
+export { paths } from "./dom/paths";
 export type {
   CrossfadeBuilder,
   CrossfadeOptions,

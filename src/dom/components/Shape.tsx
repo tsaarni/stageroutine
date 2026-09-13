@@ -7,13 +7,11 @@ import {
   type ReactiveProp,
 } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
+import { type Box, type CardinalSide, getPathPerimeterPoint, type Point } from "../geometry";
+import { type PathFunction, paths } from "../paths";
 import { type PingHandle, spawnPingPacket } from "./ping";
 
-/**
- * Geometric silhouette kind for the Shape component.
- * @category Components
- */
-export type ShapeKind = "box" | "circle" | "pill" | "diamond";
+export type { PathFunction };
 
 /**
  * Surface material preset for the Shape component.
@@ -22,12 +20,10 @@ export type ShapeKind = "box" | "circle" | "pill" | "diamond";
 export type ShapeVariant = "surface" | "ghost" | "solid";
 
 /**
- * Configuration options for the Shape, Card, Circle, Pill, and Diamond components.
+ * Configuration options for the Shape and Card components.
  * @category Components
  */
 export interface ShapeOptions extends ElementOptions {
-  /** Geometric silhouette: "box" (default), "circle", "pill", or "diamond". */
-  kind?: ShapeKind;
   /** Surface material preset: "surface" (glass card, default), "ghost" (outline), or "solid" (opaque fill). */
   variant?: ShapeVariant;
   /** Uniform width and height shorthand (ideal for circles and diamonds). */
@@ -62,66 +58,6 @@ export interface ShapeOptions extends ElementOptions {
   children?: unknown;
 }
 
-function roundedRectPath(cx: number, pad: number, pw: number, ph: number, cr: number): string {
-  if (cr <= 0) {
-    return `M ${cx} ${pad} H ${pad + pw} V ${pad + ph} H ${pad} V ${pad} H ${cx} Z`;
-  }
-  return (
-    `M ${cx} ${pad} ` +
-    `H ${pad + pw - cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + pw} ${pad + cr} ` +
-    `V ${pad + ph - cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + pw - cr} ${pad + ph} ` +
-    `H ${pad + cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad} ${pad + ph - cr} ` +
-    `V ${pad + cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + cr} ${pad} ` +
-    `H ${cx} Z`
-  );
-}
-
-function computeShapePath(kind: ShapeKind, w: number, h: number, sw: number, inset = 0): string {
-  if (w <= 0 || h <= 0) return "";
-  const pad = sw / 2 + inset;
-  const pw = w - pad * 2;
-  const ph = h - pad * 2;
-  if (pw <= 0 || ph <= 0) return "";
-
-  const cx = w / 2;
-  const cy = h / 2;
-
-  switch (kind) {
-    case "circle": {
-      const r = Math.min(pw, ph) / 2;
-      if (r <= 0) return "";
-      return `M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} A ${r} ${r} 0 0 1 ${cx} ${cy - r}`;
-    }
-    case "pill": {
-      const cr = Math.min(pw, ph) / 2;
-      return roundedRectPath(cx, pad, pw, ph, cr);
-    }
-    case "box": {
-      const cr = Math.min(12, pw / 2, ph / 2);
-      return roundedRectPath(cx, pad, pw, ph, cr);
-    }
-    case "diamond": {
-      const cr = Math.min(10.5, pw * 0.15, ph * 0.15);
-      const f = cr / Math.SQRT2;
-      return (
-        `M ${cx + f} ${pad + f} ` +
-        `L ${pad + pw - f} ${cy - f} ` +
-        `A ${cr} ${cr} 0 0 1 ${pad + pw - f} ${cy + f} ` +
-        `L ${cx + f} ${pad + ph - f} ` +
-        `A ${cr} ${cr} 0 0 1 ${cx - f} ${pad + ph - f} ` +
-        `L ${pad + f} ${cy + f} ` +
-        `A ${cr} ${cr} 0 0 1 ${pad + f} ${cy - f} ` +
-        `L ${cx - f} ${pad + f} ` +
-        `A ${cr} ${cr} 0 0 1 ${cx + f} ${pad + f} Z`
-      );
-    }
-  }
-}
-
 /**
  * @internal
  */
@@ -135,9 +71,21 @@ export class ShapeElement extends DOMElement {
     "doubleBorder",
     "text",
     "borderColor",
+    "background",
   ]);
 
-  readonly kind: ShapeKind;
+  private _path: PathFunction;
+
+  get path(): PathFunction {
+    return this._path;
+  }
+  set path(val: PathFunction) {
+    this._path = val;
+    this.lastW = 0;
+    this.lastH = 0;
+    this.update();
+  }
+
   readonly variant: ShapeVariant;
   readonly items: ReactiveElementBase[] = [];
 
@@ -160,6 +108,7 @@ export class ShapeElement extends DOMElement {
 
   private _text?: string;
   private _borderColor?: ReactiveProp<string>;
+  private _background?: string;
   private textSpan: HTMLElement | null = null;
 
   get text(): string | undefined {
@@ -188,6 +137,15 @@ export class ShapeElement extends DOMElement {
     this.update();
   }
 
+  get background(): string | undefined {
+    return this._background;
+  }
+  set background(val: string | undefined) {
+    this._background = val;
+    this.update();
+  }
+
+  private readonly frostDiv: HTMLDivElement;
   private readonly svgElement: SVGSVGElement;
   private readonly pathNode: SVGPathElement;
   private readonly innerPathNode: SVGPathElement;
@@ -214,9 +172,9 @@ export class ShapeElement extends DOMElement {
     this.update();
   }
 
-  constructor(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = {}) {
+  constructor(path: PathFunction, childrenOrOptions?: unknown, options: ShapeOptions = {}) {
     let children: unknown = childrenOrOptions;
-    let options: ShapeOptions = maybeOptions;
+    let opts: ShapeOptions = options;
 
     if (
       childrenOrOptions &&
@@ -225,51 +183,56 @@ export class ShapeElement extends DOMElement {
       !("domElement" in childrenOrOptions) &&
       !Array.isArray(childrenOrOptions)
     ) {
-      options = childrenOrOptions as ShapeOptions;
-      children = options.children;
+      opts = childrenOrOptions as ShapeOptions;
+      children = opts.children;
     }
 
-    const kind = options.kind ?? "box";
-    const variant = options.variant ?? "surface";
+    const pathFn = path;
+    const variant = opts.variant ?? "surface";
 
-    const classNames = ["sr-shape", `sr-shape-${kind}`, `sr-shape-${variant}`, options.className]
+    const classNames = ["sr-shape", `sr-shape-${variant}`, opts.className]
       .filter(Boolean)
       .join(" ");
 
     const el = document.createElement("div");
     el.className = classNames;
-    el.setAttribute("data-shape", kind);
     el.setAttribute("data-variant", variant);
 
     const customStyles: Record<string, string> = {};
 
-    if (typeof options.borderColor === "string") customStyles.borderColor = options.borderColor;
-    if (options.background) customStyles.backgroundColor = options.background;
-    if (options.color) customStyles.color = options.color;
+    if (typeof opts.borderColor === "string") customStyles.borderColor = opts.borderColor;
+    if (opts.color) customStyles.color = opts.color;
 
     Object.assign(el.style, customStyles);
 
-    // Create SVG overlay for perimeter stroke
+    // Layer 1: Frosted glass div (gradient + backdrop blur, masked via SVG data URI)
+    const frostDiv = document.createElement("div");
+    frostDiv.className = "sr-shape-frost";
+    el.appendChild(frostDiv);
+
+    // Layer 2: Vector stroke outline SVG overlay
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "sr-shape-stroke-svg");
     svg.setAttribute("aria-hidden", "true");
 
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("class", "sr-shape-path-main");
-    svg.appendChild(path);
+    const mainPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    mainPath.setAttribute("class", "sr-shape-path-main");
+    mainPath.style.fill = "none";
+    svg.appendChild(mainPath);
 
     const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     innerPath.setAttribute("class", "sr-shape-path-inner");
+    innerPath.style.fill = "none";
     innerPath.style.display = "none";
     svg.appendChild(innerPath);
 
     el.appendChild(svg);
 
+    // Layer 3: Text and child content
     const childItems: ReactiveElementBase[] = [];
     let initialTextSpan: HTMLElement | null = null;
     let initialText: string | undefined;
 
-    // Append child content
     if (children !== undefined && children !== null) {
       if (typeof children === "string" || typeof children === "number") {
         const textSpan = document.createElement("span");
@@ -320,32 +283,35 @@ export class ShapeElement extends DOMElement {
       }
     }
 
-    super("Shape", el, options);
+    super("Shape", el, opts);
+    this.domElement.style.willChange = "auto";
 
+    this.frostDiv = frostDiv;
     this.svgElement = svg;
-    this.pathNode = path;
+    this.pathNode = mainPath;
     this.innerPathNode = innerPath;
 
     this.textSpan = initialTextSpan;
     this._text = initialText;
     this.items = childItems;
-
-    this.kind = kind;
+    this._path = pathFn;
     this.variant = variant;
-    this.primaryColor = options.color ?? (options.borderColor as string | undefined) ?? "#38bdf8";
-    this.strokeWidth = options.strokeWidth ?? 2;
-    if (options.borderColor !== undefined) {
-      this.borderColor = options.borderColor;
-    } else if (options.color !== undefined) {
-      this.borderColor = options.color;
-    }
-    if (options.text !== undefined) this.text = options.text;
-    if (options.start !== undefined) this.start = options.start;
-    if (options.end !== undefined) this.end = options.end;
-    if (options.flow !== undefined) this.flow = options.flow;
+    this.primaryColor = opts.color ?? (opts.borderColor as string | undefined) ?? "#38bdf8";
+    this.strokeWidth = opts.strokeWidth ?? 2;
 
-    if (options.active !== undefined) this._active = !!options.active;
-    if (options.doubleBorder !== undefined) this._doubleBorder = !!options.doubleBorder;
+    if (opts.borderColor !== undefined) {
+      this.borderColor = opts.borderColor;
+    } else if (opts.color !== undefined) {
+      this.borderColor = opts.color;
+    }
+    if (opts.text !== undefined) this.text = opts.text;
+    if (opts.background !== undefined) this.background = opts.background;
+    if (opts.start !== undefined) this.start = opts.start;
+    if (opts.end !== undefined) this.end = opts.end;
+    if (opts.flow !== undefined) this.flow = opts.flow;
+
+    if (opts.active !== undefined) this._active = !!opts.active;
+    if (opts.doubleBorder !== undefined) this._doubleBorder = !!opts.doubleBorder;
 
     this.onMount(() => {
       this.update();
@@ -396,30 +362,41 @@ export class ShapeElement extends DOMElement {
     const strokeColor =
       (this.borderColor as string | undefined) ||
       (this.color as string | undefined) ||
-      "color-mix(in srgb, var(--sr-text) 18%, transparent)";
+      "color-mix(in srgb, var(--sr-text) 10%, transparent)";
 
     if (this.color) {
       this.domElement.style.color = String(this.color);
     }
 
+    if (this.background) {
+      this.domElement.style.background = "";
+      this.frostDiv.style.display = "";
+      this.frostDiv.style.background = this.background;
+      this.pathNode.style.fill = "none";
+    } else if (this.variant === "surface" || this.variant === "solid") {
+      this.domElement.style.background = "";
+      this.frostDiv.style.display = "";
+      this.frostDiv.style.background = "";
+      this.pathNode.style.fill = "none";
+    } else {
+      this.domElement.style.background = "";
+      this.frostDiv.style.display = "none";
+      this.frostDiv.style.background = "";
+      this.pathNode.style.fill = "none";
+    }
+
     if (this.active) {
       this.domElement.classList.add("is-active");
-      this.domElement.style.boxShadow = `0 0 24px ${this.primaryColor}66, inset 0 0 12px ${this.primaryColor}33`;
       this.pathNode.setAttribute("stroke", this.primaryColor);
       this.innerPathNode.setAttribute("stroke", this.primaryColor);
       this.pathNode.style.stroke = this.primaryColor;
       this.innerPathNode.style.stroke = this.primaryColor;
-      this.pathNode.style.color = this.primaryColor;
-      this.innerPathNode.style.color = this.primaryColor;
     } else {
       this.domElement.classList.remove("is-active");
-      this.domElement.style.boxShadow = "";
       this.pathNode.setAttribute("stroke", strokeColor);
       this.innerPathNode.setAttribute("stroke", strokeColor);
       this.pathNode.style.stroke = strokeColor;
       this.innerPathNode.style.stroke = strokeColor;
-      this.pathNode.style.color = strokeColor;
-      this.innerPathNode.style.color = strokeColor;
     }
 
     this.pathNode.setAttribute("stroke-width", String(this.strokeWidth));
@@ -444,18 +421,22 @@ export class ShapeElement extends DOMElement {
       this.lastH = h;
       this.svgElement.setAttribute("viewBox", `0 0 ${w} ${h}`);
 
-      const outerD = computeShapePath(this.kind, w, h, this.strokeWidth, 0);
-      this.pathNode.setAttribute("d", outerD);
+      const strokeD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 0 });
+      this.pathNode.setAttribute("d", strokeD);
+      const svgMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'%3E%3Cpath fill='black' d='${encodeURIComponent(strokeD)}'/%3E%3C/svg%3E")`;
+      this.frostDiv.style.maskImage = svgMask;
+      (this.frostDiv.style as CSSStyleDeclaration & { webkitMaskImage?: string }).webkitMaskImage =
+        svgMask;
 
       if (this.doubleBorder) {
-        const innerD = computeShapePath(this.kind, w, h, this.strokeWidth, 4);
+        const innerD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 4 });
         this.innerPathNode.setAttribute("d", innerD);
         this.innerPathNode.style.display = "";
       } else {
         this.innerPathNode.style.display = "none";
       }
     } else if (this.doubleBorder && this.innerPathNode.style.display === "none") {
-      const innerD = computeShapePath(this.kind, w, h, this.strokeWidth, 4);
+      const innerD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 4 });
       this.innerPathNode.setAttribute("d", innerD);
       this.innerPathNode.style.display = "";
     } else if (!this.doubleBorder && this.innerPathNode.style.display !== "none") {
@@ -605,15 +586,27 @@ export class ShapeElement extends DOMElement {
       path.style.strokeDashoffset = "0";
     }
   }
+
+  /**
+   * Calculates the exact perimeter attachment point against the shape's SVG path boundary.
+   */
+  getPerimeterPoint(box: Box, target: Point, padding = 6): { point: Point; side: CardinalSide } {
+    const d = this.pathNode.getAttribute("d") || this._path(box.width, box.height);
+    return getPathPerimeterPoint(d, box, target, padding);
+  }
 }
 
 /**
  * Universal shape container supporting multiple geometries and surface treatments.
  * @category Components
  */
-export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = {}): ShapeElement {
+export function Shape(
+  path: PathFunction,
+  childrenOrOptions?: unknown,
+  options: ShapeOptions = {},
+): ShapeElement {
   const stage = getActiveStage();
-  const el = new ShapeElement(childrenOrOptions, maybeOptions);
+  const el = new ShapeElement(path, childrenOrOptions, options);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as ShapeElement;
   }
@@ -625,29 +618,5 @@ export function Shape(childrenOrOptions?: unknown, maybeOptions: ShapeOptions = 
  * @category Components
  */
 export function Card(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
-  return Shape(childrenOrOptions, { ...options, kind: "box" });
-}
-
-/**
- * Circular geometric node.
- * @category Components
- */
-export function Circle(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
-  return Shape(childrenOrOptions, { ...options, kind: "circle" });
-}
-
-/**
- * Capsule pill tag / status indicator.
- * @category Components
- */
-export function Pill(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
-  return Shape(childrenOrOptions, { ...options, kind: "pill" });
-}
-
-/**
- * 45-degree rotated diamond decision node.
- * @category Components
- */
-export function Diamond(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
-  return Shape(childrenOrOptions, { ...options, kind: "diamond" });
+  return Shape(paths.box(), childrenOrOptions, options);
 }

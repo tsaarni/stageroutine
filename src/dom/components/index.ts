@@ -29,6 +29,11 @@ export {
   pulseSequence,
 } from "./Connector";
 export {
+  Frame,
+  type FrameElement,
+  type FrameOptions,
+} from "./Frame";
+export {
   defineIcons,
   Icon,
   type IconDefinition,
@@ -55,12 +60,8 @@ export {
 } from "./SequenceDiagram";
 export {
   Card,
-  Circle,
-  Diamond,
-  Pill,
   Shape,
   type ShapeElement,
-  type ShapeKind,
   type ShapeOptions,
   type ShapeVariant,
 } from "./Shape";

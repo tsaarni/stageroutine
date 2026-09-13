@@ -1,17 +1,28 @@
 ---
-title: Shapes
+title: Shapes & Frames
 sidebar_position: 3
 ---
 
 import { DemoFrame } from "@site/src/components/DemoFrame";
 
-# Shapes
+# Shapes & Frames
 
-StageRoutine provides geometric shape containers for diagrams and layout elements: `Circle`, `Pill`, and `Diamond`.
+StageRoutine separates geometric silhouettes from visual presentation.
 
-## Circle
+Geometry is defined by reusable path generators in `paths`. You apply geometry to stage elements using two complementary primitives:
 
-The `Circle` component creates a circular node.
+- **`Shape`**: Renders styled surfaces, frosted glass cards, diagram nodes, and text labels.
+- **`Frame`**: Clips visual media, webcam feeds, images, or DOM elements to the path silhouette.
+
+## Shape
+
+`Shape` requires a path generator as its first argument, followed by optional child content and configuration options:
+
+```typescript
+Shape(path, content?, options?)
+```
+
+The example below uses `paths.circle()`:
 
 <DemoFrame src="/stageroutine/previews/circle.html" />
 
@@ -20,9 +31,9 @@ The `Circle` component creates a circular node.
 import { Stage } from "stageroutine";
 const stage = new Stage();
 // hide-end
-import { Circle } from "stageroutine";
+import { paths, Shape } from "stageroutine";
 
-const circle = Circle("Circle", {
+const circle = Shape(paths.circle(), "Circle", {
   x: "center",
   y: "center",
   size: 180,
@@ -34,76 +45,119 @@ stage.mount("#stage");
 // hide-end
 ```
 
-## Pill
-
-The `Pill` component creates a capsule-shaped badge or node.
-
-<DemoFrame src="/stageroutine/previews/pill.html" />
-
-```typescript preview="pill.html"
-// hide-start
-import { Stage } from "stageroutine";
-const stage = new Stage();
-// hide-end
-import { Pill } from "stageroutine";
-
-const pill = Pill("Pill", {
-  x: "center",
-  y: "center",
-  width: 220,
-  height: 80,
-});
-// hide-start
-stage.scene("Pill").with(pill);
-stage.pause();
-stage.mount("#stage");
-// hide-end
-```
-
-## Diamond
-
-The `Diamond` component creates a 45-degree rotated diamond node.
-
-<DemoFrame src="/stageroutine/previews/diamond.html" />
-
-```typescript preview="diamond.html"
-// hide-start
-import { Stage } from "stageroutine";
-const stage = new Stage();
-// hide-end
-import { Diamond } from "stageroutine";
-
-const diamond = Diamond("Diamond", {
-  x: "center",
-  y: "center",
-  size: 180,
-});
-// hide-start
-stage.scene("Diamond").with(diamond);
-stage.pause();
-stage.mount("#stage");
-// hide-end
-```
-
-## Surface Variants
+### Surface Variants
 
 Shapes support three surface treatments via the `variant` option:
 
-- `"surface"` (default): Translucent glass card with backdrop blur.
-- `"ghost"`: Transparent background with border outline.
+- `"surface"` (default): Translucent frosted glass surface with backdrop blur.
+- `"ghost"`: Transparent interior with vector border outline.
 - `"solid"`: Opaque fill background.
 
 ```typescript
-const outline = Circle("Ghost", {
+const outline = Shape(paths.circle(), "Ghost", {
   size: 120,
   variant: "ghost",
 });
 ```
 
+## Frame
+
+`Frame` is a dedicated clipping container. It masks its children to an SVG path geometry contour without applying frosted glass backgrounds:
+
+```typescript
+Frame(path, media, options?)
+```
+
+Wrap any element inside a `Frame` to clip it to that path. This example clips an image to a heart with `paths.heart()`:
+
+<DemoFrame src="/stageroutine/previews/frame-heart.html" />
+
+```typescript preview="frame-heart.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Frame, Image, paths } from "stageroutine";
+
+const gradient = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/></svg>',
+)}`;
+
+const heart = Frame(paths.heart(), Image(gradient, { fit: "cover" }), {
+  x: "center",
+  y: "center",
+  size: 220,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
+});
+// hide-start
+stage.scene("Frame").with(heart);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+For a live presenter bubble, swap `Image` for `Webcam({ mirror: true })`. See [Media](./media.mdx).
+
+### Optional Borders
+
+`Frame` includes an optional vector stroke overlay on top of the clipped media:
+
+- `borderColor`: Border color string (default: `"transparent"`).
+- `strokeWidth`: Stroke width in virtual pixels (default: `0`).
+- `active`: Highlighted glow state (default: `false`).
+
+When no border color or stroke width is specified, `Frame` functions as pure clipping.
+
+## Built-in Geometries
+
+The `paths` object provides generators for the standard diagram shapes:
+
+| Path Generator | Default Options | Description |
+| :--- | :--- | :--- |
+| `paths.box()` | `{ radius: 12 }` | Rounded rectangle (also available via [`Card`](./card.mdx)). |
+| `paths.circle()` | `{ fit: "contain" }` | Uniform circle or proportional ellipse (`"contain"` or `"fill"`). |
+| `paths.pill()` | None | Capsule with fully rounded semicircle ends. |
+| `paths.diamond()` | `{ radius: 10.5 }` | Diamond decision node with softly rounded tips. |
+| `paths.triangle()` | `{ direction: "up", radius: 10 }` | Directional triangle (`"up"`, `"down"`, `"left"`, `"right"`). |
+| `paths.hexagon()` | `{ orientation: "pointy" }` | Regular hexagon (`"pointy"` or `"flat"` orientation). |
+| `paths.star()` | `{ points: 5, innerRadius: 0.45 }` | Symmetrical multi-pointed star. |
+| `paths.squircle()` | `{ curvature: 0.82 }` | Continuous G2 curvature superellipse. |
+| `paths.heart()` | None | Symmetrical heart shape. |
+| `paths.polygon()` | `{ sides: 5 }` | Regular N-sided polygon. |
+
+The same geometry powers every primitive. Pass extra options to change the silhouette:
+
+```typescript
+const rating = Shape(paths.star({ points: 6 }), "Featured", { size: 140 });
+const gateway = Shape(paths.hexagon({ orientation: "flat" }), "Gateway", { size: 130 });
+```
+
+## Connector Perimeter Tracking
+
+Connectors automatically calculate intersection points against the outer boundary of any `Shape` or `Frame`:
+
+```typescript
+import { Connector, Frame, paths, Shape } from "stageroutine";
+
+const source = Shape(paths.circle(), "Source", { size: 100 });
+const target = Frame(paths.squircle(), photo, { size: 120 });
+
+const arrow = Connector(source, target, { routing: "bezier" });
+```
+
+The layout engine uses raycast bisection to attach connector endpoints directly to the perimeter of the shape.
+
+## Custom Paths
+
+You can pass any function that calculates an SVG path `d` string to either `Shape` or `Frame`.
+
+For complete instructions and tutorial examples on building custom geometries, see the [Custom Paths guide](../advanced/custom-paths).
+
 ## API Reference
 
-- [`Circle`](../api/functions/Circle.md)
-- [`Pill`](../api/functions/Pill.md)
-- [`Diamond`](../api/functions/Diamond.md)
 - [`Shape`](../api/functions/Shape.md)
+- [`Frame`](../api/functions/Frame.md)
 - [`Card`](../api/functions/Card.md)
+- [`paths`](../api/variables/paths.md)
+- [`PathFunction`](../api/type-aliases/PathFunction.md)

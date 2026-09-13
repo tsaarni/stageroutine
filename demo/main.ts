@@ -6,22 +6,23 @@ import {
   BulletList,
   bracket,
   Card,
-  Circle,
   CodeBlock,
   Connector,
   crossfade,
-  Diamond,
   dream,
+  Frame,
   glow,
   gradient,
+  Image,
   Kicker,
   LaserPointer,
   layout,
   NavigationOverlay,
-  Pill,
+  paths,
   pulseSequence,
   rule,
   SequenceDiagram,
+  Shape,
   Stage,
   Table,
   TerminalBlock,
@@ -208,8 +209,8 @@ stage.pause();
 // Scene: Component Showcase
 
 const showcaseKicker = Kicker("03 / Design System");
-const showcasePill = Pill("v1.0.0");
-const customPill = Pill("Reactive", {
+const showcasePill = Shape(paths.pill(), "v1.0.0");
+const customPill = Shape(paths.pill(), "Reactive", {
   color: "#38bdf8",
   background: "rgba(56, 189, 248, 0.1)",
   borderColor: "rgba(56, 189, 248, 0.25)",
@@ -237,8 +238,8 @@ const showcaseList = BulletList([
 ]);
 const showcaseCode = CodeBlock([
   "// Type-safe UI primitives",
-  "const pill = Pill('v1.0');",
-  "const custom = Pill('Live', { color: '#38bdf8' });",
+  "const pill = Shape(paths.pill(), 'v1.0');",
+  "const custom = Shape(paths.pill(), 'Live', { color: '#38bdf8' });",
   "const card = Card('Frosted surface');",
 ]);
 const showcaseTerminal = TerminalBlock({
@@ -665,16 +666,19 @@ layout.vstack([stateKicker, stateHeading], {
 });
 
 // UML initial and final pseudostates
-const stateInitial = Circle(undefined, {
+const stateInitial = Shape(paths.circle(), {
   size: 34,
   variant: "ghost",
   className: "sr-state-node sr-state-initial",
+  borderColor: "rgba(255, 255, 255, 0.35)",
 });
 
-const stateFinal = Circle(undefined, {
+const stateFinal = Shape(paths.circle(), {
   size: 34,
   variant: "ghost",
   className: "sr-state-node sr-state-final",
+  borderColor: "rgba(255, 255, 255, 0.55)",
+  strokeWidth: 1.5,
 });
 
 // State nodes
@@ -796,16 +800,17 @@ stage.pause();
 
 const geoKicker = Kicker("09 / Geometric Primitives");
 const geoHeading = Title("Reactive Sizing & Geometric Nodes", {
-  width: "42cqw",
+  width: "36cqw",
 });
 const geoDescription = Text(
   "Shapes smoothly resize without scaling distortion. Width, height, and size animate as reactive properties while connectors track dynamic perimeters in real time.",
-  { width: "42cqw" },
+  { width: "36cqw" },
 );
 
 layout.vstack([geoKicker, geoHeading, geoDescription], {
   x: 6,
   y: 18,
+  gap: 2,
 });
 
 const morphBox = Card("Dynamic Layout Reflow", {
@@ -814,38 +819,52 @@ const morphBox = Card("Dynamic Layout Reflow", {
   borderColor: "#38bdf8",
 });
 
-const morphCircle = Circle("100%", {
+const morphCircle = Shape(paths.circle(), "100%", {
   size: 110,
   color: "#a855f7",
   borderColor: "#a855f7",
   end: 0,
 });
 
-const morphDiamond = Diamond("Verify", {
+const morphDiamond = Shape(paths.diamond(), "Verify", {
   size: 115,
   color: "#f59e0b",
   borderColor: "#f59e0b",
 });
 
-const morphPill = Pill("Cluster Inactive", {
+const morphPill = Shape(paths.pill(), "Cluster Inactive", {
   width: 170,
   height: 54,
   color: "#ef4444",
   borderColor: "#ef4444",
 });
 
+const starMedia = Image(
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cdefs%3E%3ClinearGradient id='sg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23f43f5e'/%3E%3Cstop offset='50%25' stop-color='%23a855f7'/%3E%3Cstop offset='100%25' stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='300' fill='url(%23sg)'/%3E%3Ccircle cx='150' cy='150' r='90' fill='none' stroke='white' stroke-width='6' opacity='0.35' stroke-dasharray='12 6'/%3E%3Ccircle cx='150' cy='150' r='45' fill='white' opacity='0.7'/%3E%3C/svg%3E",
+  { fit: "cover" },
+);
+
+const starFrame = Frame(paths.star({ points: 5, innerRadius: 0.45 }), starMedia, {
+  size: 115,
+  borderColor: "#f43f5e",
+  strokeWidth: 2,
+});
+
 layout.grid(
   [
     [morphBox, morphCircle],
-    [morphDiamond, morphPill],
+    [morphDiamond, starFrame],
   ],
   {
     x: 52,
-    y: 28,
+    y: 18,
     gapX: 8,
-    gapY: 7,
+    gapY: 10,
   },
 );
+
+morphPill.x = 60;
+morphPill.y = 74;
 
 const connBoxCircle = Connector(morphBox, morphCircle, {
   label: "auto-tracking",
@@ -853,9 +872,22 @@ const connBoxCircle = Connector(morphBox, morphCircle, {
   end: 0,
 });
 
-const connDiamondPill = Connector(morphDiamond, morphPill, {
+const connCircleStar = Connector(morphCircle, starFrame, {
+  label: "clipped-frame",
+  routing: "bezier",
+  color: "#f43f5e",
+  end: 0,
+});
+
+const connDiamondStar = Connector(morphDiamond, starFrame, {
   label: "snap-sync",
   color: "#f59e0b",
+  end: 0,
+});
+
+const connStarPill = Connector(starFrame, morphPill, {
+  routing: "bezier",
+  color: "#10b981",
   end: 0,
 });
 
@@ -869,25 +901,32 @@ stage
     morphBox,
     morphCircle,
     morphDiamond,
+    starFrame,
     morphPill,
     connBoxCircle,
-    connDiamondPill,
+    connCircleStar,
+    connDiamondStar,
+    connStarPill,
   );
 
 stage.pause();
 
 // Step 1: Draw circle perimeter & activate diamond tail-chase
 connBoxCircle.end = to(1).duration(0.4);
-connDiamondPill.end = to(1).duration(0.4);
+connCircleStar.end = to(1).duration(0.4);
+connDiamondStar.end = to(1).duration(0.4);
+connStarPill.end = to(1).duration(0.4);
 morphCircle.end = to(1).duration(0.8).ease("linear");
 morphDiamond.flow = "chase";
 stage.pause();
 
 // Step 2: Reactive Sizing & Live Text Reflow Animation
-morphBox.width = to(420).ease("cubicInOut");
+morphBox.width = to(340).ease("cubicInOut");
 morphBox.height = to(68).ease("cubicInOut");
-morphCircle.size = to(160).ease("cubicInOut");
-morphDiamond.size = to(165).ease("cubicInOut");
+morphCircle.size = to(150).ease("cubicInOut");
+morphDiamond.size = to(150).ease("cubicInOut");
+starFrame.size = to(150).ease("cubicInOut");
+starFrame.rotation = to(72).ease("cubicInOut");
 morphPill.width = to(280).ease("cubicInOut");
 morphPill.color = to("#10b981");
 morphPill.borderColor = to("#10b981");

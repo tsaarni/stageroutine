@@ -26,7 +26,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 154 symbols |
+| `stageroutine` | 164 symbols |
 | `stageroutine/backgrounds` | 24 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 11 symbols |
@@ -49,9 +49,6 @@ export function BulletList(items: BulletItemInput[], options?: BulletListOptions
 
 /** Rectangular card container. */
 export function Card(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
-
-/** Circular geometric node. */
-export function Circle(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
 
 /**
  * Code snippet component with syntax highlighting powered by the Shiki TextMate engine
@@ -91,9 +88,6 @@ export function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number):
  */
 export function defineIcons(def: IconDefinition): void;
 
-/** 45-degree rotated diamond decision node. */
-export function Diamond(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
-
 /**
  * Decorates an element with an optical liquid dream entrance.
  *
@@ -101,6 +95,9 @@ export function Diamond(childrenOrOptions?: unknown, options?: ShapeOptions): Sh
  * and a soft optical blur that settles into razor-sharp focus.
  */
 export function dream(options?: DreamOptions): ElementDecorator;
+
+/** Clips media or DOM child elements to an SVG path geometry contour. */
+export function Frame(path: PathFunction, childOrOptions?: unknown, options?: FrameOptions): FrameElement;
 
 /** Decorates an element with a glowing neon aura and optional pulse animation. */
 export function glow(options?: GlowOptions): ElementDecorator;
@@ -162,9 +159,6 @@ export function LaserPointer(options?: LaserPointerOptions): OverlayPlugin & Las
  */
 export function NavigationOverlay(options?: NavigationOverlayOptions): OverlayPlugin;
 
-/** Capsule pill tag / status indicator. */
-export function Pill(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
-
 /** Orchestrates a sequential packet pulse chain across multiple connectors. */
 export function pulseSequence(steps: (ConnectorElement | PulseSequenceStep)[], options?: PulseSequenceOptions): PulseSequenceController;
 
@@ -181,7 +175,7 @@ export function scrim(options?: ScrimOptions): ElementDecorator;
 export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramElement;
 
 /** Universal shape container supporting multiple geometries and surface treatments. */
-export function Shape(childrenOrOptions?: unknown, maybeOptions?: ShapeOptions): ShapeElement;
+export function Shape(path: PathFunction, childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
 
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
 export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerBuilder;
@@ -257,7 +251,7 @@ export function vignette(options?: VignetteOptions): (target: DOMElement | Backg
  * Creates a live reactive Webcam element on stage.
  * @example ```tsx
  * // Presenter bubble avatar in the bottom-right corner:
- * const presenter = Circle(Webcam({ mirror: true }), {
+ * const presenter = Frame(paths.circle(), Webcam({ mirror: true }), {
  *   x: "bottom-right",
  *   size: 180,
  *   active: true,
@@ -681,6 +675,71 @@ export class DOMElement implements ReactiveElementBase {
   decorate(decorator: ElementDecorator): DOMElement;
 }
 
+export class FrameElement extends DOMElement {
+  constructor(path: PathFunction, childrenOrOptions?: unknown, options?: FrameOptions): FrameElement;
+  static reactiveKeys: ReadonlySet<string>;
+  path(width: number, height: number, context?: PathContext): string;
+  readonly items: ReactiveElementBase[];
+  active: boolean;
+  borderColor: ReactiveProp<string> | undefined;
+  /**
+   * Component update hook invoked whenever reactive properties are mutated during transitions.
+   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
+   */
+  update(): void;
+  /** Calculates the exact perimeter attachment point against the frame's SVG path boundary. */
+  getPerimeterPoint(box: Box, target: Point, padding?: number): { point: Point; side: CardinalSide; };
+  reactiveKeys: ReadonlySet<string>;
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  anchor: ElementAnchor;
+  /**
+   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
+   * When true, Stage does not overwrite `node.style.transform`.
+   */
+  isCustomPositioned: boolean;
+  x: ReactiveProp<string | number>;
+  y: ReactiveProp<string | number>;
+  width: ReactiveProp<string | number> | undefined;
+  height: ReactiveProp<string | number> | undefined;
+  scale: ReactiveProp<number>;
+  rotation: ReactiveProp<number>;
+  opacity: ReactiveProp<number>;
+  blur: ReactiveProp<number>;
+  brightness: ReactiveProp<number>;
+  color: ReactiveProp<string> | undefined;
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
+  align: Align | undefined;
+  size: ReactiveProp<string | number> | undefined;
+  isMounted: boolean;
+  isActive: boolean;
+  /** Registers a callback triggered when this element is mounted into the DOM. */
+  onMount(fn: () => void): () => void;
+  /** Registers a callback triggered when this element is unmounted from the DOM. */
+  onUnmount(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
+  onActivate(fn: () => void): () => void;
+  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
+  onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
+  /** Registers a click interaction handler on this element. */
+  onClick(handler: (event: MouseEvent) => void): FrameElement;
+  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
+  decorate(decorator: ElementDecorator): FrameElement;
+}
+
 /** Reactive Icon element wrapping an SVG icon on the presentation stage. */
 export class IconElement extends DOMElement {
   constructor(nameOrOptions?: string | IconOptions, maybeOptions?: IconOptions): IconElement;
@@ -931,9 +990,9 @@ export class SequenceDiagramElement {
 }
 
 export class ShapeElement extends DOMElement {
-  constructor(childrenOrOptions?: unknown, maybeOptions?: ShapeOptions): ShapeElement;
+  constructor(path: PathFunction, childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
   static reactiveKeys: ReadonlySet<string>;
-  readonly kind: ShapeKind;
+  path(width: number, height: number, context?: PathContext): string;
   readonly variant: ShapeVariant;
   readonly items: ReactiveElementBase[];
   start: ReactiveProp<number>;
@@ -941,6 +1000,7 @@ export class ShapeElement extends DOMElement {
   flow: ReactiveProp<FlowEffect>;
   text: string | undefined;
   borderColor: ReactiveProp<string> | undefined;
+  background: string | undefined;
   active: boolean;
   doubleBorder: boolean;
   /**
@@ -948,8 +1008,11 @@ export class ShapeElement extends DOMElement {
    * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
    */
   update(): void;
+  /** Calculates the exact perimeter attachment point against the shape's SVG path boundary. */
+  getPerimeterPoint(box: Box, target: Point, padding?: number): { point: Point; side: CardinalSide; };
   reactiveKeys: ReadonlySet<string>;
   readonly id: string;
+  readonly kind: string;
   readonly domElement: HTMLElement;
   anchor: ElementAnchor;
   /**
@@ -1403,6 +1466,15 @@ export interface BackgroundOptions {
 }
 
 /**
+ * Options for the box (rounded rectangle) path generator.
+ * @category Geometry
+ */
+export interface BoxPathOptions {
+    /** Corner radius in pixels (default: 12). */
+    radius?: number;
+}
+
+/**
  * Configuration options for the grouping bracket decorator.
  * @category Decorators
  */
@@ -1483,6 +1555,19 @@ export interface CircleLayoutOptions {
     animate?: LayoutAnimation;
     /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
     duration?: number;
+}
+
+/**
+ * Options for the circle / ellipse path generator.
+ * @category Geometry
+ */
+export interface CirclePathOptions {
+    /**
+     * Sizing mode:
+     * - "contain" (default): preserves a 1:1 circular aspect ratio centered inside the bounds.
+     * - "fill": stretches to the bounding box as a smooth ellipse.
+     */
+    fit?: "contain" | "fill";
 }
 
 /**
@@ -1591,6 +1676,15 @@ export interface CSSBackgroundOptions {
 }
 
 /**
+ * Options for the diamond path generator.
+ * @category Geometry
+ */
+export interface DiamondPathOptions {
+    /** Corner tip radius in pixels (default: 10.5). */
+    radius?: number;
+}
+
+/**
  * Configuration options for the dream liquid decorator.
  * @category Decorators
  */
@@ -1649,6 +1743,29 @@ export interface ElementOptions {
 }
 
 /**
+ * Configuration options for the Frame clipping component.
+ * @category Components
+ */
+export interface FrameOptions extends ElementOptions {
+    /** Uniform width and height shorthand. */
+    size?: number | string;
+    /** Explicit width in pixels or container units. */
+    width?: number | string;
+    /** Explicit height in pixels or container units. */
+    height?: number | string;
+    /** Optional border outline color. */
+    borderColor?: ReactiveProp<string>;
+    /** Optional accent / text color. */
+    color?: string;
+    /** Border stroke outline width in virtual canvas pixels (default: 0). */
+    strokeWidth?: number;
+    /** Highlighted / glowing active state. */
+    active?: boolean;
+    /** Optional child elements or media node. */
+    children?: unknown;
+}
+
+/**
  * Configuration options for the glow decorator.
  * @category Decorators
  */
@@ -1687,6 +1804,15 @@ export interface GrainOptions {
     size?: number;
     /** Whether the grain subtly flickers/moves (default: true). */
     animated?: boolean;
+}
+
+/**
+ * Options for the hexagon path generator.
+ * @category Geometry
+ */
+export interface HexagonPathOptions {
+    /** Hexagon orientation: "pointy" (default, vertex at top) or "flat" (flat horizontal top). */
+    orientation?: "pointy" | "flat";
 }
 
 /**
@@ -1925,6 +2051,16 @@ export interface OverlayPlugin {
 }
 
 /**
+ * Geometric SVG path generators for shapes and clipping frames.
+ */
+export interface PathContext {
+    /** Stroke width in virtual canvas pixels, used to center the stroke within bounds. */
+    strokeWidth?: number;
+    /** Inset padding in pixels from the element bounds. */
+    inset?: number;
+}
+
+/**
  * Options for continuous periodic packet pulses along a connector.
  * @internal
  */
@@ -1951,6 +2087,15 @@ export interface PointerSetStateEvent {
 export interface PointerStateChangedEvent {
     /** Whether the pointer overlay is currently active. */
     active: boolean;
+}
+
+/**
+ * Options for the regular polygon path generator.
+ * @category Geometry
+ */
+export interface PolygonPathOptions {
+    /** Number of sides (minimum: 3, default: 5). */
+    sides?: number;
 }
 
 /**
@@ -2130,12 +2275,10 @@ export interface SequenceDiagramOptions {
 }
 
 /**
- * Configuration options for the Shape, Card, Circle, Pill, and Diamond components.
+ * Configuration options for the Shape and Card components.
  * @category Components
  */
 export interface ShapeOptions extends ElementOptions {
-    /** Geometric silhouette: "box" (default), "circle", "pill", or "diamond". */
-    kind?: ShapeKind;
     /** Surface material preset: "surface" (glass card, default), "ghost" (outline), or "solid" (opaque fill). */
     variant?: ShapeVariant;
     /** Uniform width and height shorthand (ideal for circles and diamonds). */
@@ -2168,6 +2311,15 @@ export interface ShapeOptions extends ElementOptions {
     strokeWidth?: number;
     /** Optional child elements or text nodes. */
     children?: unknown;
+}
+
+/**
+ * Options for the squircle (superellipse) path generator.
+ * @category Geometry
+ */
+export interface SquirclePathOptions {
+    /** Curvature tension between 0 (sharp) and 1 (round, default: 0.82). */
+    curvature?: number;
 }
 
 /**
@@ -2282,6 +2434,17 @@ export interface StaggerOptions {
     ease?: BuiltinEase | EaseCurve;
     /** Animated target properties for each element (default: `{ opacity: 1, x: 0 }`). */
     props?: Record<string, unknown>;
+}
+
+/**
+ * Options for the star path generator.
+ * @category Geometry
+ */
+export interface StarPathOptions {
+    /** Number of star points (default: 5). */
+    points?: number;
+    /** Ratio of inner radius to outer radius between 0 and 1 (default: 0.45). */
+    innerRadius?: number;
 }
 
 /**
@@ -2436,6 +2599,17 @@ export interface TransitionDescriptor<T = unknown> {
     after(elementOrId: ReactiveElementBase | string, property?: string): this;
     /** Sets the easing curve (e.g. `"quartOut"`, `"cubicInOut"`, `"smooth"`). */
     ease(curve: BuiltinEase | EaseCurve): this;
+}
+
+/**
+ * Options for the triangle path generator.
+ * @category Geometry
+ */
+export interface TrianglePathOptions {
+    /** Triangle orientation: "up" (default), "down", "left", or "right". */
+    direction?: "up" | "down" | "left" | "right";
+    /** Corner rounding radius in pixels (default: 10). */
+    radius?: number;
 }
 
 /**
@@ -2691,6 +2865,12 @@ export type LayoutElement = DOMElement | ReactiveElementBase | {
 export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 
 /**
+ * A function that calculates an SVG path string ('d' attribute) for given dimensions.
+ * @category Geometry
+ */
+export type PathFunction = (width: number, height: number, context?: PathContext) => string;
+
+/**
  * 2D coordinate point or vector as a fixed-length [x, y] tuple.
  * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
  * @category Core
@@ -2717,12 +2897,6 @@ export type RelativeAlign = "start" | "center" | "end";
  * @category Layout
  */
 export type RelativePlacement = "top" | "bottom" | "left" | "right";
-
-/**
- * Geometric silhouette kind for the Shape component.
- * @category Components
- */
-export type ShapeKind = "box" | "circle" | "pill" | "diamond";
 
 /**
  * Surface material preset for the Shape component.
@@ -2786,6 +2960,9 @@ export const dracula: ThemeConfig;
 export const layout: { hstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; };
 
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };
+
+/** Geometric SVG path generators for shapes, cards, and clipping frames. */
+export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; };
 
 export const themes: { readonly defaultDark: ThemeConfig; readonly defaultLight: ThemeConfig; readonly dracula: ThemeConfig; readonly tokyoNight: ThemeConfig; readonly cyberpunk: ThemeConfig; };
 

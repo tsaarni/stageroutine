@@ -68,18 +68,18 @@ Clicking a video toggles playback interactively.
 
 ## Webcam
 
-`Webcam` displays a live camera feed:
+`Webcam` displays a live camera feed. Wrap it in a [`Frame`](./shapes.mdx#frame) to create a circular presenter bubble:
 
 ```typescript
-import { Webcam } from "stageroutine";
+import { Frame, paths, Webcam } from "stageroutine";
 
-const cam = Webcam({
+const cam = Frame(paths.circle(), Webcam({ mirror: true }), {
   x: 85,
   y: 80,
-  width: 160,
-  height: 160,
-  borderRadius: "50%",
-  mirror: true,
+  size: 160,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
+  active: true,
 });
 ```
 
@@ -88,3 +88,4 @@ const cam = Webcam({
 - [`Image`](../api/functions/Image.md)
 - [`Video`](../api/functions/Video.md)
 - [`Webcam`](../api/functions/Webcam.md)
+- [`Frame`](../api/functions/Frame.md)

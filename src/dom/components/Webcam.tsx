@@ -253,7 +253,7 @@ export class WebcamElement extends DOMElement {
  * @example
  * ```tsx
  * // Presenter bubble avatar in the bottom-right corner:
- * const presenter = Circle(Webcam({ mirror: true }), {
+ * const presenter = Frame(paths.circle(), Webcam({ mirror: true }), {
  *   x: "bottom-right",
  *   size: 180,
  *   active: true,

@@ -142,6 +142,7 @@ const sidebars: SidebarsConfig = {
         "advanced/theming",
         "advanced/overlays-and-events",
         "advanced/custom-icons",
+        "advanced/custom-paths",
         "advanced/under-the-hood",
       ],
     },

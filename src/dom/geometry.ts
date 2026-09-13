@@ -159,6 +159,112 @@ export function getTransformedPerimeterPoint(box: Box, target: Point, r = 12, pa
   ];
 }
 
+let sharedCanvasCtx: CanvasRenderingContext2D | null = null;
+
+function getSharedCanvasContext(): CanvasRenderingContext2D | null {
+  if (!sharedCanvasCtx) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    sharedCanvasCtx = canvas.getContext("2d");
+  }
+  return sharedCanvasCtx;
+}
+
+/**
+ * Computes the perimeter intersection of a ray from the center of a box toward a target point
+ * against an arbitrary SVG path contour using Path2D raycast bisection.
+ * Accounts for element position, scale, and rotation.
+ */
+export function getPathPerimeterPoint(
+  pathD: string,
+  box: Box,
+  target: Point,
+  padding = 6,
+): { point: Point; side: CardinalSide } {
+  const scale = box.scale ?? 1;
+  const rotation = box.rotation ?? 0;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  const outDx = target[0] - cx;
+  const outDy = target[1] - cy;
+  let side: CardinalSide = "center";
+  if (Math.abs(outDx) >= Math.abs(outDy)) {
+    side = outDx >= 0 ? "right" : "left";
+  } else {
+    side = outDy >= 0 ? "bottom" : "top";
+  }
+
+  const ctx = getSharedCanvasContext();
+  if (!ctx || typeof Path2D === "undefined" || !pathD) {
+    const r = Math.min(box.width, box.height) / 2;
+    return {
+      point: getTransformedPerimeterPoint(box, target, r, padding),
+      side,
+    };
+  }
+
+  // Transform target point to local unrotated, unscaled coordinate system
+  const rad = (-rotation * Math.PI) / 180;
+  const dx = (target[0] - cx) / scale;
+  const dy = (target[1] - cy) / scale;
+
+  if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) {
+    return { point: [cx, cy], side };
+  }
+
+  const cxLocal = box.width / 2;
+  const cyLocal = box.height / 2;
+  const localTargetX = cxLocal + (dx * Math.cos(rad) - dy * Math.sin(rad));
+  const localTargetY = cyLocal + (dx * Math.sin(rad) + dy * Math.cos(rad));
+
+  const rayDx = localTargetX - cxLocal;
+  const rayDy = localTargetY - cyLocal;
+  const angle = Math.atan2(rayDy, rayDx);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  const p2d = new Path2D(pathD);
+
+  // If local center is outside (e.g. non-convex hollow shape), fallback to geometric box
+  if (!ctx.isPointInPath(p2d, cxLocal, cyLocal)) {
+    const r = Math.min(box.width, box.height) / 2;
+    return {
+      point: getTransformedPerimeterPoint(box, target, r, padding),
+      side,
+    };
+  }
+
+  let low = 0;
+  let high = Math.hypot(box.width, box.height);
+
+  for (let i = 0; i < 10; i++) {
+    const mid = (low + high) / 2;
+    if (ctx.isPointInPath(p2d, cxLocal + mid * cos, cyLocal + mid * sin)) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  const localRadius = (low + high) / 2 + padding / scale;
+  const localPerimeterX = cxLocal + localRadius * cos;
+  const localPerimeterY = cyLocal + localRadius * sin;
+
+  const lx = (localPerimeterX - cxLocal) * scale;
+  const ly = (localPerimeterY - cyLocal) * scale;
+  const worldRad = (rotation * Math.PI) / 180;
+
+  return {
+    point: [
+      cx + (lx * Math.cos(worldRad) - ly * Math.sin(worldRad)),
+      cy + (lx * Math.sin(worldRad) + ly * Math.cos(worldRad)),
+    ],
+    side,
+  };
+}
+
 /**
  * Computes a clean 90-degree orthogonal path between two points with cardinal awareness.
  */

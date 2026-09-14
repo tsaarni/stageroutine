@@ -1,0 +1,151 @@
+---
+title: Icons & Images
+sidebar_position: 9
+---
+
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
+# Icons & Images
+
+StageRoutine provides dedicated components for graphic assets: `Icon` for scalable vector graphics and `Image` for raster photos, diagrams, and illustrations.
+
+## Vector Icons vs Raster Images
+
+- **Vector Icons (`Icon`)**: Crisp at any resolution, light weight, and tintable via CSS `color` or themes. Ideal for UI symbols, status indicators, and tech logos.
+- **Raster Images (`Image`)**: Pixel-based formats (PNG, JPG, WebP, GIF) displayed at high fidelity with CSS `object-fit` scaling. Ideal for screenshots, photos, and complex artwork.
+
+## Icons
+
+<DemoFrame src="/stageroutine/previews/icon.html" />
+
+```typescript preview="icon.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Icon } from "stageroutine";
+
+const icon = Icon(
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  {
+    x: "center",
+    y: "center",
+    size: 80,
+  },
+);
+// hide-start
+stage.scene("Icon").with(icon);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+### Iconify Icon Sets
+
+StageRoutine supports on-demand icon resolution from the [Iconify](https://icon-sets.iconify.design/) ecosystem. Only the icons you import are bundled into production.
+
+#### Discovering Icons
+
+Search over 150,000 icons at [icon-sets.iconify.design](https://icon-sets.iconify.design/). The site lists collection names (such as `lucide`, `carbon`, `material-symbols`, or `simple-icons`) and individual icon names.
+
+#### Installing Icon Sets
+
+Install any icon collection as a development dependency:
+
+```bash
+pnpm add -D @iconify-json/lucide
+# or
+pnpm add -D @iconify-json/carbon
+```
+
+#### Importing and Using
+
+Import icons using the `~iconify/<collection>/<icon-name>` prefix:
+
+```typescript
+import Database from "~iconify/lucide/database";
+import Cpu from "~iconify/lucide/cpu";
+
+// Standalone icon element
+const dbIcon = Database({ x: 10, y: 20, size: 48, color: "#38bdf8" });
+
+// Passed inside a Card
+const card = Card({
+  icon: Cpu(),
+  kicker: "COMPUTE",
+  title: "Worker Node",
+});
+```
+
+Imported icon functions automatically create and return an `Icon` element configured with your options.
+
+### Project SVG Icons
+
+You can add project SVG icons by dropping files into an `icons/` folder in your project root:
+
+```text
+my-presentation/
+├── icons/
+│   ├── gateway.svg
+│   └── mycompany/
+│       └── edge-device.svg
+```
+
+Reusing an entire company icon set is as simple as copying the folder into `./icons/mycompany/`.
+
+- Files placed directly in `icons/` import from `~icons/<name>` (omit the `.svg` extension):
+  ```typescript
+  import Gateway from "~icons/gateway";
+  ```
+- Files placed in a subfolder import using the relative path:
+  ```typescript
+  import EdgeDevice from "~icons/mycompany/edge-device";
+  ```
+
+The `.svg` file extension is omitted by default, but writing `~icons/gateway.svg` also works.
+
+Monochrome icons automatically convert to `currentColor` so they adapt to themes and custom colors. Multi-color icons retain their original colors.
+
+## Images
+
+The `Image` component displays raster images (PNG, JPG, WebP, GIF) or SVG image files on the stage.
+
+```typescript
+import { Image } from "stageroutine";
+import heroImg from "./assets/architecture.png";
+
+const diagram = Image(heroImg, {
+  x: "center",
+  y: "center",
+  width: 720,
+  fit: "contain",
+});
+```
+
+Because StageRoutine uses Vite, importing any image file returns an optimized asset URL automatically.
+
+### Sizing and Fit
+
+`Image` supports CSS `object-fit` scaling via `fit`:
+
+- `"contain"` (default): Scales image to fit inside bounds while preserving aspect ratio.
+- `"cover"`: Zooms and fills bounds completely, cropping overflow.
+- `"fill"`: Stretches image to exact bounds.
+- `"none"`: Displays image at intrinsic pixel size.
+- `"scale-down"`: Scales down like `contain` if larger than container.
+
+```typescript
+const avatar = Image("./photo.jpg", {
+  width: 200,
+  height: 200,
+  fit: "cover",
+});
+```
+
+To clip images inside custom vector shapes (such as circles or hearts), see [`Frame`](./shapes.mdx#frame). For slow cinematic drifts and zooming, see the [Ken Burns effect](../advanced/patterns.mdx#cinematic-pan-and-zoom-ken-burns).
+
+## API Reference
+
+- [`Icon`](../api/functions/Icon.md)
+- [`Image`](../api/functions/Image.md)
+- [`defineIcons`](../api/functions/defineIcons.md)

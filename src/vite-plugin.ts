@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cleanupSVG, parseColors, runSVGO, SVG } from "@iconify/tools";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
 
@@ -348,7 +349,74 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
   const plugins: PluginOption[] = [corePlugin];
 
   if (options.icons !== false) {
+    const processLocalSvg = async (rawSvg: string): Promise<string> => {
+      const svg = new SVG(rawSvg);
+      await cleanupSVG(svg);
+      const parsed = await parseColors(svg);
+      if (parsed.colors.length <= 1) {
+        await parseColors(svg, {
+          callback: (_attr, _colorStr, parsedColor) => {
+            if (!parsedColor || parsedColor.type === "none" || parsedColor.type === "transparent") {
+              return "none";
+            }
+            return "currentColor";
+          },
+        });
+      }
+      await runSVGO(svg);
+      return svg.toMinifiedString();
+    };
+
+    // Dedicated plugin for local project icons (~icons/...)
+    const localIconsPlugin: PluginOption = {
+      name: "stageroutine:local-icons",
+      resolveId(id) {
+        if (id.startsWith("~icons/")) {
+          return `\0${id}`;
+        }
+      },
+      async load(id) {
+        if (!id.startsWith("\0~icons/")) return null;
+        const rawIconPath = id.slice("\0~icons/".length);
+        const iconPath = rawIconPath.replace(/\.svg$/, "");
+        const parts = iconPath.split("/");
+
+        // Supports flat (icons/gateway.svg) and nested (icons/mycompany/edge-device.svg)
+        const filePath =
+          parts.length === 1
+            ? resolve(rootDir, "icons", `${parts[0]}.svg`)
+            : resolve(rootDir, "icons", ...parts.slice(0, -1), `${parts[parts.length - 1]}.svg`);
+
+        if (existsSync(filePath)) {
+          const raw = readFileSync(filePath, "utf-8");
+          const svg = await processLocalSvg(raw);
+          return `
+import { Icon } from "stageroutine";
+export default function(options = {}) {
+  return Icon(${JSON.stringify(svg)}, options);
+}
+`;
+        }
+        throw new Error(
+          `StageRoutine could not find local icon "~icons/${iconPath}". Looked for file at: ${filePath}`,
+        );
+      },
+    };
+
+    // Rewriter allowing ~iconify/<collection>/<icon> to resolve via unplugin-icons
+    const iconifyRewriter: PluginOption = {
+      name: "stageroutine:iconify-rewriter",
+      async resolveId(id, importer, resolveOptions) {
+        if (id.startsWith("~iconify/")) {
+          const target = id.replace(/^~iconify\//, "~icons/");
+          return this.resolve(target, importer, { skipSelf: true, ...resolveOptions });
+        }
+      },
+    };
+
     plugins.push(
+      localIconsPlugin,
+      iconifyRewriter,
       Icons({
         compiler: {
           compiler: (svg) => {

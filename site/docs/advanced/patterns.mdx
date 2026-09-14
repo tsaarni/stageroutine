@@ -1,0 +1,40 @@
+---
+sidebar_position: 7
+---
+
+# Patterns
+
+This guide demonstrates composition techniques that combine multiple StageRoutine features to create production effects.
+
+## Cinematic Pan and Zoom (Ken Burns)
+
+The Ken Burns effect brings static photos and illustrations to life with a slow zoom and gentle pan while the presenter speaks.
+
+You achieve this by combining `Image`, a clipping `Frame`, and synchronized long `to()` transitions:
+
+```typescript
+import { Frame, Image, paths, to } from "stageroutine";
+import landscapeImg from "./assets/landscape.jpg";
+
+// Load the raster image asset
+const photo = Image(landscapeImg, {
+  fit: "cover", // Cover bounds so zooming has overflow margin
+  scale: 1.0,
+});
+
+// Clip the image to a shape so movement stays contained
+const viewport = Frame(paths.squircle(), photo, {
+  x: "center",
+  y: "center",
+  size: 600,
+});
+
+// Animate properties in lockstep across the scene duration
+stage.step("Ambient drift", () => {
+  photo.scale = to(1.2).duration(45).ease("linear"); // Slow continuous zoom
+  photo.x = to("48cqw").duration(45).ease("linear"); // Gentle horizontal drift
+  photo.y = to("47cqh").duration(45).ease("linear"); // Gentle vertical drift
+});
+```
+
+Because `photo` is inside `viewport`, the zoom and drift remain contained within the shape. The animation automatically pauses when moving backward (`stage.prev()`), preserving complete snapshot safety.

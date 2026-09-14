@@ -15,3 +15,10 @@ declare module "~icons/*" {
   const iconFactory: (options?: IconOptions) => IconElement;
   export default iconFactory;
 }
+
+declare module "~iconify/*" {
+  import type { IconElement, IconOptions } from "./dom/components/Icon";
+
+  const iconFactory: (options?: IconOptions) => IconElement;
+  export default iconFactory;
+}

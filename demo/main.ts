@@ -33,10 +33,10 @@ import {
   vignette,
 } from "stageroutine";
 import { AsciiFluid } from "stageroutine/backgrounds";
-import Cpu from "~icons/lucide/cpu";
-import Database from "~icons/lucide/database";
-import Globe from "~icons/lucide/globe";
-import Sparkles from "~icons/lucide/sparkles";
+import Cpu from "~iconify/lucide/cpu";
+import Database from "~iconify/lucide/database";
+import Globe from "~iconify/lucide/globe";
+import Sparkles from "~iconify/lucide/sparkles";
 import notesDoc from "./notes.md?raw";
 
 // Initialize presentation stage with the ASCII Fluid background

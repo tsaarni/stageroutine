@@ -1,0 +1,59 @@
+---
+title: Video & Camera
+sidebar_position: 10
+---
+
+# Video & Camera
+
+StageRoutine includes components for dynamic media playback and live presenter video: `Video` and `Webcam`.
+
+## Video
+
+`Video` wraps an HTML5 video element with playback options:
+
+```typescript
+import { Video } from "stageroutine";
+
+const video = Video("/assets/recording.mp4", {
+  x: "center",
+  y: "center",
+  width: 640,
+  height: 360,
+  muted: true,
+  loop: true,
+  fit: "contain",
+});
+```
+
+Clicking a video toggles playback interactively.
+
+### Sizing and Fit
+
+`Video` and `Webcam` support CSS `object-fit` scaling via `fit`:
+
+- `"contain"` (default for `Video`): Scales content to fit within bounds while preserving aspect ratio.
+- `"cover"` (default for `Webcam`): Fills bounds completely, cropping overflow.
+- `"fill"`: Stretches content to exact bounds.
+
+## Webcam
+
+`Webcam` displays a live camera feed. Wrap it in a [`Frame`](./shapes.mdx#frame) to create a circular presenter bubble:
+
+```typescript
+import { Frame, paths, Webcam } from "stageroutine";
+
+const cam = Frame(paths.circle(), Webcam({ mirror: true }), {
+  x: 85,
+  y: 80,
+  size: 160,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
+  active: true,
+});
+```
+
+## API Reference
+
+- [`Video`](../api/functions/Video.md)
+- [`Webcam`](../api/functions/Webcam.md)
+- [`Frame`](../api/functions/Frame.md)

@@ -5,7 +5,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cleanupSVG, parseColors, runSVGO, SVG } from "@iconify/tools";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
 
@@ -350,6 +349,7 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
 
   if (options.icons !== false) {
     const processLocalSvg = async (rawSvg: string): Promise<string> => {
+      const { SVG, cleanupSVG, parseColors, runSVGO } = await import("@iconify/tools");
       const svg = new SVG(rawSvg);
       await cleanupSVG(svg);
       const parsed = await parseColors(svg);

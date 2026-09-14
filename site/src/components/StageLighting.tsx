@@ -225,7 +225,7 @@ export function StageLighting(): React.JSX.Element {
       <svg
         className={styles.stageLightingSvg}
         viewBox="0 0 1200 800"
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMid meet"
       >
         <title>Stage Lighting</title>
         <defs>

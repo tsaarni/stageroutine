@@ -45,6 +45,11 @@ const sidebars: SidebarsConfig = {
         "advanced/lifecycle",
         "advanced/custom-decorators",
         "advanced/theming",
+        {
+          type: "link",
+          label: "Brand & Visual System",
+          href: "/stageroutine/brand",
+        },
         "advanced/overlays-and-events",
         "advanced/custom-paths",
         "advanced/patterns",

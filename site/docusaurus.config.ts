@@ -139,15 +139,7 @@ const config: Config = {
     },
     footer: {
       style: "dark",
-      links: [
-        {
-          html: `© ${new Date().getFullYear()} StageRoutine`,
-        },
-        {
-          label: "Brand Guidelines",
-          to: "/brand",
-        },
-      ],
+      copyright: `© ${new Date().getFullYear()} StageRoutine`,
     },
     prism: {
       theme: prismThemes.dracula,

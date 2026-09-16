@@ -62,6 +62,7 @@ export type {
   PointerSetStateEvent,
   PointerStateChangedEvent,
   Position,
+  PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
   StageContext,
@@ -72,6 +73,7 @@ export type {
   ThemeConfig,
   TransitionDescriptor,
   UnwrapTransition,
+  ValueUpdater,
 } from "./core/types";
 export type {
   BracketOptions,

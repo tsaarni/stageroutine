@@ -125,6 +125,46 @@ export function parseCoordParts(
   return null;
 }
 
+/**
+ * Resolves a coordinate or dimension value to its numeric stage percentage or scalar.
+ * Resolves keywords like `"center"` to 50 and strips CSS unit suffixes.
+ */
+export function resolveCoordNumber(val: unknown, defaultVal = 0): number {
+  if (typeof val === "number") return val;
+  if (val === undefined || val === null) return defaultVal;
+  const parts = parseCoordParts(val as number | string | undefined);
+  return parts ? parts.stageVal : defaultVal;
+}
+
+/**
+ * Applies a numeric updater function to a coordinate or scalar value,
+ * preserving explicit units (e.g. "px", "rem") and centering offsets ("center", selfPct).
+ */
+export function applyCoordUpdater(
+  from: unknown,
+  updater: (curr: number) => unknown,
+  defaultUnit = "cqw",
+): unknown {
+  const parts = parseCoordParts(from as number | string | undefined, defaultUnit);
+  let currentNum = 0;
+  if (parts) {
+    currentNum = parts.stageVal;
+  } else if (typeof from === "number") {
+    currentNum = from;
+  }
+  const nextVal = updater(currentNum);
+  if (typeof nextVal !== "number") return nextVal;
+  if (!parts) return nextVal;
+
+  if (parts.selfPct !== 0) {
+    return `calc(${nextVal}${parts.stageUnit} - ${parts.selfPct}%)`;
+  }
+  if (parts.stageUnit !== defaultUnit && parts.stageUnit !== "%") {
+    return `${nextVal}${parts.stageUnit}`;
+  }
+  return nextVal;
+}
+
 export function formatCoord(val: number | string | undefined, defaultUnit = "cqw"): string {
   if (val === undefined || val === null) return "0px";
   const parts = parseCoordParts(val, defaultUnit);

@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 168 symbols |
+| `stageroutine` | 172 symbols |
 | `stageroutine/backgrounds` | 28 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 11 symbols |
@@ -184,6 +184,18 @@ export function Text(text: string, options?: TextOptions): DOMElement;
 
 /** Headline typography component supporting default title, hero, and serif editorial variants. */
 export function Title(text: string, options?: TitleOptions): DOMElement;
+
+/**
+ * Creates a fluent transition modifier with a 2D coordinate delta updater.
+ * e.g. `card.position = to((x, y) => [x, y - 10]).duration(0.4)`
+ */
+export function to(updater: (x: number, y: number) => [number | string, number | string]): TransitionDescriptor<Position>;
+
+/**
+ * Creates a fluent transition modifier with a relative delta updater.
+ * e.g. `card.y = to(y => y - 10).duration(0.4)`
+ */
+export function to(updater: (current: number) => number): TransitionDescriptor<number>;
 
 /**
  * Creates a fluent transition modifier.
@@ -824,6 +836,27 @@ export interface ElementTransition {
     when(target: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
     after(target: ReactiveElementBase | string, property?: string): this;
     apply(): void;
+}
+
+export interface ElementTransitionProps {
+    x?: ReactiveProp<number | string> | ((x: number) => number | string);
+    y?: ReactiveProp<number | string> | ((y: number) => number | string);
+    position?: ReactiveProp<Position> | ((current: [
+        number,
+        number
+    ]) => Position);
+    width?: ReactiveProp<number | string> | ((width: number) => number | string);
+    height?: ReactiveProp<number | string> | ((height: number) => number | string);
+    size?: ReactiveProp<number | string> | ((size: number) => number | string);
+    scale?: ReactiveProp<number> | ((scale: number) => number);
+    rotation?: ReactiveProp<number> | ((rotation: number) => number);
+    opacity?: ReactiveProp<number> | ((opacity: number) => number);
+    blur?: ReactiveProp<number> | ((blur: number) => number);
+    brightness?: ReactiveProp<number> | ((brightness: number) => number);
+    color?: ReactiveProp<string>;
+    anchor?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
+    [key: string]: unknown;
 }
 
 /** Public controls for a frame. @category Components */
@@ -2030,8 +2063,6 @@ export type ElementAnchor = AnchorKeyword | Point;
  */
 export type ElementDecorator = (element: DOMElement) => void;
 
-export type ElementTransitionProps = Partial<Record<"x" | "y" | "position" | "width" | "height" | "size" | "scale" | "rotation" | "opacity" | "blur" | "brightness" | "color" | "anchor" | "align" | string, unknown>>;
-
 /**
  * Continuous ambient stroke animations supported across shapes and connectors.
  * @category Motion
@@ -2139,10 +2170,27 @@ export type Position = readonly [
 ] | readonly (number | string)[];
 
 /**
- * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * 2D coordinate delta updater function.
+ * Accepts either `(x, y)` coordinates or a `([x, y])` tuple and returns target coordinates.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T>;
+export type PositionUpdater = ((x: number, y: number) => [
+    number | string,
+    number | string
+]) | ((current: [
+    number,
+    number
+]) => [
+    number | string,
+    number | string
+]);
+
+/**
+ * Represents a property that accepts a static value, a reactive transition descriptor,
+ * or an updater callback calculating relative deltas from the current value.
+ * @category Core
+ */
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
 
 /**
  * Perpendicular alignment mode for relative placement.
@@ -2199,7 +2247,14 @@ export type TypewriterStep = string | {
  * Unwraps a potentially animated property type to its underlying raw value.
  * @category Core
  */
-export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T;
+export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T extends (...args: never[]) => infer R ? R : T;
+
+/**
+ * Callback that computes the next property value from its current numeric value or coordinate tuple.
+ * e.g. `(y) => y - 10`
+ * @category Core
+ */
+export type ValueUpdater<T = number> = (current: T) => T;
 
 ```
 
@@ -2766,10 +2821,11 @@ export type Position = readonly [
 ] | readonly (number | string)[];
 
 /**
- * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * Represents a property that accepts a static value, a reactive transition descriptor,
+ * or an updater callback calculating relative deltas from the current value.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T>;
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -3332,10 +3388,11 @@ export type Position = readonly [
 ] | readonly (number | string)[];
 
 /**
- * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * Represents a property that accepts a static value, a reactive transition descriptor,
+ * or an updater callback calculating relative deltas from the current value.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T>;
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -3595,10 +3652,11 @@ export type Position = readonly [
 ] | readonly (number | string)[];
 
 /**
- * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * Represents a property that accepts a static value, a reactive transition descriptor,
+ * or an updater callback calculating relative deltas from the current value.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T>;
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
 
 ```
 

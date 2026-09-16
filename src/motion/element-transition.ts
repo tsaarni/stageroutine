@@ -4,34 +4,35 @@
 
 import { getActiveStage } from "../core/stage";
 import type {
+  Align,
   AnimationMilestone,
   BuiltinEase,
   EaseCurve,
+  ElementAnchor,
+  Position,
   ReactiveElementBase,
+  ReactiveProp,
 } from "../core/types";
 import type { DOMElement } from "../dom/element";
 import { isTransitionDescriptor, to } from "./transitions";
 
-export type ElementTransitionProps = Partial<
-  Record<
-    | "x"
-    | "y"
-    | "position"
-    | "width"
-    | "height"
-    | "size"
-    | "scale"
-    | "rotation"
-    | "opacity"
-    | "blur"
-    | "brightness"
-    | "color"
-    | "anchor"
-    | "align"
-    | string,
-    unknown
-  >
->;
+export interface ElementTransitionProps {
+  x?: ReactiveProp<number | string> | ((x: number) => number | string);
+  y?: ReactiveProp<number | string> | ((y: number) => number | string);
+  position?: ReactiveProp<Position> | ((current: [number, number]) => Position);
+  width?: ReactiveProp<number | string> | ((width: number) => number | string);
+  height?: ReactiveProp<number | string> | ((height: number) => number | string);
+  size?: ReactiveProp<number | string> | ((size: number) => number | string);
+  scale?: ReactiveProp<number> | ((scale: number) => number);
+  rotation?: ReactiveProp<number> | ((rotation: number) => number);
+  opacity?: ReactiveProp<number> | ((opacity: number) => number);
+  blur?: ReactiveProp<number> | ((blur: number) => number);
+  brightness?: ReactiveProp<number> | ((brightness: number) => number);
+  color?: ReactiveProp<string>;
+  anchor?: ReactiveProp<ElementAnchor>;
+  align?: ReactiveProp<Align>;
+  [key: string]: unknown;
+}
 
 /**
  * Public fluent contract for multi-property transitions on an element or group.

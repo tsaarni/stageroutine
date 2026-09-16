@@ -6,6 +6,7 @@ import type {
   AnimationMilestone,
   BuiltinEase,
   EaseCurve,
+  Position,
   ReactiveElementBase,
   TransitionDescriptor,
   UnwrapTransition,
@@ -160,11 +161,31 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
 }
 
 /**
+ * Creates a fluent transition modifier with a 2D coordinate delta updater.
+ * e.g. `card.position = to((x, y) => [x, y - 10]).duration(0.4)`
+ * @category Motion
+ */
+export function to(
+  updater: (x: number, y: number) => [number | string, number | string],
+): TransitionDescriptor<Position>;
+/**
+ * Creates a fluent transition modifier with a relative delta updater.
+ * e.g. `card.y = to(y => y - 10).duration(0.4)`
+ * @category Motion
+ */
+export function to(updater: (current: number) => number): TransitionDescriptor<number>;
+/**
  * Creates a fluent transition modifier.
  * e.g. `card.x = to(200).duration(1.5).ease("quartOut")`
  * @category Motion
  */
-export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>> {
+export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>>;
+export function to<T>(
+  target:
+    | T
+    | ((current: number) => number)
+    | ((x: number, y: number) => [number | string, number | string]),
+): TransitionDescriptor<UnwrapTransition<T>> {
   return new TransitionBuilder(target) as unknown as TransitionDescriptor<UnwrapTransition<T>>;
 }
 

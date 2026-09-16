@@ -3,7 +3,11 @@
  */
 
 import type { Properties as CSSProperties } from "csstype";
-import { computeTransformAndOrigin } from "../core/interpolators";
+import {
+  applyCoordUpdater,
+  computeTransformAndOrigin,
+  resolveCoordNumber,
+} from "../core/interpolators";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import type {
   Align,
@@ -92,8 +96,35 @@ export class DOMElement implements ReactiveElementBase {
   /** @internal */
   _defaultPointerEvents = "auto";
 
-  x: ReactiveProp<number | string> = 0;
-  y: ReactiveProp<number | string> = 0;
+  private _x: ReactiveProp<number | string> = 0;
+  private _y: ReactiveProp<number | string> = 0;
+
+  get x(): ReactiveProp<number | string> {
+    return this._x;
+  }
+  set x(val: ReactiveProp<number | string>) {
+    if (typeof val === "function") {
+      this._x = applyCoordUpdater(this._x, val as (curr: number) => unknown, "cqw") as ReactiveProp<
+        number | string
+      >;
+    } else {
+      this._x = val;
+    }
+  }
+
+  get y(): ReactiveProp<number | string> {
+    return this._y;
+  }
+  set y(val: ReactiveProp<number | string>) {
+    if (typeof val === "function") {
+      this._y = applyCoordUpdater(this._y, val as (curr: number) => unknown, "cqh") as ReactiveProp<
+        number | string
+      >;
+    } else {
+      this._y = val;
+    }
+  }
+
   width?: ReactiveProp<number | string>;
   height?: ReactiveProp<number | string>;
   scale: ReactiveProp<number> = 1;
@@ -137,7 +168,22 @@ export class DOMElement implements ReactiveElementBase {
   set position(val: ReactiveProp<Position> | undefined) {
     if (val === undefined) return;
     if (isTransitionDescriptor(val)) {
-      const targetCoord = val.target as unknown;
+      let targetCoord = val.target as unknown;
+      if (typeof targetCoord === "function") {
+        const [currX, currY] = this.position;
+        const numX = resolveCoordNumber(currX);
+        const numY = resolveCoordNumber(currY);
+        const fn = targetCoord as (...args: unknown[]) => unknown;
+        const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
+        if (Array.isArray(res) && res.length >= 2) {
+          targetCoord = [
+            applyCoordUpdater(currX, () => res[0], "cqw"),
+            applyCoordUpdater(currY, () => res[1], "cqh"),
+          ];
+        } else {
+          targetCoord = res;
+        }
+      }
       let targetX: unknown;
       let targetY: unknown;
       if (Array.isArray(targetCoord)) {
@@ -156,11 +202,28 @@ export class DOMElement implements ReactiveElementBase {
       return;
     }
 
-    if (Array.isArray(val)) {
-      this.x = val[0];
-      this.y = val[1];
-    } else if (typeof val === "object" && val !== null) {
-      const p = val as { x?: number | string; y?: number | string };
+    let targetVal: unknown = val;
+    if (typeof targetVal === "function") {
+      const [currX, currY] = this.position;
+      const numX = resolveCoordNumber(currX);
+      const numY = resolveCoordNumber(currY);
+      const fn = targetVal as (...args: unknown[]) => unknown;
+      const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
+      if (Array.isArray(res) && res.length >= 2) {
+        targetVal = [
+          applyCoordUpdater(currX, () => res[0], "cqw"),
+          applyCoordUpdater(currY, () => res[1], "cqh"),
+        ];
+      } else {
+        targetVal = res;
+      }
+    }
+
+    if (Array.isArray(targetVal)) {
+      this.x = targetVal[0];
+      this.y = targetVal[1];
+    } else if (typeof targetVal === "object" && targetVal !== null) {
+      const p = targetVal as { x?: number | string; y?: number | string };
       if (p.x !== undefined) this.x = p.x;
       if (p.y !== undefined) this.y = p.y;
     }

@@ -20,6 +20,31 @@ title.opacity = to(1).duration(0.5);
 - **Spatial**: `x`, `y`, `scale`, `rotation`, `width`, `height`
 - **Visual**: `opacity`, `blur`, `brightness`, `color`
 
+## Relative Transitions
+
+Instead of setting absolute values, pass an updater function to adjust properties relative to their current state.
+
+### Property Deltas
+
+Pass a callback taking the current numeric value:
+
+```typescript
+// Shift y position 10% upwards over 0.4 seconds
+card.y = to((y) => y - 10).duration(0.4).ease("quartOut");
+
+// Scale element up by 20%
+card.scale = (s) => s * 1.2;
+```
+
+### 2D Position Deltas
+
+Pass a callback taking current `(x, y)` coordinates to update the `position` tuple:
+
+```typescript
+// Move 5% right and 10% up
+card.position = to((x, y) => [x + 5, y - 10]).duration(0.5);
+```
+
 ## Milestone Synchronization
 
 Synchronize animations relative to other elements without doing millisecond math:
@@ -48,7 +73,7 @@ Animate multiple properties on an element simultaneously with `element.to()`:
 
 ```typescript
 codePanel.to({
-  y: -50,
+  y: (y) => y - 10,
   opacity: 0,
 }).duration(0.4).ease("cubicInOut");
 ```
@@ -91,7 +116,7 @@ const leftColumn = group(heading, text, rule);
 
 // Animate multiple elements simultaneously
 leftColumn.to({
-  y: -50,
+  y: (y) => y - 10,
   opacity: 0,
 }).duration(0.4).ease("cubicInOut");
 
@@ -113,3 +138,4 @@ In addition to built-in presets (like `"quartOut"` and `"cubicInOut"`), you can 
 // Smooth cosine curve
 title.y = to(40).ease((t) => 0.5 * (1 - Math.cos(Math.PI * t)));
 ```
+

@@ -3,6 +3,7 @@
  */
 
 import { isTransitionDescriptor } from "../motion/transitions";
+import { applyCoordUpdater, resolveCoordNumber } from "./interpolators";
 import { isReactiveProperty } from "./reactive";
 import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
 
@@ -94,10 +95,6 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return Reflect.set(target, prop, value, receiver);
       }
 
-      if (typeof value === "function") {
-        return Reflect.set(target, prop, value, receiver);
-      }
-
       if (propName === "size") {
         (receiver as Record<string, unknown>).width = value;
         (receiver as Record<string, unknown>).height = value;
@@ -106,7 +103,29 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
 
       if (propName === "position") {
         if (isTransitionDescriptor(value)) {
-          const targetCoord = value.target as unknown;
+          let targetCoord = value.target as unknown;
+          if (typeof targetCoord === "function") {
+            const currX =
+              host.getCurrentPropertyValue(target.id, "x") ??
+              (target as Record<string, unknown>).x ??
+              0;
+            const currY =
+              host.getCurrentPropertyValue(target.id, "y") ??
+              (target as Record<string, unknown>).y ??
+              0;
+            const numX = resolveCoordNumber(currX);
+            const numY = resolveCoordNumber(currY);
+            const fn = targetCoord as (...args: unknown[]) => unknown;
+            const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
+            if (Array.isArray(res) && res.length >= 2) {
+              targetCoord = [
+                applyCoordUpdater(currX, () => res[0], "cqw"),
+                applyCoordUpdater(currY, () => res[1], "cqh"),
+              ];
+            } else {
+              targetCoord = res;
+            }
+          }
           let targetX: unknown;
           let targetY: unknown;
           if (Array.isArray(targetCoord)) {
@@ -131,14 +150,38 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
           return true;
         }
 
+        let targetVal = value;
+        if (typeof targetVal === "function") {
+          const currX =
+            host.getCurrentPropertyValue(target.id, "x") ??
+            (target as Record<string, unknown>).x ??
+            0;
+          const currY =
+            host.getCurrentPropertyValue(target.id, "y") ??
+            (target as Record<string, unknown>).y ??
+            0;
+          const numX = resolveCoordNumber(currX);
+          const numY = resolveCoordNumber(currY);
+          const fn = targetVal as (...args: unknown[]) => unknown;
+          const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
+          if (Array.isArray(res) && res.length >= 2) {
+            targetVal = [
+              applyCoordUpdater(currX, () => res[0], "cqw"),
+              applyCoordUpdater(currY, () => res[1], "cqh"),
+            ];
+          } else {
+            targetVal = res;
+          }
+        }
+
         let x: unknown;
         let y: unknown;
-        if (Array.isArray(value)) {
-          x = value[0];
-          y = value[1];
-        } else if (typeof value === "object" && value !== null) {
-          x = (value as Record<string, unknown>).x;
-          y = (value as Record<string, unknown>).y;
+        if (Array.isArray(targetVal)) {
+          x = targetVal[0];
+          y = targetVal[1];
+        } else if (typeof targetVal === "object" && targetVal !== null) {
+          x = (targetVal as Record<string, unknown>).x;
+          y = (targetVal as Record<string, unknown>).y;
         }
         if (x !== undefined) {
           (receiver as Record<string, unknown>).x = x;
@@ -166,6 +209,12 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
           }
         }
 
+        let targetVal = value.target;
+        if (typeof targetVal === "function") {
+          const defaultUnit = propName === "y" || propName === "height" ? "cqh" : "cqw";
+          targetVal = applyCoordUpdater(from, targetVal as (curr: number) => unknown, defaultUnit);
+        }
+
         let triggerElementId: string | undefined;
         if (value.triggerTarget) {
           if (typeof value.triggerTarget === "string") {
@@ -186,12 +235,12 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
           }
         }
 
-        host.setCurrentPropertyValue(target.id, propName, value.target);
+        host.setCurrentPropertyValue(target.id, propName, targetVal);
         host.recordMutation(
           target.id,
           propName,
           from,
-          value.target,
+          targetVal,
           value.durationMs,
           value.delayMs,
           value.curve,
@@ -204,9 +253,17 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       }
 
       // Static direct assignment: update property state without scheduling a transition
-      host.setCurrentPropertyValue(target.id, propName, value);
+      let targetVal = value;
+      if (typeof targetVal === "function") {
+        const from: unknown =
+          host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
+        const defaultUnit = propName === "y" || propName === "height" ? "cqh" : "cqw";
+        targetVal = applyCoordUpdater(from, targetVal as (curr: number) => unknown, defaultUnit);
+      }
+
+      host.setCurrentPropertyValue(target.id, propName, targetVal);
       try {
-        Reflect.set(target, prop, value, receiver);
+        Reflect.set(target, prop, targetVal, receiver);
       } catch {
         // ignore read-only
       }

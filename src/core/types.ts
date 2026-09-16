@@ -378,13 +378,44 @@ export interface StageOptions {
  * Unwraps a potentially animated property type to its underlying raw value.
  * @category Core
  */
-export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T;
+export type UnwrapTransition<T> =
+  T extends TransitionDescriptor<infer U>
+    ? UnwrapTransition<U>
+    : T extends (...args: never[]) => infer R
+      ? R
+      : T;
 
 /**
- * Represents a property that accepts either a static value or a reactive transition descriptor.
+ * Callback that computes the next property value from its current numeric value or coordinate tuple.
+ * e.g. `(y) => y - 10`
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T>;
+export type ValueUpdater<T = number> = (current: T) => T;
+
+/**
+ * 2D coordinate delta updater function.
+ * Accepts either `(x, y)` coordinates or a `([x, y])` tuple and returns target coordinates.
+ * @category Core
+ */
+export type PositionUpdater =
+  | ((x: number, y: number) => [number | string, number | string])
+  | ((current: [number, number]) => [number | string, number | string]);
+
+/**
+ * Represents a property that accepts a static value, a reactive transition descriptor,
+ * or an updater callback calculating relative deltas from the current value.
+ * @category Core
+ */
+export type ReactiveProp<T> =
+  | T
+  | TransitionDescriptor<T>
+  | (T extends number
+      ? (current: number) => number
+      : T extends string
+        ? (current: number) => string
+        : T extends Position
+          ? PositionUpdater
+          : never);
 
 /**
  * 2D coordinate point or vector as a fixed-length [x, y] tuple.

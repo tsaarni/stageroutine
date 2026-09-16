@@ -33,7 +33,7 @@ export interface PulseOptions {
 
 /**
  * Options for continuous periodic packet pulses along a connector.
- * @internal
+ * @category Components
  */
 export interface PeriodicPulseOptions extends PulseOptions {
   /** Interval between successive pulse emissions in seconds (default: 2.0s). */
@@ -88,7 +88,7 @@ export interface PulseSequenceController {
  * - "center": 50% along the path (default)
  * - "end": 75% along the path
  * - number: explicit fractional ratio from 0.0 to 1.0
- * @internal
+ * @category Components
  */
 export type LabelPlacement = "start" | "center" | "end" | number;
 
@@ -96,7 +96,7 @@ export type LabelPlacement = "start" | "center" | "end" | number;
  * Responsive offset for adjusting label badge position.
  * Supports a 2D tuple `[x, y]` or a scalar vertical offset number/string ("cqw", "cqh", "rem", "px").
  * e.g. `[0, "-1.5cqh"]` or `["2cqw", -8]`.
- * @internal
+ * @category Components
  */
 export type LabelOffset = readonly [x: number | string, y: number | string] | number | string;
 

@@ -7,9 +7,11 @@ import type {
   Align,
   AnimationMilestone,
   BuiltinEase,
+  CoordProp,
   EaseCurve,
   ElementAnchor,
   Position,
+  PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
 } from "../core/types";
@@ -17,17 +19,17 @@ import type { DOMElement } from "../dom/element";
 import { isTransitionDescriptor, to } from "./transitions";
 
 export interface ElementTransitionProps {
-  x?: ReactiveProp<number | string> | ((x: number) => number | string);
-  y?: ReactiveProp<number | string> | ((y: number) => number | string);
-  position?: ReactiveProp<Position> | ((current: [number, number]) => Position);
-  width?: ReactiveProp<number | string> | ((width: number) => number | string);
-  height?: ReactiveProp<number | string> | ((height: number) => number | string);
-  size?: ReactiveProp<number | string> | ((size: number) => number | string);
-  scale?: ReactiveProp<number> | ((scale: number) => number);
-  rotation?: ReactiveProp<number> | ((rotation: number) => number);
-  opacity?: ReactiveProp<number> | ((opacity: number) => number);
-  blur?: ReactiveProp<number> | ((blur: number) => number);
-  brightness?: ReactiveProp<number> | ((brightness: number) => number);
+  x?: CoordProp;
+  y?: CoordProp;
+  position?: ReactiveProp<Position> | PositionUpdater;
+  width?: CoordProp;
+  height?: CoordProp;
+  size?: CoordProp;
+  scale?: ReactiveProp<number>;
+  rotation?: ReactiveProp<number>;
+  opacity?: ReactiveProp<number>;
+  blur?: ReactiveProp<number>;
+  brightness?: ReactiveProp<number>;
   color?: ReactiveProp<string>;
   anchor?: ReactiveProp<ElementAnchor>;
   align?: ReactiveProp<Align>;

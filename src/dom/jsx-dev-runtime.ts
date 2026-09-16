@@ -6,6 +6,7 @@ export type {
   Align,
   AnchorKeyword,
   ComponentFunction,
+  CoordProp,
   DOMElement,
   EaseCurve,
   ElementAnchor,

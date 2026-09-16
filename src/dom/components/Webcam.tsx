@@ -279,5 +279,9 @@ export function Webcam(options: WebcamOptions = {}): WebcamElement {
   return el;
 }
 
-// Attach static method to factory function for convenient discovery
-Webcam.getCameras = WebcamElementImpl.getCameras;
+export namespace Webcam {
+  /** Discovers and lists all connected video input cameras. */
+  export async function getCameras(): Promise<CameraDevice[]> {
+    return WebcamElementImpl.getCameras();
+  }
+}

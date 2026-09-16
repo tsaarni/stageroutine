@@ -49,6 +49,7 @@ export type {
   AnimationMilestone,
   Background,
   BuiltinEase,
+  CoordProp,
   EaseCurve,
   ElementAnchor,
   FlowEffect,
@@ -73,7 +74,6 @@ export type {
   ThemeConfig,
   TransitionDescriptor,
   UnwrapTransition,
-  ValueUpdater,
 } from "./core/types";
 export type {
   BracketOptions,
@@ -170,7 +170,6 @@ export {
   Image,
   Kicker,
   pulseSequence,
-  resolveIconSvg,
   SequenceDiagram,
   Shape,
   Table,
@@ -192,7 +191,6 @@ export type {
   LayoutElement,
   LayoutOptions,
   RelativeAlign,
-  RelativePlacement,
   StackSlot,
 } from "./dom/layout";
 // Layout

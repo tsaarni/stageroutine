@@ -39,7 +39,6 @@ export {
   type IconDefinition,
   type IconElement,
   type IconOptions,
-  resolveIconSvg,
 } from "./Icon";
 export { Image, type ImageElement, type ImageFit, type ImageOptions } from "./Image";
 export { Kicker, type KickerOptions } from "./Kicker";

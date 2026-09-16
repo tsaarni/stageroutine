@@ -386,13 +386,6 @@ export type UnwrapTransition<T> =
       : T;
 
 /**
- * Callback that computes the next property value from its current numeric value or coordinate tuple.
- * e.g. `(y) => y - 10`
- * @category Core
- */
-export type ValueUpdater<T = number> = (current: T) => T;
-
-/**
  * 2D coordinate delta updater function.
  * Accepts either `(x, y)` coordinates or a `([x, y])` tuple and returns target coordinates.
  * @category Core
@@ -403,19 +396,23 @@ export type PositionUpdater =
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
- * or an updater callback calculating relative deltas from the current value.
+ * or a numeric relative-delta updater.
+ * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
+ * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
 export type ReactiveProp<T> =
   | T
   | TransitionDescriptor<T>
-  | (T extends number
-      ? (current: number) => number
-      : T extends string
-        ? (current: number) => string
-        : T extends Position
-          ? PositionUpdater
-          : never);
+  | (T extends number ? (current: number) => number : never)
+  | (T extends Position ? PositionUpdater : never);
+
+/**
+ * Stage coordinate or dimension property.
+ * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * @category Core
+ */
+export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
 
 /**
  * 2D coordinate point or vector as a fixed-length [x, y] tuple.
@@ -483,10 +480,10 @@ export interface ReactiveElementBase {
    */
   _defaultPointerEvents?: string;
   opacity: ReactiveProp<number>;
-  x: ReactiveProp<number | string>;
-  y: ReactiveProp<number | string>;
-  position?: ReactiveProp<Position>;
-  size?: ReactiveProp<number | string>;
+  x: CoordProp;
+  y: CoordProp;
+  position?: ReactiveProp<Position> | PositionUpdater;
+  size?: CoordProp;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   blur: ReactiveProp<number>;

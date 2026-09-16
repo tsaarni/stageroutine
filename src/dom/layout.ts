@@ -16,7 +16,8 @@ import { DOMElement } from "./element";
 export type { RuleOptions };
 
 /**
- * @internal
+ * Any stage element that layout helpers can measure and position.
+ * @category Layout
  */
 export type LayoutElement =
   | DOMElement
@@ -30,7 +31,8 @@ export type LayoutElement =
     };
 
 /**
- * @internal
+ * A cell in a grid layout. Empty cells are `null` or `undefined`.
+ * @category Layout
  */
 export type GridSlot = LayoutElement | null | undefined;
 
@@ -91,9 +93,8 @@ export interface LayoutOptions {
 
 /**
  * Relative cardinal placement position.
- * @category Layout
  */
-export type RelativePlacement = "top" | "bottom" | "left" | "right";
+type RelativePlacement = "top" | "bottom" | "left" | "right";
 
 /**
  * Perpendicular alignment mode for relative placement.

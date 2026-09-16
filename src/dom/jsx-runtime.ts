@@ -218,6 +218,7 @@ export namespace JSX {
 export type {
   Align,
   AnchorKeyword,
+  CoordProp,
   EaseCurve,
   ElementAnchor,
   Point,

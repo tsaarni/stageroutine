@@ -2,7 +2,13 @@
  * Logical group proxy for coordinating multi-element transitions and property broadcasting without DOM wrappers.
  */
 
-import type { Position, ReactiveElementBase, ReactiveProp } from "../core/types";
+import type {
+  CoordProp,
+  Position,
+  PositionUpdater,
+  ReactiveElementBase,
+  ReactiveProp,
+} from "../core/types";
 import {
   type ElementTransition,
   ElementTransitionBuilder,
@@ -23,10 +29,10 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string>;
-  x: ReactiveProp<number | string>;
-  y: ReactiveProp<number | string>;
-  position: ReactiveProp<Position>;
-  size: ReactiveProp<number | string>;
+  x: CoordProp;
+  y: CoordProp;
+  position: ReactiveProp<Position> | PositionUpdater;
+  size: CoordProp;
   [key: string]: unknown;
 
   to(props: ElementTransitionProps): ElementTransition;

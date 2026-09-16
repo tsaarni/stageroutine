@@ -15,12 +15,12 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 172 symbols |
-| `stageroutine/backgrounds` | 28 symbols |
+| `stageroutine` | 170 symbols |
+| `stageroutine/backgrounds` | 29 symbols |
 | `stageroutine/overlays` | 7 symbols |
-| `stageroutine/presenter` | 11 symbols |
-| `stageroutine/jsx-runtime` | 18 symbols |
-| `stageroutine/jsx-dev-runtime` | 18 symbols |
+| `stageroutine/presenter` | 3 symbols |
+| `stageroutine/jsx-runtime` | 19 symbols |
+| `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
 
 ## `stageroutine`
@@ -155,9 +155,6 @@ export function pulseSequence(steps: (ConnectorElement | PulseSequenceStep)[], o
 /** Creates an in-place element replacement transition swapping two elements smoothly without ghosting. */
 export function replace(fromElement: DOMElement | ReactiveElementBase, toElement: DOMElement | ReactiveElementBase, options?: ReplaceOptions): ReplaceTransition;
 
-/** Resolves an icon name or raw SVG to an SVG string. */
-export function resolveIconSvg(nameOrSvg: string): string | undefined;
-
 /** Decorates an element with an accent rule / divider line or curved bracket. */
 export function rule(options?: RuleOptions): ElementDecorator;
 
@@ -189,13 +186,13 @@ export function Title(text: string, options?: TitleOptions): DOMElement;
  * Creates a fluent transition modifier with a 2D coordinate delta updater.
  * e.g. `card.position = to((x, y) => [x, y - 10]).duration(0.4)`
  */
-export function to(updater: (x: number, y: number) => [number | string, number | string]): TransitionDescriptor<Position>;
+export function to(updater: PositionUpdater): TransitionDescriptor<Position>;
 
 /**
  * Creates a fluent transition modifier with a relative delta updater.
  * e.g. `card.y = to(y => y - 10).duration(0.4)`
  */
-export function to(updater: (current: number) => number): TransitionDescriptor<number>;
+export function to(updater: (current: number) => number | string): TransitionDescriptor<number | string>;
 
 /**
  * Creates a fluent transition modifier.
@@ -322,10 +319,10 @@ export class DOMElement implements ReactiveElementBase {
    * When true, Stage does not overwrite `node.style.transform`.
    */
   isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
+  x: CoordProp;
+  y: CoordProp;
+  width: CoordProp | undefined;
+  height: CoordProp | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
@@ -341,7 +338,7 @@ export class DOMElement implements ReactiveElementBase {
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
   align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
+  size: CoordProp | undefined;
   position: Position;
   /**
    * Animates multiple reactive properties on this element simultaneously.
@@ -795,11 +792,11 @@ export interface ElementOptions {
     anchor?: ElementAnchor;
     align?: Align;
     position?: Position;
-    x?: ReactiveProp<number | string>;
-    y?: ReactiveProp<number | string>;
-    width?: ReactiveProp<number | string>;
-    height?: ReactiveProp<number | string>;
-    size?: ReactiveProp<number | string>;
+    x?: CoordProp;
+    y?: CoordProp;
+    width?: CoordProp;
+    height?: CoordProp;
+    size?: CoordProp;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
@@ -839,20 +836,17 @@ export interface ElementTransition {
 }
 
 export interface ElementTransitionProps {
-    x?: ReactiveProp<number | string> | ((x: number) => number | string);
-    y?: ReactiveProp<number | string> | ((y: number) => number | string);
-    position?: ReactiveProp<Position> | ((current: [
-        number,
-        number
-    ]) => Position);
-    width?: ReactiveProp<number | string> | ((width: number) => number | string);
-    height?: ReactiveProp<number | string> | ((height: number) => number | string);
-    size?: ReactiveProp<number | string> | ((size: number) => number | string);
-    scale?: ReactiveProp<number> | ((scale: number) => number);
-    rotation?: ReactiveProp<number> | ((rotation: number) => number);
-    opacity?: ReactiveProp<number> | ((opacity: number) => number);
-    blur?: ReactiveProp<number> | ((blur: number) => number);
-    brightness?: ReactiveProp<number> | ((brightness: number) => number);
+    x?: CoordProp;
+    y?: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    width?: CoordProp;
+    height?: CoordProp;
+    size?: CoordProp;
+    scale?: ReactiveProp<number>;
+    rotation?: ReactiveProp<number>;
+    opacity?: ReactiveProp<number>;
+    blur?: ReactiveProp<number>;
+    brightness?: ReactiveProp<number>;
     color?: ReactiveProp<string>;
     anchor?: ReactiveProp<ElementAnchor>;
     align?: ReactiveProp<Align>;
@@ -943,10 +937,10 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
     blur: ReactiveProp<number>;
     brightness: ReactiveProp<number>;
     color: ReactiveProp<string>;
-    x: ReactiveProp<number | string>;
-    y: ReactiveProp<number | string>;
-    position: ReactiveProp<Position>;
-    size: ReactiveProp<number | string>;
+    x: CoordProp;
+    y: CoordProp;
+    position: ReactiveProp<Position> | PositionUpdater;
+    size: CoordProp;
     [key: string]: unknown;
     to(props: ElementTransitionProps): ElementTransition;
     decorate(...decorators: ElementDecorator[]): this;
@@ -1231,7 +1225,7 @@ export interface PathContext {
 
 /**
  * Options for continuous periodic packet pulses along a connector.
- * @internal
+ * @category Components
  */
 export interface PeriodicPulseOptions extends PulseOptions {
     /** Interval between successive pulse emissions in seconds (default: 2.0s). */
@@ -1344,10 +1338,10 @@ export interface ReactiveElementBase {
      */
     _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
-    x: ReactiveProp<number | string>;
-    y: ReactiveProp<number | string>;
-    position?: ReactiveProp<Position>;
-    size?: ReactiveProp<number | string>;
+    x: CoordProp;
+    y: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    size?: CoordProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -2043,6 +2037,13 @@ export type ConnectorTarget = DOMElement | Point | readonly [
 ];
 
 /**
+ * Stage coordinate or dimension property.
+ * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * @category Core
+ */
+export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+
+/**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
 /**
@@ -2070,7 +2071,8 @@ export type ElementDecorator = (element: DOMElement) => void;
 export type FlowEffect = "none" | "traveling" | "chase" | "ping";
 
 /**
- * @internal
+ * A cell in a grid layout. Empty cells are `null` or `undefined`.
+ * @category Layout
  */
 export type GridSlot = LayoutElement | null | undefined;
 
@@ -2089,7 +2091,7 @@ export type ImageFit = "contain" | "cover" | "fill" | "none" | "scale-down";
  * Responsive offset for adjusting label badge position.
  * Supports a 2D tuple `[x, y]` or a scalar vertical offset number/string ("cqw", "cqh", "rem", "px").
  * e.g. `[0, "-1.5cqh"]` or `["2cqw", -8]`.
- * @internal
+ * @category Components
  */
 export type LabelOffset = readonly [
     x: number | string,
@@ -2102,7 +2104,7 @@ export type LabelOffset = readonly [
  * - "center": 50% along the path (default)
  * - "end": 75% along the path
  * - number: explicit fractional ratio from 0.0 to 1.0
- * @internal
+ * @category Components
  */
 export type LabelPlacement = "start" | "center" | "end" | number;
 
@@ -2116,7 +2118,8 @@ export type LabelPlacement = "start" | "center" | "end" | number;
 export type LayoutAnimation = boolean | ((coord: number | "center", element: LayoutElement, index: number) => TransitionDescriptor<unknown>);
 
 /**
- * @internal
+ * Any stage element that layout helpers can measure and position.
+ * @category Layout
  */
 export type LayoutElement = DOMElement | ReactiveElementBase | {
     x?: unknown;
@@ -2187,22 +2190,18 @@ export type PositionUpdater = ((x: number, y: number) => [
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
- * or an updater callback calculating relative deltas from the current value.
+ * or a numeric relative-delta updater.
+ * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
+ * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 /**
  * Perpendicular alignment mode for relative placement.
  * @category Layout
  */
 export type RelativeAlign = "start" | "center" | "end";
-
-/**
- * Relative cardinal placement position.
- * @category Layout
- */
-export type RelativePlacement = "top" | "bottom" | "left" | "right";
 
 /**
  * Surface material preset for the Shape component.
@@ -2248,13 +2247,6 @@ export type TypewriterStep = string | {
  * @category Core
  */
 export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? UnwrapTransition<U> : T extends (...args: never[]) => infer R ? R : T;
-
-/**
- * Callback that computes the next property value from its current numeric value or coordinate tuple.
- * e.g. `(y) => y - 10`
- * @category Core
- */
-export type ValueUpdater<T = number> = (current: T) => T;
 
 ```
 
@@ -2366,10 +2358,10 @@ export class DOMElement implements ReactiveElementBase {
    * When true, Stage does not overwrite `node.style.transform`.
    */
   isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
+  x: CoordProp;
+  y: CoordProp;
+  width: CoordProp | undefined;
+  height: CoordProp | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
@@ -2385,7 +2377,7 @@ export class DOMElement implements ReactiveElementBase {
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
   align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
+  size: CoordProp | undefined;
   position: Position;
   /**
    * Animates multiple reactive properties on this element simultaneously.
@@ -2532,11 +2524,11 @@ export interface ElementOptions {
     anchor?: ElementAnchor;
     align?: Align;
     position?: Position;
-    x?: ReactiveProp<number | string>;
-    y?: ReactiveProp<number | string>;
-    width?: ReactiveProp<number | string>;
-    height?: ReactiveProp<number | string>;
-    size?: ReactiveProp<number | string>;
+    x?: CoordProp;
+    y?: CoordProp;
+    width?: CoordProp;
+    height?: CoordProp;
+    size?: CoordProp;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
@@ -2603,10 +2595,10 @@ export interface ReactiveElementBase {
      */
     _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
-    x: ReactiveProp<number | string>;
-    y: ReactiveProp<number | string>;
-    position?: ReactiveProp<Position>;
-    size?: ReactiveProp<number | string>;
+    x: CoordProp;
+    y: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    size?: CoordProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -2786,6 +2778,13 @@ export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "righ
 export type AnchorKeyword = Align;
 
 /**
+ * Stage coordinate or dimension property.
+ * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * @category Core
+ */
+export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+
+/**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
 /**
@@ -2822,10 +2821,12 @@ export type Position = readonly [
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
- * or an updater callback calculating relative deltas from the current value.
+ * or a numeric relative-delta updater.
+ * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
+ * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -2997,20 +2998,6 @@ export class PresenterClient {
   close(): void;
 }
 
-/**
- * Manages the presentation host's connection to the dual-screen presenter console.
- * Strictly asymmetric: receives PresenterCommands from PresenterClient and emits
- * PresenterNotifications (stage:stateChanged).
- */
-export class PresenterHost {
-  constructor(target: PresenterHostTarget, channelName: string): PresenterHost;
-  messagesSent: number;
-  messagesReceived: number;
-  lastMsgTime: number;
-  /** Closes the presenter communication channel and disconnects event listeners. */
-  dispose(): void;
-}
-
 /** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
 export class PresenterRecorder {
   constructor(): PresenterRecorder;
@@ -3032,38 +3019,6 @@ export class PresenterRecorder {
 ### Interfaces
 
 ```ts
-/**
- * Minimal event bus target satisfied by the Stage.
- * @internal
- */
-export interface PresenterHostTarget {
-    on<K extends keyof StageEventMap>(event: K, listener: (data: StageEventMap[K]) => void): () => void;
-    emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [
-    ] : [
-        data: StageEventMap[K]
-    ]): void;
-}
-
-/**
- * Scene metadata included in presenter state payloads.
- * @internal
- */
-export interface PresenterSceneInfo {
-    sceneIndex: number;
-    sceneName: string;
-    startStepIndex: number;
-    stepCount: number;
-}
-
-/**
- * Step metadata included in presenter state payloads.
- * @internal
- */
-export interface PresenterStepInfo {
-    stepIndex: number;
-    sceneName: string;
-}
-
 /**
  * Complete state snapshot emitted whenever presentation state changes.
  * @category Core
@@ -3089,59 +3044,6 @@ export interface StageStateChangedEvent {
         sceneName: string;
     }[];
 }
-
-```
-
-### Types
-
-```ts
-/**
- * All messages transmitted over the presenter BroadcastChannel.
- * @internal
- */
-export type PresenterChannelMessage = PresenterCommand | PresenterNotification;
-
-/**
- * Commands sent by PresenterClient to control the presentation Stage.
- * @internal
- */
-export type PresenterCommand = {
-    event: "req:stage:requestState";
-} | {
-    event: "req:nav:nextStep";
-} | {
-    event: "req:nav:prevStep";
-} | {
-    event: "req:nav:nextScene";
-} | {
-    event: "req:nav:prevScene";
-} | {
-    event: "req:nav:gotoStep";
-    data: {
-        index: number;
-    };
-} | {
-    event: "req:nav:gotoScene";
-    data: {
-        index: number;
-    };
-};
-
-/**
- * Message payload received by the presenter from the stage via BroadcastChannel.
- * Mirrors the StageStateChangedEvent shape.
- * @internal
- */
-export type PresenterMessage = StageStateChangedEvent;
-
-/**
- * Notifications sent by Stage to inform PresenterClient of state updates.
- * @internal
- */
-export type PresenterNotification = {
-    event: "evt:stage:stateChanged";
-    data: StageStateChangedEvent;
-};
 
 ```
 
@@ -3178,10 +3080,10 @@ export class DOMElement implements ReactiveElementBase {
    * When true, Stage does not overwrite `node.style.transform`.
    */
   isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
+  x: CoordProp;
+  y: CoordProp;
+  width: CoordProp | undefined;
+  height: CoordProp | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
@@ -3197,7 +3099,7 @@ export class DOMElement implements ReactiveElementBase {
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
   align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
+  size: CoordProp | undefined;
   position: Position;
   /**
    * Animates multiple reactive properties on this element simultaneously.
@@ -3257,10 +3159,10 @@ export interface ReactiveElementBase {
      */
     _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
-    x: ReactiveProp<number | string>;
-    y: ReactiveProp<number | string>;
-    position?: ReactiveProp<Position>;
-    size?: ReactiveProp<number | string>;
+    x: CoordProp;
+    y: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    size?: CoordProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -3351,6 +3253,13 @@ export type AnchorKeyword = Align;
 export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
 
 /**
+ * Stage coordinate or dimension property.
+ * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * @category Core
+ */
+export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+
+/**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
 /**
@@ -3389,10 +3298,12 @@ export type Position = readonly [
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
- * or an updater callback calculating relative deltas from the current value.
+ * or a numeric relative-delta updater.
+ * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
+ * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -3442,10 +3353,10 @@ export class DOMElement implements ReactiveElementBase {
    * When true, Stage does not overwrite `node.style.transform`.
    */
   isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
+  x: CoordProp;
+  y: CoordProp;
+  width: CoordProp | undefined;
+  height: CoordProp | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
@@ -3461,7 +3372,7 @@ export class DOMElement implements ReactiveElementBase {
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
   align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
+  size: CoordProp | undefined;
   position: Position;
   /**
    * Animates multiple reactive properties on this element simultaneously.
@@ -3521,10 +3432,10 @@ export interface ReactiveElementBase {
      */
     _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
-    x: ReactiveProp<number | string>;
-    y: ReactiveProp<number | string>;
-    position?: ReactiveProp<Position>;
-    size?: ReactiveProp<number | string>;
+    x: CoordProp;
+    y: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    size?: CoordProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -3615,6 +3526,13 @@ export type AnchorKeyword = Align;
 export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
 
 /**
+ * Stage coordinate or dimension property.
+ * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * @category Core
+ */
+export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+
+/**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
 /**
@@ -3653,10 +3571,12 @@ export type Position = readonly [
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
- * or an updater callback calculating relative deltas from the current value.
+ * or a numeric relative-delta updater.
+ * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
+ * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : T extends string ? (current: number) => string : T extends Position ? PositionUpdater : never);
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 ```
 

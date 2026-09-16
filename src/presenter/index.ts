@@ -69,13 +69,4 @@ export class PresenterClient {
 }
 
 export type { StageStateChangedEvent } from "../core/types";
-export { PresenterHost, type PresenterHostTarget } from "./host";
-export type {
-  PresenterChannelMessage,
-  PresenterCommand,
-  PresenterMessage,
-  PresenterNotification,
-  PresenterSceneInfo,
-  PresenterStepInfo,
-} from "./messages";
 export { PresenterRecorder } from "./recorder";

@@ -11,8 +11,10 @@ import {
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import type {
   Align,
+  CoordProp,
   ElementAnchor,
   Position,
+  PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
 } from "../core/types";
@@ -41,11 +43,11 @@ export interface ElementOptions {
   anchor?: ElementAnchor;
   align?: Align;
   position?: Position;
-  x?: ReactiveProp<number | string>;
-  y?: ReactiveProp<number | string>;
-  width?: ReactiveProp<number | string>;
-  height?: ReactiveProp<number | string>;
-  size?: ReactiveProp<number | string>;
+  x?: CoordProp;
+  y?: CoordProp;
+  width?: CoordProp;
+  height?: CoordProp;
+  size?: CoordProp;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;
@@ -96,37 +98,33 @@ export class DOMElement implements ReactiveElementBase {
   /** @internal */
   _defaultPointerEvents = "auto";
 
-  private _x: ReactiveProp<number | string> = 0;
-  private _y: ReactiveProp<number | string> = 0;
+  private _x: CoordProp = 0;
+  private _y: CoordProp = 0;
 
-  get x(): ReactiveProp<number | string> {
+  get x(): CoordProp {
     return this._x;
   }
-  set x(val: ReactiveProp<number | string>) {
+  set x(val: CoordProp) {
     if (typeof val === "function") {
-      this._x = applyCoordUpdater(this._x, val as (curr: number) => unknown, "cqw") as ReactiveProp<
-        number | string
-      >;
+      this._x = applyCoordUpdater(this._x, val as (curr: number) => unknown, "cqw") as CoordProp;
     } else {
       this._x = val;
     }
   }
 
-  get y(): ReactiveProp<number | string> {
+  get y(): CoordProp {
     return this._y;
   }
-  set y(val: ReactiveProp<number | string>) {
+  set y(val: CoordProp) {
     if (typeof val === "function") {
-      this._y = applyCoordUpdater(this._y, val as (curr: number) => unknown, "cqh") as ReactiveProp<
-        number | string
-      >;
+      this._y = applyCoordUpdater(this._y, val as (curr: number) => unknown, "cqh") as CoordProp;
     } else {
       this._y = val;
     }
   }
 
-  width?: ReactiveProp<number | string>;
-  height?: ReactiveProp<number | string>;
+  width?: CoordProp;
+  height?: CoordProp;
   scale: ReactiveProp<number> = 1;
   rotation: ReactiveProp<number> = 0;
   opacity: ReactiveProp<number> = 1;
@@ -152,10 +150,10 @@ export class DOMElement implements ReactiveElementBase {
     }
   }
 
-  get size(): ReactiveProp<number | string> | undefined {
+  get size(): CoordProp | undefined {
     return this.width ?? this.height;
   }
-  set size(val: ReactiveProp<number | string> | undefined) {
+  set size(val: CoordProp | undefined) {
     this.width = val;
     this.height = val;
   }
@@ -165,7 +163,7 @@ export class DOMElement implements ReactiveElementBase {
     const currY = isTransitionDescriptor(this.y) ? this.y.target : this.y;
     return [currX as number | string, currY as number | string];
   }
-  set position(val: ReactiveProp<Position> | undefined) {
+  set position(val: ReactiveProp<Position> | PositionUpdater | undefined) {
     if (val === undefined) return;
     if (isTransitionDescriptor(val)) {
       let targetCoord = val.target as unknown;

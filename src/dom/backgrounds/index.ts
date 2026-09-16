@@ -6,6 +6,7 @@ export type {
   Align,
   AnchorKeyword,
   Background,
+  CoordProp,
   EaseCurve,
   ElementAnchor,
   Point,

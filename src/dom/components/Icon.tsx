@@ -44,7 +44,7 @@ export function defineIcons(def: IconDefinition): void {
 /**
  * Resolves an icon name or raw SVG to an SVG string.
  */
-export function resolveIconSvg(nameOrSvg: string): string | undefined {
+function resolveIconSvg(nameOrSvg: string): string | undefined {
   if (nameOrSvg.trim().startsWith("<svg") || nameOrSvg.includes("<svg")) {
     return nameOrSvg;
   }

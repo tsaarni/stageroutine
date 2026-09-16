@@ -143,6 +143,23 @@ export function rule(options: RuleOptions = {}): ElementDecorator {
     const el = element.domElement;
     if (!el) return;
 
+    if (!isBracketed) {
+      el.setAttribute("data-rule-side", side);
+      if (side === "left") {
+        el.style.borderTopLeftRadius = "0px";
+        el.style.borderBottomLeftRadius = "0px";
+      } else if (side === "right") {
+        el.style.borderTopRightRadius = "0px";
+        el.style.borderBottomRightRadius = "0px";
+      } else if (side === "top") {
+        el.style.borderTopLeftRadius = "0px";
+        el.style.borderTopRightRadius = "0px";
+      } else if (side === "bottom") {
+        el.style.borderBottomLeftRadius = "0px";
+        el.style.borderBottomRightRadius = "0px";
+      }
+    }
+
     if (getComputedStyle(el).position === "static") {
       el.style.position = "relative";
     }
@@ -179,49 +196,53 @@ export function rule(options: RuleOptions = {}): ElementDecorator {
     } else {
       if (isBorderStroke) {
         if (side === "left") {
-          ruleNode.style.left = formattedInset;
+          ruleNode.style.left = "0px";
           ruleNode.style.top = formattedInset;
           ruleNode.style.bottom = formattedInset;
           ruleNode.style.width = "0px";
         } else if (side === "right") {
-          ruleNode.style.right = formattedInset;
+          ruleNode.style.right = "0px";
           ruleNode.style.top = formattedInset;
           ruleNode.style.bottom = formattedInset;
           ruleNode.style.width = "0px";
         } else if (side === "top") {
-          ruleNode.style.top = formattedInset;
+          ruleNode.style.top = "0px";
           ruleNode.style.left = formattedInset;
           ruleNode.style.right = formattedInset;
           ruleNode.style.height = "0px";
         } else if (side === "bottom") {
-          ruleNode.style.bottom = formattedInset;
+          ruleNode.style.bottom = "0px";
           ruleNode.style.left = formattedInset;
           ruleNode.style.right = formattedInset;
           ruleNode.style.height = "0px";
         }
       } else {
         if (side === "left") {
-          ruleNode.style.left = formattedInset;
+          ruleNode.style.left = "0px";
           ruleNode.style.top = formattedInset;
           ruleNode.style.bottom = formattedInset;
           ruleNode.style.width = formattedThickness;
         } else if (side === "right") {
-          ruleNode.style.right = formattedInset;
+          ruleNode.style.right = "0px";
           ruleNode.style.top = formattedInset;
           ruleNode.style.bottom = formattedInset;
           ruleNode.style.width = formattedThickness;
         } else if (side === "top") {
-          ruleNode.style.top = formattedInset;
+          ruleNode.style.top = "0px";
           ruleNode.style.left = formattedInset;
           ruleNode.style.right = formattedInset;
           ruleNode.style.height = formattedThickness;
         } else if (side === "bottom") {
-          ruleNode.style.bottom = formattedInset;
+          ruleNode.style.bottom = "0px";
           ruleNode.style.left = formattedInset;
           ruleNode.style.right = formattedInset;
           ruleNode.style.height = formattedThickness;
         }
       }
+    }
+
+    if (typeof (element as { update?: () => void }).update === "function") {
+      (element as { update?: () => void }).update?.();
     }
 
     el.appendChild(ruleNode);

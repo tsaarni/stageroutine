@@ -435,12 +435,23 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     if (h <= 0 && typeof this.height === "number") h = this.height;
     if (w <= 0 || h <= 0) return;
 
+    const ruleSideAttr = (this.domElement.getAttribute("data-rule-side") || undefined) as
+      | "left"
+      | "right"
+      | "top"
+      | "bottom"
+      | undefined;
+
     if (w !== this.lastW || h !== this.lastH) {
       this.lastW = w;
       this.lastH = h;
       this.svgElement.setAttribute("viewBox", `0 0 ${w} ${h}`);
 
-      const strokeD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 0 });
+      const strokeD = this._path(w, h, {
+        strokeWidth: this.strokeWidth,
+        inset: 0,
+        ruleSide: ruleSideAttr,
+      } as import("../paths").PathContext);
       this.pathNode.setAttribute("d", strokeD);
       const svgMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'%3E%3Cpath fill='black' d='${encodeURIComponent(strokeD)}'/%3E%3C/svg%3E")`;
       this.frostDiv.style.maskImage = svgMask;
@@ -448,14 +459,22 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
         svgMask;
 
       if (this.doubleBorder) {
-        const innerD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 4 });
+        const innerD = this._path(w, h, {
+          strokeWidth: this.strokeWidth,
+          inset: 4,
+          ruleSide: ruleSideAttr,
+        } as import("../paths").PathContext);
         this.innerPathNode.setAttribute("d", innerD);
         this.innerPathNode.style.display = "";
       } else {
         this.innerPathNode.style.display = "none";
       }
     } else if (this.doubleBorder && this.innerPathNode.style.display === "none") {
-      const innerD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 4 });
+      const innerD = this._path(w, h, {
+        strokeWidth: this.strokeWidth,
+        inset: 4,
+        ruleSide: ruleSideAttr,
+      } as import("../paths").PathContext);
       this.innerPathNode.setAttribute("d", innerD);
       this.innerPathNode.style.display = "";
     } else if (!this.doubleBorder && this.innerPathNode.style.display !== "none") {

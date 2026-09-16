@@ -48,22 +48,50 @@ function getGeometryBounds(w: number, h: number, context?: PathContext): Geometr
   };
 }
 
-function roundedRect(cx: number, pad: number, pw: number, ph: number, cr: number): string {
-  if (cr <= 0) {
-    return `M ${cx} ${pad} H ${pad + pw} V ${pad + ph} H ${pad} V ${pad} H ${cx} Z`;
+interface CornerRadii {
+  tl: number;
+  tr: number;
+  br: number;
+  bl: number;
+}
+
+function roundedRectPerCorner(pad: number, pw: number, ph: number, radii: CornerRadii): string {
+  const { tl, tr, br, bl } = radii;
+  const left = pad;
+  const right = pad + pw;
+  const top = pad;
+  const bottom = pad + ph;
+
+  if (tl <= 0 && tr <= 0 && br <= 0 && bl <= 0) {
+    return `M ${left} ${top} H ${right} V ${bottom} H ${left} Z`;
   }
-  return (
-    `M ${cx} ${pad} ` +
-    `H ${pad + pw - cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + pw} ${pad + cr} ` +
-    `V ${pad + ph - cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + pw - cr} ${pad + ph} ` +
-    `H ${pad + cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad} ${pad + ph - cr} ` +
-    `V ${pad + cr} ` +
-    `A ${cr} ${cr} 0 0 1 ${pad + cr} ${pad} ` +
-    `H ${cx} Z`
-  );
+
+  const pathParts: string[] = [];
+
+  pathParts.push(`M ${left + tl} ${top}`);
+
+  pathParts.push(`H ${right - tr}`);
+  if (tr > 0) {
+    pathParts.push(`A ${tr} ${tr} 0 0 1 ${right} ${top + tr}`);
+  }
+
+  pathParts.push(`V ${bottom - br}`);
+  if (br > 0) {
+    pathParts.push(`A ${br} ${br} 0 0 1 ${right - br} ${bottom}`);
+  }
+
+  pathParts.push(`H ${left + bl}`);
+  if (bl > 0) {
+    pathParts.push(`A ${bl} ${bl} 0 0 1 ${left} ${bottom - bl}`);
+  }
+
+  pathParts.push(`V ${top + tl}`);
+  if (tl > 0) {
+    pathParts.push(`A ${tl} ${tl} 0 0 1 ${left + tl} ${top}`);
+  }
+
+  pathParts.push("Z");
+  return pathParts.join(" ");
 }
 
 /**
@@ -159,8 +187,29 @@ export const paths = {
     return (w, h, ctx) => {
       const geo = getGeometryBounds(w, h, ctx);
       if (!geo) return "";
-      const cr = Math.min(defaultRadius, geo.pw / 2, geo.ph / 2);
-      return roundedRect(geo.cx, geo.pad, geo.pw, geo.ph, cr);
+      const maxR = Math.min(geo.pw / 2, geo.ph / 2);
+      const r = Math.min(Math.max(0, defaultRadius), maxR);
+      let tl = r;
+      let tr = r;
+      let br = r;
+      let bl = r;
+
+      const ruleSide = (ctx as { ruleSide?: string } | undefined)?.ruleSide;
+      if (ruleSide === "left") {
+        tl = 0;
+        bl = 0;
+      } else if (ruleSide === "right") {
+        tr = 0;
+        br = 0;
+      } else if (ruleSide === "top") {
+        tl = 0;
+        tr = 0;
+      } else if (ruleSide === "bottom") {
+        bl = 0;
+        br = 0;
+      }
+
+      return roundedRectPerCorner(geo.pad, geo.pw, geo.ph, { tl, tr, br, bl });
     };
   },
 
@@ -199,7 +248,7 @@ export const paths = {
       const geo = getGeometryBounds(w, h, ctx);
       if (!geo) return "";
       const cr = Math.min(geo.pw, geo.ph) / 2;
-      return roundedRect(geo.cx, geo.pad, geo.pw, geo.ph, cr);
+      return roundedRectPerCorner(geo.pad, geo.pw, geo.ph, { tl: cr, tr: cr, br: cr, bl: cr });
     };
   },
 

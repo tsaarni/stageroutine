@@ -431,6 +431,7 @@ const topologyNote = Card(
     align: "right",
     width: "24cqw",
     opacity: 0,
+    borderColor: "none",
   },
 ).decorate(rule({ side: "right" }));
 

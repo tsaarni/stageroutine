@@ -118,6 +118,22 @@ const asciiFragmentShader = `
   }
 `;
 
+function drawGlyphsToCanvas(canvas: HTMLCanvasElement, chars: string, size: number): void {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const charCount = chars.length;
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = `bold ${Math.floor(size * 0.78)}px "JetBrains Mono", ui-monospace, Menlo, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+
+  for (let i = 0; i < charCount; i++) {
+    ctx.fillText(chars[i], i * size + size / 2, size / 2);
+  }
+}
+
 function createGlyphAtlas(chars: string): { texture: THREE.CanvasTexture; charCount: number } {
   const charCount = chars.length;
   const size = 64;
@@ -125,23 +141,19 @@ function createGlyphAtlas(chars: string): { texture: THREE.CanvasTexture; charCo
   canvas.width = size * charCount;
   canvas.height = size;
 
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = `bold ${Math.floor(size * 0.78)}px monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-
-    for (let i = 0; i < charCount; i++) {
-      ctx.fillText(chars[i], i * size + size / 2, size / 2);
-    }
-  }
+  drawGlyphsToCanvas(canvas, chars, size);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
+
+  if (document.fonts) {
+    document.fonts.ready.then(() => {
+      drawGlyphsToCanvas(canvas, chars, size);
+      texture.needsUpdate = true;
+    });
+  }
+
   return { texture, charCount };
 }
 
@@ -161,7 +173,7 @@ export interface AsciiFluidCanvasProps {
 
 export function AsciiFluidCanvas({
   characters = " .:-=+*#%@",
-  cellSize = 16,
+  cellSize = 18,
   color = "#38bdf8",
   backgroundColor = "#09090b",
   opacity = 0.45,

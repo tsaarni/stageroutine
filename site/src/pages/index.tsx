@@ -25,7 +25,7 @@ function HomepageHeader() {
 
   return (
     <header className={styles.heroWrapper}>
-      <AsciiFluidCanvas color="#38bdf8" backgroundColor="#09090b" opacity={0.38} cellSize={16} />
+      <AsciiFluidCanvas color="#38bdf8" backgroundColor="#09090b" opacity={0.38} cellSize={18} />
       <div className={styles.heroVignette} aria-hidden="true" />
       <StageLighting />
       <div

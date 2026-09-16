@@ -30,11 +30,18 @@ export interface ImageOptions extends ElementOptions {
   fit?: ImageFit;
 }
 
+/** Public controls for an image. @category Components */
+export interface ImageElement extends DOMElement {
+  fit: ImageFit;
+  src: string;
+  alt: string;
+}
+
 /**
  * Reactive Image element wrapping a native <img> DOM node.
  * @internal
  */
-export class ImageElement extends DOMElement {
+class ImageElementImpl extends DOMElement implements ImageElement {
   readonly imgElement: HTMLImageElement;
   private _fit: ImageFit = "contain";
 
@@ -110,7 +117,7 @@ export function Image(
   maybeOptions: ImageOptions = {},
 ): ImageElement {
   const stage = getActiveStage();
-  const el = new ImageElement(srcOrOptions, maybeOptions);
+  const el = new ImageElementImpl(srcOrOptions, maybeOptions);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as ImageElement;
   }

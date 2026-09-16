@@ -74,7 +74,12 @@ export function dream(options: DreamOptions = {}): ElementDecorator {
     float = 12,
   } = options;
 
-  const chromaRatio = typeof prismatic === "number" ? Math.max(0, prismatic) : prismatic ? 0.15 : 0;
+  let chromaRatio = 0;
+  if (typeof prismatic === "number") {
+    chromaRatio = Math.max(0, prismatic);
+  } else if (prismatic) {
+    chromaRatio = 0.15;
+  }
 
   return (element: DOMElement) => {
     element.enterDuration = duration;

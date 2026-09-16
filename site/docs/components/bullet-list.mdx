@@ -37,16 +37,27 @@ Pass nested arrays to create indented sub-items.
 
 ## Item Selection
 
-Clicking or dragging bullet items highlights selected rows and dims unselected items.
+Clicking or dragging bullet items interactively highlights selected rows and dims unselected items.
 
-You can also focus items programmatically with `focus(start, end)`:
+## Reveal
+
+Items are visible by default. Pass `{ opacity: 0 }` to opt into reveal animations:
 
 ```typescript
-// Focus the first item (1-indexed)
-list.focus(1);
+const list = BulletList([
+  "First bullet point",
+  "Second bullet point",
+  "Third bullet point",
+], { opacity: 0 });
 
-// Clear focus
-list.unfocus();
+// Continuous staggered reveal in a single step
+list.reveal();
+
+// Or reveal step-by-step across presenter clicks
+list.items.forEach((item) => {
+  item.to({ opacity: 1, x: 0 }).duration(0.4);
+  stage.pause();
+});
 ```
 
 ## API Reference

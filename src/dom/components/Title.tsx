@@ -1,3 +1,7 @@
+/**
+ * Headline typography component supporting default title, hero, and serif editorial variants.
+ */
+
 import "./Title.css";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";

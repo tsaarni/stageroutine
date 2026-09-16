@@ -1,3 +1,7 @@
+/**
+ * Body copy paragraph component formatted for high-legibility stage presentations.
+ */
+
 import "./Text.css";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";

@@ -36,7 +36,7 @@ export function getReactiveKeys(target: unknown): ReadonlySet<string> {
  */
 export function isReactiveProperty(target: unknown, prop: string | symbol): boolean {
   if (typeof prop !== "string" || !target || typeof target !== "object") return false;
-  if (prop === "size") return true;
+  if (prop === "size" || prop === "position") return true;
   const keys = getReactiveKeys(target);
   return keys.has(prop);
 }

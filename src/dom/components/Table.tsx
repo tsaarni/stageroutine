@@ -5,7 +5,7 @@
 import "./Table.css";
 import { getActiveStage } from "../../core/stage";
 import type { Align } from "../../core/types";
-import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
+import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
@@ -33,20 +33,17 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
   interactive?: boolean;
 }
 
+/** Public controls for a table. @category Components */
+export interface TableElement extends DOMElement {
+  readonly rows: DOMElement[];
+  reveal(options?: StaggerOptions): StaggerTransition;
+}
+
 /**
  * @internal
  */
-export class TableElement extends DOMElement {
+class TableElementImpl extends DOMElement implements TableElement {
   readonly rows: DOMElement[];
-  private controller: ReturnType<typeof attachRangeSelection>;
-
-  get focusedRange(): [number, number] | null {
-    return this.controller.focusedRange;
-  }
-
-  get focusedIndex(): number | null {
-    return this.controller.focusedIndex;
-  }
 
   constructor(options: TableOptions) {
     const { align: tableAlign, ...elementOpts } = options;
@@ -118,7 +115,7 @@ export class TableElement extends DOMElement {
       childRowElements.push(proxyRow);
     }
 
-    const controller = attachRangeSelection({
+    attachRangeSelection({
       container,
       getItems: () => rawRowElements,
       interactive: isInteractive,
@@ -127,21 +124,33 @@ export class TableElement extends DOMElement {
     super("Table", container, containerOptions);
 
     this.rows = childRowElements;
-    this.controller = controller;
   }
 
-  focusRows(start: number, end: number = start): this {
-    this.controller.focus(start, end);
-    return this;
-  }
-
-  unfocus(): this {
-    this.controller.unfocus();
-    return this;
-  }
-
-  reveal(options?: StaggerOptions): StaggerBuilder {
-    return stagger(this.rows, options);
+  reveal(options?: StaggerOptions): StaggerTransition {
+    const stage = getActiveStage();
+    for (const row of this.rows) {
+      const currentOpacity = stage
+        ? (stage.getCurrentPropertyValue(row.id, "opacity") as number | undefined)
+        : (row.opacity as number | undefined);
+      const currentX = stage
+        ? (stage.getCurrentPropertyValue(row.id, "x") as number | string | undefined)
+        : (row.x as number | string | undefined);
+      if (currentOpacity === undefined || currentOpacity === 1) {
+        if (stage) {
+          stage.setCurrentPropertyValue(row.id, "opacity", 0);
+        } else {
+          row.opacity = 0;
+        }
+      }
+      if (currentX === undefined || currentX === 0) {
+        if (stage) {
+          stage.setCurrentPropertyValue(row.id, "x", 2);
+        } else {
+          row.x = 2;
+        }
+      }
+    }
+    return stagger(this.rows, { props: { opacity: 1, x: 0 }, ...options });
   }
 }
 
@@ -151,6 +160,6 @@ export class TableElement extends DOMElement {
  */
 export function Table(options: TableOptions): TableElement {
   const stage = getActiveStage();
-  const el = new TableElement(options);
+  const el = new TableElementImpl(options);
   return stage ? (stage.registerElement(el) as TableElement) : el;
 }

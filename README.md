@@ -1,19 +1,10 @@
 <div align="center">
   <img src="site/static/img/stageroutine-lockup.svg" alt="StageRoutine" width="340" />
-  <p><strong>Code-driven presentations built for the stage.</strong></p>
+  <p><i>Code-driven presentations built for the stage.</i></p>
 
-  <p>
-    <a href="https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml"><img src="https://github.com/tsaarni/stageroutine/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-    <a href="https://tsaarni.github.io/stageroutine/"><img src="https://img.shields.io/badge/docs-website-blue.svg" alt="Documentation" /></a>
-    <a href="https://tsaarni.github.io/stageroutine/demo/"><img src="https://img.shields.io/badge/demo-online-brightgreen.svg" alt="Live Demo" /></a>
-    <a href="https://github.com/tsaarni/stageroutine/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache-2.0" /></a>
-  </p>
-
-  <p>
-    <a href="https://tsaarni.github.io/stageroutine/demo/"><strong>Live Demo</strong></a> &middot;
-    <a href="https://tsaarni.github.io/stageroutine/"><strong>Documentation</strong></a> &middot;
-    <a href="https://tsaarni.github.io/stageroutine/docs/getting-started/quickstart"><strong>Quick Start</strong></a>
-  </p>
+  [Live Demo](https://tsaarni.github.io/stageroutine/demo/) ·
+  [Documentation](https://tsaarni.github.io/stageroutine/) ·
+  [Quick Start](https://tsaarni.github.io/stageroutine/docs/getting-started/quickstart)
 </div>
 
 StageRoutine is a TypeScript library for creating presentations in code. Instead of flipping through separate slides, you define scenes on a stage: elements can enter, leave, or animate smoothly to new positions.

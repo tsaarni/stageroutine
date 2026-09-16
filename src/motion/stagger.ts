@@ -1,3 +1,7 @@
+/**
+ * Staggered animation coordinator for sequential reveals across element collections.
+ */
+
 import { getActiveStage } from "../core/stage";
 import type {
   AnimationMilestone,
@@ -19,19 +23,33 @@ export interface StaggerOptions {
   overlap?: AnimationMilestone;
   /** Easing curve for each element transition (default: "quartOut"). */
   ease?: BuiltinEase | EaseCurve;
-  /** Animated target properties for each element (default: `{ opacity: 1, x: 0 }`). */
+  /** Animated target properties for each element (default: `{ opacity: 1 }`). */
   props?: Record<string, unknown>;
+}
+
+/**
+ * Public fluent contract for a staggered reveal operation.
+ * @category Motion
+ */
+export interface StaggerTransition {
+  duration(seconds: number): this;
+  overlap(milestone: AnimationMilestone): this;
+  ease(curve: BuiltinEase | EaseCurve): this;
+  props(properties: Record<string, unknown>): this;
+  when(target: ReactiveElementBase | string, milestone?: AnimationMilestone): this;
+  after(target: ReactiveElementBase | string): this;
+  apply(): void;
 }
 
 /**
  * @internal
  */
-export class StaggerBuilder {
+export class StaggerBuilder implements StaggerTransition {
   private elements: (DOMElement | ReactiveElementBase)[];
   private durationSec = 0.4;
   private overlapMilestone: AnimationMilestone = 0.5;
   private easeCurve: BuiltinEase | EaseCurve = "quartOut";
-  private targetProps: Record<string, unknown> = { opacity: 1, x: 0 };
+  private targetProps: Record<string, unknown> = { opacity: 1 };
   private triggerTarget?: ReactiveElementBase | string;
   private triggerMilestone: AnimationMilestone = "end";
   private applied = false;
@@ -70,7 +88,7 @@ export class StaggerBuilder {
     return this;
   }
 
-  /** Customizes the animated target properties (defaults to `{ opacity: 1, x: 0 }`). */
+  /** Customizes the animated target properties (defaults to `{ opacity: 1 }`). */
   props(properties: Record<string, unknown>): this {
     this.targetProps = properties;
     return this;
@@ -126,6 +144,6 @@ export class StaggerBuilder {
 export function stagger(
   elements: (DOMElement | ReactiveElementBase)[],
   options?: StaggerOptions,
-): StaggerBuilder {
+): StaggerTransition {
   return new StaggerBuilder(elements, options);
 }

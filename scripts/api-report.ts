@@ -418,7 +418,12 @@ function inspectEntryPoint(
             if (memberDoc) {
               members.push(memberDoc);
             }
-            const prefix = isStatic ? "static " : isReadonly ? "readonly " : "";
+            let prefix = "";
+            if (isStatic) {
+              prefix = "static ";
+            } else if (isReadonly) {
+              prefix = "readonly ";
+            }
             const typeStr = checker.typeToString(
               propType,
               sourceFile,

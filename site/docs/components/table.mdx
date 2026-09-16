@@ -37,16 +37,30 @@ stage.mount("#stage");
 
 ## Row Selection
 
-Clicking or dragging table rows highlights selected rows and dims unselected rows.
+Clicking or dragging table rows interactively highlights selected rows and dims unselected rows.
 
-You can also focus rows programmatically with `focusRows(start, end)`:
+## Reveal
+
+Rows are visible by default. Pass `{ opacity: 0 }` to opt into reveal animations:
 
 ```typescript
-// Focus the first row (1-indexed)
-table.focusRows(1);
+const table = Table({
+  headers: ["Service", "Status"],
+  rows: [
+    ["Auth Gateway", "Operational"],
+    ["Payment Engine", "Operational"],
+  ],
+  opacity: 0,
+});
 
-// Clear focus
-table.unfocus();
+// Continuous staggered reveal in a single step
+table.reveal();
+
+// Or reveal step-by-step across presenter clicks
+table.rows.forEach((row) => {
+  row.to({ opacity: 1, x: 0 }).duration(0.4);
+  stage.pause();
+});
 ```
 
 ## API Reference

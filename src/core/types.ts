@@ -23,11 +23,7 @@ export type BuiltinEase =
   | "expoOut"
   | "expoInOut"
   | "smooth"
-  | "gentle"
-  | "outQuad"
-  | "inOutQuad"
-  | "outExpo"
-  | "inOutExpo";
+  | "gentle";
 
 /**
  * Animation milestone representing progress of another element's transition:
@@ -398,6 +394,15 @@ export type ReactiveProp<T> = T | TransitionDescriptor<T>;
 export type Point = readonly [x: number, y: number];
 
 /**
+ * 2D coordinate point or vector as an [x, y] tuple.
+ * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * @category Core
+ */
+export type Position =
+  | readonly [x: number | string, y: number | string]
+  | readonly (number | string)[];
+
+/**
  * 9-position content alignment grid for text and children inside a container.
  * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
  * @category Layout
@@ -449,6 +454,8 @@ export interface ReactiveElementBase {
   opacity: ReactiveProp<number>;
   x: ReactiveProp<number | string>;
   y: ReactiveProp<number | string>;
+  position?: ReactiveProp<Position>;
+  size?: ReactiveProp<number | string>;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   blur: ReactiveProp<number>;

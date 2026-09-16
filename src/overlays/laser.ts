@@ -1,3 +1,7 @@
+/**
+ * Laser pointer overlay with glowing trail and cursor suppression for live presentation guidance.
+ */
+
 import type { OverlayContext, OverlayPlugin } from "../core/types";
 
 /**

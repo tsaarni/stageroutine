@@ -22,20 +22,13 @@ export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
   interactive?: boolean;
 }
 
+/** Public controls for a code block. @category Components */
+export interface CodeBlockElement extends DOMElement {}
+
 /**
  * @internal
  */
-export class CodeBlockElement extends DOMElement {
-  private controller: ReturnType<typeof attachRangeSelection>;
-
-  get focusedRange(): [number, number] | null {
-    return this.controller.focusedRange;
-  }
-
-  get focusedIndex(): number | null {
-    return this.controller.focusedIndex;
-  }
-
+class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
   constructor(snippet: string | string[], options: CodeBlockOptions = {}) {
     const lang = options.lang || "typescript";
     const shikiTheme = typeof options.theme === "string" ? options.theme : "vitesse-dark";
@@ -109,18 +102,6 @@ export class CodeBlockElement extends DOMElement {
 
     const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
     super("CodeBlock", preEl, { ...options, theme: elementTheme });
-
-    this.controller = controller;
-  }
-
-  focusLines(start: number, end: number = start): this {
-    this.controller.focus(start, end);
-    return this;
-  }
-
-  unfocus(): this {
-    this.controller.unfocus();
-    return this;
   }
 }
 
@@ -134,6 +115,6 @@ export function CodeBlock(
   options: CodeBlockOptions = {},
 ): CodeBlockElement {
   const stage = getActiveStage();
-  const el = new CodeBlockElement(snippet, options);
+  const el = new CodeBlockElementImpl(snippet, options);
   return stage ? (stage.registerElement(el) as CodeBlockElement) : el;
 }

@@ -4,7 +4,7 @@
 
 import "./BulletList.css";
 import { getActiveStage } from "../../core/stage";
-import { type StaggerBuilder, type StaggerOptions, stagger } from "../../motion/stagger";
+import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
@@ -55,20 +55,17 @@ function resolveMarker(marker: string | readonly string[] | undefined, level: nu
   return marker[Math.min(level, marker.length - 1)];
 }
 
+/** Public controls for a bullet list. @category Components */
+export interface BulletListElement extends DOMElement {
+  readonly items: DOMElement[];
+  reveal(options?: StaggerOptions): StaggerTransition;
+}
+
 /**
  * @internal
  */
-export class BulletListElement extends DOMElement {
+class BulletListElementImpl extends DOMElement implements BulletListElement {
   readonly items: DOMElement[];
-  private controller: ReturnType<typeof attachRangeSelection>;
-
-  get focusedRange(): [number, number] | null {
-    return this.controller.focusedRange;
-  }
-
-  get focusedIndex(): number | null {
-    return this.controller.focusedIndex;
-  }
 
   constructor(items: BulletItemInput[], options: BulletListOptions = {}) {
     const isHiddenInitially = options.opacity === 0;
@@ -124,30 +121,38 @@ export class BulletListElement extends DOMElement {
 
     this.items = childElements;
 
-    this.controller = attachRangeSelection({
+    attachRangeSelection({
       container,
       getItems: () => rawItemElements,
       interactive: isInteractive,
     });
   }
 
-  focus(index: number): this {
-    this.controller.focus(index);
-    return this;
-  }
-
-  focusItems(start: number, end: number = start): this {
-    this.controller.focus(start, end);
-    return this;
-  }
-
-  unfocus(): this {
-    this.controller.unfocus();
-    return this;
-  }
-
-  reveal(options?: StaggerOptions): StaggerBuilder {
-    return stagger(this.items, options);
+  reveal(options?: StaggerOptions): StaggerTransition {
+    const stage = getActiveStage();
+    for (const item of this.items) {
+      const currentOpacity = stage
+        ? (stage.getCurrentPropertyValue(item.id, "opacity") as number | undefined)
+        : (item.opacity as number | undefined);
+      const currentX = stage
+        ? (stage.getCurrentPropertyValue(item.id, "x") as number | string | undefined)
+        : (item.x as number | string | undefined);
+      if (currentOpacity === undefined || currentOpacity === 1) {
+        if (stage) {
+          stage.setCurrentPropertyValue(item.id, "opacity", 0);
+        } else {
+          item.opacity = 0;
+        }
+      }
+      if (currentX === undefined || currentX === 0) {
+        if (stage) {
+          stage.setCurrentPropertyValue(item.id, "x", 2);
+        } else {
+          item.x = 2;
+        }
+      }
+    }
+    return stagger(this.items, { props: { opacity: 1, x: 0 }, ...options });
   }
 }
 
@@ -160,6 +165,6 @@ export function BulletList(
   options: BulletListOptions = {},
 ): BulletListElement {
   const stage = getActiveStage();
-  const el = new BulletListElement(items, options);
+  const el = new BulletListElementImpl(items, options);
   return stage ? (stage.registerElement(el) as BulletListElement) : el;
 }

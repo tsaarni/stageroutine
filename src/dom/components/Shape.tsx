@@ -1,3 +1,7 @@
+/**
+ * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
+ */
+
 import "./Shape.css";
 import {
   type Align,
@@ -58,10 +62,25 @@ export interface ShapeOptions extends ElementOptions {
   children?: unknown;
 }
 
+/** Public controls for a shape. @category Components */
+export interface ShapeElement extends DOMElement {
+  path: PathFunction;
+  readonly variant: ShapeVariant;
+  readonly items: ReactiveElementBase[];
+  start: ReactiveProp<number>;
+  end: ReactiveProp<number>;
+  flow: ReactiveProp<FlowEffect>;
+  text: string | undefined;
+  borderColor: ReactiveProp<string> | undefined;
+  background: string | undefined;
+  active: boolean;
+  doubleBorder: boolean;
+}
+
 /**
  * @internal
  */
-export class ShapeElement extends DOMElement {
+class ShapeElementImpl extends DOMElement implements ShapeElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "start",
@@ -606,7 +625,7 @@ export function Shape(
   options: ShapeOptions = {},
 ): ShapeElement {
   const stage = getActiveStage();
-  const el = new ShapeElement(path, childrenOrOptions, options);
+  const el = new ShapeElementImpl(path, childrenOrOptions, options);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as ShapeElement;
   }

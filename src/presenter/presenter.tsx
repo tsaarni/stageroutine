@@ -91,11 +91,13 @@ recorder.onUpdate((state) => {
     micIcon.textContent = state.isMicEnabled ? "mic" : "mic_off";
     const isLive = state.isRecording && state.isMicEnabled;
     btnMic.classList.toggle("active", isLive);
-    btnMic.title = state.isMicEnabled
-      ? state.isRecording
-        ? "Microphone recording live (Click to mute)"
-        : "Microphone enabled (Click to mute)"
-      : "Microphone muted (Click to unmute)";
+    if (!state.isMicEnabled) {
+      btnMic.title = "Microphone muted (Click to unmute)";
+    } else if (state.isRecording) {
+      btnMic.title = "Microphone recording live (Click to mute)";
+    } else {
+      btnMic.title = "Microphone enabled (Click to mute)";
+    }
   }
 });
 

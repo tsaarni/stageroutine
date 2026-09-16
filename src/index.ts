@@ -14,7 +14,7 @@
  * - `stageroutine/vite`        — the StageRoutine Vite plugin
  *
  * A symbol is exported here exactly when it is part of the documented user-facing
- * API. Implementation element classes (`TitleElement`, `ConnectorElement`, ...),
+ * API. Implementation element classes,
  * fluent builder classes, and engine internals are intentionally not public.
  */
 
@@ -61,6 +61,7 @@ export type {
   Point,
   PointerSetStateEvent,
   PointerStateChangedEvent,
+  Position,
   ReactiveElementBase,
   ReactiveProp,
   StageContext,
@@ -138,7 +139,7 @@ export type {
   PulseSequenceController,
   PulseSequenceOptions,
   PulseSequenceStep,
-  SequenceDiagramElement,
+  SequenceDiagramController,
   SequenceDiagramOptions,
   ShapeElement,
   ShapeOptions,
@@ -180,6 +181,8 @@ export {
 export type { ElementDecorator, ElementOptions } from "./dom/element";
 // Base class & option types for custom components
 export { DOMElement } from "./dom/element";
+export type { GroupElement } from "./dom/group";
+export { group } from "./dom/group";
 export type {
   CircleLayoutOptions,
   GridSlot,
@@ -207,13 +210,15 @@ export type {
 // Geometry
 export { paths } from "./dom/paths";
 export type {
-  CrossfadeBuilder,
-  CrossfadeOptions,
-  StaggerBuilder,
+  ElementTransition,
+  ElementTransitionProps,
+  ReplaceOptions,
+  ReplaceTransition,
   StaggerOptions,
+  StaggerTransition,
 } from "./motion/index";
 // Motion
-export { crossfade, cubicBezier, stagger, to } from "./motion/index";
+export { replace, stagger, to } from "./motion/index";
 export type {
   LaserPointerController,
   LaserPointerOptions,

@@ -1,3 +1,7 @@
+/**
+ * Micro-label typography component for chapter indices, category tags, and subtitles.
+ */
+
 import "./Kicker.css";
 import { getActiveStage } from "../../core/stage";
 import { DOMElement, type ElementOptions } from "../element";

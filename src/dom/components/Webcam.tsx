@@ -38,11 +38,21 @@ export interface WebcamOptions extends ElementOptions {
   cycleOnClick?: boolean;
 }
 
+/** Public controls for a webcam. @category Components */
+export interface WebcamElement extends DOMElement {
+  fit: ImageFit;
+  mirror: boolean;
+  deviceId: string | undefined;
+  start(): Promise<void>;
+  stop(): void;
+  cycleCamera(): Promise<void>;
+}
+
 /**
  * Reactive Webcam element wrapping a native <video> element connected to getUserMedia stream.
  * @internal
  */
-export class WebcamElement extends DOMElement {
+class WebcamElementImpl extends DOMElement implements WebcamElement {
   readonly videoElement: HTMLVideoElement;
   private stream: MediaStream | null = null;
   private _fit: ImageFit = "cover";
@@ -232,7 +242,7 @@ export class WebcamElement extends DOMElement {
    * Cycles to the next connected camera.
    */
   async cycleCamera(): Promise<void> {
-    const cameras = await WebcamElement.getCameras();
+    const cameras = await WebcamElementImpl.getCameras();
     if (cameras.length <= 1) return;
 
     const currentIndex = cameras.findIndex((c) => c.id === this._deviceId);
@@ -262,7 +272,7 @@ export class WebcamElement extends DOMElement {
  */
 export function Webcam(options: WebcamOptions = {}): WebcamElement {
   const stage = getActiveStage();
-  const el = new WebcamElement(options);
+  const el = new WebcamElementImpl(options);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as WebcamElement;
   }
@@ -270,4 +280,4 @@ export function Webcam(options: WebcamOptions = {}): WebcamElement {
 }
 
 // Attach static method to factory function for convenient discovery
-Webcam.getCameras = WebcamElement.getCameras;
+Webcam.getCameras = WebcamElementImpl.getCameras;

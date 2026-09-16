@@ -1,7 +1,7 @@
 /**
  * Public surface of the standard component library (Title, Text, Shape, CodeBlock, etc.).
  *
- * Implementation element classes (`TitleElement`, `ConnectorElement`, ...) are intentionally
+ * Implementation element classes are intentionally
  * not exported; users interact with the reactive proxies returned by the factories and type
  * custom logic against `DOMElement` or the exported option interfaces.
  */
@@ -45,7 +45,7 @@ export { Image, type ImageElement, type ImageFit, type ImageOptions } from "./Im
 export { Kicker, type KickerOptions } from "./Kicker";
 /**
  * The sequence diagram system is used through its coordinator: `SequenceDiagram()` returns
- * the `seq` handle with `.message()`, `.activate()`, `.addParticipant()`, `.lifelines`,
+ * the `seq` controller with `.message()`, `.activate()`, `.addParticipant()`, `.lifelines`,
  * and `.elements`. Lifelines and activation bars are sub-elements managed by the
  * coordinator.
  */
@@ -55,7 +55,7 @@ export {
   type LifelineElement,
   type LifelineOptions,
   SequenceDiagram,
-  type SequenceDiagramElement,
+  type SequenceDiagramController,
   type SequenceDiagramOptions,
 } from "./SequenceDiagram";
 export {

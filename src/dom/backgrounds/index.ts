@@ -3,12 +3,16 @@
  */
 
 export type {
+  Align,
   AnchorKeyword,
+  Background,
   EaseCurve,
   ElementAnchor,
   Point,
+  Position,
   ReactiveElementBase,
   ReactiveProp,
+  StageContext,
   ThemeConfig,
   TransitionDescriptor,
 } from "../../core/types";

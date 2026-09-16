@@ -1,3 +1,7 @@
+/**
+ * Smooth in-place element replacement transition swapping elements without layout ghosting.
+ */
+
 import { getActiveStage } from "../core/stage";
 import type {
   AnimationMilestone,
@@ -9,10 +13,10 @@ import type { DOMElement } from "../dom/element";
 import { to } from "./transitions";
 
 /**
- * Configuration options for asymmetric crossfade transitions between two elements.
+ * Configuration options for in-place element replacement transitions.
  * @category Motion
  */
-export interface CrossfadeOptions {
+export interface ReplaceOptions {
   /** Total choreography duration in seconds (default: 0.5s). */
   duration?: number;
   /** Overlap hand-off point as a fraction of exit progress (default: 0.55). */
@@ -26,9 +30,28 @@ export interface CrossfadeOptions {
 }
 
 /**
+ * Public fluent contract for an in-place replacement operation.
+ * @category Motion
+ */
+export interface ReplaceTransition {
+  duration(seconds: number): this;
+  overlap(fraction: number): this;
+  ease(curve: BuiltinEase | EaseCurve): this;
+  scale(factor?: boolean | number): this;
+  matchPosition(match: boolean): this;
+  when(
+    target: ReactiveElementBase | string,
+    milestone?: AnimationMilestone,
+    property?: string,
+  ): this;
+  after(target: ReactiveElementBase | string, property?: string): this;
+  apply(): void;
+}
+
+/**
  * @internal
  */
-export class CrossfadeBuilder {
+export class ReplaceBuilder implements ReplaceTransition {
   private fromElement: DOMElement | ReactiveElementBase;
   private toElement: DOMElement | ReactiveElementBase;
   private durationSec = 0.5;
@@ -45,7 +68,7 @@ export class CrossfadeBuilder {
   constructor(
     fromElement: DOMElement | ReactiveElementBase,
     toElement: DOMElement | ReactiveElementBase,
-    options: CrossfadeOptions = {},
+    options: ReplaceOptions = {},
   ) {
     this.fromElement = fromElement;
     this.toElement = toElement;
@@ -55,8 +78,10 @@ export class CrossfadeBuilder {
     if (options.ease !== undefined) this.easeCurve = options.ease;
     if (options.matchPosition !== undefined) this.shouldMatchPosition = options.matchPosition;
     if (options.scale !== undefined) {
-      this.scaleFactor =
-        typeof options.scale === "number" ? options.scale : options.scale ? 0.96 : undefined;
+      this.scaleFactor = typeof options.scale === "number" ? options.scale : undefined;
+      if (options.scale) {
+        this.scaleFactor ??= 0.96;
+      }
     }
 
     const stage = getActiveStage();
@@ -87,7 +112,10 @@ export class CrossfadeBuilder {
 
   /** Enables or configures subtle depth scaling during the swap. */
   scale(factor: boolean | number = 0.96): this {
-    this.scaleFactor = typeof factor === "number" ? factor : factor ? 0.96 : undefined;
+    this.scaleFactor = typeof factor === "number" ? factor : undefined;
+    if (factor) {
+      this.scaleFactor ??= 0.96;
+    }
     return this;
   }
 
@@ -97,7 +125,7 @@ export class CrossfadeBuilder {
     return this;
   }
 
-  /** Synchronizes the crossfade start to an external element trigger. */
+  /** Synchronizes the replacement start to an external element trigger. */
   when(
     target: ReactiveElementBase | string,
     milestone: AnimationMilestone = "end",
@@ -110,12 +138,12 @@ export class CrossfadeBuilder {
     return this;
   }
 
-  /** Chains the crossfade to start after an external element finishes. */
+  /** Chains the replacement to start after an external element finishes. */
   after(target: ReactiveElementBase | string, property?: string): this {
     return this.when(target, "end", property);
   }
 
-  /** Executes the asymmetric phase swap transitions. */
+  /** Executes the in-place replacement transitions. */
   apply(): void {
     if (this.applied) return;
     this.applied = true;
@@ -169,13 +197,13 @@ export class CrossfadeBuilder {
 }
 
 /**
- * Creates an asymmetric crossfade transition swapping two elements in place.
+ * Creates an in-place element replacement transition swapping two elements smoothly without ghosting.
  * @category Motion
  */
-export function crossfade(
+export function replace(
   fromElement: DOMElement | ReactiveElementBase,
   toElement: DOMElement | ReactiveElementBase,
-  options?: CrossfadeOptions,
-): CrossfadeBuilder {
-  return new CrossfadeBuilder(fromElement, toElement, options);
+  options?: ReplaceOptions,
+): ReplaceTransition {
+  return new ReplaceBuilder(fromElement, toElement, options);
 }

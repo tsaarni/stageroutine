@@ -48,7 +48,12 @@ export function applyRuleStyles(node: HTMLElement, options: RuleOptions = {}): v
   const rawThickness = thicknessOpt ?? 2;
   const isBracketed = !!bracket;
   const isBorderStroke = borderStyle !== "solid";
-  const defaultRadius = isBracketed ? 8 : isBorderStroke ? 0 : 2;
+  let defaultRadius = 2;
+  if (isBracketed) {
+    defaultRadius = 8;
+  } else if (isBorderStroke) {
+    defaultRadius = 0;
+  }
   const radius = radiusOpt ?? defaultRadius;
 
   const formattedThickness = typeof rawThickness === "number" ? `${rawThickness}px` : rawThickness;

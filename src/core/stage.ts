@@ -68,40 +68,52 @@ class SceneBuilder {
       | ReactiveElementBase
       | { items?: ReactiveElementBase[] }
       | { rows?: ReactiveElementBase[] }
+      | { elements?: readonly unknown[] }
+      | Iterable<unknown>
       | null
       | undefined
       | false
     )[]
   ): this {
     const flattened: ReactiveElementBase[] = [];
-    for (const el of elements) {
-      if (!el || typeof el !== "object") continue;
-      if ("id" in el && "domElement" in el) {
-        const reactiveEl = el as ReactiveElementBase;
+    const registerAndPush = (item: unknown) => {
+      if (!item || typeof item !== "object") return;
+      if ("id" in item && "domElement" in item) {
+        const reactiveEl = item as ReactiveElementBase;
         if (!this.stage.hasElement(reactiveEl.id)) {
           this.stage.registerElement(reactiveEl);
         }
         flattened.push(reactiveEl);
       }
-      if ("items" in el && Array.isArray((el as { items?: ReactiveElementBase[] }).items)) {
-        for (const item of (el as { items: ReactiveElementBase[] }).items) {
-          if (item && typeof item === "object" && "id" in item && "domElement" in item) {
-            if (!this.stage.hasElement(item.id)) {
-              this.stage.registerElement(item);
-            }
-            flattened.push(item);
-          }
+      if ("items" in item && Array.isArray((item as { items?: unknown[] }).items)) {
+        for (const sub of (item as { items: unknown[] }).items) {
+          registerAndPush(sub);
         }
       }
-      if ("rows" in el && Array.isArray((el as { rows?: ReactiveElementBase[] }).rows)) {
-        for (const row of (el as { rows: ReactiveElementBase[] }).rows) {
-          if (row && typeof row === "object" && "id" in row && "domElement" in row) {
-            if (!this.stage.hasElement(row.id)) {
-              this.stage.registerElement(row);
-            }
-            flattened.push(row);
-          }
+      if ("rows" in item && Array.isArray((item as { rows?: unknown[] }).rows)) {
+        for (const sub of (item as { rows: unknown[] }).rows) {
+          registerAndPush(sub);
         }
+      }
+      if ("elements" in item && Array.isArray((item as { elements?: unknown[] }).elements)) {
+        for (const sub of (item as { elements: unknown[] }).elements) {
+          registerAndPush(sub);
+        }
+      }
+    };
+
+    for (const el of elements) {
+      if (!el || typeof el !== "object") continue;
+      if (
+        Symbol.iterator in el &&
+        typeof (el as Iterable<unknown>)[Symbol.iterator] === "function" &&
+        !("domElement" in el)
+      ) {
+        for (const sub of el as Iterable<unknown>) {
+          registerAndPush(sub);
+        }
+      } else {
+        registerAndPush(el);
       }
     }
     this.stage._setActiveScene(this.name, flattened);

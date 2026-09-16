@@ -216,10 +216,12 @@ export namespace JSX {
 }
 
 export type {
+  Align,
   AnchorKeyword,
   EaseCurve,
   ElementAnchor,
   Point,
+  Position,
   ReactiveElementBase,
   ReactiveProp,
   TransitionDescriptor,

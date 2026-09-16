@@ -1,3 +1,7 @@
+/**
+ * In-browser presentation screen recorder and audio capture engine using MediaRecorder.
+ */
+
 import { logger } from "../core/logger";
 
 /**
@@ -73,11 +77,12 @@ export class PresenterRecorder {
       const stream = new MediaStream(combinedTracks);
 
       this.recordedChunks = [];
-      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-        ? "video/webm;codecs=vp9,opus"
-        : MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-          ? "video/webm;codecs=vp9"
-          : "video/webm";
+      let mimeType = "video/webm";
+      if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) {
+        mimeType = "video/webm;codecs=vp9,opus";
+      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+        mimeType = "video/webm;codecs=vp9";
+      }
 
       this.mediaRecorder = new MediaRecorder(stream, {
         mimeType,

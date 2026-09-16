@@ -1,3 +1,7 @@
+/**
+ * Geometric clipping container that shapes media and child elements to custom SVG contours.
+ */
+
 import "./Frame.css";
 import { getActiveStage, type ReactiveElementBase, type ReactiveProp } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
@@ -27,10 +31,18 @@ export interface FrameOptions extends ElementOptions {
   children?: unknown;
 }
 
+/** Public controls for a frame. @category Components */
+export interface FrameElement extends DOMElement {
+  path: PathFunction;
+  readonly items: ReactiveElementBase[];
+  active: boolean;
+  borderColor: ReactiveProp<string> | undefined;
+}
+
 /**
  * @internal
  */
-export class FrameElement extends DOMElement {
+class FrameElementImpl extends DOMElement implements FrameElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "active",
@@ -262,7 +274,7 @@ export function Frame(
   options: FrameOptions = {},
 ): FrameElement {
   const stage = getActiveStage();
-  const el = new FrameElement(path, childOrOptions, options);
+  const el = new FrameElementImpl(path, childOrOptions, options);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as FrameElement;
   }

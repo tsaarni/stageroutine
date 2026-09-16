@@ -8,11 +8,11 @@ import {
   Card,
   CodeBlock,
   Connector,
-  crossfade,
   dream,
   Frame,
   glow,
   gradient,
+  group,
   Image,
   Kicker,
   LaserPointer,
@@ -20,6 +20,7 @@ import {
   NavigationOverlay,
   paths,
   pulseSequence,
+  replace,
   rule,
   SequenceDiagram,
   Shape,
@@ -45,27 +46,23 @@ const stage = new Stage().background(AsciiFluid().decorate(vignette())).notesDoc
 // Scene: Introduction
 
 const sectionKicker = Kicker("00 / Core Runtime", {
-  x: "center",
-  y: 32,
+  position: ["center", 32],
 });
 
 const brandTitle = Title("StageRoutine", {
   variant: "hero",
-  x: "center",
-  y: 40,
+  position: ["center", 40],
 });
 
 const editorialLead = Title("Code-driven presentations built for the stage.", {
   variant: "serif",
-  x: "center",
-  y: 52,
+  position: ["center", 52],
 })
   .decorate(gradient())
   .decorate(glow());
 
 const heroBody = Text("An open-source presentation runtime for developers.", {
-  x: "center",
-  y: 64,
+  position: ["center", 64],
 });
 
 // Declare which elements are active in this scene.
@@ -109,13 +106,11 @@ codePanel.x = 110;
 stage.scene("Continuous Plane").with(brandTitle, leftHeading, leftBody, codePanel, planeRule);
 
 // Reposition brandTitle to the top-left corner.
-brandTitle.x = to(6).ease("cubicInOut");
-brandTitle.y = to(6).ease("cubicInOut");
+brandTitle.position = to([6, 6]).ease("cubicInOut");
 brandTitle.scale = to(0.6).ease("cubicInOut");
 
 // Choreographed exit for intro lead
-editorialLead.y = to(62);
-editorialLead.opacity = to(0);
+editorialLead.to({ y: 62, opacity: 0 });
 
 // Milestone triggers chain animations to start after another element completes.
 leftHeading.opacity = to(1).after(brandTitle);
@@ -160,10 +155,7 @@ stage
   .with(brandTitle, codePanel, rightHeading, rightBody, featureChecklist);
 
 // Slide left column off-screen.
-leftHeading.opacity = to(0);
-leftHeading.x = to(-50);
-leftBody.opacity = to(0);
-leftBody.x = to(-50);
+group(leftHeading, leftBody).to({ opacity: 0, x: -50 });
 if (planeRule) planeRule.opacity = to(0);
 
 // Move code panel from the right column over to the left column.
@@ -199,11 +191,8 @@ stage
   .with(brandTitle, terminalPanel, rightHeading, rightBody, featureChecklist);
 
 // Slide code block upward off-screen and lift terminal up from below.
-codePanel.y = to(-50).ease("cubicInOut");
-codePanel.opacity = to(0);
-
-terminalPanel.y = to(19).when(codePanel, "halfway");
-terminalPanel.opacity = to(1).when(codePanel, "halfway");
+codePanel.to({ y: -50, opacity: 0 }).ease("cubicInOut");
+terminalPanel.to({ y: 19, opacity: 1 }).when(codePanel, "halfway");
 stage.pause();
 
 // Scene: Component Showcase
@@ -272,8 +261,7 @@ stage
   );
 
 // Animate previous terminal panel off-screen
-terminalPanel.y = to(120).ease("cubicInOut");
-terminalPanel.opacity = to(0);
+terminalPanel.to({ y: 120, opacity: 0 }).ease("cubicInOut");
 stage.pause();
 
 // Scene: Element Decorators
@@ -383,12 +371,11 @@ const tableCode = CodeBlock(
     "  align: ['left', 'right', 'right', 'center'],",
     "});",
     "",
-    "// Programmatic or click/drag focus",
-    "metrics.focusRows(1); // highlights degraded service",
+    "// Staggered row reveal",
+    "metrics.reveal();",
   ],
   {
-    x: 52,
-    y: 0,
+    position: [52, 0],
     opacity: 0,
     width: "42cqw",
   },
@@ -399,8 +386,7 @@ stage
   .with(brandTitle, tableKicker, tableHeading, tableText, serviceMetricsTable, tableCode);
 
 // Animate previous code panel off-screen
-decoratorCode.opacity = to(0);
-decoratorCode.y = to(80);
+decoratorCode.to({ opacity: 0, y: 80 });
 
 // Reveal table elements with staggered spatial entrance
 tableKicker.opacity = to(1).when(brandTitle, "start");
@@ -414,8 +400,7 @@ serviceMetricsTable.y = to(48).when(tableText, "start");
 serviceMetricsTable.reveal().when(tableText, 0.5);
 
 // Glide code panel in from the right edge
-tableCode.y = to(18).when(tableText, "halfway");
-tableCode.opacity = to(1).when(tableText, "halfway");
+tableCode.to({ y: 18, opacity: 1 }).when(tableText, "halfway");
 stage.pause();
 
 // Scene: Component Topology
@@ -459,8 +444,7 @@ layout.grid(
 );
 
 // Position architecture note lower and offset to the far left
-topologyNote.x = 6;
-topologyNote.y = 74;
+topologyNote.position = [6, 74];
 
 const connClientGateway = Connector(clientCard, apiGateway, {
   label: "HTTPS REST",
@@ -537,8 +521,7 @@ connAuthDb.pulse();
 stage.pause();
 
 // Step 4: Topology Annotation & Observability Callout
-topologyNote.opacity = to(1).duration(0.35);
-noteConnector.opacity = to(1).duration(0.35);
+group(topologyNote, noteConnector).to({ opacity: 1 }).duration(0.35);
 stage.pause();
 
 clientCard.y = to(46).ease("cubicInOut");
@@ -550,13 +533,11 @@ stage.pause();
 
 const sequenceKicker = Kicker("07 / Protocol Choreography");
 const sequenceHeading = Title("Sequence Diagram & Protocols", {
-  x: 6,
-  y: 25,
+  position: [6, 25],
   width: "32cqw",
 });
 
-sequenceKicker.x = 6;
-sequenceKicker.y = 18;
+sequenceKicker.position = [6, 18];
 
 // Initialize sequence diagram helper with participants
 const seq = SequenceDiagram({
@@ -630,9 +611,7 @@ layout.hstack([clientCard, apiGateway, authService], {
 });
 
 // Drop down vertical lifelines only after participant cards arrive at destination
-for (const line of seq.lifelines) {
-  line.opacity = to(1).duration(0.35).after(clientCard);
-}
+group(seq.lifelines).to({ opacity: 1 }).duration(0.35).after(clientCard);
 
 // Step 1: Client -> Gateway draws automatically after lifelines appear
 msg1.end = to(1).duration(0.4).after(seq.lifelines[0]);
@@ -863,8 +842,7 @@ layout.grid(
   },
 );
 
-morphPill.x = 60;
-morphPill.y = 74;
+morphPill.position = [60, 74];
 
 const connBoxCircle = Connector(morphBox, morphCircle, {
   label: "auto-tracking",
@@ -912,24 +890,17 @@ stage
 stage.pause();
 
 // Step 1: Draw circle perimeter & activate diamond tail-chase
-connBoxCircle.end = to(1).duration(0.4);
-connCircleStar.end = to(1).duration(0.4);
-connDiamondStar.end = to(1).duration(0.4);
-connStarPill.end = to(1).duration(0.4);
+group(connBoxCircle, connCircleStar, connDiamondStar, connStarPill).to({ end: 1 }).duration(0.4);
 morphCircle.end = to(1).duration(0.8).ease("linear");
 morphDiamond.flow = "chase";
 stage.pause();
 
 // Step 2: Reactive Sizing & Live Text Reflow Animation
-morphBox.width = to(340).ease("cubicInOut");
-morphBox.height = to(68).ease("cubicInOut");
+morphBox.to({ width: 340, height: 68 }).ease("cubicInOut");
 morphCircle.size = to(150).ease("cubicInOut");
 morphDiamond.size = to(150).ease("cubicInOut");
-starFrame.size = to(150).ease("cubicInOut");
-starFrame.rotation = to(72).ease("cubicInOut");
-morphPill.width = to(280).ease("cubicInOut");
-morphPill.color = to("#10b981");
-morphPill.borderColor = to("#10b981");
+starFrame.to({ size: 150, rotation: 72 }).ease("cubicInOut");
+morphPill.to({ width: 280, color: "#10b981", borderColor: "#10b981" }).ease("cubicInOut");
 morphPill.text = "Cluster Active";
 morphPill.flow = "ping";
 
@@ -1039,9 +1010,9 @@ stage
   );
 
 // Draw connector arrows only after the card move animations have settled
-connAiClientGateway.end = to(1).after(aiReasoningNode);
-connAiGatewayVector.end = to(1).after(aiReasoningNode);
-connAiGatewayLLM.end = to(1).after(aiReasoningNode);
+group(connAiClientGateway, connAiGatewayVector, connAiGatewayLLM)
+  .to({ end: 1 })
+  .after(aiReasoningNode);
 stage.pause();
 
 // Scene: Motion Orchestration & Crossfade
@@ -1071,21 +1042,20 @@ const reactiveCard = Card(
   { width: "42cqw", opacity: 0 },
 ).decorate(rule({ color: "#38bdf8" }));
 
-const crossfadeCode = CodeBlock(
-  ["// Synchronized in-place crossfade", "crossfade(legacyCard, reactiveCard);"],
+const replaceCode = CodeBlock(
+  ["// Synchronized in-place replacement", "replace(legacyCard, reactiveCard);"],
   { width: "44cqw" },
 ).decorate(bracket({ color: "rgba(56, 189, 248, 0.4)" }));
 
-layout.hstack([[motionKicker, motionHeading, motionDescription, legacyCard], crossfadeCode], {
+layout.hstack([[motionKicker, motionHeading, motionDescription, legacyCard], replaceCode], {
   x: 6,
   y: 18,
   width: [42, 44],
 });
-reactiveCard.x = legacyCard.x;
-reactiveCard.y = legacyCard.y;
+reactiveCard.position = legacyCard.position;
 
 stage
-  .scene("Motion & Crossfade")
+  .scene("Motion & Replacement")
   .with(
     brandTitle,
     motionKicker,
@@ -1093,12 +1063,12 @@ stage
     motionDescription,
     legacyCard,
     reactiveCard,
-    crossfadeCode,
+    replaceCode,
   );
 stage.pause();
 
-// Step 2: In-Place Crossfade Animation
-crossfade(legacyCard, reactiveCard);
+// Step 2: In-Place Replacement Animation
+replace(legacyCard, reactiveCard);
 stage.pause();
 
 // Scene: Dream Appearance
@@ -1164,13 +1134,8 @@ stage.pause();
 stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
 
 // Return title, lead, and body to hero center positions.
-brandTitle.x = to("center").ease("cubicInOut");
-brandTitle.y = to(38).ease("cubicInOut");
-brandTitle.scale = to(1).ease("cubicInOut");
-
-editorialLead.y = to(52).when(brandTitle, "halfway");
-editorialLead.opacity = to(1).when(brandTitle, "halfway");
-
+brandTitle.to({ position: ["center", 38], scale: 1 }).ease("cubicInOut");
+editorialLead.to({ y: 52, opacity: 1 }).when(brandTitle, "halfway");
 heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 

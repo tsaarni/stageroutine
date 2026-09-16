@@ -138,21 +138,56 @@ export interface SequenceDiagramOptions {
   paddingBottom?: number;
 }
 
+/** Public controls for a sequence diagram lifeline. @category Components */
+export interface LifelineElement extends DOMElement {
+  readonly actor: DOMElement;
+  length: number;
+  color: string;
+  readonly activations: ActivationBarElement[];
+  setLength(length: number): void;
+  activate(options?: ActivationOptions): ActivationBarElement;
+  hasActivationAt(yPx: number): boolean;
+}
+
+/** Public state for a sequence diagram activation. @category Components */
+export interface ActivationBarElement extends DOMElement {
+  readonly lifeline: LifelineElement;
+}
+
+/** Public coordinator for a sequence diagram. @category Components */
+export interface SequenceDiagramController {
+  readonly participants: DOMElement[];
+  readonly lifelines: LifelineElement[];
+  readonly messages: ConnectorElement[];
+  readonly activations: ActivationBarElement[];
+  readonly elements: DOMElement[];
+  startY: number;
+  gapY: number;
+  addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
+  getLifeline(actor: DOMElement): LifelineElement;
+  message(
+    from: DOMElement | LifelineElement,
+    to: DOMElement | LifelineElement,
+    options?: ConnectorOptions | string,
+  ): ConnectorElement;
+  activate(actor: DOMElement | LifelineElement, options?: ActivationOptions): ActivationBarElement;
+}
+
 /**
  * Vertical dashed lifeline element rendered below its participant actor.
  * @internal
  */
-export class LifelineElement extends DOMElement {
+class LifelineElementImpl extends DOMElement implements LifelineElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "length",
   ]);
 
   actor: DOMElement;
-  diagram?: SequenceDiagramElement;
+  diagram?: SequenceDiagramControllerImpl;
   length: number;
   color: string;
-  activations: ActivationBarElement[] = [];
+  activations: ActivationBarElementImpl[] = [];
 
   override update(): void {
     this.domElement.style.height = `${this.length}px`;
@@ -176,7 +211,7 @@ export class LifelineElement extends DOMElement {
     });
 
     this.actor = actor;
-    (actor as unknown as { lifeline?: LifelineElement }).lifeline = this;
+    (actor as unknown as { lifeline?: LifelineElementImpl }).lifeline = this;
     this.length = options.length ?? 500;
     this.color = options.color || "rgba(148, 163, 184, 0.7)";
     this.domElement.style.left = "calc(50% - 1px)";
@@ -208,9 +243,9 @@ export class LifelineElement extends DOMElement {
     }
   }
 
-  activate(options: ActivationOptions = {}): ActivationBarElement {
+  activate(options: ActivationOptions = {}): ActivationBarElementImpl {
     const stage = getActiveStage();
-    const el = new ActivationBarElement(this, options);
+    const el = new ActivationBarElementImpl(this, options);
     this.activations.push(el);
 
     const yNum = typeof el.y === "number" ? el.y : Number.parseFloat(String(el.y)) || 0;
@@ -222,7 +257,7 @@ export class LifelineElement extends DOMElement {
       this.setLength(needed);
     }
 
-    return stage.registerElement(el) as ActivationBarElement;
+    return stage.registerElement(el) as ActivationBarElementImpl;
   }
 
   hasActivationAt(yPx: number): boolean {
@@ -251,8 +286,8 @@ export class LifelineElement extends DOMElement {
  * Execution activation bar element attached to a lifeline.
  * @internal
  */
-export class ActivationBarElement extends DOMElement {
-  lifeline: LifelineElement;
+class ActivationBarElementImpl extends DOMElement implements ActivationBarElement {
+  lifeline: LifelineElementImpl;
   /** @internal */
   _fromTarget?: ConnectorElement | number;
   /** @internal */
@@ -293,7 +328,7 @@ export class ActivationBarElement extends DOMElement {
     this.domElement.style.height = `${hNum}cqh`;
   }
 
-  constructor(lifeline: LifelineElement, options: ActivationOptions = {}) {
+  constructor(lifeline: LifelineElementImpl, options: ActivationOptions = {}) {
     const color = options.color || "#38bdf8";
     const bar = document.createElement("div");
     bar.className = "sr-activation sr-activation-bar";
@@ -334,12 +369,12 @@ export class ActivationBarElement extends DOMElement {
  * Sequence diagram coordinator that manages lifelines, messages, and activations for a set of participants.
  * @internal
  */
-export class SequenceDiagramElement {
+class SequenceDiagramControllerImpl implements SequenceDiagramController {
   readonly participants: DOMElement[] = [];
-  readonly lifelines: LifelineElement[] = [];
+  readonly lifelines: LifelineElementImpl[] = [];
   readonly messages: ConnectorElement[] = [];
-  readonly activations: ActivationBarElement[] = [];
-  private lifelineMap = new Map<DOMElement, LifelineElement>();
+  readonly activations: ActivationBarElementImpl[] = [];
+  private lifelineMap = new Map<DOMElement, LifelineElementImpl>();
   private defaultLifelineLength: number;
   private paddingBottom: number;
   startY: number;
@@ -406,7 +441,7 @@ export class SequenceDiagramElement {
     }
   }
 
-  addParticipant(actor: DOMElement, options: LifelineOptions = {}): LifelineElement {
+  addParticipant(actor: DOMElement, options: LifelineOptions = {}): LifelineElementImpl {
     const existing = this.lifelineMap.get(actor);
     if (existing) {
       return existing;
@@ -420,17 +455,17 @@ export class SequenceDiagramElement {
     return line;
   }
 
-  getLifeline(actor: DOMElement): LifelineElement {
+  getLifeline(actor: DOMElement): LifelineElementImpl {
     return this.lifelineMap.get(actor) || this.addParticipant(actor);
   }
 
   message(
-    from: DOMElement | LifelineElement,
-    to: DOMElement | LifelineElement,
+    from: DOMElement | LifelineElementImpl,
+    to: DOMElement | LifelineElementImpl,
     options: ConnectorOptions | string = {},
   ): ConnectorElement {
-    const fromActor = "actor" in from ? (from as LifelineElement).actor : (from as DOMElement);
-    const toActor = "actor" in to ? (to as LifelineElement).actor : (to as DOMElement);
+    const fromActor = "actor" in from ? (from as LifelineElementImpl).actor : (from as DOMElement);
+    const toActor = "actor" in to ? (to as LifelineElementImpl).actor : (to as DOMElement);
 
     this.getLifeline(fromActor);
     this.getLifeline(toActor);
@@ -459,10 +494,10 @@ export class SequenceDiagramElement {
   }
 
   activate(
-    actor: DOMElement | LifelineElement,
+    actor: DOMElement | LifelineElementImpl,
     options: ActivationOptions = {},
-  ): ActivationBarElement {
-    const act = "actor" in actor ? (actor as LifelineElement).actor : (actor as DOMElement);
+  ): ActivationBarElementImpl {
+    const act = "actor" in actor ? (actor as LifelineElementImpl).actor : (actor as DOMElement);
     const line = this.getLifeline(act);
     const active = line.activate(options);
     this.activations.push(active);
@@ -475,16 +510,16 @@ export class SequenceDiagramElement {
  * Creates a reactive Sequence Diagram coordinator with lifelines and messages.
  * @category Components
  */
-export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramElement {
-  return new SequenceDiagramElement(options);
+export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramController {
+  return new SequenceDiagramControllerImpl(options);
 }
 
 /**
  * Creates a vertical dashed timeline lifeline extending from a participant actor.
  * Module-internal: lifelines are created and owned by the SequenceDiagram coordinator.
  */
-const Lifeline = (actor: DOMElement, options?: LifelineOptions): LifelineElement => {
+const Lifeline = (actor: DOMElement, options?: LifelineOptions): LifelineElementImpl => {
   const stage = getActiveStage();
-  const el = new LifelineElement(actor, options);
-  return stage.registerElement(el) as LifelineElement;
+  const el = new LifelineElementImpl(actor, options);
+  return stage.registerElement(el) as LifelineElementImpl;
 };

@@ -3,6 +3,7 @@
  */
 
 export type {
+  Align,
   AnchorKeyword,
   ComponentFunction,
   DOMElement,
@@ -11,6 +12,7 @@ export type {
   JSX,
   JSXProps,
   Point,
+  Position,
   ReactiveElementBase,
   ReactiveProp,
   TransitionDescriptor,

@@ -21,6 +21,22 @@
         "noUndeclaredDependencies": "off",
         "noUnusedImports": "error"
       },
+      "suspicious": {
+        "noAssignInExpressions": "error",
+        "noDoubleEquals": "error",
+        "noExplicitAny": "error",
+        "noTsIgnore": "error"
+      },
+      "style": {
+        "noNestedTernary": "error",
+        "noNonNullAssertion": "error",
+        "useImportType": "error"
+      },
+      "a11y": {
+        "useFocusableInteractive": "error",
+        "useKeyWithClickEvents": "error",
+        "useValidAnchor": "error"
+      },
       "nursery": {
         "noFloatingPromises": "error"
       }
@@ -51,11 +67,37 @@
   },
   "overrides": [
     {
-      "includes": ["src/**", "!src/vite-plugin.ts", "!src/cli.ts"],
+      "includes": [
+        "src/**",
+        "!src/vite-plugin.ts",
+        "!src/vite-plugin.js",
+        "!src/cli.ts",
+        "!src/cli.js"
+      ],
       "linter": {
         "rules": {
           "correctness": {
             "noNodejsModules": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/dom/jsx-runtime.d.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.js"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNestedTernary": "off"
           }
         }
       }

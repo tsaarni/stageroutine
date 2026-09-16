@@ -36,6 +36,15 @@ site/docs/api
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
+# Legacy in-place TypeScript emit artifacts
+/src/**/*.js
+/src/**/*.d.ts
+!/src/vite-env.d.ts
+/demo/**/*.js
+/demo/**/*.d.ts
+/scripts/api-report.js
+/scripts/api-report.d.ts
+
 # Logs
 logs
 *.log
@@ -47,4 +56,3 @@ coverage
 
 # Chrome debugging profile (launched by `pnpm run chrome`)
 .chrome-profile/
-

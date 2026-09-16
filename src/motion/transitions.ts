@@ -94,17 +94,6 @@ export const builtinEasings: Record<BuiltinEase, EaseCurve> = {
   },
   smooth: cubicBezier(0.25, 0.1, 0.25, 1),
   gentle: cubicBezier(0.16, 1, 0.3, 1),
-  // Legacy aliases
-  outQuad: (t) => t * (2 - t),
-  inOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
-  outExpo: (t) => (t === 1 ? 1 : 1 - 2 ** (-10 * t)),
-  inOutExpo: (t) => {
-    if (t === 0) return 0;
-    if (t === 1) return 1;
-    const scaled = t * 2;
-    if (scaled < 1) return 0.5 * 2 ** (10 * (scaled - 1));
-    return 0.5 * (-(2 ** (-10 * (scaled - 1))) + 2);
-  },
 };
 
 class TransitionBuilder<T> implements TransitionDescriptor<T> {

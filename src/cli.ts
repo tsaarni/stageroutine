@@ -59,11 +59,12 @@ Options:
     return;
   }
 
-  const isPresenterEnabled = values["no-presenter"]
-    ? false
-    : values.presenter !== undefined
-      ? Boolean(values.presenter)
-      : undefined;
+  let isPresenterEnabled: boolean | undefined;
+  if (values["no-presenter"]) {
+    isPresenterEnabled = false;
+  } else if (values.presenter !== undefined) {
+    isPresenterEnabled = Boolean(values.presenter);
+  }
 
   const basePluginOptions = {
     ...(values.base ? { base: String(values.base) } : {}),

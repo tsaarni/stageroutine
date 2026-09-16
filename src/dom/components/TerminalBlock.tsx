@@ -22,20 +22,13 @@ export interface TerminalBlockOptions extends ElementOptions {
   interactive?: boolean;
 }
 
+/** Public controls for a terminal block. @category Components */
+export interface TerminalBlockElement extends DOMElement {}
+
 /**
  * @internal
  */
-export class TerminalBlockElement extends DOMElement {
-  private controller: ReturnType<typeof attachRangeSelection>;
-
-  get focusedRange(): [number, number] | null {
-    return this.controller.focusedRange;
-  }
-
-  get focusedIndex(): number | null {
-    return this.controller.focusedIndex;
-  }
-
+class TerminalBlockElementImpl extends DOMElement implements TerminalBlockElement {
   constructor(options: TerminalBlockOptions = {}) {
     const lines = options.lines || [
       "$ pnpm create stageroutine@latest my-talk",
@@ -71,25 +64,13 @@ export class TerminalBlockElement extends DOMElement {
       rawLineElements.push(lineEl);
     }
 
-    const controller = attachRangeSelection({
+    attachRangeSelection({
       container: body,
       getItems: () => rawLineElements,
       interactive: isInteractive,
     });
 
     super("TerminalBlock", container, options);
-
-    this.controller = controller;
-  }
-
-  focusLines(start: number, end: number = start): this {
-    this.controller.focus(start, end);
-    return this;
-  }
-
-  unfocus(): this {
-    this.controller.unfocus();
-    return this;
   }
 }
 
@@ -99,6 +80,6 @@ export class TerminalBlockElement extends DOMElement {
  */
 export function TerminalBlock(options: TerminalBlockOptions = {}): TerminalBlockElement {
   const stage = getActiveStage();
-  const el = new TerminalBlockElement(options);
+  const el = new TerminalBlockElementImpl(options);
   return stage ? (stage.registerElement(el) as TerminalBlockElement) : el;
 }

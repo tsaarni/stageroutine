@@ -81,11 +81,16 @@ export interface IconOptions extends ElementOptions {
   asElement?: boolean;
 }
 
+/** Public controls for an icon. @category Components */
+export interface IconElement extends DOMElement {
+  name: string;
+}
+
 /**
  * Reactive Icon element wrapping an SVG icon on the presentation stage.
- * @category Components
+ * @internal
  */
-export class IconElement extends DOMElement {
+class IconElementImpl extends DOMElement implements IconElement {
   private _name: string;
 
   get name(): string {
@@ -165,7 +170,7 @@ export function Icon(
   maybeOptions: IconOptions = {},
 ): IconElement {
   const stage = getActiveStage();
-  const el = new IconElement(nameOrOptions, maybeOptions);
+  const el = new IconElementImpl(nameOrOptions, maybeOptions);
   return stage && typeof stage.registerElement === "function"
     ? (stage.registerElement(el) as IconElement)
     : el;

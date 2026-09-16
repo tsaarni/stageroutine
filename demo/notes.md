@@ -99,13 +99,13 @@ Here we coordinate an AI inference topology spanning edge gateway, vector databa
 
 Dynamic connector lines track nodes in real time as cards animate into their designated slots.
 
-## Motion & Crossfade
+## Motion & Replacement
 
-Here we demonstrate in-place crossfading between two distinct visual elements. On the left, we have our legacy pipeline card alongside the choreographic code.
+Here we demonstrate in-place replacement between two distinct visual elements. On the left, we have our legacy pipeline card alongside the choreographic code.
 
-> [!STEP] In-Place Crossfade
+> [!STEP] In-Place Replacement
 > [!ACTION] Point out the zero layout shifts during swap.
-With a single crossfade call, StageRoutine smoothly swaps the legacy card with the new reactive card while coordinating opacity and depth scaling.
+With a single replace call, StageRoutine smoothly swaps the legacy card with the new reactive card while coordinating opacity and depth scaling.
 
 ## Dream Appearance
 

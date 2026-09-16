@@ -4,6 +4,7 @@ sidebar_position: 9
 ---
 
 import { DemoFrame } from "@site/src/components/DemoFrame";
+import { FileTree } from "@site/src/components/FileTree";
 
 # Icons & Images
 
@@ -83,13 +84,13 @@ Imported icon functions automatically create and return an `Icon` element config
 
 You can add project SVG icons by dropping files into an `icons/` folder in your project root:
 
-```text
-my-presentation/
-├── icons/
-│   ├── gateway.svg
-│   └── mycompany/
-│       └── edge-device.svg
-```
+<FileTree>
+- my-presentation/
+  - icons/
+    - gateway.svg
+    - mycompany/
+      - edge-device.svg
+</FileTree>
 
 Reusing an entire company icon set is as simple as copying the folder into `./icons/mycompany/`.
 

@@ -1,3 +1,7 @@
+/**
+ * Geometric calculation utilities for connector routing, bounding boxes, and perimeter intersections.
+ */
+
 import { resolveAnchor } from "../core/interpolators";
 import type { ElementAnchor, Point } from "../core/types";
 

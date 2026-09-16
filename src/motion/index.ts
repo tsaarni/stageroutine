@@ -1,16 +1,11 @@
 /**
- * Exports all motion primitives: atomic transitions (to) and group choreography (stagger).
+ * Exports all motion primitives: atomic transitions (to), element transitions,
+ * and explicit multi-element choreography helpers.
  */
 
-export {
-  type CrossfadeBuilder,
-  type CrossfadeOptions,
-  crossfade,
-} from "./crossfade";
-
-export {
-  type StaggerBuilder,
-  type StaggerOptions,
-  stagger,
-} from "./stagger";
-export { cubicBezier, to } from "./transitions";
+export type { ElementTransition, ElementTransitionProps } from "./element-transition";
+export type { ReplaceOptions, ReplaceTransition } from "./replace";
+export { replace } from "./replace";
+export type { StaggerOptions, StaggerTransition } from "./stagger";
+export { stagger } from "./stagger";
+export { to } from "./transitions";

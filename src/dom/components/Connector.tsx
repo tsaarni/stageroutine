@@ -1,3 +1,7 @@
+/**
+ * Reactive visual connector and arrow primitive linking nodes and coordinates with dynamic tracking.
+ */
+
 import "./Connector.css";
 import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
 import type { ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
@@ -323,10 +327,30 @@ export type ConnectorTarget =
   | Point
   | readonly [x: number | string, y: number | string];
 
+/** Public controls for a connector. @category Components */
+export interface ConnectorElement extends DOMElement {
+  fromTarget: ConnectorTarget;
+  toTarget: ConnectorTarget;
+  connectorStyle: "straight" | "corner" | "bezier" | "arc";
+  curvature: number;
+  connectorColor: string;
+  labelPlacement: ReactiveProp<LabelPlacement>;
+  labelOffset: ReactiveProp<LabelOffset>;
+  labelOffsetX: ReactiveProp<number | string>;
+  labelOffsetY: ReactiveProp<number | string>;
+  flow: FlowEffect;
+  start: ReactiveProp<number>;
+  end: ReactiveProp<number>;
+  pulse(options?: PulseOptions): void;
+  cancelPulses(): this;
+  startPeriodicPulse(options?: number | PeriodicPulseOptions): this;
+  stopPeriodicPulse(): this;
+}
+
 /**
  * @internal
  */
-export class ConnectorElement extends DOMElement {
+class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "start",
@@ -1415,6 +1439,6 @@ export function Connector(
   options?: ConnectorOptions,
 ): ConnectorElement {
   const stage = getActiveStage();
-  const el = new ConnectorElement(from, to, options);
+  const el = new ConnectorElementImpl(from, to, options);
   return stage.registerElement(el) as ConnectorElement;
 }

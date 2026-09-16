@@ -1,3 +1,7 @@
+/**
+ * Layout calculation engine for rows, columns, grids, stacks, and circular topologies.
+ */
+
 import {
   getActiveStage,
   type Point,
@@ -137,22 +141,25 @@ function measureElement(
   const prevWidth = dom.style.width;
 
   if (explicitWidth !== undefined) {
-    const formattedW =
-      typeof explicitWidth === "number"
-        ? `${(explicitWidth / 100) * BASE_WIDTH}px`
-        : String(explicitWidth).endsWith("cqw")
-          ? `${(Number.parseFloat(String(explicitWidth)) / 100) * BASE_WIDTH}px`
-          : String(explicitWidth);
+    let formattedW: string;
+    if (typeof explicitWidth === "number") {
+      formattedW = `${(explicitWidth / 100) * BASE_WIDTH}px`;
+    } else if (explicitWidth.endsWith("cqw")) {
+      formattedW = `${(Number.parseFloat(explicitWidth) / 100) * BASE_WIDTH}px`;
+    } else {
+      formattedW = explicitWidth;
+    }
     dom.style.width = formattedW;
   } else {
     const wProp = (el as Record<string, unknown>).width;
     if (wProp !== undefined) {
-      const formattedW =
-        typeof wProp === "number"
-          ? `${wProp}px`
-          : String(wProp).endsWith("cqw")
-            ? `${(Number.parseFloat(String(wProp)) / 100) * BASE_WIDTH}px`
-            : String(wProp);
+      const widthValue = String(wProp);
+      let formattedW = widthValue;
+      if (typeof wProp === "number") {
+        formattedW = `${wProp}px`;
+      } else if (widthValue.endsWith("cqw")) {
+        formattedW = `${(Number.parseFloat(widthValue) / 100) * BASE_WIDTH}px`;
+      }
       dom.style.width = formattedW;
     }
   }
@@ -426,12 +433,12 @@ export const layout = {
       if (Array.isArray(slot)) {
         const colElements = slot;
         const totalGapsY = Math.max(0, colElements.length - 1) * gapY;
-        const colWidthVal =
-          typeof explicitWidth === "number"
-            ? explicitWidth
-            : typeof explicitWidth === "string"
-              ? Number.parseFloat(explicitWidth) || autoColWidth
-              : autoColWidth;
+        let colWidthVal = autoColWidth;
+        if (typeof explicitWidth === "number") {
+          colWidthVal = explicitWidth;
+        } else if (typeof explicitWidth === "string") {
+          colWidthVal = Number.parseFloat(explicitWidth) || autoColWidth;
+        }
 
         for (const el of colElements) {
           if ((el as Record<string, unknown>).width === undefined) {
@@ -462,14 +469,12 @@ export const layout = {
         const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
         const elWidth = (slot as Record<string, unknown>).width;
         const isEqual = options.width === "equal";
-        const m =
-          explicitW !== undefined && explicitW !== "equal"
-            ? measureElement(slot, explicitW)
-            : elWidth !== undefined
-              ? measureElement(slot)
-              : isEqual
-                ? measureElement(slot, autoColWidth)
-                : measureElement(slot);
+        let m = measureElement(slot);
+        if (explicitW !== undefined && explicitW !== "equal") {
+          m = measureElement(slot, explicitW);
+        } else if (elWidth === undefined && isEqual) {
+          m = measureElement(slot, autoColWidth);
+        }
         slotMeasurements.push({
           widthCqw: m.widthCqw,
           heightCqh: m.heightCqh,
@@ -535,21 +540,22 @@ export const layout = {
       if (options.rule && index < slotMeasurements.length - 1) {
         const ruleX = currentX + sm.widthCqw + gapX / 2;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const inset =
-          typeof cfg.inset === "number"
-            ? cfg.inset
-            : typeof cfg.inset === "string"
-              ? Number.parseFloat(cfg.inset) || 0
-              : 0;
+        let inset = 0;
+        if (typeof cfg.inset === "number") {
+          inset = cfg.inset;
+        } else if (typeof cfg.inset === "string") {
+          inset = Number.parseFloat(cfg.inset) || 0;
+        }
         const thickness = cfg.thickness ?? 2;
         const isBracketed = !!cfg.bracket;
         const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
 
-        const ruleWidth = isBracketed
-          ? `${bracketLength}px`
-          : typeof thickness === "number"
-            ? `${thickness}px`
-            : String(thickness);
+        let ruleWidth = String(thickness);
+        if (isBracketed) {
+          ruleWidth = `${bracketLength}px`;
+        } else if (typeof thickness === "number") {
+          ruleWidth = `${thickness}px`;
+        }
         const ruleHeight = `${maxH - 2 * inset}cqh`;
 
         const ruleEl = createLayoutRule(ruleX, yNum + inset, ruleWidth, ruleHeight, {
@@ -596,12 +602,12 @@ export const layout = {
       if (Array.isArray(slot)) {
         const rowElements = slot;
         const totalGapsX = Math.max(0, rowElements.length - 1) * gapX;
-        const widthVal =
-          typeof effectiveWidth === "number"
-            ? effectiveWidth
-            : Array.isArray(effectiveWidth) && typeof effectiveWidth[0] === "number"
-              ? (effectiveWidth[0] as number)
-              : 80;
+        let widthVal = 80;
+        if (typeof effectiveWidth === "number") {
+          widthVal = effectiveWidth;
+        } else if (Array.isArray(effectiveWidth) && typeof effectiveWidth[0] === "number") {
+          widthVal = effectiveWidth[0];
+        }
         const autoItemWidth = Math.max(10, (widthVal - totalGapsX) / rowElements.length);
 
         for (const el of rowElements) {
@@ -630,17 +636,16 @@ export const layout = {
       } else {
         const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
         const elWidth = (slot as Record<string, unknown>).width;
-        const m =
-          explicitW !== undefined
-            ? measureElement(slot, explicitW)
-            : elWidth !== undefined
-              ? measureElement(slot)
-              : measureElement(
-                  slot,
-                  typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
-                    ? effectiveWidth
-                    : undefined,
-                );
+        let m = measureElement(slot);
+        if (explicitW !== undefined) {
+          m = measureElement(slot, explicitW);
+        } else if (elWidth === undefined) {
+          const fallbackWidth =
+            typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
+              ? effectiveWidth
+              : undefined;
+          m = measureElement(slot, fallbackWidth);
+        }
         slotMeasurements.push({
           widthCqw: m.widthCqw,
           heightCqh: typeof explicitHeight === "number" ? explicitHeight : m.heightCqh,
@@ -665,12 +670,12 @@ export const layout = {
 
     const rules: DOMElement[] = [];
     let itemIdx = 0;
-    const widthNum =
-      typeof effectiveWidth === "number"
-        ? effectiveWidth
-        : typeof effectiveWidth === "string"
-          ? Number.parseFloat(effectiveWidth) || 44
-          : 44;
+    let widthNum = 44;
+    if (typeof effectiveWidth === "number") {
+      widthNum = effectiveWidth;
+    } else if (typeof effectiveWidth === "string") {
+      widthNum = Number.parseFloat(effectiveWidth) || 44;
+    }
 
     slotMeasurements.forEach((sm, index) => {
       const explicitH = Array.isArray(options.height) ? options.height[index] : options.height;
@@ -693,12 +698,11 @@ export const layout = {
           const appliedOptions = {
             ...options,
             width:
-              explicitW !== undefined
-                ? explicitW
-                : (elWidth ??
-                  (typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
-                    ? effectiveWidth
-                    : undefined)),
+              explicitW ??
+              elWidth ??
+              (typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
+                ? effectiveWidth
+                : undefined),
             height: explicitH,
           };
           applyPosition(item.el, x, currentY, appliedOptions, itemIdx++);
@@ -708,21 +712,22 @@ export const layout = {
       if (options.rule && index < slotMeasurements.length - 1) {
         const ruleY = currentY + sm.heightCqh + gapY / 2;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        const inset =
-          typeof cfg.inset === "number"
-            ? cfg.inset
-            : typeof cfg.inset === "string"
-              ? Number.parseFloat(cfg.inset) || 0
-              : 0;
+        let inset = 0;
+        if (typeof cfg.inset === "number") {
+          inset = cfg.inset;
+        } else if (typeof cfg.inset === "string") {
+          inset = Number.parseFloat(cfg.inset) || 0;
+        }
         const thickness = cfg.thickness ?? 2;
         const isBracketed = !!cfg.bracket;
         const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
 
-        const ruleHeight = isBracketed
-          ? `${bracketLength}px`
-          : typeof thickness === "number"
-            ? `${thickness}px`
-            : String(thickness);
+        let ruleHeight = String(thickness);
+        if (isBracketed) {
+          ruleHeight = `${bracketLength}px`;
+        } else if (typeof thickness === "number") {
+          ruleHeight = `${thickness}px`;
+        }
         const ruleWidth = `${widthNum - 2 * inset}cqw`;
 
         const ruleEl = createLayoutRule(xNum + inset, ruleY, ruleWidth, ruleHeight, {
@@ -804,21 +809,22 @@ export const layout = {
     const rules: DOMElement[] = [];
     if (options.rule) {
       const cfg = typeof options.rule === "object" ? options.rule : {};
-      const inset =
-        typeof cfg.inset === "number"
-          ? cfg.inset
-          : typeof cfg.inset === "string"
-            ? Number.parseFloat(cfg.inset) || 0
-            : 0;
+      let inset = 0;
+      if (typeof cfg.inset === "number") {
+        inset = cfg.inset;
+      } else if (typeof cfg.inset === "string") {
+        inset = Number.parseFloat(cfg.inset) || 0;
+      }
       const thickness = cfg.thickness ?? 2;
       const isBracketed = !!cfg.bracket;
       const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
 
-      const vertWidth = isBracketed
-        ? `${bracketLength}px`
-        : typeof thickness === "number"
-          ? `${thickness}px`
-          : String(thickness);
+      let vertWidth = String(thickness);
+      if (isBracketed) {
+        vertWidth = `${bracketLength}px`;
+      } else if (typeof thickness === "number") {
+        vertWidth = `${thickness}px`;
+      }
       const vertHeight = `${totalGridHeight - 2 * inset}cqh`;
 
       // Vertical column dividers
@@ -832,11 +838,12 @@ export const layout = {
         );
       }
 
-      const horizHeight = isBracketed
-        ? `${bracketLength}px`
-        : typeof thickness === "number"
-          ? `${thickness}px`
-          : String(thickness);
+      let horizHeight = String(thickness);
+      if (isBracketed) {
+        horizHeight = `${bracketLength}px`;
+      } else if (typeof thickness === "number") {
+        horizHeight = `${thickness}px`;
+      }
       const horizWidth = `${totalGridWidth - 2 * inset}cqw`;
 
       // Horizontal row dividers

@@ -5,7 +5,19 @@
 import type { Properties as CSSProperties } from "csstype";
 import { computeTransformAndOrigin } from "../core/interpolators";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
-import type { Align, ElementAnchor, Point, ReactiveElementBase, ReactiveProp } from "../core/types";
+import type {
+  Align,
+  ElementAnchor,
+  Position,
+  ReactiveElementBase,
+  ReactiveProp,
+} from "../core/types";
+import {
+  type ElementTransition,
+  ElementTransitionBuilder,
+  type ElementTransitionProps,
+} from "../motion/element-transition";
+import { isTransitionDescriptor } from "../motion/transitions";
 import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
 
 let nextId = 1;
@@ -24,7 +36,7 @@ export interface ElementOptions {
   id?: string;
   anchor?: ElementAnchor;
   align?: Align;
-  position?: Point;
+  position?: Position;
   x?: ReactiveProp<number | string>;
   y?: ReactiveProp<number | string>;
   width?: ReactiveProp<number | string>;
@@ -115,6 +127,51 @@ export class DOMElement implements ReactiveElementBase {
   set size(val: ReactiveProp<number | string> | undefined) {
     this.width = val;
     this.height = val;
+  }
+
+  get position(): Position {
+    const currX = isTransitionDescriptor(this.x) ? this.x.target : this.x;
+    const currY = isTransitionDescriptor(this.y) ? this.y.target : this.y;
+    return [currX as number | string, currY as number | string];
+  }
+  set position(val: ReactiveProp<Position> | undefined) {
+    if (val === undefined) return;
+    if (isTransitionDescriptor(val)) {
+      const targetCoord = val.target as unknown;
+      let targetX: unknown;
+      let targetY: unknown;
+      if (Array.isArray(targetCoord)) {
+        targetX = targetCoord[0];
+        targetY = targetCoord[1];
+      } else if (typeof targetCoord === "object" && targetCoord !== null) {
+        targetX = (targetCoord as Record<string, unknown>).x;
+        targetY = (targetCoord as Record<string, unknown>).y;
+      }
+      if (targetX !== undefined) {
+        this.x = { ...val, target: targetX } as unknown as ReactiveProp<number | string>;
+      }
+      if (targetY !== undefined) {
+        this.y = { ...val, target: targetY } as unknown as ReactiveProp<number | string>;
+      }
+      return;
+    }
+
+    if (Array.isArray(val)) {
+      this.x = val[0];
+      this.y = val[1];
+    } else if (typeof val === "object" && val !== null) {
+      const p = val as { x?: number | string; y?: number | string };
+      if (p.x !== undefined) this.x = p.x;
+      if (p.y !== undefined) this.y = p.y;
+    }
+  }
+
+  /**
+   * Animates multiple reactive properties on this element simultaneously.
+   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   */
+  to(props: ElementTransitionProps): ElementTransition {
+    return new ElementTransitionBuilder(this, props);
   }
 
   isMounted = false;

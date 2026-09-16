@@ -37,11 +37,23 @@ export interface VideoOptions extends ElementOptions {
   controls?: boolean;
 }
 
+/** Public controls for a video. @category Components */
+export interface VideoElement extends DOMElement {
+  fit: ImageFit;
+  src: string;
+  playing: boolean;
+  currentTime: number;
+  playbackRate: number;
+  volume: number;
+  muted: boolean;
+  loop: boolean;
+}
+
 /**
  * Reactive Video element wrapping a native <video> DOM node.
  * @internal
  */
-export class VideoElement extends DOMElement {
+class VideoElementImpl extends DOMElement implements VideoElement {
   readonly videoElement: HTMLVideoElement;
   private _fit: ImageFit = "contain";
 
@@ -214,7 +226,7 @@ export function Video(
   maybeOptions: VideoOptions = {},
 ): VideoElement {
   const stage = getActiveStage();
-  const el = new VideoElement(srcOrOptions, maybeOptions);
+  const el = new VideoElementImpl(srcOrOptions, maybeOptions);
   if (stage && typeof stage.registerElement === "function") {
     return stage.registerElement(el) as VideoElement;
   }

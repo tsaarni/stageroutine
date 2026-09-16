@@ -11,27 +11,16 @@ This document records all public symbols exported by StageRoutine. Each chapter 
 Exports within a chapter are grouped into functions, classes, interfaces, types, and constants.
 Signatures define type constraints and parameters. JSDoc comments explain runtime behavior, options, default values, and measurement units.
 
-## Diagnostics & Forgotten Exports
-
-- `[stageroutine/backgrounds]` Class `BackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
-- `[stageroutine/backgrounds]` Class `CSSBackgroundElement` heritage clause uses type `Background` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
-- `[stageroutine/backgrounds]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
-- `[stageroutine/backgrounds]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/backgrounds`, but exported in `stageroutine`).
-- `[stageroutine/jsx-runtime]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/jsx-runtime`, but exported in `stageroutine`).
-- `[stageroutine/jsx-runtime]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/jsx-runtime`, but exported in `stageroutine`).
-- `[stageroutine/jsx-dev-runtime]` Property `align` of interface `ReactiveElementBase` uses type `Align` (not exported in `stageroutine/jsx-dev-runtime`, but exported in `stageroutine`).
-- `[stageroutine/jsx-dev-runtime]` Type alias `AnchorKeyword` uses type `Align` (not exported in `stageroutine/jsx-dev-runtime`, but exported in `stageroutine`).
-
 ## Summary
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 164 symbols |
-| `stageroutine/backgrounds` | 24 symbols |
+| `stageroutine` | 168 symbols |
+| `stageroutine/backgrounds` | 28 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 11 symbols |
-| `stageroutine/jsx-runtime` | 16 symbols |
-| `stageroutine/jsx-dev-runtime` | 16 symbols |
+| `stageroutine/jsx-runtime` | 18 symbols |
+| `stageroutine/jsx-dev-runtime` | 18 symbols |
 | `stageroutine/vite` | 2 symbols |
 
 ## `stageroutine`
@@ -59,9 +48,6 @@ export function CodeBlock(snippet: string | string[], options?: CodeBlockOptions
 /** Creates a reactive visual connector / arrow between two nodes or coordinate points. */
 export function Connector(from: ConnectorTarget, to: ConnectorTarget, options?: ConnectorOptions): ConnectorElement;
 
-/** Creates an asymmetric crossfade transition swapping two elements in place. */
-export function crossfade(fromElement: DOMElement | ReactiveElementBase, toElement: DOMElement | ReactiveElementBase, options?: CrossfadeOptions): CrossfadeBuilder;
-
 /**
  * Creates a full-bleed CSS background supporting colors, gradients, and images.
  * @example ```ts
@@ -71,9 +57,6 @@ export function crossfade(fromElement: DOMElement | ReactiveElementBase, toEleme
  * ```
  */
 export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): CSSBackgroundElement;
-
-/** Creates a cubic Bézier easing curve from control points (p1x, p1y) and (p2x, p2y). */
-export function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number): EaseCurve;
 
 /**
  * Registers an icon set or custom SVG icons.
@@ -107,6 +90,13 @@ export function gradient(options?: GradientOptions): ElementDecorator;
 
 /** Decorates an element or background with a film grain texture. */
 export function grain(options?: GrainOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => void;
+
+/**
+ * Creates a zero-DOM logical group proxy over multiple stage elements.
+ * Grouping allows broadcasting transitions, property mutations, and decorators
+ * across elements without adding container elements to the DOM tree.
+ */
+export function group(...items: (DOMElement | ReactiveElementBase | (DOMElement | ReactiveElementBase)[] | GroupElement | null | undefined | false)[]): GroupElement;
 
 /**
  * Creates a reactive Icon element on stage.
@@ -162,6 +152,9 @@ export function NavigationOverlay(options?: NavigationOverlayOptions): OverlayPl
 /** Orchestrates a sequential packet pulse chain across multiple connectors. */
 export function pulseSequence(steps: (ConnectorElement | PulseSequenceStep)[], options?: PulseSequenceOptions): PulseSequenceController;
 
+/** Creates an in-place element replacement transition swapping two elements smoothly without ghosting. */
+export function replace(fromElement: DOMElement | ReactiveElementBase, toElement: DOMElement | ReactiveElementBase, options?: ReplaceOptions): ReplaceTransition;
+
 /** Resolves an icon name or raw SVG to an SVG string. */
 export function resolveIconSvg(nameOrSvg: string): string | undefined;
 
@@ -172,13 +165,13 @@ export function rule(options?: RuleOptions): ElementDecorator;
 export function scrim(options?: ScrimOptions): ElementDecorator;
 
 /** Creates a reactive Sequence Diagram coordinator with lifelines and messages. */
-export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramElement;
+export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramController;
 
 /** Universal shape container supporting multiple geometries and surface treatments. */
 export function Shape(path: PathFunction, childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
 
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
-export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerBuilder;
+export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerTransition;
 
 /** Table component with column alignment, row proxies, and interactive row-level focus. */
 export function Table(options: TableOptions): TableElement;
@@ -265,67 +258,6 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
 ### Classes
 
 ```ts
-/** Execution activation bar element attached to a lifeline. */
-export class ActivationBarElement extends DOMElement {
-  constructor(lifeline: LifelineElement, options?: ActivationOptions): ActivationBarElement;
-  static reactiveKeys: ReadonlySet<string>;
-  lifeline: LifelineElement;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): ActivationBarElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): ActivationBarElement;
-}
-
 /**
  * Base element for procedural WebGL and canvas backgrounds.
  * Handles resize observation, full-bleed container positioning,
@@ -348,257 +280,6 @@ export abstract class BackgroundElement implements Background {
   dispose(): void;
   /** Lifecycle attach hook invoked when the background is attached to a stage */
   attach(stage: StageContext): void;
-}
-
-export class BulletListElement extends DOMElement {
-  constructor(items: BulletItemInput[], options?: BulletListOptions): BulletListElement;
-  static reactiveKeys: ReadonlySet<string>;
-  readonly items: DOMElement[];
-  focusedRange: [number, number] | null;
-  focusedIndex: number | null;
-  focus(index: number): BulletListElement;
-  focusItems(start: number, end?: number): BulletListElement;
-  unfocus(): BulletListElement;
-  reveal(options?: StaggerOptions): StaggerBuilder;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): BulletListElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): BulletListElement;
-}
-
-export class CodeBlockElement extends DOMElement {
-  constructor(snippet: string | string[], options?: CodeBlockOptions): CodeBlockElement;
-  static reactiveKeys: ReadonlySet<string>;
-  focusedRange: [number, number] | null;
-  focusedIndex: number | null;
-  focusLines(start: number, end?: number): CodeBlockElement;
-  unfocus(): CodeBlockElement;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): CodeBlockElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): CodeBlockElement;
-}
-
-export class ConnectorElement extends DOMElement {
-  constructor(from: ConnectorTarget, to: ConnectorTarget, options?: ConnectorOptions): ConnectorElement;
-  static reactiveKeys: ReadonlySet<string>;
-  flow: FlowEffect;
-  fromTarget: ConnectorTarget;
-  toTarget: ConnectorTarget;
-  connectorStyle: "straight" | "corner" | "bezier" | "arc";
-  curvature: number;
-  connectorColor: string;
-  strokeWidth: number;
-  isDashed: boolean;
-  isDotted: boolean;
-  startHead: ConnectorHeadType;
-  endHead: ConnectorHeadType;
-  startHeadSize: number;
-  endHeadSize: number;
-  radius: number;
-  padding: number;
-  labelPlacement: ReactiveProp<LabelPlacement>;
-  labelOffset: ReactiveProp<LabelOffset>;
-  labelOffsetX: ReactiveProp<string | number>;
-  labelOffsetY: ReactiveProp<string | number>;
-  fromAnchor: ElementAnchor | "auto";
-  toAnchor: ElementAnchor | "auto";
-  svgRoot: SVGSVGElement;
-  pathNode: SVGPathElement;
-  startHeadNode: SVGElement | null;
-  endHeadNode: SVGElement | null;
-  startRetract: number;
-  endRetract: number;
-  labelGroup: SVGGElement | null;
-  labelBg: SVGRectElement | null;
-  labelText: SVGTextElement | null;
-  start: ReactiveProp<number>;
-  end: ReactiveProp<number>;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /**
-   * Spawns a glowing data packet particle traveling along the connector path.
-   * If invoked while defining presentation steps, it automatically records as a step action.
-   */
-  pulse(options?: PulseOptions): void;
-  /** Cancels and removes all in-flight pulse packets on this connector. */
-  cancelPulses(): ConnectorElement;
-  /** Starts emitting repeating glowing packet pulses at regular intervals. */
-  startPeriodicPulse(options?: number | PeriodicPulseOptions): ConnectorElement;
-  /** Stops repeating glowing packet pulses. */
-  stopPeriodicPulse(): ConnectorElement;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): ConnectorElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): ConnectorElement;
-}
-
-export class CrossfadeBuilder {
-  constructor(fromElement: DOMElement | ReactiveElementBase, toElement: DOMElement | ReactiveElementBase, options?: CrossfadeOptions): CrossfadeBuilder;
-  /** Sets total duration in seconds. */
-  duration(seconds: number): CrossfadeBuilder;
-  /** Sets the overlap hand-off point as a fraction of exit progress (0..1). */
-  overlap(fraction: number): CrossfadeBuilder;
-  /** Sets the easing curve for the incoming element. */
-  ease(curve: BuiltinEase | EaseCurve): CrossfadeBuilder;
-  /** Enables or configures subtle depth scaling during the swap. */
-  scale(factor?: boolean | number): CrossfadeBuilder;
-  /** Whether incoming element automatically snaps to outgoing element's position. */
-  matchPosition(match: boolean): CrossfadeBuilder;
-  /** Synchronizes the crossfade start to an external element trigger. */
-  when(target: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): CrossfadeBuilder;
-  /** Chains the crossfade to start after an external element finishes. */
-  after(target: ReactiveElementBase | string, property?: string): CrossfadeBuilder;
-  /** Executes the asymmetric phase swap transitions. */
-  apply(): void;
 }
 
 /** Full-bleed DOM background element styled with standard CSS. */
@@ -649,6 +330,12 @@ export class DOMElement implements ReactiveElementBase {
   enterDelay: number | undefined;
   align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
+  position: Position;
+  /**
+   * Animates multiple reactive properties on this element simultaneously.
+   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   */
+  to(props: ElementTransitionProps): ElementTransition;
   isMounted: boolean;
   isActive: boolean;
   /**
@@ -673,264 +360,6 @@ export class DOMElement implements ReactiveElementBase {
   onClick(handler: (event: MouseEvent) => void): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
   decorate(decorator: ElementDecorator): DOMElement;
-}
-
-export class FrameElement extends DOMElement {
-  constructor(path: PathFunction, childrenOrOptions?: unknown, options?: FrameOptions): FrameElement;
-  static reactiveKeys: ReadonlySet<string>;
-  path(width: number, height: number, context?: PathContext): string;
-  readonly items: ReactiveElementBase[];
-  active: boolean;
-  borderColor: ReactiveProp<string> | undefined;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Calculates the exact perimeter attachment point against the frame's SVG path boundary. */
-  getPerimeterPoint(box: Box, target: Point, padding?: number): { point: Point; side: CardinalSide; };
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): FrameElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): FrameElement;
-}
-
-/** Reactive Icon element wrapping an SVG icon on the presentation stage. */
-export class IconElement extends DOMElement {
-  constructor(nameOrOptions?: string | IconOptions, maybeOptions?: IconOptions): IconElement;
-  static reactiveKeys: ReadonlySet<string>;
-  name: string;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): IconElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): IconElement;
-}
-
-/** Reactive Image element wrapping a native <img> DOM node. */
-export class ImageElement extends DOMElement {
-  constructor(srcOrOptions?: string | ImageOptions, maybeOptions?: ImageOptions): ImageElement;
-  static reactiveKeys: ReadonlySet<string>;
-  readonly imgElement: HTMLImageElement;
-  fit: ImageFit;
-  src: string;
-  alt: string;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): ImageElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): ImageElement;
-}
-
-/** Vertical dashed lifeline element rendered below its participant actor. */
-export class LifelineElement extends DOMElement {
-  constructor(actor: DOMElement, options?: LifelineOptions): LifelineElement;
-  static reactiveKeys: ReadonlySet<string>;
-  actor: DOMElement;
-  diagram: SequenceDiagramElement | undefined;
-  length: number;
-  color: string;
-  activations: ActivationBarElement[];
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Sets the visual length of the dashed lifeline in pixels. */
-  setLength(length: number): void;
-  activate(options?: ActivationOptions): ActivationBarElement;
-  hasActivationAt(yPx: number): boolean;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): LifelineElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): LifelineElement;
 }
 
 /**
@@ -970,95 +399,6 @@ export class PresenterRecorder {
   toggle(): void;
   /** Returns the current recording state snapshot. */
   getRecordingState(): { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; };
-}
-
-/** Sequence diagram coordinator that manages lifelines, messages, and activations for a set of participants. */
-export class SequenceDiagramElement {
-  constructor(options?: SequenceDiagramOptions): SequenceDiagramElement;
-  readonly participants: DOMElement[];
-  readonly lifelines: LifelineElement[];
-  readonly messages: ConnectorElement[];
-  readonly activations: ActivationBarElement[];
-  startY: number;
-  gapY: number;
-  elements: DOMElement[];
-  updateLifelineLengths(): void;
-  addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
-  getLifeline(actor: DOMElement): LifelineElement;
-  message(from: DOMElement | LifelineElement, to: DOMElement | LifelineElement, options?: ConnectorOptions | string): ConnectorElement;
-  activate(actor: DOMElement | LifelineElement, options?: ActivationOptions): ActivationBarElement;
-}
-
-export class ShapeElement extends DOMElement {
-  constructor(path: PathFunction, childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
-  static reactiveKeys: ReadonlySet<string>;
-  path(width: number, height: number, context?: PathContext): string;
-  readonly variant: ShapeVariant;
-  readonly items: ReactiveElementBase[];
-  start: ReactiveProp<number>;
-  end: ReactiveProp<number>;
-  flow: ReactiveProp<FlowEffect>;
-  text: string | undefined;
-  borderColor: ReactiveProp<string> | undefined;
-  background: string | undefined;
-  active: boolean;
-  doubleBorder: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Calculates the exact perimeter attachment point against the shape's SVG path boundary. */
-  getPerimeterPoint(box: Box, target: Point, padding?: number): { point: Point; side: CardinalSide; };
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): ShapeElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): ShapeElement;
 }
 
 /** Presentation director managing scenes, step transitions, snapshots, and the virtual viewport. */
@@ -1132,298 +472,16 @@ export class Stage {
   dispose(): void;
 }
 
-export class StaggerBuilder {
-  constructor(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerBuilder;
-  /** Sets the duration in seconds for each element's animation. */
-  duration(seconds: number): StaggerBuilder;
-  /** Sets the overlap trigger milestone between consecutive items (e.g. 0.5 or "halfway"). */
-  overlap(milestone: AnimationMilestone): StaggerBuilder;
-  /** Sets the easing curve for each element transition. */
-  ease(curve: BuiltinEase | EaseCurve): StaggerBuilder;
-  /** Customizes the animated target properties (defaults to `{ opacity: 1, x: 0 }`). */
-  props(properties: Record<string, unknown>): StaggerBuilder;
-  /** Synchronizes the stagger cascade to start when an external trigger reaches a milestone. */
-  when(target: ReactiveElementBase | string, milestone?: AnimationMilestone): StaggerBuilder;
-  /** Chains the stagger cascade to start after an external trigger finishes its animation. */
-  after(target: ReactiveElementBase | string): StaggerBuilder;
-  /** Explicitly executes the stagger cascade immediately. */
-  apply(): void;
-}
-
-export class TableElement extends DOMElement {
-  constructor(options: TableOptions): TableElement;
-  static reactiveKeys: ReadonlySet<string>;
-  readonly rows: DOMElement[];
-  focusedRange: [number, number] | null;
-  focusedIndex: number | null;
-  focusRows(start: number, end?: number): TableElement;
-  unfocus(): TableElement;
-  reveal(options?: StaggerOptions): StaggerBuilder;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): TableElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): TableElement;
-}
-
-export class TerminalBlockElement extends DOMElement {
-  constructor(options?: TerminalBlockOptions): TerminalBlockElement;
-  static reactiveKeys: ReadonlySet<string>;
-  focusedRange: [number, number] | null;
-  focusedIndex: number | null;
-  focusLines(start: number, end?: number): TerminalBlockElement;
-  unfocus(): TerminalBlockElement;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): TerminalBlockElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): TerminalBlockElement;
-}
-
-/** Reactive Video element wrapping a native <video> DOM node. */
-export class VideoElement extends DOMElement {
-  constructor(srcOrOptions?: string | VideoOptions, maybeOptions?: VideoOptions): VideoElement;
-  static reactiveKeys: ReadonlySet<string>;
-  readonly videoElement: HTMLVideoElement;
-  fit: ImageFit;
-  src: string;
-  playing: boolean;
-  currentTime: number;
-  playbackRate: number;
-  volume: number;
-  muted: boolean;
-  loop: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): VideoElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): VideoElement;
-}
-
-/** Reactive Webcam element wrapping a native <video> element connected to getUserMedia stream. */
-export class WebcamElement extends DOMElement {
-  constructor(options?: WebcamOptions): WebcamElement;
-  /** Discovers and lists all connected video input cameras. */
-  static getCameras(): Promise<CameraDevice[]>;
-  static reactiveKeys: ReadonlySet<string>;
-  readonly videoElement: HTMLVideoElement;
-  fit: ImageFit;
-  mirror: boolean;
-  deviceId: string | undefined;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Starts the webcam video stream. */
-  start(): Promise<void>;
-  /** Stops the webcam video stream and releases the camera hardware. */
-  stop(): void;
-  /** Cycles to the next connected camera. */
-  cycleCamera(): Promise<void>;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: ReactiveProp<string | number>;
-  y: ReactiveProp<string | number>;
-  width: ReactiveProp<string | number> | undefined;
-  height: ReactiveProp<string | number> | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: ReactiveProp<string | number> | undefined;
-  isMounted: boolean;
-  isActive: boolean;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): WebcamElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): WebcamElement;
-}
-
 ```
 
 ### Interfaces
 
 ```ts
+/** Public state for a sequence diagram activation. @category Components */
+export interface ActivationBarElement extends DOMElement {
+    readonly lifeline: LifelineElement;
+}
+
 /**
  * Configuration options for execution activation bars.
  * @category Components
@@ -1505,6 +563,12 @@ export interface BracketOptions {
     className?: string;
 }
 
+/** Public controls for a bullet list. @category Components */
+export interface BulletListElement extends DOMElement {
+    readonly items: DOMElement[];
+    reveal(options?: StaggerOptions): StaggerTransition;
+}
+
 /**
  * Configuration options for the BulletList component.
  * @category Components
@@ -1570,6 +634,10 @@ export interface CirclePathOptions {
     fit?: "contain" | "fill";
 }
 
+/** Public controls for a code block. @category Components */
+export interface CodeBlockElement extends DOMElement {
+}
+
 /**
  * Configuration options for the syntax-highlighted CodeBlock component.
  * @category Components
@@ -1581,6 +649,26 @@ export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
     className?: string;
     /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
     interactive?: boolean;
+}
+
+/** Public controls for a connector. @category Components */
+export interface ConnectorElement extends DOMElement {
+    fromTarget: ConnectorTarget;
+    toTarget: ConnectorTarget;
+    connectorStyle: "straight" | "corner" | "bezier" | "arc";
+    curvature: number;
+    connectorColor: string;
+    labelPlacement: ReactiveProp<LabelPlacement>;
+    labelOffset: ReactiveProp<LabelOffset>;
+    labelOffsetX: ReactiveProp<number | string>;
+    labelOffsetY: ReactiveProp<number | string>;
+    flow: FlowEffect;
+    start: ReactiveProp<number>;
+    end: ReactiveProp<number>;
+    pulse(options?: PulseOptions): void;
+    cancelPulses(): this;
+    startPeriodicPulse(options?: number | PeriodicPulseOptions): this;
+    stopPeriodicPulse(): this;
 }
 
 /**
@@ -1646,23 +734,6 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
 }
 
 /**
- * Configuration options for asymmetric crossfade transitions between two elements.
- * @category Motion
- */
-export interface CrossfadeOptions {
-    /** Total choreography duration in seconds (default: 0.5s). */
-    duration?: number;
-    /** Overlap hand-off point as a fraction of exit progress (default: 0.55). */
-    overlap?: number;
-    /** Subtle depth scaling factor during swap (default: 0.96, or false to disable). */
-    scale?: boolean | number;
-    /** Easing curve for the incoming element (default: "quartOut"). */
-    ease?: BuiltinEase | EaseCurve;
-    /** Automatically match incoming element's (x, y) coordinates to outgoing element (default: true). */
-    matchPosition?: boolean;
-}
-
-/**
  * Configuration options for full-bleed CSS backgrounds.
  * @category Backgrounds
  */
@@ -1711,7 +782,7 @@ export interface ElementOptions {
     id?: string;
     anchor?: ElementAnchor;
     align?: Align;
-    position?: Point;
+    position?: Position;
     x?: ReactiveProp<number | string>;
     y?: ReactiveProp<number | string>;
     width?: ReactiveProp<number | string>;
@@ -1740,6 +811,27 @@ export interface ElementOptions {
     onUnmount?: () => void;
     onActivate?: () => void;
     onDeactivate?: () => void;
+}
+
+/**
+ * Public fluent contract for multi-property transitions on an element or group.
+ * @category Motion
+ */
+export interface ElementTransition {
+    duration(seconds: number): this;
+    delay(seconds: number): this;
+    ease(curve: BuiltinEase | EaseCurve): this;
+    when(target: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
+    after(target: ReactiveElementBase | string, property?: string): this;
+    apply(): void;
+}
+
+/** Public controls for a frame. @category Components */
+export interface FrameElement extends DOMElement {
+    path: PathFunction;
+    readonly items: ReactiveElementBase[];
+    active: boolean;
+    borderColor: ReactiveProp<string> | undefined;
 }
 
 /**
@@ -1807,6 +899,27 @@ export interface GrainOptions {
 }
 
 /**
+ * Public fluent contract for a logical group of elements.
+ * @category Core
+ */
+export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase> {
+    readonly elements: readonly (DOMElement | ReactiveElementBase)[];
+    opacity: ReactiveProp<number>;
+    scale: ReactiveProp<number>;
+    rotation: ReactiveProp<number>;
+    blur: ReactiveProp<number>;
+    brightness: ReactiveProp<number>;
+    color: ReactiveProp<string>;
+    x: ReactiveProp<number | string>;
+    y: ReactiveProp<number | string>;
+    position: ReactiveProp<Position>;
+    size: ReactiveProp<number | string>;
+    [key: string]: unknown;
+    to(props: ElementTransitionProps): ElementTransition;
+    decorate(...decorators: ElementDecorator[]): this;
+}
+
+/**
  * Options for the hexagon path generator.
  * @category Geometry
  */
@@ -1825,6 +938,11 @@ export interface IconDefinition {
     resolver?: (name: string) => string | undefined;
 }
 
+/** Public controls for an icon. @category Components */
+export interface IconElement extends DOMElement {
+    name: string;
+}
+
 /**
  * Configuration options for the Icon component.
  * @category Components
@@ -1834,6 +952,13 @@ export interface IconOptions extends ElementOptions {
     name?: string;
     /** Force registration as top-level stage element (default: false). */
     asElement?: boolean;
+}
+
+/** Public controls for an image. @category Components */
+export interface ImageElement extends DOMElement {
+    fit: ImageFit;
+    src: string;
+    alt: string;
 }
 
 /**
@@ -1918,6 +1043,17 @@ export interface LayoutOptions {
     align?: RelativeAlign;
     /** Whether multiple relative elements stack sequentially (default: true). */
     stack?: boolean;
+}
+
+/** Public controls for a sequence diagram lifeline. @category Components */
+export interface LifelineElement extends DOMElement {
+    readonly actor: DOMElement;
+    length: number;
+    color: string;
+    readonly activations: ActivationBarElement[];
+    setLength(length: number): void;
+    activate(options?: ActivationOptions): ActivationBarElement;
+    hasActivationAt(yPx: number): boolean;
 }
 
 /**
@@ -2177,6 +1313,8 @@ export interface ReactiveElementBase {
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
+    position?: ReactiveProp<Position>;
+    size?: ReactiveProp<number | string>;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -2210,6 +1348,38 @@ export interface ReactiveElementBase {
     _activate?(): void;
     /** @internal Engine driver */
     _deactivate?(): void;
+}
+
+/**
+ * Configuration options for in-place element replacement transitions.
+ * @category Motion
+ */
+export interface ReplaceOptions {
+    /** Total choreography duration in seconds (default: 0.5s). */
+    duration?: number;
+    /** Overlap hand-off point as a fraction of exit progress (default: 0.55). */
+    overlap?: number;
+    /** Subtle depth scaling factor during swap (default: 0.96, or false to disable). */
+    scale?: boolean | number;
+    /** Easing curve for the incoming element (default: "quartOut"). */
+    ease?: BuiltinEase | EaseCurve;
+    /** Automatically match incoming element's (x, y) coordinates to outgoing element (default: true). */
+    matchPosition?: boolean;
+}
+
+/**
+ * Public fluent contract for an in-place replacement operation.
+ * @category Motion
+ */
+export interface ReplaceTransition {
+    duration(seconds: number): this;
+    overlap(fraction: number): this;
+    ease(curve: BuiltinEase | EaseCurve): this;
+    scale(factor?: boolean | number): this;
+    matchPosition(match: boolean): this;
+    when(target: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
+    after(target: ReactiveElementBase | string, property?: string): this;
+    apply(): void;
 }
 
 /**
@@ -2253,6 +1423,21 @@ export interface ScrimOptions {
     blur?: number;
 }
 
+/** Public coordinator for a sequence diagram. @category Components */
+export interface SequenceDiagramController {
+    readonly participants: DOMElement[];
+    readonly lifelines: LifelineElement[];
+    readonly messages: ConnectorElement[];
+    readonly activations: ActivationBarElement[];
+    readonly elements: DOMElement[];
+    startY: number;
+    gapY: number;
+    addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
+    getLifeline(actor: DOMElement): LifelineElement;
+    message(from: DOMElement | LifelineElement, to: DOMElement | LifelineElement, options?: ConnectorOptions | string): ConnectorElement;
+    activate(actor: DOMElement | LifelineElement, options?: ActivationOptions): ActivationBarElement;
+}
+
 /**
  * Configuration options for the SequenceDiagram coordinator.
  * @category Components
@@ -2272,6 +1457,21 @@ export interface SequenceDiagramOptions {
     lifelineOpacity?: number;
     /** Padding in pixels below the lowest message or activation (default: 48). */
     paddingBottom?: number;
+}
+
+/** Public controls for a shape. @category Components */
+export interface ShapeElement extends DOMElement {
+    path: PathFunction;
+    readonly variant: ShapeVariant;
+    readonly items: ReactiveElementBase[];
+    start: ReactiveProp<number>;
+    end: ReactiveProp<number>;
+    flow: ReactiveProp<FlowEffect>;
+    text: string | undefined;
+    borderColor: ReactiveProp<string> | undefined;
+    background: string | undefined;
+    active: boolean;
+    doubleBorder: boolean;
 }
 
 /**
@@ -2432,8 +1632,22 @@ export interface StaggerOptions {
     overlap?: AnimationMilestone;
     /** Easing curve for each element transition (default: "quartOut"). */
     ease?: BuiltinEase | EaseCurve;
-    /** Animated target properties for each element (default: `{ opacity: 1, x: 0 }`). */
+    /** Animated target properties for each element (default: `{ opacity: 1 }`). */
     props?: Record<string, unknown>;
+}
+
+/**
+ * Public fluent contract for a staggered reveal operation.
+ * @category Motion
+ */
+export interface StaggerTransition {
+    duration(seconds: number): this;
+    overlap(milestone: AnimationMilestone): this;
+    ease(curve: BuiltinEase | EaseCurve): this;
+    props(properties: Record<string, unknown>): this;
+    when(target: ReactiveElementBase | string, milestone?: AnimationMilestone): this;
+    after(target: ReactiveElementBase | string): this;
+    apply(): void;
 }
 
 /**
@@ -2445,6 +1659,12 @@ export interface StarPathOptions {
     points?: number;
     /** Ratio of inner radius to outer radius between 0 and 1 (default: 0.45). */
     innerRadius?: number;
+}
+
+/** Public controls for a table. @category Components */
+export interface TableElement extends DOMElement {
+    readonly rows: DOMElement[];
+    reveal(options?: StaggerOptions): StaggerTransition;
 }
 
 /**
@@ -2462,6 +1682,10 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
     className?: string;
     /** Whether clicking or dragging rows focuses them interactively (default: true). */
     interactive?: boolean;
+}
+
+/** Public controls for a terminal block. @category Components */
+export interface TerminalBlockElement extends DOMElement {
 }
 
 /**
@@ -2639,6 +1863,18 @@ export interface TypewriterOptions {
     script?: TypewriterStep[];
 }
 
+/** Public controls for a video. @category Components */
+export interface VideoElement extends DOMElement {
+    fit: ImageFit;
+    src: string;
+    playing: boolean;
+    currentTime: number;
+    playbackRate: number;
+    volume: number;
+    muted: boolean;
+    loop: boolean;
+}
+
 /**
  * Configuration options for the Video component.
  * @category Components
@@ -2679,6 +1915,16 @@ export interface VignetteOptions {
     opacity?: number;
     /** Custom radial gradient falloff shape (default: "ellipse 55% 55% at 50% 50%"). */
     shape?: string;
+}
+
+/** Public controls for a webcam. @category Components */
+export interface WebcamElement extends DOMElement {
+    fit: ImageFit;
+    mirror: boolean;
+    deviceId: string | undefined;
+    start(): Promise<void>;
+    stop(): void;
+    cycleCamera(): Promise<void>;
 }
 
 /**
@@ -2740,7 +1986,7 @@ export type BracketStyle = "curly" | "square" | "round" | "corners";
  * Built-in named easing curves supported by StageRoutine transitions.
  * @category Motion
  */
-export type BuiltinEase = "linear" | "cubicOut" | "cubicInOut" | "quartOut" | "quartInOut" | "quintOut" | "quintInOut" | "expoOut" | "expoInOut" | "smooth" | "gentle" | "outQuad" | "inOutQuad" | "outExpo" | "inOutExpo";
+export type BuiltinEase = "linear" | "cubicOut" | "cubicInOut" | "quartOut" | "quartInOut" | "quintOut" | "quintInOut" | "expoOut" | "expoInOut" | "smooth" | "gentle";
 
 /**
  * Item specification for a bullet list. Can be a string or a nested array of items.
@@ -2783,6 +2029,8 @@ export type ElementAnchor = AnchorKeyword | Point;
  * @category Decorators
  */
 export type ElementDecorator = (element: DOMElement) => void;
+
+export type ElementTransitionProps = Partial<Record<"x" | "y" | "position" | "width" | "height" | "size" | "scale" | "rotation" | "opacity" | "blur" | "brightness" | "color" | "anchor" | "align" | string, unknown>>;
 
 /**
  * Continuous ambient stroke animations supported across shapes and connectors.
@@ -2879,6 +2127,16 @@ export type Point = readonly [
     x: number,
     y: number
 ];
+
+/**
+ * 2D coordinate point or vector as an [x, y] tuple.
+ * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * @category Core
+ */
+export type Position = readonly [
+    x: number | string,
+    y: number | string
+] | readonly (number | string)[];
 
 /**
  * Represents a property that accepts either a static value or a reactive transition descriptor.
@@ -3073,6 +2331,12 @@ export class DOMElement implements ReactiveElementBase {
   enterDelay: number | undefined;
   align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
+  position: Position;
+  /**
+   * Animates multiple reactive properties on this element simultaneously.
+   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   */
+  to(props: ElementTransitionProps): ElementTransition;
   isMounted: boolean;
   isActive: boolean;
   /**
@@ -3156,6 +2420,19 @@ export interface AsciiFluidOptions extends BaseFluidOptions {
 }
 
 /**
+ * Interface implemented by dynamic or static stage background renderers.
+ * @category Backgrounds
+ */
+export interface Background {
+    readonly domElement?: HTMLElement;
+    attach(stage: StageContext): void;
+    dispose?(): void;
+    decorate?(decorator: BackgroundDecorator): this;
+    play?(): void;
+    pause?(): void;
+}
+
+/**
  * Base options for background elements.
  * @category Backgrounds
  */
@@ -3199,7 +2476,7 @@ export interface ElementOptions {
     id?: string;
     anchor?: ElementAnchor;
     align?: Align;
-    position?: Point;
+    position?: Position;
     x?: ReactiveProp<number | string>;
     y?: ReactiveProp<number | string>;
     width?: ReactiveProp<number | string>;
@@ -3273,6 +2550,8 @@ export interface ReactiveElementBase {
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
+    position?: ReactiveProp<Position>;
+    size?: ReactiveProp<number | string>;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -3306,6 +2585,17 @@ export interface ReactiveElementBase {
     _activate?(): void;
     /** @internal Engine driver */
     _deactivate?(): void;
+}
+
+/**
+ * Context passed to background renderers when they are attached to the stage.
+ * @category Core
+ */
+export interface StageContext {
+    container: HTMLElement;
+    width: number;
+    height: number;
+    on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
 }
 
 /**
@@ -3428,6 +2718,13 @@ export interface TransitionDescriptor<T = unknown> {
 
 ```ts
 /**
+ * 9-position content alignment grid for text and children inside a container.
+ * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
+ * @category Layout
+ */
+export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
+
+/**
  * Standard named position or anchor keyword.
  * @category Core
  */
@@ -3457,6 +2754,16 @@ export type Point = readonly [
     x: number,
     y: number
 ];
+
+/**
+ * 2D coordinate point or vector as an [x, y] tuple.
+ * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * @category Core
+ */
+export type Position = readonly [
+    x: number | string,
+    y: number | string
+] | readonly (number | string)[];
 
 /**
  * Represents a property that accepts either a static value or a reactive transition descriptor.
@@ -3835,6 +3142,12 @@ export class DOMElement implements ReactiveElementBase {
   enterDelay: number | undefined;
   align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
+  position: Position;
+  /**
+   * Animates multiple reactive properties on this element simultaneously.
+   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   */
+  to(props: ElementTransitionProps): ElementTransition;
   isMounted: boolean;
   isActive: boolean;
   /**
@@ -3890,6 +3203,8 @@ export interface ReactiveElementBase {
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
+    position?: ReactiveProp<Position>;
+    size?: ReactiveProp<number | string>;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -3965,6 +3280,13 @@ export interface TransitionDescriptor<T = unknown> {
 
 ```ts
 /**
+ * 9-position content alignment grid for text and children inside a container.
+ * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
+ * @category Layout
+ */
+export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
+
+/**
  * Standard named position or anchor keyword.
  * @category Core
  */
@@ -3998,6 +3320,16 @@ export type Point = readonly [
     x: number,
     y: number
 ];
+
+/**
+ * 2D coordinate point or vector as an [x, y] tuple.
+ * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * @category Core
+ */
+export type Position = readonly [
+    x: number | string,
+    y: number | string
+] | readonly (number | string)[];
 
 /**
  * Represents a property that accepts either a static value or a reactive transition descriptor.
@@ -4073,6 +3405,12 @@ export class DOMElement implements ReactiveElementBase {
   enterDelay: number | undefined;
   align: Align | undefined;
   size: ReactiveProp<string | number> | undefined;
+  position: Position;
+  /**
+   * Animates multiple reactive properties on this element simultaneously.
+   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   */
+  to(props: ElementTransitionProps): ElementTransition;
   isMounted: boolean;
   isActive: boolean;
   /**
@@ -4128,6 +3466,8 @@ export interface ReactiveElementBase {
     opacity: ReactiveProp<number>;
     x: ReactiveProp<number | string>;
     y: ReactiveProp<number | string>;
+    position?: ReactiveProp<Position>;
+    size?: ReactiveProp<number | string>;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -4203,6 +3543,13 @@ export interface TransitionDescriptor<T = unknown> {
 
 ```ts
 /**
+ * 9-position content alignment grid for text and children inside a container.
+ * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
+ * @category Layout
+ */
+export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
+
+/**
  * Standard named position or anchor keyword.
  * @category Core
  */
@@ -4236,6 +3583,16 @@ export type Point = readonly [
     x: number,
     y: number
 ];
+
+/**
+ * 2D coordinate point or vector as an [x, y] tuple.
+ * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * @category Core
+ */
+export type Position = readonly [
+    x: number | string,
+    y: number | string
+] | readonly (number | string)[];
 
 /**
  * Represents a property that accepts either a static value or a reactive transition descriptor.

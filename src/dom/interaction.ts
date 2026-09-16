@@ -16,10 +16,6 @@ export interface RangeSelectionOptions {
 }
 
 export interface RangeSelectionController {
-  readonly focusedRange: [number, number] | null;
-  readonly focusedIndex: number | null;
-  focus(start: number, end?: number): void;
-  unfocus(): void;
   refresh(): void;
   destroy(): void;
 }
@@ -137,21 +133,6 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
   markClickable();
 
   return {
-    get focusedRange() {
-      return currentRange;
-    },
-    get focusedIndex() {
-      return currentRange && currentRange[0] === currentRange[1] ? currentRange[0] : null;
-    },
-    focus(start: number, end: number = start) {
-      const items = getItems();
-      if (start >= 0 && start < items.length) {
-        updateRange([start, Math.min(end, items.length - 1)]);
-      }
-    },
-    unfocus() {
-      updateRange(null);
-    },
     refresh() {
       markClickable();
       if (currentRange !== null) {

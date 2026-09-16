@@ -13,12 +13,6 @@ interface ThemePreset {
   background: string;
   text: string;
   primary: string;
-  textMuted: string;
-  textDim: string;
-  surfaceBg: string;
-  surfaceBorder: string;
-  badgeBg: string;
-  btnTextColor: string;
 }
 
 const THEME_PRESETS: ThemePreset[] = [
@@ -29,13 +23,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: "#09090b",
     text: "#ffffff",
     primary: "#38bdf8",
-    textMuted: "rgba(255, 255, 255, 0.65)",
-    textDim: "rgba(255, 255, 255, 0.40)",
-    surfaceBg:
-      "linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)",
-    surfaceBorder: "rgba(255, 255, 255, 0.10)",
-    badgeBg: "rgba(56, 189, 248, 0.12)",
-    btnTextColor: "#09090b",
   },
   {
     id: "tokyoNight",
@@ -44,13 +31,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: "#1a1b26",
     text: "#c0caf5",
     primary: "#7aa2f7",
-    textMuted: "rgba(192, 202, 245, 0.65)",
-    textDim: "rgba(192, 202, 245, 0.40)",
-    surfaceBg:
-      "linear-gradient(180deg, rgba(192, 202, 245, 0.06) 0%, rgba(192, 202, 245, 0.02) 100%)",
-    surfaceBorder: "rgba(192, 202, 245, 0.12)",
-    badgeBg: "rgba(122, 162, 247, 0.15)",
-    btnTextColor: "#1a1b26",
   },
   {
     id: "dracula",
@@ -59,13 +39,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: "#282a36",
     text: "#f8f8f2",
     primary: "#ff79c6",
-    textMuted: "rgba(248, 248, 242, 0.65)",
-    textDim: "rgba(248, 248, 242, 0.40)",
-    surfaceBg:
-      "linear-gradient(180deg, rgba(248, 248, 242, 0.06) 0%, rgba(248, 248, 242, 0.02) 100%)",
-    surfaceBorder: "rgba(248, 248, 242, 0.12)",
-    badgeBg: "rgba(255, 121, 198, 0.15)",
-    btnTextColor: "#282a36",
   },
   {
     id: "cyberpunk",
@@ -74,12 +47,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: "#0d0221",
     text: "#00f0ff",
     primary: "#ff003c",
-    textMuted: "rgba(0, 240, 255, 0.65)",
-    textDim: "rgba(0, 240, 255, 0.40)",
-    surfaceBg: "linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, rgba(0, 240, 255, 0.02) 100%)",
-    surfaceBorder: "rgba(0, 240, 255, 0.16)",
-    badgeBg: "rgba(255, 0, 60, 0.15)",
-    btnTextColor: "#ffffff",
   },
   {
     id: "defaultLight",
@@ -88,12 +55,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: "#fafafa",
     text: "#09090b",
     primary: "#0284c7",
-    textMuted: "rgba(9, 9, 11, 0.65)",
-    textDim: "rgba(9, 9, 11, 0.40)",
-    surfaceBg: "linear-gradient(180deg, rgba(9, 9, 11, 0.04) 0%, rgba(9, 9, 11, 0.015) 100%)",
-    surfaceBorder: "rgba(9, 9, 11, 0.10)",
-    badgeBg: "rgba(2, 132, 199, 0.12)",
-    btnTextColor: "#ffffff",
   },
 ];
 
@@ -137,14 +98,14 @@ export default function BrandGuidelines(): React.JSX.Element {
             </div>
           </header>
 
-          {/* Section 1: Adaptive Color Engine */}
+          {/* Section 1: Theme & Adaptive Color System */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTag}>01 / Color Scheming</span>
-              <h2 className={styles.sectionTitle}>Theme Engine</h2>
+              <h2 className={styles.sectionTitle}>Theme Engine &amp; Adaptive Palette</h2>
               <p className={styles.sectionSubtitle}>
-                Themes define three base properties: <code>background</code>, <code>text</code>, and{" "}
-                <code>primary</code>. Secondary shades and surfaces are derived automatically.
+                Themes define 3 base properties: <code>background</code>, <code>text</code>, and{" "}
+                <code>primary</code>. Selecting a preset updates the stage canvas, foundation tokens, and derived opacity scales in real time.
               </p>
             </div>
 
@@ -188,8 +149,8 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.sandboxStageCard}
                   style={{
-                    background: activePreset.surfaceBg,
-                    border: `1px solid ${activePreset.surfaceBorder}`,
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 5%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 1.5%, transparent) 100%)`,
+                    border: `1px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
                     color: activePreset.text,
                   }}
                 >
@@ -217,17 +178,20 @@ export default function BrandGuidelines(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <p className={styles.sandboxSubtitle} style={{ color: activePreset.textMuted }}>
+                  <p
+                    className={styles.sandboxSubtitle}
+                    style={{ color: `color-mix(in srgb, ${activePreset.text} 65%, transparent)` }}
+                  >
                     Secondary description demonstrating layout hierarchy.
                   </p>
 
                   <div
                     className={styles.sandboxFooterRow}
-                    style={{ borderColor: activePreset.surfaceBorder }}
+                    style={{ borderColor: `color-mix(in srgb, ${activePreset.text} 10%, transparent)` }}
                   >
                     <span
                       className={styles.sandboxCodeSnippet}
-                      style={{ color: activePreset.textDim }}
+                      style={{ color: `color-mix(in srgb, ${activePreset.text} 40%, transparent)` }}
                     >
                       stage.theme(themes.{activePreset.id})
                     </span>
@@ -237,14 +201,22 @@ export default function BrandGuidelines(): React.JSX.Element {
                       className={styles.sandboxBtn}
                       style={{
                         background: activePreset.primary,
-                        color: activePreset.btnTextColor,
+                        color:
+                          activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
+                            ? "#ffffff"
+                            : activePreset.background,
                       }}
                     >
                       <span>Action</span>
                       <MicroLogo
                         width={14}
                         height={14}
-                        style={{ color: activePreset.btnTextColor }}
+                        style={{
+                          color:
+                            activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
+                              ? "#ffffff"
+                              : activePreset.background,
+                        }}
                         aria-hidden="true"
                         role="img"
                       />
@@ -252,77 +224,32 @@ export default function BrandGuidelines(): React.JSX.Element {
                   </div>
                 </div>
               </div>
-
-              {/* Real-time Config Details */}
-              <div className={styles.sandboxConfigRow}>
-                <div>
-                  <code>background: "{activePreset.background}"</code> &middot;{" "}
-                  <code>text: "{activePreset.text}"</code> &middot;{" "}
-                  <code>primary: "{activePreset.primary}"</code>
-                </div>
-                <div style={{ color: activePreset.primary }}>
-                  &check; Logo and surfaces inherit CSS custom properties
-                </div>
-              </div>
             </div>
 
-            {/* Derived Tokens */}
-            <div className={styles.derivationGrid}>
-              <div className={styles.derivationCard}>
-                <span className={styles.derivationFormula}>
-                  color-mix(in srgb, var(--sr-text) 65%, transparent)
-                </span>
-                <h3 className={styles.derivationName}>--sr-text-muted</h3>
-                <p className={styles.derivationDesc}>Secondary text color with 65% opacity.</p>
-              </div>
-
-              <div className={styles.derivationCard}>
-                <span className={styles.derivationFormula}>linear-gradient(text 5% to 1.5%)</span>
-                <h3 className={styles.derivationName}>--sr-surface</h3>
-                <p className={styles.derivationDesc}>
-                  Translucent surface gradient for cards and dialogs.
-                </p>
-              </div>
-
-              <div className={styles.derivationCard}>
-                <span className={styles.derivationFormula}>
-                  1px solid color-mix(text 10%, transparent)
-                </span>
-                <h3 className={styles.derivationName}>--sr-surface-border</h3>
-                <p className={styles.derivationDesc}>
-                  Subtle border stroke derived from text color.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 2: Color Tokens */}
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionTag}>02 / Color Tokens</span>
-              <h2 className={styles.sectionTitle}>Default Palette</h2>
-              <p className={styles.sectionSubtitle}>
-                Default tokens for canvas, surfaces, text, and accents.
-              </p>
-            </div>
+            {/* Subsection 1.1: Core Input Tokens for Active Preset */}
+            <h3 className={styles.subSectionTitle}>
+              Foundation Input Tokens (<code>themes.{activePreset.id}</code>)
+            </h3>
+            <p className={styles.subSectionSubtitle}>
+              The 3 explicit properties configured in <code>stage.theme()</code> for the selected theme.
+            </p>
 
             <div className={styles.paletteGrid}>
               {[
-                { name: "Canvas Background", hex: "#09090b", role: "Base canvas background" },
-                { name: "Text Primary", hex: "#ffffff", role: "Headings and primary text" },
-                { name: "Accent Primary", hex: "#38bdf8", role: "Primary accent color" },
-                { name: "Accent Secondary", hex: "#7dd3fc", role: "Secondary highlight color" },
-                { name: "Text Muted", hex: "#a1a1aa", role: "Secondary text (65% opacity)" },
-                { name: "Surface Dark", hex: "#18181b", role: "Base surface color" },
                 {
-                  name: "Surface Border",
-                  hex: "rgba(255,255,255,0.1)",
-                  role: "Card and dialog borders",
+                  name: "Canvas Background",
+                  hex: activePreset.background,
+                  role: "Base canvas background (--sr-background)",
                 },
                 {
-                  name: "Accent Highlight",
-                  hex: "rgba(56,189,248,0.15)",
-                  role: "Focus ring and glow",
+                  name: "Primary Text",
+                  hex: activePreset.text,
+                  role: "Typography root & surface base (--sr-text)",
+                },
+                {
+                  name: "Primary Accent",
+                  hex: activePreset.primary,
+                  role: "Active brand accent & focus (--sr-primary)",
                 },
               ].map((swatch) => (
                 <button
@@ -335,8 +262,7 @@ export default function BrandGuidelines(): React.JSX.Element {
                     className={styles.swatchPreview}
                     style={{
                       background: swatch.hex,
-                      border:
-                        swatch.hex === "#09090b" ? "1px solid rgba(255,255,255,0.1)" : undefined,
+                      border: "1px solid rgba(255,255,255,0.12)",
                     }}
                   />
                   <div className={styles.swatchMeta}>
@@ -349,12 +275,147 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </button>
               ))}
             </div>
+
+            {/* Subsection 1.2: Mathematically Derived Scales */}
+            <h3 className={styles.subSectionTitle}>
+              Adaptive Derived Scales (Computed from <code>{activePreset.text}</code>)
+            </h3>
+            <p className={styles.subSectionSubtitle}>
+              Component glass fills, borders, and text contrasts generated dynamically via CSS <code>color-mix()</code>.
+            </p>
+
+            <div className={styles.derivationGrid}>
+              {/* Token 1: Muted Text */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    backgroundColor: activePreset.background,
+                    color: `color-mix(in srgb, ${activePreset.text} 65%, transparent)`,
+                  }}
+                >
+                  65% Text Opacity
+                </div>
+                <span className={styles.derivationFormula}>
+                  color-mix(in srgb, {activePreset.text} 65%, transparent)
+                </span>
+                <h4 className={styles.derivationName}>--sr-text-muted</h4>
+                <p className={styles.derivationDesc}>
+                  Secondary text. Use for subtitles, body paragraphs, and descriptive labels.
+                </p>
+              </div>
+
+              {/* Token 2: Dim Text */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    backgroundColor: activePreset.background,
+                    color: `color-mix(in srgb, ${activePreset.text} 40%, transparent)`,
+                  }}
+                >
+                  40% Text Opacity
+                </div>
+                <span className={styles.derivationFormula}>
+                  color-mix(in srgb, {activePreset.text} 40%, transparent)
+                </span>
+                <h4 className={styles.derivationName}>--sr-text-dim</h4>
+                <p className={styles.derivationDesc}>
+                  Low-contrast text. Use for code snippets, line numbers, and metadata.
+                </p>
+              </div>
+
+              {/* Token 3: Surface Gradient */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 5%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 1.5%, transparent) 100%)`,
+                    border: `1px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
+                    color: activePreset.text,
+                  }}
+                >
+                  5% &rarr; 1.5% Glass
+                </div>
+                <span className={styles.derivationFormula}>
+                  linear-gradient(text 5% to 1.5%)
+                </span>
+                <h4 className={styles.derivationName}>--sr-surface</h4>
+                <p className={styles.derivationDesc}>
+                  Container background. Use for card surfaces, dialog boxes, and floating panels.
+                </p>
+              </div>
+
+              {/* Token 4: Surface Border */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    backgroundColor: activePreset.background,
+                    border: `2px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
+                    color: `color-mix(in srgb, ${activePreset.text} 80%, transparent)`,
+                  }}
+                >
+                  10% Border Stroke
+                </div>
+                <span className={styles.derivationFormula}>
+                  1px solid color-mix({activePreset.text} 10%, transparent)
+                </span>
+                <h4 className={styles.derivationName}>--sr-surface-border</h4>
+                <p className={styles.derivationDesc}>
+                  Container outline. Use for card borders, table gridlines, and section dividers.
+                </p>
+              </div>
+
+              {/* Token 5: Surface Highlight */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${activePreset.text} 20%, transparent)`,
+                    color: activePreset.text,
+                  }}
+                >
+                  20% Surface Fill
+                </div>
+                <span className={styles.derivationFormula}>
+                  color-mix(in srgb, {activePreset.text} 20%, transparent)
+                </span>
+                <h4 className={styles.derivationName}>--sr-surface-highlight</h4>
+                <p className={styles.derivationDesc}>
+                  Interactive feedback. Use for hover fills, active row states, and focus rings.
+                </p>
+              </div>
+
+              {/* Token 6: Secondary Accent Sync */}
+              <div className={styles.derivationCard}>
+                <div
+                  className={styles.derivationPreview}
+                  style={{
+                    backgroundColor: activePreset.primary,
+                    color:
+                      activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
+                        ? "#ffffff"
+                        : activePreset.background,
+                  }}
+                >
+                  Accent: {activePreset.primary}
+                </div>
+                <span className={styles.derivationFormula}>
+                  var(--sr-primary) &rarr; {activePreset.primary}
+                </span>
+                <h4 className={styles.derivationName}>--sr-accent</h4>
+                <p className={styles.derivationDesc}>
+                  Secondary accent. Use for badges, status indicators, and divider rule accents.
+                </p>
+              </div>
+            </div>
           </section>
 
-          {/* Section 3: Typography System */}
+          {/* Section 2: Typography System */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionTag}>03 / Typography</span>
+              <span className={styles.sectionTag}>02 / Typography</span>
               <h2 className={styles.sectionTitle}>Type Families &amp; Scale</h2>
               <p className={styles.sectionSubtitle}>
                 Three font families used for interface elements, editorial text, and code.
@@ -530,10 +591,10 @@ export default function BrandGuidelines(): React.JSX.Element {
             </div>
           </section>
 
-          {/* Section 4: The Logomark */}
+          {/* Section 3: The Logomark */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionTag}>04 / Logomark</span>
+              <span className={styles.sectionTag}>03 / Logomark</span>
               <h2 className={styles.sectionTitle}>Mark &amp; Lockups</h2>
               <p className={styles.sectionSubtitle}>
                 A responsive vector mark combining bracket syntax with a playhead. Automatically
@@ -555,13 +616,15 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.lockupInfo}>
                   <h3 className={styles.lockupTitle}>Standalone Mark</h3>
-                  <p className={styles.lockupDesc}>Application icons, favicons, and avatars.</p>
+                  <p className={styles.lockupDesc}>
+                    Mark only. Use for application icons, favicons, and compact avatar spaces.
+                  </p>
                   <div className={styles.specRow}>
                     <span className={styles.specItem}>
-                      Aspect: <span>1:1</span>
+                      Type: <span>Mark Only</span>
                     </span>
                     <span className={styles.specItem}>
-                      Scale: <span>16px - 128px (Adaptive)</span>
+                      Aspect: <span>1:1 Square</span>
                     </span>
                   </div>
                 </div>
@@ -584,14 +647,14 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div className={styles.lockupInfo}>
                   <h3 className={styles.lockupTitle}>Horizontal Lockup</h3>
                   <p className={styles.lockupDesc}>
-                    Header navigation. Sized at 28px height with 11px margin.
+                    Inline mark and wordmark. Use for header navigation, title bars, and banners.
                   </p>
                   <div className={styles.specRow}>
                     <span className={styles.specItem}>
-                      Mark: <span>28px</span>
+                      Type: <span>Inline</span>
                     </span>
                     <span className={styles.specItem}>
-                      Gap: <span>11px</span>
+                      Align: <span>Horizontal Baseline</span>
                     </span>
                   </div>
                 </div>
@@ -617,14 +680,14 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div className={styles.lockupInfo}>
                   <h3 className={styles.lockupTitle}>Stacked Lockup</h3>
                   <p className={styles.lockupDesc}>
-                    Centered layouts for title cards and splash screens.
+                    Centered mark above wordmark. Use for title cards, presentation slides, and splash screens.
                   </p>
                   <div className={styles.specRow}>
                     <span className={styles.specItem}>
-                      Mark: <span>44px - 64px</span>
+                      Type: <span>Stacked</span>
                     </span>
                     <span className={styles.specItem}>
-                      Align: <span>Center</span>
+                      Align: <span>Center Column</span>
                     </span>
                   </div>
                 </div>
@@ -645,7 +708,6 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.sizeLabel}>
                   <strong>64px</strong>
-                  Display
                 </div>
               </div>
 
@@ -661,7 +723,6 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.sizeLabel}>
                   <strong>44px</strong>
-                  Control
                 </div>
               </div>
 
@@ -677,7 +738,6 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.sizeLabel}>
                   <strong>28px</strong>
-                  Navbar
                 </div>
               </div>
 
@@ -693,7 +753,6 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.sizeLabel}>
                   <strong>20px</strong>
-                  Micro UI
                 </div>
               </div>
 
@@ -709,7 +768,6 @@ export default function BrandGuidelines(): React.JSX.Element {
                 </div>
                 <div className={styles.sizeLabel}>
                   <strong>16px</strong>
-                  Favicon
                 </div>
               </div>
             </div>

@@ -308,18 +308,19 @@
   filter: brightness(1.1);
 }
 
-.sandboxConfigRow {
-  padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  font-family: var(--sr-font-mono);
-  font-size: 0.78rem;
+/* Subsection Headers */
+.subSectionTitle {
+  font-family: var(--sr-font-sans);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 2.25rem 0 0.35rem;
+}
+
+.subSectionSubtitle {
+  font-size: 0.9rem;
   color: #a1a1aa;
+  margin: 0 0 1.25rem;
 }
 
 /* Derivation Tokens Row */
@@ -327,7 +328,6 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
-  margin-top: 1.75rem;
 }
 
 .derivationCard {
@@ -335,6 +335,19 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 1.25rem 1.35rem;
+}
+
+.derivationPreview {
+  height: 40px;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sr-font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .derivationFormula {
@@ -662,7 +675,7 @@
 /* Palette Swatches */
 .paletteGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
 }
 

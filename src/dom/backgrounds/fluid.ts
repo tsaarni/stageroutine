@@ -24,7 +24,7 @@ export interface BaseFluidOptions extends BackgroundOptions {
 export interface AsciiFluidOptions extends BaseFluidOptions {
   /** ASCII character ramp ordered from darkest to brightest */
   characters?: string;
-  /** Size of each ASCII character cell in pixels (default: 13) */
+  /** Size of each ASCII character cell in pixels (default: 18) */
   cellSize?: number;
   /** Primary accent color for characters (default: "#38bdf8") */
   color?: string;
@@ -180,13 +180,13 @@ const asciiFragmentShader = `
     float glyphAlpha = texture2D(u_atlas, vec2(atlasU, 1.0 - glyphUv.y)).r;
 
     // Harmonious chromatic palette
-    vec3 deepTone   = mix(u_bgColor, u_charColor, 0.35);
-    vec3 brightTone = mix(u_charColor, vec3(0.55, 0.80, 0.95), 0.35);
-    vec3 activeColor = mix(deepTone, brightTone, smoothstep(0.15, 0.90, intensity));
+    vec3 deepTone   = mix(u_bgColor, u_charColor, 0.40);
+    vec3 brightTone = mix(u_charColor, vec3(0.60, 0.85, 0.98), 0.38);
+    vec3 activeColor = mix(deepTone, brightTone, smoothstep(0.12, 0.88, intensity));
 
     activeColor += vec3(0.04, 0.10, 0.15) * length(totalDisplacement) * 5.0;
 
-    float charBrightness = glyphAlpha * (0.30 + intensity * 0.60);
+    float charBrightness = glyphAlpha * (0.35 + intensity * 0.60);
     float cellGlow = smoothstep(0.7, 0.0, length(cellUv - 0.5)) * intensity * 0.10;
 
     float totalAlpha = clamp((charBrightness + cellGlow) * u_opacity, 0.0, 1.0);

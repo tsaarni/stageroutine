@@ -20,7 +20,7 @@ const THEME_PRESETS: ThemePreset[] = [
     id: "defaultDark",
     name: "Default Dark",
     tag: "Native Dark",
-    background: "#09090b",
+    background: "#0c0d12",
     text: "#ffffff",
     primary: "#38bdf8",
   },
@@ -105,7 +105,8 @@ export default function BrandGuidelines(): React.JSX.Element {
               <h2 className={styles.sectionTitle}>Theme Engine &amp; Adaptive Palette</h2>
               <p className={styles.sectionSubtitle}>
                 Themes define 3 base properties: <code>background</code>, <code>text</code>, and{" "}
-                <code>primary</code>. Selecting a preset updates the stage canvas, foundation tokens, and derived opacity scales in real time.
+                <code>primary</code>. Selecting a preset updates the stage canvas, foundation
+                tokens, and derived opacity scales in real time.
               </p>
             </div>
 
@@ -149,8 +150,9 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.sandboxStageCard}
                   style={{
-                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 5%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 1.5%, transparent) 100%)`,
-                    border: `1px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 9%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 3.5%, transparent) 100%)`,
+                    border: `1px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
+                    boxShadow: `0 20px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 color-mix(in srgb, ${activePreset.text} 18%, transparent)`,
                     color: activePreset.text,
                   }}
                 >
@@ -180,18 +182,20 @@ export default function BrandGuidelines(): React.JSX.Element {
 
                   <p
                     className={styles.sandboxSubtitle}
-                    style={{ color: `color-mix(in srgb, ${activePreset.text} 65%, transparent)` }}
+                    style={{ color: `color-mix(in srgb, ${activePreset.text} 72%, transparent)` }}
                   >
                     Secondary description demonstrating layout hierarchy.
                   </p>
 
                   <div
                     className={styles.sandboxFooterRow}
-                    style={{ borderColor: `color-mix(in srgb, ${activePreset.text} 10%, transparent)` }}
+                    style={{
+                      borderColor: `color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
+                    }}
                   >
                     <span
                       className={styles.sandboxCodeSnippet}
-                      style={{ color: `color-mix(in srgb, ${activePreset.text} 40%, transparent)` }}
+                      style={{ color: `color-mix(in srgb, ${activePreset.text} 50%, transparent)` }}
                     >
                       stage.theme(themes.{activePreset.id})
                     </span>
@@ -231,7 +235,8 @@ export default function BrandGuidelines(): React.JSX.Element {
               Foundation Input Tokens (<code>themes.{activePreset.id}</code>)
             </h3>
             <p className={styles.subSectionSubtitle}>
-              The 3 explicit properties configured in <code>stage.theme()</code> for the selected theme.
+              The 3 explicit properties configured in <code>stage.theme()</code> for the selected
+              theme.
             </p>
 
             <div className={styles.paletteGrid}>
@@ -281,7 +286,8 @@ export default function BrandGuidelines(): React.JSX.Element {
               Adaptive Derived Scales (Computed from <code>{activePreset.text}</code>)
             </h3>
             <p className={styles.subSectionSubtitle}>
-              Component glass fills, borders, and text contrasts generated dynamically via CSS <code>color-mix()</code>.
+              Component glass fills, borders, and text contrasts generated dynamically via CSS{" "}
+              <code>color-mix()</code>.
             </p>
 
             <div className={styles.derivationGrid}>
@@ -291,13 +297,13 @@ export default function BrandGuidelines(): React.JSX.Element {
                   className={styles.derivationPreview}
                   style={{
                     backgroundColor: activePreset.background,
-                    color: `color-mix(in srgb, ${activePreset.text} 65%, transparent)`,
+                    color: `color-mix(in srgb, ${activePreset.text} 72%, transparent)`,
                   }}
                 >
-                  65% Text Opacity
+                  72% Text Opacity
                 </div>
                 <span className={styles.derivationFormula}>
-                  color-mix(in srgb, {activePreset.text} 65%, transparent)
+                  color-mix(in srgb, {activePreset.text} 72%, transparent)
                 </span>
                 <h4 className={styles.derivationName}>--sr-text-muted</h4>
                 <p className={styles.derivationDesc}>
@@ -311,13 +317,13 @@ export default function BrandGuidelines(): React.JSX.Element {
                   className={styles.derivationPreview}
                   style={{
                     backgroundColor: activePreset.background,
-                    color: `color-mix(in srgb, ${activePreset.text} 40%, transparent)`,
+                    color: `color-mix(in srgb, ${activePreset.text} 50%, transparent)`,
                   }}
                 >
-                  40% Text Opacity
+                  50% Text Opacity
                 </div>
                 <span className={styles.derivationFormula}>
-                  color-mix(in srgb, {activePreset.text} 40%, transparent)
+                  color-mix(in srgb, {activePreset.text} 50%, transparent)
                 </span>
                 <h4 className={styles.derivationName}>--sr-text-dim</h4>
                 <p className={styles.derivationDesc}>
@@ -330,15 +336,16 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.derivationPreview}
                   style={{
-                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 5%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 1.5%, transparent) 100%)`,
-                    border: `1px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 8%, color-mix(in srgb, ${activePreset.background} 88%, transparent)) 0%, color-mix(in srgb, ${activePreset.text} 3%, color-mix(in srgb, ${activePreset.background} 82%, transparent)) 100%)`,
+                    border: `1px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
+                    boxShadow: `inset 0 1px 0 0 color-mix(in srgb, ${activePreset.text} 18%, transparent)`,
                     color: activePreset.text,
                   }}
                 >
-                  5% &rarr; 1.5% Glass
+                  8% &rarr; 3% Surface
                 </div>
                 <span className={styles.derivationFormula}>
-                  linear-gradient(text 5% to 1.5%)
+                  linear-gradient(text 8% / bg 88% to text 3% / bg 82%)
                 </span>
                 <h4 className={styles.derivationName}>--sr-surface</h4>
                 <p className={styles.derivationDesc}>
@@ -352,14 +359,14 @@ export default function BrandGuidelines(): React.JSX.Element {
                   className={styles.derivationPreview}
                   style={{
                     backgroundColor: activePreset.background,
-                    border: `2px solid color-mix(in srgb, ${activePreset.text} 10%, transparent)`,
-                    color: `color-mix(in srgb, ${activePreset.text} 80%, transparent)`,
+                    border: `2px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
+                    color: `color-mix(in srgb, ${activePreset.text} 90%, transparent)`,
                   }}
                 >
-                  10% Border Stroke
+                  15% Border Stroke
                 </div>
                 <span className={styles.derivationFormula}>
-                  1px solid color-mix({activePreset.text} 10%, transparent)
+                  1px solid color-mix({activePreset.text} 15%, transparent)
                 </span>
                 <h4 className={styles.derivationName}>--sr-surface-border</h4>
                 <p className={styles.derivationDesc}>
@@ -372,14 +379,14 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.derivationPreview}
                   style={{
-                    backgroundColor: `color-mix(in srgb, ${activePreset.text} 20%, transparent)`,
+                    backgroundColor: `color-mix(in srgb, ${activePreset.text} 25%, transparent)`,
                     color: activePreset.text,
                   }}
                 >
-                  20% Surface Fill
+                  25% Surface Fill
                 </div>
                 <span className={styles.derivationFormula}>
-                  color-mix(in srgb, {activePreset.text} 20%, transparent)
+                  color-mix(in srgb, {activePreset.text} 25%, transparent)
                 </span>
                 <h4 className={styles.derivationName}>--sr-surface-highlight</h4>
                 <p className={styles.derivationDesc}>
@@ -680,7 +687,8 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div className={styles.lockupInfo}>
                   <h3 className={styles.lockupTitle}>Stacked Lockup</h3>
                   <p className={styles.lockupDesc}>
-                    Centered mark above wordmark. Use for title cards, presentation slides, and splash screens.
+                    Centered mark above wordmark. Use for title cards, presentation slides, and
+                    splash screens.
                   </p>
                   <div className={styles.specRow}>
                     <span className={styles.specItem}>

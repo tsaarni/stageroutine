@@ -31,26 +31,36 @@
     -webkit-user-select: none;
 
     /* Core Canvas & Palette */
-    --sr-background: #09090b;
+    --sr-background: #0c0d12;
     --sr-text: #ffffff;
     --sr-primary: #f97316;
     --sr-accent: var(--sr-primary);
 
     /* Secondary Text (Auto-derived from text color) */
-    --sr-text-muted: color-mix(in srgb, var(--sr-text) 65%, transparent);
-    --sr-text-dim: color-mix(in srgb, var(--sr-text) 40%, transparent);
+    --sr-text-muted: color-mix(in srgb, var(--sr-text) 72%, transparent);
+    --sr-text-dim: color-mix(in srgb, var(--sr-text) 50%, transparent);
 
-    /* Surface & Container Tokens (Adaptive to theme text color) */
+    /* Surface & Container Tokens (Adaptive to theme text and background) */
     --sr-surface: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--sr-text) 5%, transparent) 0%,
-      color-mix(in srgb, var(--sr-text) 1.5%, transparent) 100%
+      color-mix(
+          in srgb,
+          var(--sr-text) 8%,
+          color-mix(in srgb, var(--sr-background) 88%, transparent)
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--sr-text) 3%,
+          color-mix(in srgb, var(--sr-background) 82%, transparent)
+        )
+        100%
     );
-    --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 10%, transparent);
-    --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 20%, transparent);
+    --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 15%, transparent);
+    --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 25%, transparent);
     --sr-surface-shadow:
       0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 10%, transparent);
+      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 18%, transparent);
     --sr-surface-backdrop: blur(16px);
 
     /* Spatial Scale & Radius */

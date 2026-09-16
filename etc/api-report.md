@@ -2413,7 +2413,7 @@ export class StarfieldElement extends BackgroundElement {
 export interface AsciiFluidOptions extends BaseFluidOptions {
     /** ASCII character ramp ordered from darkest to brightest */
     characters?: string;
-    /** Size of each ASCII character cell in pixels (default: 13) */
+    /** Size of each ASCII character cell in pixels (default: 18) */
     cellSize?: number;
     /** Primary accent color for characters (default: "#38bdf8") */
     color?: string;

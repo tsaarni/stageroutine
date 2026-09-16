@@ -5,7 +5,7 @@
 import type { ThemeConfig } from "./tokens";
 
 export const defaultDark: ThemeConfig = {
-  background: "#09090b",
+  background: "#0c0d12",
   text: "#ffffff",
   primary: "#f97316",
 };

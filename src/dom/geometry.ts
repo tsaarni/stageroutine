@@ -243,7 +243,7 @@ export function getPathPerimeterPoint(
   let low = 0;
   let high = Math.hypot(box.width, box.height);
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 14; i++) {
     const mid = (low + high) / 2;
     if (ctx.isPointInPath(p2d, cxLocal + mid * cos, cyLocal + mid * sin)) {
       low = mid;

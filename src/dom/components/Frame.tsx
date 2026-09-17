@@ -233,9 +233,12 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   }
 
   private updateGeometry(): void {
-    const rect = this.domElement.getBoundingClientRect();
-    const w = rect.width || parseFloat(this.domElement.style.width) || 0;
-    const h = rect.height || parseFloat(this.domElement.style.height) || 0;
+    let w = this.domElement.offsetWidth;
+    let h = this.domElement.offsetHeight;
+    if (w <= 0 && typeof this.width === "number") w = this.width;
+    if (h <= 0 && typeof this.height === "number") h = this.height;
+    if (w <= 0) w = parseFloat(this.domElement.style.width) || 0;
+    if (h <= 0) h = parseFloat(this.domElement.style.height) || 0;
 
     if (w <= 0 || h <= 0) return;
 
@@ -259,7 +262,9 @@ class FrameElementImpl extends DOMElement implements FrameElement {
    * Calculates the exact perimeter attachment point against the frame's SVG path boundary.
    */
   getPerimeterPoint(box: Box, target: Point, padding = 6): { point: Point; side: CardinalSide } {
-    const d = this.pathNode.getAttribute("d") || this._path(box.width, box.height);
+    const d =
+      this.pathNode.getAttribute("d") ||
+      this._path(box.width, box.height, { strokeWidth: this.strokeWidth, inset: 0 });
     return getPathPerimeterPoint(d, box, target, padding);
   }
 }

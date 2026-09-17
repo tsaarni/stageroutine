@@ -640,13 +640,17 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         const vRect = viewport.getBoundingClientRect();
         const dRect = dom.getBoundingClientRect();
         const scale = vRect.width > 0 ? vRect.width / stageW : 1;
-        const x = (dRect.left - vRect.left) / scale;
-        const y = (dRect.top - vRect.top) / scale;
-        const width = dRect.width / scale;
-        const height = dRect.height / scale;
+        const cx = (dRect.left - vRect.left + dRect.width / 2) / scale;
+        const cy = (dRect.top - vRect.top + dRect.height / 2) / scale;
+        let width = dom.offsetWidth;
+        let height = dom.offsetHeight;
+        if (width <= 0) width = parseFloat(dom.style.width) || dRect.width / scale;
+        if (height <= 0) height = parseFloat(dom.style.height) || dRect.height / scale;
+        const x = cx - width / 2;
+        const y = cy - height / 2;
 
         return {
-          point: [x + width / 2, y + height / 2],
+          point: [cx, cy],
           box: {
             x,
             y,

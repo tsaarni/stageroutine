@@ -459,6 +459,14 @@ export type AnchorKeyword = Align;
 export type ElementAnchor = AnchorKeyword | Point;
 
 /**
+ * How a connector endpoint picks its attachment point on a target outline.
+ * "auto" pins to the midpoint of the facing straight side when there is one, otherwise it behaves like "ray".
+ * "closest" takes the nearest outline point. "ray" takes the crossing of the direction towards the other endpoint.
+ * @category Core
+ */
+export type AnchorMode = "auto" | "closest" | "ray";
+
+/**
  * Base interface for all reactive presentation elements on stage.
  * @category Core
  */

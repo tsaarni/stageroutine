@@ -854,18 +854,21 @@ const connBoxCircle = Connector(morphBox, morphCircle, {
 const connCircleStar = Connector(morphCircle, starFrame, {
   label: "clipped-frame",
   routing: "bezier",
+  toAnchor: "closest",
   color: "#f43f5e",
   end: 0,
 });
 
 const connDiamondStar = Connector(morphDiamond, starFrame, {
   label: "snap-sync",
+  toAnchor: "closest",
   color: "#f59e0b",
   end: 0,
 });
 
 const connStarPill = Connector(starFrame, morphPill, {
   routing: "bezier",
+  fromAnchor: "closest",
   color: "#10b981",
   end: 0,
 });

@@ -51,6 +51,27 @@ const curved = Connector(a, b, {
 });
 ```
 
+## Attachment Anchors
+
+A connector attaches to the outline of each target. The `fromAnchor` and `toAnchor` options decide where.
+
+`"auto"` (default) attaches to the middle of the target side that faces the other endpoint, and follows the outline where there is no straight side to pin to. `"ray"` always attaches where the direction towards the other endpoint crosses the outline, so it slides along flat sides while the other element moves. `"closest"` attaches to the nearest point on the outline, which suits silhouettes with concave parts such as clipped frames or stars:
+
+```typescript
+const link = Connector(a, frame, {
+  routing: "bezier",
+  toAnchor: "closest",
+});
+```
+
+Pass a named face (`"top"`, `"right"`, `"bottom"`, `"left"`, `"top-left"`, and so on) or an `[x, y]` percentage pair to pin an endpoint to a fixed spot:
+
+```typescript
+const pinned = Connector(a, b, { fromAnchor: "bottom", toAnchor: [50, 0] });
+```
+
+Attachment points sit `padding` pixels outside the outline (default: 6).
+
 ## Head Markers
 
 Choose from several endpoint marker styles via `startHead` and `endHead`:

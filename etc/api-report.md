@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 170 symbols |
+| `stageroutine` | 171 symbols |
 | `stageroutine/backgrounds` | 29 symbols |
 | `stageroutine/overlays` | 7 symbols |
 | `stageroutine/presenter` | 3 symbols |
@@ -666,6 +666,10 @@ export interface ConnectorElement extends DOMElement {
     toTarget: ConnectorTarget;
     connectorStyle: "straight" | "corner" | "bezier" | "arc";
     curvature: number;
+    /** Outer clearance padding around target perimeters in virtual pixels. */
+    padding: number;
+    fromAnchor: AnchorMode | ElementAnchor;
+    toAnchor: AnchorMode | ElementAnchor;
     connectorColor: string;
     labelPlacement: ReactiveProp<LabelPlacement>;
     labelOffset: ReactiveProp<LabelOffset>;
@@ -701,10 +705,10 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
     /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
     curvature?: number;
-    /** Cardinal attachment face or custom [x, y] anchor on the origin target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
-    fromAnchor?: "auto" | ElementAnchor;
-    /** Cardinal attachment face or custom [x, y] anchor on the destination target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
-    toAnchor?: "auto" | ElementAnchor;
+    /** Attachment point on the origin target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
+    fromAnchor?: AnchorMode | ElementAnchor;
+    /** Attachment point on the destination target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
+    toAnchor?: AnchorMode | ElementAnchor;
     /** Stroke color of the connector line (defaults to #38bdf8). */
     color?: string;
     /** Stroke width in virtual pixels (defaults to 3). */
@@ -1992,6 +1996,14 @@ export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "righ
  * @category Core
  */
 export type AnchorKeyword = Align;
+
+/**
+ * How a connector endpoint picks its attachment point on a target outline.
+ * "auto" pins to the midpoint of the facing straight side when there is one, otherwise it behaves like "ray".
+ * "closest" takes the nearest outline point. "ray" takes the crossing of the direction towards the other endpoint.
+ * @category Core
+ */
+export type AnchorMode = "auto" | "closest" | "ray";
 
 /**
  * Animation milestone representing progress of another element's transition:

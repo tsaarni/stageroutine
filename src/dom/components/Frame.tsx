@@ -1,11 +1,16 @@
 /**
  * Geometric clipping container that shapes media and child elements to custom SVG contours.
  */
-
 import "./Frame.css";
 import { getActiveStage, type ReactiveElementBase, type ReactiveProp } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
-import { type Box, type CardinalSide, getPathPerimeterPoint, type Point } from "../geometry";
+import {
+  type AnchorMode,
+  type AnchorPoint,
+  type Box,
+  getPathAnchorPoint,
+  type Point,
+} from "../geometry";
 import type { PathFunction } from "../paths";
 
 /**
@@ -259,13 +264,10 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   }
 
   /**
-   * Calculates the exact perimeter attachment point against the frame's SVG path boundary.
+   * Resolves the connector attachment point on the frame outline.
    */
-  getPerimeterPoint(box: Box, target: Point, padding = 6): { point: Point; side: CardinalSide } {
-    const d =
-      this.pathNode.getAttribute("d") ||
-      this._path(box.width, box.height, { strokeWidth: this.strokeWidth, inset: 0 });
-    return getPathPerimeterPoint(d, box, target, padding);
+  getPerimeterPoint(box: Box, target: Point, padding = 6, mode: AnchorMode = "auto"): AnchorPoint {
+    return getPathAnchorPoint(this.pathNode, box, target, padding, mode);
   }
 }
 

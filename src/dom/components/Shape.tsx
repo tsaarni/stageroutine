@@ -11,7 +11,14 @@ import {
   type ReactiveProp,
 } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
-import { type Box, type CardinalSide, getPathPerimeterPoint, type Point } from "../geometry";
+
+import {
+  type AnchorMode,
+  type AnchorPoint,
+  type Box,
+  getPathAnchorPoint,
+  type Point,
+} from "../geometry";
 import { type PathFunction, paths } from "../paths";
 import { type PingHandle, spawnPingPacket } from "./ping";
 
@@ -626,11 +633,10 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
 
   /**
-   * Calculates the exact perimeter attachment point against the shape's SVG path boundary.
+   * Resolves the connector attachment point on the shape outline.
    */
-  getPerimeterPoint(box: Box, target: Point, padding = 6): { point: Point; side: CardinalSide } {
-    const d = this.pathNode.getAttribute("d") || this._path(box.width, box.height);
-    return getPathPerimeterPoint(d, box, target, padding);
+  getPerimeterPoint(box: Box, target: Point, padding = 6, mode: AnchorMode = "auto"): AnchorPoint {
+    return getPathAnchorPoint(this.pathNode, box, target, padding, mode);
   }
 }
 

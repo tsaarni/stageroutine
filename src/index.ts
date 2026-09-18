@@ -46,6 +46,7 @@ export type { LogLevel } from "./core/logger";
 export type {
   Align,
   AnchorKeyword,
+  AnchorMode,
   AnimationMilestone,
   Background,
   BuiltinEase,

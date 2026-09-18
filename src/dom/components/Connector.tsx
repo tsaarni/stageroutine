@@ -4,15 +4,19 @@
 
 import "./Connector.css";
 import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
-import type { ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
+import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
+  type AnchorPoint,
   type Box,
   type CardinalSide,
   computeArcPath,
   computeBezierPath,
   computeOrthogonalPath,
   getBoxAnchorPoint,
+  getClosestBoxPoint,
+  isAnchorMode,
+  isPerimeterProvider,
   type Point,
 } from "../geometry";
 
@@ -277,10 +281,10 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
   /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
   curvature?: number;
-  /** Cardinal attachment face or custom [x, y] anchor on the origin target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
-  fromAnchor?: "auto" | ElementAnchor;
-  /** Cardinal attachment face or custom [x, y] anchor on the destination target ("auto" | "top" | "bottom" | "left" | "right" | [x, y]). */
-  toAnchor?: "auto" | ElementAnchor;
+  /** Attachment point on the origin target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
+  fromAnchor?: AnchorMode | ElementAnchor;
+  /** Attachment point on the destination target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
+  toAnchor?: AnchorMode | ElementAnchor;
   /** Stroke color of the connector line (defaults to #38bdf8). */
   color?: string;
   /** Stroke width in virtual pixels (defaults to 3). */
@@ -333,6 +337,10 @@ export interface ConnectorElement extends DOMElement {
   toTarget: ConnectorTarget;
   connectorStyle: "straight" | "corner" | "bezier" | "arc";
   curvature: number;
+  /** Outer clearance padding around target perimeters in virtual pixels. */
+  padding: number;
+  fromAnchor: AnchorMode | ElementAnchor;
+  toAnchor: AnchorMode | ElementAnchor;
   connectorColor: string;
   labelPlacement: ReactiveProp<LabelPlacement>;
   labelOffset: ReactiveProp<LabelOffset>;
@@ -399,8 +407,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   labelOffsetX: ReactiveProp<number | string> = 0;
   labelOffsetY: ReactiveProp<number | string> = 0;
 
-  fromAnchor: "auto" | ElementAnchor = "auto";
-  toAnchor: "auto" | ElementAnchor = "auto";
+  fromAnchor: AnchorMode | ElementAnchor = "auto";
+  toAnchor: AnchorMode | ElementAnchor = "auto";
 
   svgRoot: SVGSVGElement;
   pathNode: SVGPathElement;
@@ -703,34 +711,26 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     let endPt = toResolved.point;
     let startSide: CardinalSide = "center";
     let endSide: CardinalSide = "center";
-    const resolveShapePoint = (
+    let startNormal: Point | undefined;
+    let endNormal: Point | undefined;
+    const resolveEndpoint = (
       target: ConnectorTarget,
       box: Box,
       targetPt: Point,
-      anchorPreference: "auto" | ElementAnchor,
-    ): { point: Point; side: CardinalSide } => {
-      if (
-        anchorPreference === "auto" &&
-        "getPerimeterPoint" in target &&
-        typeof (target as { getPerimeterPoint?: unknown }).getPerimeterPoint === "function"
-      ) {
-        return (
-          target as {
-            getPerimeterPoint: (
-              box: Box,
-              target: Point,
-              padding: number,
-            ) => { point: Point; side: CardinalSide };
-          }
-        ).getPerimeterPoint(box, targetPt, this.padding);
+      anchor: AnchorMode | ElementAnchor,
+    ): AnchorPoint => {
+      if (isAnchorMode(anchor)) {
+        if (isPerimeterProvider(target)) {
+          return target.getPerimeterPoint(box, targetPt, this.padding, anchor);
+        }
+        if (anchor === "closest") return getClosestBoxPoint(box, targetPt, this.padding);
+        return getBoxAnchorPoint(box, "auto", targetPt, this.padding);
       }
-
-      const anchor = getBoxAnchorPoint(box, anchorPreference, targetPt, this.padding);
-      return { point: anchor.point, side: anchor.side };
+      return getBoxAnchorPoint(box, anchor, targetPt, this.padding);
     };
 
     if (fromResolved.box) {
-      const res = resolveShapePoint(
+      const res = resolveEndpoint(
         this.fromTarget,
         fromResolved.box,
         toResolved.point,
@@ -738,17 +738,14 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       );
       startPt = res.point;
       startSide = res.side;
+      startNormal = res.normal;
     }
 
     if (toResolved.box) {
-      const res = resolveShapePoint(
-        this.toTarget,
-        toResolved.box,
-        fromResolved.point,
-        this.toAnchor,
-      );
+      const res = resolveEndpoint(this.toTarget, toResolved.box, fromResolved.point, this.toAnchor);
       endPt = res.point;
       endSide = res.side;
+      endNormal = res.normal;
     }
 
     const resolvedY = resolveCoordToPx(
@@ -804,7 +801,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const buildPath = (sp: Point, ep: Point): string => {
       if (this.connectorStyle === "corner")
         return computeOrthogonalPath(sp, ep, startSide, endSide);
-      if (this.connectorStyle === "bezier") return computeBezierPath(sp, ep, startSide, endSide);
+      if (this.connectorStyle === "bezier")
+        return computeBezierPath(sp, ep, startNormal, endNormal);
       if (this.connectorStyle === "arc") return computeArcPath(sp, ep, this.curvature);
       return `M ${sp[0]} ${sp[1]} L ${ep[0]} ${ep[1]}`;
     };

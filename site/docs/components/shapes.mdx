@@ -125,12 +125,47 @@ The `paths` object provides generators for the standard diagram shapes:
 | `paths.squircle()` | `{ curvature: 0.82 }` | Continuous G2 curvature superellipse. |
 | `paths.heart()` | None | Symmetrical heart shape. |
 | `paths.polygon()` | `{ sides: 5 }` | Regular N-sided polygon. |
+| `paths.speechBubble()` | `{ radius: 12, tail: 16 }` | Rounded bubble with a downward pointer tail. |
+| `paths.thoughtBubble()` | `{ tail: 30, lobes: 9 }` | Scalloped cloud with a trail of shrinking bubbles. |
 
 The same geometry powers every primitive. Pass extra options to change the silhouette:
 
 ```typescript
 const rating = Shape(paths.star({ points: 6 }), "Featured", { size: 140 });
 const gateway = Shape(paths.hexagon({ orientation: "flat" }), "Gateway", { size: 130 });
+```
+
+The bubble generators are ready to use as callouts:
+
+<DemoFrame src="/stageroutine/previews/bubbles.html" />
+
+```typescript preview="bubbles.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { layout, paths, Shape } from "stageroutine";
+
+const question = Shape(paths.speechBubble(), "Hello, world!", {
+  width: 220,
+  height: 140,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
+});
+
+const idea = Shape(paths.thoughtBubble(), "Thinking...", {
+  width: 220,
+  height: 140,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
+});
+
+layout.hstack([question, idea], { x: "center", y: 25, align: "center", gap: 6 });
+// hide-start
+stage.scene("Bubbles").with(question, idea);
+stage.pause();
+stage.mount("#stage");
+// hide-end
 ```
 
 ## Connector Perimeter Tracking

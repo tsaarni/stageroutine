@@ -15,6 +15,7 @@ import { to } from "./transitions";
 /**
  * Configuration options for in-place element replacement transitions.
  * @category Motion
+ * @inline
  */
 export interface ReplaceOptions {
   /** Total choreography duration in seconds (default: 0.5s). */

@@ -6,7 +6,8 @@ import type { OverlayContext, OverlayPlugin } from "../core/types";
 
 /**
  * Configuration options for the laser pointer overlay.
- * @category Overlays
+ * @category Presenter
+ * @inline
  */
 export interface LaserPointerOptions {
   /** Base laser beam color in RGB hex. Defaults to neon laser ruby ('#ff0055'). */
@@ -23,7 +24,7 @@ export interface LaserPointerOptions {
 
 /**
  * Extended controller for the laser pointer overlay, beyond the base OverlayPlugin interface.
- * @category Overlays
+ * @category Presenter
  */
 export interface LaserPointerController {
   /** Whether the laser pointer is currently active. */
@@ -128,7 +129,7 @@ interface RawPoint {
  * stage.overlay(LaserPointer());
  * ```
  *
- * @category Overlays
+ * @category Presenter
  */
 export function LaserPointer(
   options: LaserPointerOptions = {},

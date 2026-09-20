@@ -9,6 +9,7 @@ import { DOMElement, type ElementOptions } from "../element";
 /**
  * Configuration options for the Text component.
  * @category Components
+ * @inline
  */
 export interface TextOptions extends ElementOptions {
   /** Foreground text color. */

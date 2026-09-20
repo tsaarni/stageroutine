@@ -8,6 +8,7 @@ import type { DOMElement } from "../dom/element";
 /**
  * Configuration options for the film grain texture decorator.
  * @category Decorators
+ * @inline
  */
 export interface GrainOptions {
   /** Film grain opacity from 0 to 1 (default: 0.12). */

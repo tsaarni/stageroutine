@@ -8,6 +8,7 @@ import { appendAnimation } from "./gradient";
 /**
  * Configuration options for the glow decorator.
  * @category Decorators
+ * @inline
  */
 export interface GlowOptions {
   /** Whether the glow pulses continuously (default: true). */

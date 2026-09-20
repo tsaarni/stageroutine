@@ -18,6 +18,10 @@ import type {
 import type { DOMElement } from "../dom/element";
 import { isTransitionDescriptor, to } from "./transitions";
 
+/**
+ * Transitionable element properties and targets.
+ * @category Motion
+ */
 export interface ElementTransitionProps {
   x?: CoordProp;
   y?: CoordProp;

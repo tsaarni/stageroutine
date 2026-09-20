@@ -13,18 +13,6 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./backgrounds": {
-      "types": "./src/dom/backgrounds/index.ts",
-      "import": "./src/dom/backgrounds/index.ts"
-    },
-    "./overlays": {
-      "types": "./src/overlays/index.ts",
-      "import": "./src/overlays/index.ts"
-    },
-    "./presenter": {
-      "types": "./src/presenter/index.ts",
-      "import": "./src/presenter/index.ts"
-    },
     "./jsx-runtime": {
       "types": "./src/dom/jsx-runtime.ts",
       "import": "./src/dom/jsx-runtime.ts"

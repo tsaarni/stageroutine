@@ -73,6 +73,7 @@ function resolveIconSvg(nameOrSvg: string): string | undefined {
 /**
  * Configuration options for the Icon component.
  * @category Components
+ * @inline
  */
 export interface IconOptions extends ElementOptions {
   /** Icon identifier (e.g. "lucide:heart", "mycompany:logo") or raw SVG markup. */

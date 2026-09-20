@@ -3,12 +3,13 @@
  */
 
 import * as THREE from "three";
-import type { StageContext } from "../../core/types";
+import type { Background, StageContext } from "../../core/types";
 import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./base";
 
 /**
  * Configuration options for the 3D Starfield background.
  * @category Backgrounds
+ * @inline
  */
 export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
   /** Number of star particles (default: 2000) */
@@ -213,6 +214,6 @@ export class StarfieldElement extends BackgroundElement {
  * Creates an interactive 3D Starfield background element.
  * @category Backgrounds
  */
-export function Starfield(options: StarfieldOptions = {}): StarfieldElement {
+export function Starfield(options: StarfieldOptions = {}): Background {
   return new StarfieldElement(options);
 }

@@ -7,7 +7,8 @@ import type { OverlayContext, OverlayPlugin } from "../core/types";
 
 /**
  * Options for the navigation overlay.
- * @category Overlays
+ * @category Presenter
+ * @inline
  */
 export interface NavigationOverlayOptions {
   /** Height of the trigger zone at the bottom of the screen, in pixels. Defaults to 100. */
@@ -26,7 +27,7 @@ export interface NavigationOverlayOptions {
  * stage.overlay(NavigationOverlay());
  * ```
  *
- * @category Overlays
+ * @category Presenter
  */
 export function NavigationOverlay(options: NavigationOverlayOptions = {}): OverlayPlugin {
   const triggerZone = options.triggerZone ?? 100;

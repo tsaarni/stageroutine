@@ -7,6 +7,7 @@ import type { DOMElement, ElementDecorator } from "../dom/element";
 /**
  * Configuration options for the dream liquid decorator.
  * @category Decorators
+ * @inline
  */
 export interface DreamOptions {
   /** Entrance animation duration in seconds (default: 1.4). */

@@ -332,7 +332,8 @@ export interface OverlayPlugin {
 }
 
 /**
- * @internal
+ * A decorator applied to a background element.
+ * @category Backgrounds
  */
 export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void;
 
@@ -344,7 +345,7 @@ export interface Background {
   readonly domElement?: HTMLElement;
   attach(stage: StageContext): void;
   dispose?(): void;
-  decorate?(decorator: BackgroundDecorator): this;
+  decorate(decorator: BackgroundDecorator): this;
   play?(): void;
   pause?(): void;
 }
@@ -352,6 +353,7 @@ export interface Background {
 /**
  * Options for initializing the Stage presentation director.
  * @category Core
+ * @inline
  */
 export interface StageOptions {
   /** Target HTML container or CSS selector to mount into (default: `document.body`). */

@@ -17,6 +17,7 @@ export type BulletItemInput = string | BulletItemInput[];
 /**
  * Configuration options for the BulletList component.
  * @category Components
+ * @inline
  */
 export interface BulletListOptions extends ElementOptions {
   /** Vertical spacing between bullet items in pixels (default: 16). */

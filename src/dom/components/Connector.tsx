@@ -66,6 +66,7 @@ export interface PulseSequenceStep {
 /**
  * Options for configuring a multi-connector sequential pulse loop.
  * @category Motion
+ * @inline
  */
 export interface PulseSequenceOptions {
   /** Whether the sequence should loop continuously (default: true). */
@@ -263,6 +264,7 @@ function createHeadMarker(
 /**
  * Configuration options for creating a reactive Connector between two elements or points.
  * @category Components
+ * @inline
  */
 export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   /** Optional text label rendered at the connector's midpoint or specified placement. */

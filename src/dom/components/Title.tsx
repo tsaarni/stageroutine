@@ -15,6 +15,7 @@ export type TitleVariant = "title" | "hero" | "serif";
 /**
  * Configuration options for the Title component.
  * @category Components
+ * @inline
  */
 export interface TitleOptions extends ElementOptions {
   /** Visual typography variant: "title" (default), "hero" (large display), or "serif" (editorial italic). */

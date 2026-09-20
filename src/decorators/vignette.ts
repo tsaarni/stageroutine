@@ -8,6 +8,7 @@ import type { DOMElement } from "../dom/element";
 /**
  * Configuration options for the radial dark vignette decorator.
  * @category Decorators
+ * @inline
  */
 export interface VignetteOptions {
   /** Vignette color (default: "#09090b"). */

@@ -17,9 +17,6 @@
     "jsxImportSource": "stageroutine",
     "paths": {
       "stageroutine": ["./src/index.ts"],
-      "stageroutine/backgrounds": ["./src/dom/backgrounds/index.ts"],
-      "stageroutine/overlays": ["./src/overlays/index.ts"],
-      "stageroutine/presenter": ["./src/presenter/index.ts"],
       "stageroutine/jsx-runtime": ["./src/dom/jsx-runtime.ts"],
       "stageroutine/jsx-dev-runtime": ["./src/dom/jsx-dev-runtime.ts"],
       "stageroutine/styles.css": ["./src/dom/style.css"],

@@ -12,6 +12,7 @@ import { attachRangeSelection } from "../interaction";
 /**
  * Configuration options for the syntax-highlighted CodeBlock component.
  * @category Components
+ * @inline
  */
 export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
   lang?: string;

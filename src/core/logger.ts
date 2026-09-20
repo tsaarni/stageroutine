@@ -28,6 +28,10 @@ let currentLevel: LogLevel = "warn";
 
 const prefix = "[StageRoutine]";
 
+/**
+ * Logger control object for configuring logging behavior.
+ * @category Core
+ */
 export const logger = {
   /** Set the minimum log level. Messages below this level are suppressed. */
   setLevel(level: LogLevel) {

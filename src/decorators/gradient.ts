@@ -7,6 +7,7 @@ import type { DOMElement, ElementDecorator } from "../dom/element";
 /**
  * Configuration options for the linear gradient text decorator.
  * @category Decorators
+ * @inline
  */
 export interface GradientOptions {
   /** Array of CSS color stops for the gradient. */

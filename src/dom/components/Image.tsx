@@ -20,6 +20,7 @@ export type ImageFit = "contain" | "cover" | "fill" | "none" | "scale-down";
 /**
  * Configuration options for the Image component.
  * @category Components
+ * @inline
  */
 export interface ImageOptions extends ElementOptions {
   /** Image source URL or path (optional if passed as first argument). */

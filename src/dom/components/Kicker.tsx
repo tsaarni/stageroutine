@@ -9,6 +9,7 @@ import { DOMElement, type ElementOptions } from "../element";
 /**
  * Configuration options for the Kicker component.
  * @category Components
+ * @inline
  */
 export interface KickerOptions extends ElementOptions {
   /** Foreground label color. */

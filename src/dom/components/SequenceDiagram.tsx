@@ -120,6 +120,7 @@ export interface ActivationOptions extends ElementOptions {
 /**
  * Configuration options for the SequenceDiagram coordinator.
  * @category Components
+ * @inline
  */
 export interface SequenceDiagramOptions {
   /** Initial actor elements to register as diagram participants. */

@@ -7,11 +7,11 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 # Custom Paths
 
-StageRoutine allows you to define custom SVG path geometry functions. Both `Shape` and `Frame` accept custom paths directly.
+`Shape` and `Frame` take a path generator that defines their silhouette. StageRoutine ships common shapes in [`paths`](../components/shapes.mdx), but you can pass your own when you need something else.
 
 ## The PathFunction Contract
 
-A path generator is a pure function that takes bounding dimensions and returns an SVG path string (`d` attribute):
+A path generator is a pure function that returns an SVG path string (the `d` attribute):
 
 ```typescript
 import type { PathContext, PathFunction } from "stageroutine";
@@ -19,111 +19,70 @@ import type { PathContext, PathFunction } from "stageroutine";
 type PathFunction = (width: number, height: number, context?: PathContext) => string;
 ```
 
-### PathContext
+The optional `context` provides stroke metrics:
 
-The optional `context` parameter provides stroke metrics:
+- `context.strokeWidth`: outline stroke width in pixels (default: `0`).
+- `context.inset`: inset from the container edge in pixels (default: `0`).
 
-- `context.strokeWidth`: Outline stroke width in pixels (default: `0`).
-- `context.inset`: Inset padding in pixels from the container edge (default: `0`).
-
-Subtracting half the stroke width from boundaries ensures strokes render inside the container without edge clipping:
+Subtract half the stroke width so the outline stays inside the bounds:
 
 ```typescript
 const pad = (context?.strokeWidth ?? 0) / 2 + (context?.inset ?? 0);
-const innerWidth = width - pad * 2;
-const innerHeight = height - pad * 2;
 ```
 
-## Creating a Speech Bubble Path
+## A Custom Path
 
-Here is a custom speech bubble path generator with a downward pointer tail:
+A note with a folded corner. The second subpath draws the fold line:
 
-<DemoFrame src="/stageroutine/previews/speech-bubble.html" />
+<DemoFrame src="/stageroutine/previews/custom-path.html" />
 
-```typescript preview="speech-bubble.html"
+```typescript preview="custom-path.html"
 // hide-start
 import { Stage } from "stageroutine";
 const stage = new Stage();
 // hide-end
 import { type PathFunction, Shape } from "stageroutine";
 
-function speechBubble(radius = 12, tailHeight = 16): PathFunction {
-  return (w, h, ctx) => {
-    const sw = ctx?.strokeWidth ?? 0;
-    const pad = sw / 2 + (ctx?.inset ?? 0);
-    const right = w - pad;
-    const left = pad;
-    const top = pad;
-    const bottom = h - pad - tailHeight;
-    const cx = w / 2;
+const note: PathFunction = (w, h, ctx) => {
+  const p = (ctx?.strokeWidth ?? 0) / 2;
+  const f = Math.min(w, h) * 0.28;
+  return `M ${p} ${p} H ${w - p - f} L ${w - p} ${p + f} V ${h - p} H ${p} Z
+          M ${w - p - f} ${p} V ${p + f} H ${w - p}`;
+};
 
-    return `
-      M ${left + radius} ${top}
-      L ${right - radius} ${top}
-      A ${radius} ${radius} 0 0 1 ${right} ${top + radius}
-      L ${right} ${bottom - radius}
-      A ${radius} ${radius} 0 0 1 ${right - radius} ${bottom}
-      L ${cx + 12} ${bottom}
-      L ${cx} ${h - pad}
-      L ${cx - 12} ${bottom}
-      L ${left + radius} ${bottom}
-      A ${radius} ${radius} 0 0 1 ${left} ${bottom - radius}
-      L ${left} ${top + radius}
-      A ${radius} ${radius} 0 0 1 ${left + radius} ${top}
-      Z
-    `;
-  };
-}
-
-const callout = Shape(speechBubble(16, 20), "Hello, world!", {
+const callout = Shape(note, "Custom path", {
   x: "center",
   y: "center",
-  width: 280,
-  height: 140,
+  width: 220,
+  height: 150,
   borderColor: "#38bdf8",
   strokeWidth: 2,
-  style: { paddingBottom: "36px" },
 });
 // hide-start
-stage.scene("SpeechBubble").with(callout);
+stage.scene("CustomPath").with(callout);
 stage.pause();
 stage.mount("#stage");
 // hide-end
 ```
 
-### Optical Centering for Asymmetric Shapes
+`Shape` masks its surface with the path, so the fill follows the silhouette automatically. Wind every subpath the same way to keep overlapping parts solid.
 
-When a shape has an asymmetrical protrusion like a pointer tail, the mathematical center of the bounding box is lower than the visual center of the bubble body.
+## Built-in Paths
 
-Setting `style: { paddingBottom: "36px" }` shifts the content upward to align with the optical center of the bubble.
+Callout shapes such as `paths.speechBubble()` and `paths.thoughtBubble()` ship as path generators. See [Shapes & Frames](../components/shapes.mdx) for the full catalog.
 
-## Creating a Reusable Wave Frame
+## Custom Paths with Frame
 
-Custom paths work identically when passed to `Frame` for clipping images or video:
+`Frame` clips media to any custom path. Reuse the `note` generator above:
 
 ```typescript
-import { Frame, Image, type PathFunction } from "stageroutine";
+import { Frame, Image } from "stageroutine";
 
-const waveClip: PathFunction = (w, h, ctx) => {
-  const pad = (ctx?.strokeWidth ?? 0) / 2;
-  const top = pad;
-  const bottom = h - pad;
-  const left = pad;
-  const right = w - pad;
-
-  return `
-    M ${left} ${top + h * 0.3}
-    Q ${w * 0.25} ${top}, ${w * 0.5} ${top + h * 0.3}
-    T ${right} ${top + h * 0.3}
-    L ${right} ${bottom}
-    L ${left} ${bottom}
-    Z
-  `;
-};
-
-const photo = Frame(waveClip, Image("./hero.png", { fit: "cover" }), {
-  width: 400,
-  height: 250,
+const photo = Frame(note, Image("./hero.png", { fit: "cover" }), {
+  width: 260,
+  height: 180,
+  borderColor: "#38bdf8",
+  strokeWidth: 2,
 });
 ```
 

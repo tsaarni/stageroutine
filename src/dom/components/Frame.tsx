@@ -15,7 +15,8 @@ import type { PathFunction } from "../paths";
 
 /**
  * Configuration options for the Frame clipping component.
- * @category Components
+ * @category Shape & Frame
+ * @inline
  */
 export interface FrameOptions extends ElementOptions {
   /** Uniform width and height shorthand. */
@@ -36,7 +37,7 @@ export interface FrameOptions extends ElementOptions {
   children?: unknown;
 }
 
-/** Public controls for a frame. @category Components */
+/** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
   path: PathFunction;
   readonly items: ReactiveElementBase[];
@@ -273,7 +274,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
 
 /**
  * Clips media or DOM child elements to an SVG path geometry contour.
- * @category Components
+ * @category Shape & Frame
  */
 export function Frame(
   path: PathFunction,

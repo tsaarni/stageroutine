@@ -8,6 +8,7 @@ import type { DOMElement, ElementDecorator } from "../dom/element";
 /**
  * Configuration options for the background scrim underlay decorator.
  * @category Decorators
+ * @inline
  */
 export interface ScrimOptions {
   /** Background darkness opacity from 0 to 1 (default: 0.85). */

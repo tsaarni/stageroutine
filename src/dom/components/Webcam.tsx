@@ -20,6 +20,7 @@ export interface CameraDevice {
 /**
  * Configuration options for the Webcam component.
  * @category Components
+ * @inline
  */
 export interface WebcamOptions extends ElementOptions {
   /** Explicit device ID or camera label substring. */
@@ -279,6 +280,10 @@ export function Webcam(options: WebcamOptions = {}): WebcamElement {
   return el;
 }
 
+/**
+ * Webcam utilities and device enumeration.
+ * @category Components
+ */
 export namespace Webcam {
   /** Discovers and lists all connected video input cameras. */
   export async function getCameras(): Promise<CameraDevice[]> {

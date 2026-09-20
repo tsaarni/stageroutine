@@ -1,7 +1,7 @@
 /**
- * Geometric SVG path generators for shapes and clipping frames.
+ * Contextual geometry parameters passed to a PathFunction.
+ * @category Shape & Frame
  */
-
 export interface PathContext {
   /** Stroke width in virtual canvas pixels, used to center the stroke within bounds. */
   strokeWidth?: number;
@@ -11,7 +11,7 @@ export interface PathContext {
 
 /**
  * A function that calculates an SVG path string ('d' attribute) for given dimensions.
- * @category Geometry
+ * @category Shape & Frame
  */
 export type PathFunction = (width: number, height: number, context?: PathContext) => string;
 
@@ -95,8 +95,38 @@ function roundedRectPerCorner(pad: number, pw: number, ph: number, radii: Corner
 }
 
 /**
+ * Samples an ellipse at `count` points spaced evenly by arc length.
+ * Sampling by angle would bunch points together at the flatter left and right sides.
+ */
+function ellipseRing(
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  count: number,
+): Array<[number, number]> {
+  const at = (t: number) => [cx + rx * Math.sin(t), cy - ry * Math.cos(t)];
+  const steps = 360;
+  const samples = Array.from({ length: steps + 1 }, (_, i) => at((i / steps) * Math.PI * 2));
+  const segs = samples
+    .slice(1)
+    .map((p, i) => Math.hypot(p[0] - samples[i][0], p[1] - samples[i][1]));
+  const total = segs.reduce((a, b) => a + b, 0);
+  let e = 0;
+  let walked = 0;
+  return Array.from({ length: count }, (_, k) => {
+    const goal = (k / count) * total;
+    while (walked + segs[e] < goal) walked += segs[e++];
+    const f = (goal - walked) / segs[e];
+    const a = samples[e];
+    const b = samples[e + 1];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  });
+}
+
+/**
  * Options for the box (rounded rectangle) path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface BoxPathOptions {
   /** Corner radius in pixels (default: 12). */
@@ -105,7 +135,7 @@ export interface BoxPathOptions {
 
 /**
  * Options for the circle / ellipse path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface CirclePathOptions {
   /**
@@ -118,7 +148,7 @@ export interface CirclePathOptions {
 
 /**
  * Options for the diamond path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface DiamondPathOptions {
   /** Corner tip radius in pixels (default: 10.5). */
@@ -127,7 +157,7 @@ export interface DiamondPathOptions {
 
 /**
  * Options for the triangle path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface TrianglePathOptions {
   /** Triangle orientation: "up" (default), "down", "left", or "right". */
@@ -138,7 +168,7 @@ export interface TrianglePathOptions {
 
 /**
  * Options for the hexagon path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface HexagonPathOptions {
   /** Hexagon orientation: "pointy" (default, vertex at top) or "flat" (flat horizontal top). */
@@ -147,7 +177,7 @@ export interface HexagonPathOptions {
 
 /**
  * Options for the star path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface StarPathOptions {
   /** Number of star points (default: 5). */
@@ -158,7 +188,7 @@ export interface StarPathOptions {
 
 /**
  * Options for the squircle (superellipse) path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface SquirclePathOptions {
   /** Curvature tension between 0 (sharp) and 1 (round, default: 0.82). */
@@ -167,7 +197,7 @@ export interface SquirclePathOptions {
 
 /**
  * Options for the regular polygon path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface PolygonPathOptions {
   /** Number of sides (minimum: 3, default: 5). */
@@ -175,8 +205,30 @@ export interface PolygonPathOptions {
 }
 
 /**
+ * Options for the speech bubble path generator.
+ * @category Shape & Frame
+ */
+export interface SpeechBubblePathOptions {
+  /** Corner radius in pixels (default: 12). */
+  radius?: number;
+  /** Pointer tail height in pixels. The body is inset by the same amount so it stays centered (default: 16). */
+  tail?: number;
+}
+
+/**
+ * Options for the thought bubble path generator.
+ * @category Shape & Frame
+ */
+export interface ThoughtBubblePathOptions {
+  /** Vertical space reserved for the bubble trail in pixels (default: 30). */
+  tail?: number;
+  /** Number of cloud puffs (default: 9). */
+  lobes?: number;
+}
+
+/**
  * Geometric SVG path generators for shapes, cards, and clipping frames.
- * @category Geometry
+ * @category Shape & Frame
  */
 export const paths = {
   /**
@@ -491,6 +543,77 @@ export const paths = {
 
       const [start, ...rest] = points;
       return `M ${start[0]} ${start[1]} ${rest.map((p) => `L ${p[0]} ${p[1]}`).join(" ")} Z`;
+    };
+  },
+
+  /**
+   * Generates a speech bubble with a downward pointer tail.
+   */
+  speechBubble(options: SpeechBubblePathOptions = {}): PathFunction {
+    const defaultRadius = options.radius ?? 12;
+    const tail = Math.max(0, options.tail ?? 16);
+    return (w, h, ctx) => {
+      const geo = getGeometryBounds(w, h, ctx);
+      if (!geo) return "";
+      const { pw, ph, cx, left, right, top } = geo;
+      // The body is centered in the bounds; `tail` is both the top margin and the
+      // pointer height, so centered content lands on the middle of the body.
+      const bodyTop = top + Math.min(tail, ph / 2);
+      const bodyBottom = top + ph - Math.min(tail, ph / 2);
+      const r = Math.min(
+        Math.max(0, defaultRadius),
+        pw / 2,
+        Math.max(0, (bodyBottom - bodyTop) / 2),
+      );
+      const half = Math.min(tail * 0.75, pw * 0.25);
+      const tip = top + ph;
+      return (
+        `M ${left + r} ${bodyTop} ` +
+        `H ${right - r} A ${r} ${r} 0 0 1 ${right} ${bodyTop + r} ` +
+        `V ${bodyBottom - r} A ${r} ${r} 0 0 1 ${right - r} ${bodyBottom} ` +
+        `H ${cx + half} L ${cx} ${tip} L ${cx - half} ${bodyBottom} ` +
+        `H ${left + r} A ${r} ${r} 0 0 1 ${left} ${bodyBottom - r} ` +
+        `V ${bodyTop + r} A ${r} ${r} 0 0 1 ${left + r} ${bodyTop} Z`
+      );
+    };
+  },
+
+  /**
+   * Generates a scalloped thought cloud with a trail of shrinking bubbles.
+   */
+  thoughtBubble(options: ThoughtBubblePathOptions = {}): PathFunction {
+    const tail = Math.max(0, options.tail ?? 30);
+    const lobes = Math.max(3, Math.round(options.lobes ?? 9));
+    return (w, h, ctx) => {
+      const geo = getGeometryBounds(w, h, ctx);
+      if (!geo) return "";
+      const { pad, pw, ph, cx } = geo;
+      // The cloud is centered in the bounds, so centered content lands on it.
+      const cy = pad + ph / 2;
+      const rx = pw * 0.4;
+      const ry = Math.max(0, ph - tail) * 0.38;
+
+      const ring = ellipseRing(cx, cy, rx, ry, lobes);
+      const cloud = ring
+        .map(([x, y], i) => {
+          const [px, py] = ring[(i + lobes - 1) % lobes];
+          const r = Math.hypot(x - px, y - py) * 0.72;
+          return `${i ? "" : `M ${px} ${py} `}A ${r} ${r} 0 0 1 ${x} ${y}`;
+        })
+        .join(" ");
+
+      // The trail drifts down-left, just clear of the scalloped outline.
+      const base = cy + ry;
+      const trail = [0.3, 0.17, 0.09]
+        .map((scale, i) => {
+          const r = tail * scale;
+          const x = cx - rx * (0.66 + 0.16 * i);
+          const y = base + tail * (0.28 + 0.24 * i);
+          return `M ${x - r} ${y} a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0`;
+        })
+        .join(" ");
+
+      return `${cloud} Z ${trail}`;
     };
   },
 };

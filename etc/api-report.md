@@ -15,10 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 171 symbols |
-| `stageroutine/backgrounds` | 29 symbols |
-| `stageroutine/overlays` | 7 symbols |
-| `stageroutine/presenter` | 3 symbols |
+| `stageroutine` | 179 symbols |
 | `stageroutine/jsx-runtime` | 19 symbols |
 | `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -30,6 +27,9 @@ Primary entry point providing the stage director, built-in components, motion tr
 ### Functions
 
 ```ts
+/** Creates a procedural ASCII Fluid background element. */
+export function AsciiFluid(options?: AsciiFluidOptions): Background;
+
 /** Decorates an element with a grouping bracket (curly brace, square bracket, or corner frame). */
 export function bracket(options?: BracketOptions): ElementDecorator;
 
@@ -56,7 +56,7 @@ export function Connector(from: ConnectorTarget, to: ConnectorTarget, options?: 
  * CSSBackground("url('/wallpaper.jpg') center / cover no-repeat");
  * ```
  */
-export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): CSSBackgroundElement;
+export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): Background;
 
 /**
  * Registers an icon set or custom SVG icons.
@@ -87,6 +87,9 @@ export function glow(options?: GlowOptions): ElementDecorator;
 
 /** Decorates an element with a linear gradient text effect and optional flowing animation. */
 export function gradient(options?: GradientOptions): ElementDecorator;
+
+/** Creates a procedural continuous Chromatic Gradient Fluid background element. */
+export function GradientFluid(options?: GradientFluidOptions): Background;
 
 /** Decorates an element or background with a film grain texture. */
 export function grain(options?: GrainOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => void;
@@ -169,6 +172,9 @@ export function Shape(path: PathFunction, childrenOrOptions?: unknown, options?:
 
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
 export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerTransition;
+
+/** Creates an interactive 3D Starfield background element. */
+export function Starfield(options?: StarfieldOptions): Background;
 
 /** Table component with column alignment, row proxies, and interactive row-level focus. */
 export function Table(options: TableOptions): TableElement;
@@ -267,41 +273,6 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
 ### Classes
 
 ```ts
-/**
- * Base element for procedural WebGL and canvas backgrounds.
- * Handles resize observation, full-bleed container positioning,
- * and automatic render loop pausing when invisible.
- */
-export abstract class BackgroundElement implements Background {
-  constructor(kind: string, options?: BackgroundOptions): BackgroundElement;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): BackgroundElement;
-  play(): void;
-  /** Called when container dimensions change */
-  onResize(width: number, height: number): void;
-  /** Starts or resumes the continuous WebGL render loop */
-  resume(): void;
-  /** Pauses the continuous WebGL render loop when hidden */
-  pause(): void;
-  /** Clean up WebGL resources, geometries, textures, and observers */
-  dispose(): void;
-  /** Lifecycle attach hook invoked when the background is attached to a stage */
-  attach(stage: StageContext): void;
-}
-
-/** Full-bleed DOM background element styled with standard CSS. */
-export class CSSBackgroundElement implements Background {
-  constructor(options?: CSSBackgroundOptions): CSSBackgroundElement;
-  readonly id: string;
-  readonly kind: "CSSBackground";
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): CSSBackgroundElement;
-  attach(stage: StageContext): void;
-  dispose(): void;
-}
-
 /**
  * Animated DOM element instance managed by the reactive Stage runtime.
  * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
@@ -509,6 +480,20 @@ export interface ActivationOptions extends ElementOptions {
 }
 
 /**
+ * Configuration options for procedural ASCII fluid simulation background.
+ * @category Backgrounds
+ * @inline
+ */
+export interface AsciiFluidOptions extends BaseFluidOptions {
+    /** ASCII character ramp ordered from darkest to brightest */
+    characters?: string;
+    /** Size of each ASCII character cell in pixels (default: 18) */
+    cellSize?: number;
+    /** Primary accent color for characters (default: "#38bdf8") */
+    color?: string;
+}
+
+/**
  * Interface implemented by dynamic or static stage background renderers.
  * @category Backgrounds
  */
@@ -516,7 +501,7 @@ export interface Background {
     readonly domElement?: HTMLElement;
     attach(stage: StageContext): void;
     dispose?(): void;
-    decorate?(decorator: BackgroundDecorator): this;
+    decorate(decorator: BackgroundDecorator): this;
     play?(): void;
     pause?(): void;
 }
@@ -533,8 +518,20 @@ export interface BackgroundOptions {
 }
 
 /**
+ * @internal
+ */
+export interface BaseFluidOptions extends BackgroundOptions {
+    /** Background color behind the fluid (default: "#09090b") */
+    backgroundColor?: string;
+    /** Overall opacity / brightness factor (default: 0.28) */
+    opacity?: number;
+    /** Speed of wave rolling across screen (default: 0.5) */
+    waveSpeed?: number;
+}
+
+/**
  * Options for the box (rounded rectangle) path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface BoxPathOptions {
     /** Corner radius in pixels (default: 12). */
@@ -544,6 +541,7 @@ export interface BoxPathOptions {
 /**
  * Configuration options for the grouping bracket decorator.
  * @category Decorators
+ * @inline
  */
 export interface BracketOptions {
     /** Bracket style: "curly" (default), "square", "round", or "corners". */
@@ -581,6 +579,7 @@ export interface BulletListElement extends DOMElement {
 /**
  * Configuration options for the BulletList component.
  * @category Components
+ * @inline
  */
 export interface BulletListOptions extends ElementOptions {
     /** Vertical spacing between bullet items in pixels (default: 16). */
@@ -632,7 +631,7 @@ export interface CircleLayoutOptions {
 
 /**
  * Options for the circle / ellipse path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface CirclePathOptions {
     /**
@@ -650,6 +649,7 @@ export interface CodeBlockElement extends DOMElement {
 /**
  * Configuration options for the syntax-highlighted CodeBlock component.
  * @category Components
+ * @inline
  */
 export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
     lang?: string;
@@ -687,6 +687,7 @@ export interface ConnectorElement extends DOMElement {
 /**
  * Configuration options for creating a reactive Connector between two elements or points.
  * @category Components
+ * @inline
  */
 export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     /** Optional text label rendered at the connector's midpoint or specified placement. */
@@ -761,7 +762,7 @@ export interface CSSBackgroundOptions {
 
 /**
  * Options for the diamond path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface DiamondPathOptions {
     /** Corner tip radius in pixels (default: 10.5). */
@@ -771,6 +772,7 @@ export interface DiamondPathOptions {
 /**
  * Configuration options for the dream liquid decorator.
  * @category Decorators
+ * @inline
  */
 export interface DreamOptions {
     /** Entrance animation duration in seconds (default: 1.4). */
@@ -839,6 +841,10 @@ export interface ElementTransition {
     apply(): void;
 }
 
+/**
+ * Transitionable element properties and targets.
+ * @category Motion
+ */
 export interface ElementTransitionProps {
     x?: CoordProp;
     y?: CoordProp;
@@ -857,7 +863,7 @@ export interface ElementTransitionProps {
     [key: string]: unknown;
 }
 
-/** Public controls for a frame. @category Components */
+/** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
     path: PathFunction;
     readonly items: ReactiveElementBase[];
@@ -867,7 +873,8 @@ export interface FrameElement extends DOMElement {
 
 /**
  * Configuration options for the Frame clipping component.
- * @category Components
+ * @category Shape & Frame
+ * @inline
  */
 export interface FrameOptions extends ElementOptions {
     /** Uniform width and height shorthand. */
@@ -891,6 +898,7 @@ export interface FrameOptions extends ElementOptions {
 /**
  * Configuration options for the glow decorator.
  * @category Decorators
+ * @inline
  */
 export interface GlowOptions {
     /** Whether the glow pulses continuously (default: true). */
@@ -900,8 +908,29 @@ export interface GlowOptions {
 }
 
 /**
+ * Configuration options for procedural chromatic gradient fluid background.
+ * @category Backgrounds
+ * @inline
+ */
+export interface GradientFluidOptions extends BaseFluidOptions {
+    /**
+     * Color palette from dark depth to luminous crest highlights.
+     * Default: ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"]
+     */
+    colors?: [
+        string,
+        string,
+        string,
+        string
+    ] | string[];
+    /** Strength of surface refraction / liquid gloss (default: 1.0) */
+    gloss?: number;
+}
+
+/**
  * Configuration options for the linear gradient text decorator.
  * @category Decorators
+ * @inline
  */
 export interface GradientOptions {
     /** Array of CSS color stops for the gradient. */
@@ -917,6 +946,7 @@ export interface GradientOptions {
 /**
  * Configuration options for the film grain texture decorator.
  * @category Decorators
+ * @inline
  */
 export interface GrainOptions {
     /** Film grain opacity from 0 to 1 (default: 0.12). */
@@ -952,7 +982,7 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
 
 /**
  * Options for the hexagon path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface HexagonPathOptions {
     /** Hexagon orientation: "pointy" (default, vertex at top) or "flat" (flat horizontal top). */
@@ -977,6 +1007,7 @@ export interface IconElement extends DOMElement {
 /**
  * Configuration options for the Icon component.
  * @category Components
+ * @inline
  */
 export interface IconOptions extends ElementOptions {
     /** Icon identifier (e.g. "lucide:heart", "mycompany:logo") or raw SVG markup. */
@@ -995,6 +1026,7 @@ export interface ImageElement extends DOMElement {
 /**
  * Configuration options for the Image component.
  * @category Components
+ * @inline
  */
 export interface ImageOptions extends ElementOptions {
     /** Image source URL or path (optional if passed as first argument). */
@@ -1008,6 +1040,7 @@ export interface ImageOptions extends ElementOptions {
 /**
  * Configuration options for the Kicker component.
  * @category Components
+ * @inline
  */
 export interface KickerOptions extends ElementOptions {
     /** Foreground label color. */
@@ -1018,7 +1051,7 @@ export interface KickerOptions extends ElementOptions {
 
 /**
  * Extended controller for the laser pointer overlay, beyond the base OverlayPlugin interface.
- * @category Overlays
+ * @category Presenter
  */
 export interface LaserPointerController {
     /** Whether the laser pointer is currently active. */
@@ -1027,7 +1060,8 @@ export interface LaserPointerController {
 
 /**
  * Configuration options for the laser pointer overlay.
- * @category Overlays
+ * @category Presenter
+ * @inline
  */
 export interface LaserPointerOptions {
     /** Base laser beam color in RGB hex. Defaults to neon laser ruby ('#ff0055'). */
@@ -1118,7 +1152,8 @@ export interface NavGotoStepEvent {
 
 /**
  * Options for the navigation overlay.
- * @category Overlays
+ * @category Presenter
+ * @inline
  */
 export interface NavigationOverlayOptions {
     /** Height of the trigger zone at the bottom of the screen, in pixels. Defaults to 100. */
@@ -1218,7 +1253,8 @@ export interface OverlayPlugin {
 }
 
 /**
- * Geometric SVG path generators for shapes and clipping frames.
+ * Contextual geometry parameters passed to a PathFunction.
+ * @category Shape & Frame
  */
 export interface PathContext {
     /** Stroke width in virtual canvas pixels, used to center the stroke within bounds. */
@@ -1258,7 +1294,7 @@ export interface PointerStateChangedEvent {
 
 /**
  * Options for the regular polygon path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface PolygonPathOptions {
     /** Number of sides (minimum: 3, default: 5). */
@@ -1293,6 +1329,7 @@ export interface PulseSequenceController {
 /**
  * Options for configuring a multi-connector sequential pulse loop.
  * @category Motion
+ * @inline
  */
 export interface PulseSequenceOptions {
     /** Whether the sequence should loop continuously (default: true). */
@@ -1384,6 +1421,7 @@ export interface ReactiveElementBase {
 /**
  * Configuration options for in-place element replacement transitions.
  * @category Motion
+ * @inline
  */
 export interface ReplaceOptions {
     /** Total choreography duration in seconds (default: 0.5s). */
@@ -1416,6 +1454,7 @@ export interface ReplaceTransition {
 /**
  * Configuration options for rules and dividers.
  * @category Decorators
+ * @inline
  */
 export interface RuleOptions {
     /** Which side the rule sits on or faces ("left" | "right" | "top" | "bottom", default: "left"). */
@@ -1442,6 +1481,7 @@ export interface RuleOptions {
 /**
  * Configuration options for the background scrim underlay decorator.
  * @category Decorators
+ * @inline
  */
 export interface ScrimOptions {
     /** Background darkness opacity from 0 to 1 (default: 0.85). */
@@ -1472,6 +1512,7 @@ export interface SequenceDiagramController {
 /**
  * Configuration options for the SequenceDiagram coordinator.
  * @category Components
+ * @inline
  */
 export interface SequenceDiagramOptions {
     /** Initial actor elements to register as diagram participants. */
@@ -1490,7 +1531,7 @@ export interface SequenceDiagramOptions {
     paddingBottom?: number;
 }
 
-/** Public controls for a shape. @category Components */
+/** Public controls for a shape. @category Shape & Frame */
 export interface ShapeElement extends DOMElement {
     path: PathFunction;
     readonly variant: ShapeVariant;
@@ -1507,7 +1548,8 @@ export interface ShapeElement extends DOMElement {
 
 /**
  * Configuration options for the Shape and Card components.
- * @category Components
+ * @category Shape & Frame
+ * @inline
  */
 export interface ShapeOptions extends ElementOptions {
     /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
@@ -1545,8 +1587,19 @@ export interface ShapeOptions extends ElementOptions {
 }
 
 /**
+ * Options for the speech bubble path generator.
+ * @category Shape & Frame
+ */
+export interface SpeechBubblePathOptions {
+    /** Corner radius in pixels (default: 12). */
+    radius?: number;
+    /** Pointer tail height in pixels. The body is inset by the same amount so it stays centered (default: 16). */
+    tail?: number;
+}
+
+/**
  * Options for the squircle (superellipse) path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface SquirclePathOptions {
     /** Curvature tension between 0 (sharp) and 1 (round, default: 0.82). */
@@ -1593,6 +1646,7 @@ export interface StageEventMap {
 /**
  * Options for initializing the Stage presentation director.
  * @category Core
+ * @inline
  */
 export interface StageOptions {
     /** Target HTML container or CSS selector to mount into (default: `document.body`). */
@@ -1655,6 +1709,7 @@ export interface StageStateChangedEvent {
 /**
  * Configuration options for cascading stagger animations across multiple elements.
  * @category Motion
+ * @inline
  */
 export interface StaggerOptions {
     /** Animation duration in seconds for each element (default: 0.4s). */
@@ -1682,8 +1737,26 @@ export interface StaggerTransition {
 }
 
 /**
+ * Configuration options for the 3D Starfield background.
+ * @category Backgrounds
+ * @inline
+ */
+export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
+    /** Number of star particles (default: 2000) */
+    count?: number;
+    /** Base travel speed through starfield (default: 1.0) */
+    speed?: number;
+    /** Color of stars (default: 0xffffff) */
+    color?: number | string;
+    /** Particle size in pixels (default: 2.5) */
+    size?: number;
+    /** Radius of space spread (default: 2000) */
+    spread?: number;
+}
+
+/**
  * Options for the star path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface StarPathOptions {
     /** Number of star points (default: 5). */
@@ -1701,6 +1774,7 @@ export interface TableElement extends DOMElement {
 /**
  * Configuration options for the Table component.
  * @category Components
+ * @inline
  */
 export interface TableOptions extends Omit<ElementOptions, "align"> {
     /** Column header labels displayed in the table header row. */
@@ -1722,6 +1796,7 @@ export interface TerminalBlockElement extends DOMElement {
 /**
  * Options for configuring the TerminalBlock component.
  * @category Components
+ * @inline
  */
 export interface TerminalBlockOptions extends ElementOptions {
     /** Window title bar label (default: "bash - 80x24"). */
@@ -1737,6 +1812,7 @@ export interface TerminalBlockOptions extends ElementOptions {
 /**
  * Configuration options for the Text component.
  * @category Components
+ * @inline
  */
 export interface TextOptions extends ElementOptions {
     /** Foreground text color. */
@@ -1809,8 +1885,20 @@ export interface ThemeConfig {
 }
 
 /**
+ * Options for the thought bubble path generator.
+ * @category Shape & Frame
+ */
+export interface ThoughtBubblePathOptions {
+    /** Vertical space reserved for the bubble trail in pixels (default: 30). */
+    tail?: number;
+    /** Number of cloud puffs (default: 9). */
+    lobes?: number;
+}
+
+/**
  * Configuration options for the Title component.
  * @category Components
+ * @inline
  */
 export interface TitleOptions extends ElementOptions {
     /** Visual typography variant: "title" (default), "hero" (large display), or "serif" (editorial italic). */
@@ -1858,7 +1946,7 @@ export interface TransitionDescriptor<T = unknown> {
 
 /**
  * Options for the triangle path generator.
- * @category Geometry
+ * @category Shape & Frame
  */
 export interface TrianglePathOptions {
     /** Triangle orientation: "up" (default), "down", "left", or "right". */
@@ -1909,6 +1997,7 @@ export interface VideoElement extends DOMElement {
 /**
  * Configuration options for the Video component.
  * @category Components
+ * @inline
  */
 export interface VideoOptions extends ElementOptions {
     /** Video source URL or media asset path (optional if passed as first argument). */
@@ -1938,6 +2027,7 @@ export interface VideoOptions extends ElementOptions {
 /**
  * Configuration options for the radial dark vignette decorator.
  * @category Decorators
+ * @inline
  */
 export interface VignetteOptions {
     /** Vignette color (default: "#09090b"). */
@@ -1961,6 +2051,7 @@ export interface WebcamElement extends DOMElement {
 /**
  * Configuration options for the Webcam component.
  * @category Components
+ * @inline
  */
 export interface WebcamOptions extends ElementOptions {
     /** Explicit device ID or camera label substring. */
@@ -2014,6 +2105,12 @@ export type AnchorMode = "auto" | "closest" | "ray";
  * @category Motion
  */
 export type AnimationMilestone = "start" | "halfway" | "end" | "complete" | number;
+
+/**
+ * A decorator applied to a background element.
+ * @category Backgrounds
+ */
+export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void;
 
 /**
  * Supported geometric styles for grouping brackets.
@@ -2160,7 +2257,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 
 /**
  * A function that calculates an SVG path string ('d' attribute) for given dimensions.
- * @category Geometry
+ * @category Shape & Frame
  */
 export type PathFunction = (width: number, height: number, context?: PathContext) => string;
 
@@ -2217,7 +2314,7 @@ export type RelativeAlign = "start" | "center" | "end";
 
 /**
  * Surface material preset for the Shape component.
- * @category Components
+ * @category Shape & Frame
  */
 export type ShapeVariant = "surface" | "ghost" | "solid";
 
@@ -2265,797 +2362,32 @@ export type UnwrapTransition<T> = T extends TransitionDescriptor<infer U> ? Unwr
 ### Constants & Variables
 
 ```ts
+/** Cyberpunk theme preset. */
 export const cyberpunk: ThemeConfig;
 
+/** Default dark theme preset. */
 export const defaultDark: ThemeConfig;
 
+/** Default light theme preset. */
 export const defaultLight: ThemeConfig;
 
+/** Dracula theme preset. */
 export const dracula: ThemeConfig;
 
 /** Layout helper providing procedural positioning engines (hstack, vstack, grid, circle, relational). */
 export const layout: { hstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; };
 
+/** Logger control object for configuring logging behavior. */
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };
 
 /** Geometric SVG path generators for shapes, cards, and clipping frames. */
-export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; };
+export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; speechBubble(options?: SpeechBubblePathOptions): PathFunction; thoughtBubble(options?: ThoughtBubblePathOptions): PathFunction; };
 
+/** Collection of all built-in theme presets. */
 export const themes: { readonly defaultDark: ThemeConfig; readonly defaultLight: ThemeConfig; readonly dracula: ThemeConfig; readonly tokyoNight: ThemeConfig; readonly cyberpunk: ThemeConfig; };
 
+/** Tokyo Night theme preset. */
 export const tokyoNight: ThemeConfig;
-
-```
-
-## `stageroutine/backgrounds`
-
-Procedural WebGL and canvas background renderers, packaged separately to keep 2D presentations lightweight.
-
-### Functions
-
-```ts
-/** Creates a procedural ASCII Fluid background element. */
-export function AsciiFluid(options?: AsciiFluidOptions): FluidBackgroundElement;
-
-/**
- * Creates a full-bleed CSS background supporting colors, gradients, and images.
- * @example ```ts
- * CSSBackground("#0f172a");
- * CSSBackground("linear-gradient(135deg, #1e293b, #0f172a)");
- * CSSBackground("url('/wallpaper.jpg') center / cover no-repeat");
- * ```
- */
-export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): CSSBackgroundElement;
-
-/** Creates a procedural continuous Chromatic Gradient Fluid background element. */
-export function GradientFluid(options?: GradientFluidOptions): FluidBackgroundElement;
-
-/** Creates an interactive 3D Starfield background element. */
-export function Starfield(options?: StarfieldOptions): StarfieldElement;
-
-```
-
-### Classes
-
-```ts
-/**
- * Base element for procedural WebGL and canvas backgrounds.
- * Handles resize observation, full-bleed container positioning,
- * and automatic render loop pausing when invisible.
- */
-export abstract class BackgroundElement implements Background {
-  constructor(kind: string, options?: BackgroundOptions): BackgroundElement;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): BackgroundElement;
-  play(): void;
-  /** Called when container dimensions change */
-  onResize(width: number, height: number): void;
-  /** Starts or resumes the continuous WebGL render loop */
-  resume(): void;
-  /** Pauses the continuous WebGL render loop when hidden */
-  pause(): void;
-  /** Clean up WebGL resources, geometries, textures, and observers */
-  dispose(): void;
-  /** Lifecycle attach hook invoked when the background is attached to a stage */
-  attach(stage: StageContext): void;
-}
-
-/** Full-bleed DOM background element styled with standard CSS. */
-export class CSSBackgroundElement implements Background {
-  constructor(options?: CSSBackgroundOptions): CSSBackgroundElement;
-  readonly id: string;
-  readonly kind: "CSSBackground";
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): CSSBackgroundElement;
-  attach(stage: StageContext): void;
-  dispose(): void;
-}
-
-/**
- * Animated DOM element instance managed by the reactive Stage runtime.
- * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
- */
-export class DOMElement implements ReactiveElementBase {
-  constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
-  static reactiveKeys: ReadonlySet<string>;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: CoordProp;
-  y: CoordProp;
-  width: CoordProp | undefined;
-  height: CoordProp | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: CoordProp | undefined;
-  position: Position;
-  /**
-   * Animates multiple reactive properties on this element simultaneously.
-   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
-   */
-  to(props: ElementTransitionProps): ElementTransition;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): DOMElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): DOMElement;
-}
-
-export class FluidBackgroundElement extends BackgroundElement {
-  constructor(kind: string, config: FluidEngineConfig, options?: BaseFluidOptions): FluidBackgroundElement;
-  /** Called when container dimensions change */
-  onResize(width: number, height: number): void;
-  /** Starts or resumes the continuous WebGL render loop */
-  resume(): void;
-  /** Pauses the continuous WebGL render loop when hidden */
-  pause(): void;
-  /** Clean up WebGL resources, geometries, textures, and observers */
-  dispose(): void;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): FluidBackgroundElement;
-  play(): void;
-  /** Lifecycle attach hook invoked when the background is attached to a stage */
-  attach(stage: StageContext): void;
-}
-
-export class StarfieldElement extends BackgroundElement {
-  constructor(options?: StarfieldOptions): StarfieldElement;
-  /** Lifecycle attach hook invoked when the background is attached to a stage */
-  attach(stage: StageContext): void;
-  /** Called when container dimensions change */
-  onResize(width: number, height: number): void;
-  /** Starts or resumes the continuous WebGL render loop */
-  resume(): void;
-  /** Pauses the continuous WebGL render loop when hidden */
-  pause(): void;
-  /** Clean up WebGL resources, geometries, textures, and observers */
-  dispose(): void;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  decorate(decorator: BackgroundDecorator): StarfieldElement;
-  play(): void;
-}
-
-```
-
-### Interfaces
-
-```ts
-/**
- * Configuration options for procedural ASCII fluid simulation background.
- * @category Backgrounds
- */
-export interface AsciiFluidOptions extends BaseFluidOptions {
-    /** ASCII character ramp ordered from darkest to brightest */
-    characters?: string;
-    /** Size of each ASCII character cell in pixels (default: 18) */
-    cellSize?: number;
-    /** Primary accent color for characters (default: "#38bdf8") */
-    color?: string;
-}
-
-/**
- * Interface implemented by dynamic or static stage background renderers.
- * @category Backgrounds
- */
-export interface Background {
-    readonly domElement?: HTMLElement;
-    attach(stage: StageContext): void;
-    dispose?(): void;
-    decorate?(decorator: BackgroundDecorator): this;
-    play?(): void;
-    pause?(): void;
-}
-
-/**
- * Base options for background elements.
- * @category Backgrounds
- */
-export interface BackgroundOptions {
-    id?: string;
-    className?: string;
-    /** Optional initial opacity (default: 1). */
-    opacity?: number;
-}
-
-/**
- * @internal
- */
-export interface BaseFluidOptions extends BackgroundOptions {
-    /** Background color behind the fluid (default: "#09090b") */
-    backgroundColor?: string;
-    /** Overall opacity / brightness factor (default: 0.28) */
-    opacity?: number;
-    /** Speed of wave rolling across screen (default: 0.5) */
-    waveSpeed?: number;
-}
-
-/**
- * Configuration options for full-bleed CSS backgrounds.
- * @category Backgrounds
- */
-export interface CSSBackgroundOptions {
-    id?: string;
-    className?: string;
-    /** Standard CSS background value (color, gradient, or url). */
-    background?: string;
-    /** Optional initial opacity (default: 1). */
-    opacity?: number;
-}
-
-/**
- * Base positioning and visual options shared across all Stage elements.
- * @category Core
- */
-export interface ElementOptions {
-    id?: string;
-    anchor?: ElementAnchor;
-    align?: Align;
-    position?: Position;
-    x?: CoordProp;
-    y?: CoordProp;
-    width?: CoordProp;
-    height?: CoordProp;
-    size?: CoordProp;
-    scale?: ReactiveProp<number>;
-    rotation?: ReactiveProp<number>;
-    opacity?: ReactiveProp<number>;
-    blur?: ReactiveProp<number>;
-    brightness?: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    className?: string;
-    style?: CSSProperties | Partial<CSSStyleDeclaration>;
-    theme?: Partial<ThemeConfig>;
-    /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
-    customPositioned?: boolean;
-    /** Duration in seconds for exiting scene transition. */
-    exitDuration?: number;
-    /** Delay in seconds before exiting scene transition begins. */
-    exitDelay?: number;
-    /** Duration in seconds for entering scene transition. */
-    enterDuration?: number;
-    /** Delay in seconds before entering scene transition begins. */
-    enterDelay?: number;
-    onMount?: () => void;
-    onUnmount?: () => void;
-    onActivate?: () => void;
-    onDeactivate?: () => void;
-}
-
-/**
- * Configuration options for procedural chromatic gradient fluid background.
- * @category Backgrounds
- */
-export interface GradientFluidOptions extends BaseFluidOptions {
-    /**
-     * Color palette from dark depth to luminous crest highlights.
-     * Default: ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"]
-     */
-    colors?: [
-        string,
-        string,
-        string,
-        string
-    ] | string[];
-    /** Strength of surface refraction / liquid gloss (default: 1.0) */
-    gloss?: number;
-}
-
-/**
- * Base interface for all reactive presentation elements on stage.
- * @category Core
- */
-export interface ReactiveElementBase {
-    readonly id: string;
-    readonly kind: string;
-    readonly domElement: HTMLElement;
-    anchor?: ReactiveProp<ElementAnchor>;
-    align?: ReactiveProp<Align>;
-    /**
-     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-     * When true, Stage does not overwrite `node.style.transform`.
-     * @internal Engine driver
-     */
-    isCustomPositioned?: boolean;
-    /**
-     * Default pointer-events style when element is visible.
-     * @internal Engine driver
-     */
-    _defaultPointerEvents?: string;
-    opacity: ReactiveProp<number>;
-    x: CoordProp;
-    y: CoordProp;
-    position?: ReactiveProp<Position> | PositionUpdater;
-    size?: CoordProp;
-    scale: ReactiveProp<number>;
-    rotation: ReactiveProp<number>;
-    blur: ReactiveProp<number>;
-    brightness: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    readonly isMounted?: boolean;
-    readonly isActive?: boolean;
-    onMount?(fn: () => void): () => void;
-    onUnmount?(fn: () => void): () => void;
-    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-    exitDuration?: number;
-    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-    exitDelay?: number;
-    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-    enterDuration?: number;
-    /** Delay in seconds before entering scene transition begins (defaults to 0). */
-    enterDelay?: number;
-    onActivate?(fn: () => void): () => void;
-    onDeactivate?(fn: () => void): () => void;
-    onUpdate?(fn: (progress: number) => void): () => void;
-    onClick?(handler: (event: MouseEvent) => void): this;
-    /** Recomputes layout or path coordinates on visual changes. */
-    update?(): void;
-    /** @internal Engine driver */
-    _dispatchUpdate?(progress?: number): void;
-    /** @internal Engine driver */
-    _mount?(parent: HTMLElement): void;
-    /** @internal Engine driver */
-    _unmount?(): void;
-    /** @internal Engine driver */
-    _activate?(): void;
-    /** @internal Engine driver */
-    _deactivate?(): void;
-}
-
-/**
- * Context passed to background renderers when they are attached to the stage.
- * @category Core
- */
-export interface StageContext {
-    container: HTMLElement;
-    width: number;
-    height: number;
-    on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
-}
-
-/**
- * Configuration options for the 3D Starfield background.
- * @category Backgrounds
- */
-export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
-    /** Number of star particles (default: 2000) */
-    count?: number;
-    /** Base travel speed through starfield (default: 1.0) */
-    speed?: number;
-    /** Color of stars (default: 0xffffff) */
-    color?: number | string;
-    /** Particle size in pixels (default: 2.5) */
-    size?: number;
-    /** Radius of space spread (default: 2000) */
-    spread?: number;
-}
-
-/**
- * Strictly typed design tokens and theme engine for StageRoutine.
- */
-/**
- * Theme configuration object for customizing stage canvas, typography, surfaces, and colors.
- * All properties are optional and strictly typed.
- * @category Theme
- */
-export interface ThemeConfig {
-    /** Stage canvas background color or CSS gradient. */
-    background?: string;
-    /** Primary text color. */
-    text?: string;
-    /** Primary brand accent color. */
-    primary?: string;
-    /** Secondary accent or highlight color. */
-    accent?: string;
-    /** Muted secondary text color. */
-    textMuted?: string;
-    /** Dim tertiary text color. */
-    textDim?: string;
-    /** Component surface background color. */
-    surface?: string;
-    /** Component surface border stroke. */
-    surfaceBorder?: string;
-    /** Subtle surface highlight color. */
-    surfaceHighlight?: string;
-    /** Box shadow applied to raised surfaces. */
-    surfaceShadow?: string;
-    /** Backdrop overlay behind elevated layers. */
-    surfaceBackdrop?: string;
-    /** Base border radius (e.g. "12px"). */
-    radius?: string;
-    /** Extra-small spacing token. */
-    spaceXs?: string;
-    /** Small spacing token. */
-    spaceSm?: string;
-    /** Medium spacing token. */
-    spaceMd?: string;
-    /** Large spacing token. */
-    spaceLg?: string;
-    /** Extra-large spacing token. */
-    spaceXl?: string;
-    /** Sans-serif font family. */
-    fontSans?: string;
-    /** Serif font family. */
-    fontSerif?: string;
-    /** Monospace font family. */
-    fontMono?: string;
-    /** Hero title typography scale. */
-    fontHero?: string;
-    /** Title typography scale. */
-    fontTitle?: string;
-    /** Lead paragraph typography scale. */
-    fontLead?: string;
-    /** Body paragraph typography scale. */
-    fontBody?: string;
-    /** Code snippet typography scale. */
-    fontCode?: string;
-    /** Kicker label typography scale. */
-    fontKicker?: string;
-}
-
-/**
- * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
- * @category Motion
- */
-export interface TransitionDescriptor<T = unknown> {
-    __isTransition: true;
-    target: T;
-    durationMs: number;
-    delayMs: number;
-    triggerTarget?: ReactiveElementBase | string;
-    triggerMilestone?: AnimationMilestone;
-    triggerProperty?: string;
-    curve: EaseCurve;
-    /** Sets animation duration in seconds. */
-    duration(seconds: number): this;
-    /** Adds a delay in seconds before animation begins. */
-    delay(seconds: number): this;
-    /**
-     * Synchronizes this transition to start when another element reaches an animation milestone.
-     * @param elementOrId Target element or element ID to listen to.
-     * @param milestone Progress milestone: `"start"`, `"halfway"`, `"end"` (default), or a fraction (0..1).
-     * @param property Optional specific property on the target element to track.
-     */
-    when(elementOrId: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
-    /**
-     * Chains this transition to start after another element completes its animation (alias for `.when(element, "end")`).
-     * @param elementOrId Target element or element ID to wait for.
-     * @param property Optional specific property on the target element to wait for.
-     */
-    after(elementOrId: ReactiveElementBase | string, property?: string): this;
-    /** Sets the easing curve (e.g. `"quartOut"`, `"cubicInOut"`, `"smooth"`). */
-    ease(curve: BuiltinEase | EaseCurve): this;
-}
-
-```
-
-### Types
-
-```ts
-/**
- * 9-position content alignment grid for text and children inside a container.
- * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
- * @category Layout
- */
-export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
-
-/**
- * Standard named position or anchor keyword.
- * @category Core
- */
-export type AnchorKeyword = Align;
-
-/**
- * Stage coordinate or dimension property.
- * Accepts a number, CSS/layout string, transition, or relative-delta updater.
- * @category Core
- */
-export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
-
-/**
- * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
- */
-/**
- * Custom easing function mapping progress t (0..1) to animated value.
- * @category Motion
- */
-export type EaseCurve = (t: number) => number;
-
-/**
- * Element or connector anchor: either a named keyword or an [x, y] percentage point.
- * @category Core
- */
-export type ElementAnchor = AnchorKeyword | Point;
-
-/**
- * 2D coordinate point or vector as a fixed-length [x, y] tuple.
- * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
- * @category Core
- */
-export type Point = readonly [
-    x: number,
-    y: number
-];
-
-/**
- * 2D coordinate point or vector as an [x, y] tuple.
- * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
- * @category Core
- */
-export type Position = readonly [
-    x: number | string,
-    y: number | string
-] | readonly (number | string)[];
-
-/**
- * Represents a property that accepts a static value, a reactive transition descriptor,
- * or a numeric relative-delta updater.
- * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
- * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
- * @category Core
- */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
-
-```
-
-## `stageroutine/overlays`
-
-Interactive presentation overlays mounted above the stage, including laser pointer and navigation controls.
-
-### Functions
-
-```ts
-/**
- * Laser pointer overlay with glowing trail and cursor suppression.
- *
- * Controlled via stage events (`req:pointer:setState`, `evt:pointer:stateChanged`)
- * or programmatically via the returned controller. Toggle with the P key or Esc.
- * @example ```ts
- * stage.overlay(LaserPointer());
- * ```
- */
-export function LaserPointer(options?: LaserPointerOptions): OverlayPlugin & LaserPointerController;
-
-/**
- * Creates a navigation overlay plugin with prev scene, prev step, next step, next scene,
- * and pointer toggle buttons.
- *
- * The overlay appears when the mouse cursor moves near the bottom of the screen and
- * hides immediately when the cursor moves away.
- * @example ```ts
- * stage.overlay(NavigationOverlay());
- * ```
- */
-export function NavigationOverlay(options?: NavigationOverlayOptions): OverlayPlugin;
-
-```
-
-### Interfaces
-
-```ts
-/**
- * Extended controller for the laser pointer overlay, beyond the base OverlayPlugin interface.
- * @category Overlays
- */
-export interface LaserPointerController {
-    /** Whether the laser pointer is currently active. */
-    active: boolean;
-}
-
-/**
- * Configuration options for the laser pointer overlay.
- * @category Overlays
- */
-export interface LaserPointerOptions {
-    /** Base laser beam color in RGB hex. Defaults to neon laser ruby ('#ff0055'). */
-    color?: string;
-    /** Trail persistence in milliseconds. Defaults to 160ms. */
-    trailDurationMs?: number;
-    /** Inactivity delay before the pointer canvas sleeps. Defaults to 2000ms. */
-    idleTimeoutMs?: number;
-    /** Inactivity delay before the cursor is hidden. Defaults to 2000ms. */
-    cursorIdleMs?: number;
-    /** Start with the pointer active. Defaults to false. */
-    active?: boolean;
-}
-
-/**
- * Options for the navigation overlay.
- * @category Overlays
- */
-export interface NavigationOverlayOptions {
-    /** Height of the trigger zone at the bottom of the screen, in pixels. Defaults to 100. */
-    triggerZone?: number;
-}
-
-/**
- * Context passed to overlay plugins when they are mounted on the stage.
- * Provides the DOM containers, stage dimensions, navigation methods, and event subscriptions.
- * @category Core
- */
-export interface OverlayContext {
-    /** The stage top-level container element (screen space). */
-    container: HTMLElement;
-    /** The scaled virtual viewport element (e.g. 1920×1080). */
-    viewport: HTMLElement;
-    /** Virtual stage width in pixels (e.g. 1920). */
-    width: number;
-    /** Virtual stage height in pixels (e.g. 1080). */
-    height: number;
-    /** Advance to the next step. */
-    next(): void;
-    /** Go back to the previous step. */
-    prev(): void;
-    /** Jump to the first step of the next scene. */
-    nextScene(): void;
-    /** Jump to the first step of the previous scene. */
-    prevScene(): void;
-    /** Emit an event on the stage event bus. */
-    emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [
-    ] : [
-        data: StageEventMap[K]
-    ]): void;
-    /** Subscribe to stage events. Returns an unsubscribe function. */
-    on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
-}
-
-/**
- * Interface for overlay plugins that attach interactive UI on top of the stage.
- *
- * Overlays are mounted via `stage.overlay(plugin)` and receive an {@link OverlayContext}
- * with navigation methods and event subscriptions.
- *
- * @example
- * ```ts
- * const myOverlay: OverlayPlugin = {
- *   mount(ctx) {
- *     const btn = document.createElement("button");
- *     btn.textContent = "Next";
- *     btn.addEventListener("click", () => ctx.next());
- *     ctx.container.appendChild(btn);
- *   },
- *   show() {},
- *   hide() {},
- *   destroy() {},
- * };
- * stage.overlay(myOverlay);
- * ```
- *
- * @category Core
- */
-export interface OverlayPlugin {
-    /** Called once when the overlay is attached to the stage. */
-    mount(ctx: OverlayContext): void;
-    /** Show the overlay. */
-    show(): void;
-    /** Hide the overlay. */
-    hide(): void;
-    /** Remove overlay from the DOM and clean up all listeners. */
-    destroy(): void;
-}
-
-```
-
-## `stageroutine/presenter`
-
-Presenter console synchronization client over BroadcastChannel and in-browser screen recorder.
-
-### Classes
-
-```ts
-/**
- * Client for synchronizing a custom presenter view with the main presentation window
- * via BroadcastChannel.
- */
-export class PresenterClient {
-  constructor(channelName?: string): PresenterClient;
-  /**
-   * Registers a callback invoked whenever the presentation state changes.
-   * @param callback Receives the latest {@link StageStateChangedEvent} payload.
-   */
-  onUpdate(callback: (msg: StageStateChangedEvent) => void): void;
-  /** Advances the presentation to the next step. */
-  next(): void;
-  /** Returns the presentation to the previous step. */
-  prev(): void;
-  /** Jumps directly to a step by 0-based index. */
-  gotoStep(stepIndex: number): void;
-  /** Jumps directly to a scene by 0-based index. */
-  gotoScene(sceneIndex: number): void;
-  /** Closes the presenter communication channel. */
-  close(): void;
-}
-
-/** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
-export class PresenterRecorder {
-  constructor(): PresenterRecorder;
-  onUpdate(callback: (state: { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; }) => void): void;
-  /** Toggles microphone audio track capture on or off. */
-  toggleMic(): void;
-  /** Prompts for display capture and starts screen recording. */
-  start(): Promise<void>;
-  /** Stops recording and downloads the captured video. */
-  stop(): void;
-  /** Starts recording if currently stopped, or stops if currently recording. */
-  toggle(): void;
-  /** Returns the current recording state snapshot. */
-  getRecordingState(): { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; };
-}
-
-```
-
-### Interfaces
-
-```ts
-/**
- * Complete state snapshot emitted whenever presentation state changes.
- * @category Core
- */
-export interface StageStateChangedEvent {
-    step: number;
-    total: number;
-    sceneIndex: number;
-    totalScenes: number;
-    scene: string;
-    notes: string;
-    notesDoc?: string;
-    nextScene: string;
-    nextNotes: string;
-    scenes: {
-        sceneIndex: number;
-        sceneName: string;
-        startStepIndex: number;
-        stepCount: number;
-    }[];
-    steps: {
-        stepIndex: number;
-        sceneName: string;
-    }[];
-}
 
 ```
 

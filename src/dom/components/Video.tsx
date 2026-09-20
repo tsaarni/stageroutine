@@ -11,6 +11,7 @@ import type { ImageFit } from "./Image";
 /**
  * Configuration options for the Video component.
  * @category Components
+ * @inline
  */
 export interface VideoOptions extends ElementOptions {
   /** Video source URL or media asset path (optional if passed as first argument). */

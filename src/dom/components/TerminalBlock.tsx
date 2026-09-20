@@ -10,6 +10,7 @@ import { attachRangeSelection } from "../interaction";
 /**
  * Options for configuring the TerminalBlock component.
  * @category Components
+ * @inline
  */
 export interface TerminalBlockOptions extends ElementOptions {
   /** Window title bar label (default: "bash - 80x24"). */

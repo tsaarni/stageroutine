@@ -8,6 +8,7 @@ import type { DOMElement, ElementDecorator } from "../dom/element";
 /**
  * Configuration options for rules and dividers.
  * @category Decorators
+ * @inline
  */
 export interface RuleOptions {
   /** Which side the rule sits on or faces ("left" | "right" | "top" | "bottom", default: "left"). */

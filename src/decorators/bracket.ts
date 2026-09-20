@@ -14,6 +14,7 @@ export type BracketStyle = "curly" | "square" | "round" | "corners";
 /**
  * Configuration options for the grouping bracket decorator.
  * @category Decorators
+ * @inline
  */
 export interface BracketOptions {
   /** Bracket style: "curly" (default), "square", "round", or "corners". */

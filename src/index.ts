@@ -3,12 +3,8 @@
  *
  * Everything user-facing is exported flat from the root, so a single
  * `import { ... } from "stageroutine"` covers the whole library with IDE
- * autocompletion. Larger feature areas are additionally available as subpath
- * entry points:
+ * autocompletion. Tooling and asset entry points:
  *
- * - `stageroutine/backgrounds` — full-screen background renderers (WebGL/canvas)
- * - `stageroutine/overlays`    — overlay plugins (laser pointer, navigation)
- * - `stageroutine/presenter`   — presenter console client & screen recorder
  * - `stageroutine/jsx-runtime` — JSX runtime (configured as `jsxImportSource` by the Vite plugin)
  * - `stageroutine/styles.css`  — base stylesheet
  * - `stageroutine/vite`        — the StageRoutine Vite plugin
@@ -16,6 +12,27 @@
  * A symbol is exported here exactly when it is part of the documented user-facing
  * API. Implementation element classes,
  * fluent builder classes, and engine internals are intentionally not public.
+ *
+ * @categoryDescription Core
+ * Coordinate definitions, reactivity primitives, stage configuration, and lifecycle event contracts.
+ * @categoryDescription Components
+ * Prebuilt elements rendered on the stage, from text and shapes to tables, terminals, and media.
+ * @categoryDescription Shape & Frame
+ * Geometry primitives, clipping frames, and path generators.
+ * @categoryDescription Layout
+ * Fluent helpers for arranging elements in stacks, grids, and circles.
+ * @categoryDescription Motion
+ * Transitions, stagger coordination, and step-driven animation.
+ * @categoryDescription Decorators
+ * Composable visual effects applied to elements and backgrounds.
+ * @categoryDescription Backgrounds
+ * Full-bleed renderers drawn behind the stage content.
+ * @categoryDescription Presenter
+ * Dual-screen presenter console, laser pointer, and navigation overlays.
+ * @categoryDescription Theme
+ * Color tokens and built-in theme presets.
+ *
+ * @packageDocumentation
  */
 
 // Global stylesheet (design tokens, cascade layers, component styling, and body resets)
@@ -49,6 +66,7 @@ export type {
   AnchorMode,
   AnimationMilestone,
   Background,
+  BackgroundDecorator,
   BuiltinEase,
   CoordProp,
   EaseCurve,
@@ -102,15 +120,15 @@ export {
   vignette,
 } from "./decorators/index";
 export type {
+  AsciiFluidOptions,
   BackgroundOptions,
-  CSSBackgroundElement,
+  BaseFluidOptions,
   CSSBackgroundOptions,
+  GradientFluidOptions,
+  StarfieldOptions,
 } from "./dom/backgrounds/index";
 // Backgrounds
-// Lightweight base & CSS backgrounds are exported at root.
-// Full-screen WebGL / Three.js backgrounds (Starfield, AsciiFluid, GradientFluid)
-// are imported from "stageroutine/backgrounds" to prevent bundling Three.js in 2D decks.
-export { BackgroundElement, CSSBackground } from "./dom/backgrounds/index";
+export { AsciiFluid, CSSBackground, GradientFluid, Starfield } from "./dom/backgrounds/index";
 export type {
   ActivationBarElement,
   ActivationOptions,
@@ -204,8 +222,10 @@ export type {
   PathContext,
   PathFunction,
   PolygonPathOptions,
+  SpeechBubblePathOptions,
   SquirclePathOptions,
   StarPathOptions,
+  ThoughtBubblePathOptions,
   TrianglePathOptions,
 } from "./dom/paths";
 // Geometry

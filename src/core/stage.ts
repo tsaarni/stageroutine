@@ -699,6 +699,7 @@ export class Stage {
     applyThemeTokens(this.container, theme);
   }
 
+  /** @internal */
   _setActiveScene(name: string, elements: ReactiveElementBase[]): void {
     this.currentSceneName = name;
     const ids = new Set<string>();

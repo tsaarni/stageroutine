@@ -15,6 +15,7 @@ import { to } from "./transitions";
 /**
  * Configuration options for cascading stagger animations across multiple elements.
  * @category Motion
+ * @inline
  */
 export interface StaggerOptions {
   /** Animation duration in seconds for each element (default: 0.4s). */

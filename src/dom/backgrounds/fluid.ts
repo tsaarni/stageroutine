@@ -3,6 +3,7 @@
  */
 
 import * as THREE from "three";
+import type { Background } from "../../core/types";
 import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./base";
 
 /**
@@ -20,6 +21,7 @@ export interface BaseFluidOptions extends BackgroundOptions {
 /**
  * Configuration options for procedural ASCII fluid simulation background.
  * @category Backgrounds
+ * @inline
  */
 export interface AsciiFluidOptions extends BaseFluidOptions {
   /** ASCII character ramp ordered from darkest to brightest */
@@ -33,6 +35,7 @@ export interface AsciiFluidOptions extends BaseFluidOptions {
 /**
  * Configuration options for procedural chromatic gradient fluid background.
  * @category Backgrounds
+ * @inline
  */
 export interface GradientFluidOptions extends BaseFluidOptions {
   /**
@@ -394,7 +397,7 @@ export class FluidBackgroundElement extends BackgroundElement {
  * Creates a procedural ASCII Fluid background element.
  * @category Backgrounds
  */
-export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElement {
+export function AsciiFluid(options: AsciiFluidOptions = {}): Background {
   const characters = options.characters ?? " .:-=+*#%@";
   const cellSize = options.cellSize ?? 18;
   const charColor = new THREE.Color(options.color ?? "#38bdf8");
@@ -428,7 +431,7 @@ export function AsciiFluid(options: AsciiFluidOptions = {}): FluidBackgroundElem
  * Creates a procedural continuous Chromatic Gradient Fluid background element.
  * @category Backgrounds
  */
-export function GradientFluid(options: GradientFluidOptions = {}): FluidBackgroundElement {
+export function GradientFluid(options: GradientFluidOptions = {}): Background {
   const rawColors = options.colors ?? ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"];
   const color0 = new THREE.Color(options.backgroundColor ?? rawColors[0] ?? "#09090b");
   const color1 = new THREE.Color(rawColors[1] ?? "#0284c7");

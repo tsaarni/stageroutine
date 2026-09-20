@@ -19,6 +19,7 @@ function resolveColumnTextAlign(align?: Align): "left" | "center" | "right" | un
 /**
  * Configuration options for the Table component.
  * @category Components
+ * @inline
  */
 export interface TableOptions extends Omit<ElementOptions, "align"> {
   /** Column header labels displayed in the table header row. */

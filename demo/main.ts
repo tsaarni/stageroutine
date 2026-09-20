@@ -3,6 +3,7 @@
  */
 
 import {
+  AsciiFluid,
   BulletList,
   bracket,
   Card,
@@ -33,7 +34,6 @@ import {
   typewriter,
   vignette,
 } from "stageroutine";
-import { AsciiFluid } from "stageroutine/backgrounds";
 import Cpu from "~iconify/lucide/cpu";
 import Database from "~iconify/lucide/database";
 import Globe from "~iconify/lucide/globe";

@@ -26,13 +26,14 @@ export type { PathFunction };
 
 /**
  * Surface material preset for the Shape component.
- * @category Components
+ * @category Shape & Frame
  */
 export type ShapeVariant = "surface" | "ghost" | "solid";
 
 /**
  * Configuration options for the Shape and Card components.
- * @category Components
+ * @category Shape & Frame
+ * @inline
  */
 export interface ShapeOptions extends ElementOptions {
   /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
@@ -69,7 +70,7 @@ export interface ShapeOptions extends ElementOptions {
   children?: unknown;
 }
 
-/** Public controls for a shape. @category Components */
+/** Public controls for a shape. @category Shape & Frame */
 export interface ShapeElement extends DOMElement {
   path: PathFunction;
   readonly variant: ShapeVariant;
@@ -642,7 +643,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
 
 /**
  * Universal shape container supporting multiple geometries and surface treatments.
- * @category Components
+ * @category Shape & Frame
  */
 export function Shape(
   path: PathFunction,

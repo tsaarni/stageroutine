@@ -81,9 +81,7 @@ export class CSSBackgroundElement implements Background {
  * CSSBackground("url('/wallpaper.jpg') center / cover no-repeat");
  * ```
  */
-export function CSSBackground(
-  cssOrOptions: string | CSSBackgroundOptions = {},
-): CSSBackgroundElement {
+export function CSSBackground(cssOrOptions: string | CSSBackgroundOptions = {}): Background {
   const options = typeof cssOrOptions === "string" ? { background: cssOrOptions } : cssOrOptions;
   return new CSSBackgroundElement(options);
 }

@@ -82,9 +82,9 @@
   /* Frosted glass fill: square HTML div masked by SVG vector silhouette */
   .sr-shape-frost {
     position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    inset: calc(-1 * var(--sr-frost-overflow, 0px)) !important;
+    width: auto !important;
+    height: auto !important;
     pointer-events: none !important;
     z-index: 0 !important;
     mask-size: 100% 100%;

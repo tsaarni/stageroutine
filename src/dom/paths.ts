@@ -1,3 +1,7 @@
+import { resolveAnchor } from "../core/interpolators";
+import type { AnchorMode, ElementAnchor, Point } from "../core/types";
+import type { DOMElement } from "./element";
+
 /**
  * Contextual geometry parameters passed to a PathFunction.
  * @category Shape & Frame
@@ -14,6 +18,33 @@ export interface PathContext {
  * @category Shape & Frame
  */
 export type PathFunction = (width: number, height: number, context?: PathContext) => string;
+
+/**
+ * Runtime context supplied by Shape/Frame when evaluating a path.
+ * @internal
+ */
+export interface PathRuntimeContext extends PathContext {
+  /** Resolves a live tail target to a point in the source element's local coordinate space. */
+  resolveTail?: (
+    target: DOMElement | Point,
+    anchor: AnchorMode | ElementAnchor,
+    padding: number,
+  ) => Point | null;
+}
+
+/** Paths that depend on live targets and must be regenerated every frame. @internal */
+const dynamicPaths = new WeakSet<PathFunction>();
+
+/** @internal Marks a path generator as depending on live targets. */
+export function markDynamicPath(fn: PathFunction): PathFunction {
+  dynamicPaths.add(fn);
+  return fn;
+}
+
+/** @internal Whether a path generator depends on live targets. */
+export function isDynamicPath(fn: PathFunction): boolean {
+  return dynamicPaths.has(fn);
+}
 
 interface GeometryBounds {
   pad: number;
@@ -125,6 +156,184 @@ function ellipseRing(
 }
 
 /**
+ * Explicit live tail target with an attachment anchor and clearance padding.
+ * @category Shape & Frame
+ */
+export interface TailTargetSpec {
+  /** Element or stage point the tail points to. */
+  to: DOMElement | Point;
+  /** Attachment on the target outline (default: "auto"). */
+  anchor?: AnchorMode | ElementAnchor;
+  /** Clearance in pixels between the tail tip and the target outline (default: 0). */
+  padding?: number;
+}
+
+/**
+ * Accepted forms of the bubble `tail` option: a length, a local anchor, a target spec,
+ * or a bare target element/point for live tracking.
+ * @category Shape & Frame
+ */
+export type BubbleTail = number | ElementAnchor | TailTargetSpec | DOMElement;
+
+interface ParsedTail {
+  kind: "local" | "target";
+  anchor: AnchorMode | ElementAnchor;
+  length: number;
+  target?: DOMElement | Point;
+  padding: number;
+}
+
+function parseTail(
+  tail: BubbleTail | undefined,
+  defaultAnchor: ElementAnchor,
+  defaultLength: number,
+): ParsedTail {
+  if (tail === undefined) {
+    return { kind: "local", anchor: defaultAnchor, length: defaultLength, padding: 0 };
+  }
+  if (typeof tail === "number") {
+    return { kind: "local", anchor: defaultAnchor, length: Math.max(0, tail), padding: 0 };
+  }
+  if (typeof tail === "string") {
+    return { kind: "local", anchor: tail, length: defaultLength, padding: 0 };
+  }
+  if (Array.isArray(tail)) {
+    return { kind: "local", anchor: tail as ElementAnchor, length: defaultLength, padding: 0 };
+  }
+  if (typeof tail === "object" && tail !== null) {
+    // Check the element shorthand first: DOMElement instances also carry a `to()` method.
+    if ("domElement" in tail) {
+      return { kind: "target", anchor: "auto", length: 0, target: tail as DOMElement, padding: 0 };
+    }
+    if ("to" in tail) {
+      const spec = tail as TailTargetSpec;
+      return {
+        kind: "target",
+        anchor: spec.anchor ?? "auto",
+        length: 0,
+        target: spec.to,
+        padding: spec.padding ?? 0,
+      };
+    }
+  }
+  return { kind: "local", anchor: defaultAnchor, length: defaultLength, padding: 0 };
+}
+
+/** Local anchor position as an offset inside the element bounds. */
+function localTailTip(
+  anchor: ElementAnchor,
+  pw: number,
+  ph: number,
+  left: number,
+  top: number,
+): Point {
+  const [pctX, pctY] = resolveAnchor(anchor);
+  return [left + (pctX / 100) * pw, top + (pctY / 100) * ph];
+}
+
+type WedgeSide = "top" | "right" | "bottom" | "left";
+
+/** Thought-bubble trail: a few dots that shrink toward the thinker. */
+const TRAIL_SAMPLES = 24;
+const TRAIL_TAPER = 0.6;
+const TRAIL_MIN_R = 1.8;
+const TRAIL_MAX_BUBBLES = 6;
+const TRAIL_HEAD_RATIO = 0.32;
+const TRAIL_MAX_HEAD_R = 16;
+
+/** Picks the bounding-box face that the tail tip points away from. */
+function pickWedgeSide(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  tip: Point,
+): WedgeSide {
+  const cx = (left + right) / 2;
+  const cy = (top + bottom) / 2;
+  const dx = tip[0] - cx;
+  const dy = tip[1] - cy;
+  if (Math.abs(dy) * (right - left) >= Math.abs(dx) * (bottom - top)) {
+    return dy >= 0 ? "bottom" : "top";
+  }
+  return dx >= 0 ? "right" : "left";
+}
+
+/**
+ * Builds a rounded rectangle whose `side` is interrupted by a pointy wedge aimed at `tip`.
+ * Path travels clockwise; base points are ordered along that direction.
+ */
+function buildBubblePath(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  r: number,
+  side: WedgeSide,
+  tip: Point,
+  tailWidth: number,
+): string {
+  const w = right - left;
+  const h = bottom - top;
+  const cx = (left + right) / 2;
+  const cy = (top + bottom) / 2;
+  const p: string[] = [`M ${left + r} ${top}`];
+
+  if (side === "top") {
+    const bw = Math.max(8, Math.min(tailWidth, w - 2 * r));
+    const minX = left + r + bw / 2;
+    const maxX = right - r - bw / 2;
+    const bx = minX <= maxX ? Math.max(minX, Math.min(maxX, tip[0])) : cx;
+    const ty = Math.min(tip[1], top - 4);
+    p.push(`H ${bx - bw / 2}`, `L ${tip[0]} ${ty}`, `L ${bx + bw / 2} ${top}`, `H ${right - r}`);
+  } else {
+    p.push(`H ${right - r}`);
+  }
+
+  p.push(`A ${r} ${r} 0 0 1 ${right} ${top + r}`);
+
+  if (side === "right") {
+    const bw = Math.max(8, Math.min(tailWidth, h - 2 * r));
+    const minY = top + r + bw / 2;
+    const maxY = bottom - r - bw / 2;
+    const by = minY <= maxY ? Math.max(minY, Math.min(maxY, tip[1])) : cy;
+    const tx = Math.max(tip[0], right + 4);
+    p.push(`V ${by - bw / 2}`, `L ${tx} ${tip[1]}`, `L ${right} ${by + bw / 2}`, `V ${bottom - r}`);
+  } else {
+    p.push(`V ${bottom - r}`);
+  }
+
+  p.push(`A ${r} ${r} 0 0 1 ${right - r} ${bottom}`);
+
+  if (side === "bottom") {
+    const bw = Math.max(8, Math.min(tailWidth, w - 2 * r));
+    const minX = left + r + bw / 2;
+    const maxX = right - r - bw / 2;
+    const bx = minX <= maxX ? Math.max(minX, Math.min(maxX, tip[0])) : cx;
+    const ty = Math.max(tip[1], bottom + 4);
+    p.push(`H ${bx + bw / 2}`, `L ${tip[0]} ${ty}`, `L ${bx - bw / 2} ${bottom}`, `H ${left + r}`);
+  } else {
+    p.push(`H ${left + r}`);
+  }
+
+  p.push(`A ${r} ${r} 0 0 1 ${left} ${bottom - r}`);
+
+  if (side === "left") {
+    const bw = Math.max(8, Math.min(tailWidth, h - 2 * r));
+    const minY = top + r + bw / 2;
+    const maxY = bottom - r - bw / 2;
+    const by = minY <= maxY ? Math.max(minY, Math.min(maxY, tip[1])) : cy;
+    const tx = Math.min(tip[0], left - 4);
+    p.push(`V ${by + bw / 2}`, `L ${tx} ${tip[1]}`, `L ${left} ${by - bw / 2}`, `V ${top + r}`);
+  } else {
+    p.push(`V ${top + r}`);
+  }
+
+  p.push(`A ${r} ${r} 0 0 1 ${left + r} ${top} Z`);
+  return p.join(" ");
+}
+
+/**
  * Options for the box (rounded rectangle) path generator.
  * @category Shape & Frame
  */
@@ -211,8 +420,15 @@ export interface PolygonPathOptions {
 export interface SpeechBubblePathOptions {
   /** Corner radius in pixels (default: 12). */
   radius?: number;
-  /** Pointer tail height in pixels. The body is inset by the same amount so it stays centered (default: 16). */
-  tail?: number;
+  /**
+   * Tail placement:
+   * - Live target: a DOM element, `{ to, anchor?, padding? }`, or a stage `[x, y]` point. Tracks the target each frame.
+   * - Local preset: `"bottom"` (default) | `"bottom-left"` | `"top-right"` | `"left"` | `"right"` | etc.
+   * - Number: tail length in pixels for the local preset (default: 16).
+   */
+  tail?: BubbleTail;
+  /** Width of the tail base where it joins the bubble body (default: 24). */
+  tailWidth?: number;
 }
 
 /**
@@ -220,8 +436,13 @@ export interface SpeechBubblePathOptions {
  * @category Shape & Frame
  */
 export interface ThoughtBubblePathOptions {
-  /** Vertical space reserved for the bubble trail in pixels (default: 30). */
-  tail?: number;
+  /**
+   * Trail placement:
+   * - Live target: a DOM element, `{ to, anchor?, padding? }`, or a stage `[x, y]` point. Tracks the target each frame.
+   * - Local preset: `"bottom-left"` (default) | `"bottom-right"` | `"top-left"` | `"top-right"` | etc.
+   * - Number: trail length in pixels for the local preset (default: 30).
+   */
+  tail?: BubbleTail;
   /** Number of cloud puffs (default: 9). */
   lobes?: number;
 }
@@ -547,51 +768,79 @@ export const paths = {
   },
 
   /**
-   * Generates a speech bubble with a downward pointer tail.
+   * Generates a speech bubble with a pointy pointer tail.
+   * Pass a live target (element or stage point) to make the tail track it each frame.
    */
   speechBubble(options: SpeechBubblePathOptions = {}): PathFunction {
-    const defaultRadius = options.radius ?? 12;
-    const tail = Math.max(0, options.tail ?? 16);
-    return (w, h, ctx) => {
+    const radius = options.radius ?? 12;
+    const tailWidth = options.tailWidth ?? 24;
+    const parsed = parseTail(options.tail, "bottom", 16);
+
+    const fn: PathFunction = (w, h, ctx) => {
       const geo = getGeometryBounds(w, h, ctx);
       if (!geo) return "";
-      const { pw, ph, cx, left, right, top } = geo;
-      // The body is centered in the bounds; `tail` is both the top margin and the
-      // pointer height, so centered content lands on the middle of the body.
-      const bodyTop = top + Math.min(tail, ph / 2);
-      const bodyBottom = top + ph - Math.min(tail, ph / 2);
+      const { pad, pw, ph, left, right, top, bottom } = geo;
+
+      let tip: Point | null = null;
+      let bodyLeft = left;
+      let bodyTop = top;
+      let bodyRight = right;
+      let bodyBottom = bottom;
+
+      if (parsed.kind === "target") {
+        tip =
+          (ctx as PathRuntimeContext | undefined)?.resolveTail?.(
+            parsed.target as DOMElement | Point,
+            parsed.anchor,
+            parsed.padding,
+          ) ?? null;
+      } else if (parsed.length > 0) {
+        // Local tail: aim at a preset/corner inside the bounds and reserve space on that axis.
+        tip = localTailTip(parsed.anchor as ElementAnchor, pw, ph, left, top);
+        const side = pickWedgeSide(left, top, right, bottom, tip);
+        const margin = Math.min(parsed.length, Math.min(pw, ph) / 2);
+        if (side === "bottom" || side === "top") {
+          bodyTop = top + margin;
+          bodyBottom = bottom - margin;
+        } else {
+          bodyLeft = left + margin;
+          bodyRight = right - margin;
+        }
+      }
+
       const r = Math.min(
-        Math.max(0, defaultRadius),
-        pw / 2,
-        Math.max(0, (bodyBottom - bodyTop) / 2),
+        Math.max(0, radius),
+        (bodyRight - bodyLeft) / 2,
+        (bodyBottom - bodyTop) / 2,
       );
-      const half = Math.min(tail * 0.75, pw * 0.25);
-      const tip = top + ph;
-      return (
-        `M ${left + r} ${bodyTop} ` +
-        `H ${right - r} A ${r} ${r} 0 0 1 ${right} ${bodyTop + r} ` +
-        `V ${bodyBottom - r} A ${r} ${r} 0 0 1 ${right - r} ${bodyBottom} ` +
-        `H ${cx + half} L ${cx} ${tip} L ${cx - half} ${bodyBottom} ` +
-        `H ${left + r} A ${r} ${r} 0 0 1 ${left} ${bodyBottom - r} ` +
-        `V ${bodyTop + r} A ${r} ${r} 0 0 1 ${left + r} ${bodyTop} Z`
-      );
+
+      if (!tip) {
+        return roundedRectPerCorner(pad, pw, ph, { tl: r, tr: r, br: r, bl: r });
+      }
+
+      const side = pickWedgeSide(bodyLeft, bodyTop, bodyRight, bodyBottom, tip);
+      return buildBubblePath(bodyLeft, bodyTop, bodyRight, bodyBottom, r, side, tip, tailWidth);
     };
+
+    if (parsed.kind === "target") markDynamicPath(fn);
+    return fn;
   },
 
   /**
-   * Generates a scalloped thought cloud with a trail of shrinking bubbles.
+   * Generates a scalloped thought cloud with a curved trail of shrinking bubbles.
+   * Pass a live target (element or stage point) to make the trail track it each frame.
    */
   thoughtBubble(options: ThoughtBubblePathOptions = {}): PathFunction {
-    const tail = Math.max(0, options.tail ?? 30);
     const lobes = Math.max(3, Math.round(options.lobes ?? 9));
-    return (w, h, ctx) => {
+    const parsed = parseTail(options.tail, "bottom-left", 30);
+
+    const fn: PathFunction = (w, h, ctx) => {
       const geo = getGeometryBounds(w, h, ctx);
       if (!geo) return "";
-      const { pad, pw, ph, cx } = geo;
-      // The cloud is centered in the bounds, so centered content lands on it.
-      const cy = pad + ph / 2;
-      const rx = pw * 0.4;
-      const ry = Math.max(0, ph - tail) * 0.38;
+      const { pw, ph, cx, cy, left, top } = geo;
+
+      const rx = pw * 0.38;
+      const ry = ph * 0.35;
 
       const ring = ellipseRing(cx, cy, rx, ry, lobes);
       const cloud = ring
@@ -602,18 +851,98 @@ export const paths = {
         })
         .join(" ");
 
-      // The trail drifts down-left, just clear of the scalloped outline.
-      const base = cy + ry;
-      const trail = [0.3, 0.17, 0.09]
-        .map((scale, i) => {
-          const r = tail * scale;
-          const x = cx - rx * (0.66 + 0.16 * i);
-          const y = base + tail * (0.28 + 0.24 * i);
-          return `M ${x - r} ${y} a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0`;
-        })
-        .join(" ");
+      let tip: Point | null = null;
+      if (parsed.kind === "target") {
+        tip =
+          (ctx as PathRuntimeContext | undefined)?.resolveTail?.(
+            parsed.target as DOMElement | Point,
+            parsed.anchor,
+            parsed.padding,
+          ) ?? null;
+      } else if (parsed.length > 0) {
+        tip = localTailTip(parsed.anchor as ElementAnchor, pw, ph, left, top);
+      }
 
-      return `${cloud} Z ${trail}`;
+      if (!tip) return `${cloud} Z`;
+
+      // Exit point on the cloud ellipse in the direction of the target.
+      const angle = Math.atan2(tip[1] - cy, tip[0] - cx);
+      const exitX = cx + rx * Math.cos(angle);
+      const exitY = cy + ry * Math.sin(angle);
+
+      const ex = tip[0] - exitX;
+      const ey = tip[1] - exitY;
+      const vlen = Math.hypot(ex, ey);
+      if (vlen < 10) return `${cloud} Z`;
+
+      // Perpendicular vector for a slight whimsical bow.
+      const ux = ex / vlen;
+      const uy = ey / vlen;
+      const bow = vlen * 0.12;
+      const midX = (exitX + tip[0]) / 2 - uy * bow;
+      const midY = (exitY + tip[1]) / 2 + ux * bow;
+
+      const spine = (t: number): Point => {
+        const it = 1 - t;
+        return [
+          it * it * exitX + 2 * it * t * midX + t * t * tip[0],
+          it * it * exitY + 2 * it * t * midY + t * t * tip[1],
+        ];
+      };
+
+      // Sample the spine into an arc-length table so bubbles can be placed by distance.
+      const cum: number[] = [0];
+      for (let i = 1; i <= TRAIL_SAMPLES; i++) {
+        const a = spine((i - 1) / TRAIL_SAMPLES);
+        const b = spine(i / TRAIL_SAMPLES);
+        cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
+      }
+      const arcLen = cum[TRAIL_SAMPLES];
+      const tAtDistance = (d: number): number => {
+        if (d <= 0) return 0;
+        if (d >= arcLen) return 1;
+        let i = 1;
+        while (i < cum.length - 1 && cum[i] < d) i++;
+        const seg = cum[i] - cum[i - 1] || 1;
+        return (i - 1 + (d - cum[i - 1]) / seg) / TRAIL_SAMPLES;
+      };
+
+      // Head size follows the cloud, not the distance, so far targets never inflate it.
+      const clearance = Math.min(28, Math.max(5, Math.min(rx, ry) * 0.34));
+      const usable = Math.max(4, arcLen - clearance);
+      const headR = Math.max(3, Math.min(TRAIL_MAX_HEAD_R, Math.min(rx, ry) * TRAIL_HEAD_RATIO));
+
+      // A short tapering run of dots, ending in a small one.
+      const radii: number[] = [];
+      for (let r = headR; radii.length < TRAIL_MAX_BUBBLES && r >= TRAIL_MIN_R; r *= TRAIL_TAPER) {
+        radii.push(r);
+      }
+
+      // Melded (touching) when it fits; otherwise scale down. Leftover length becomes dot gaps.
+      const naturalSpan = 2 * radii.reduce((a, b) => a + b, 0);
+      if (naturalSpan > usable) {
+        const scale = usable / naturalSpan;
+        for (let i = 0; i < radii.length; i++) radii[i] *= scale;
+      }
+      const steps = radii.slice(0, -1).map((r, i) => r + radii[i + 1]);
+      const usedSpan = steps.reduce((a, b) => a + b, 0) + radii[0] + radii[radii.length - 1];
+      const gap = steps.length > 0 ? Math.max(0, (usable - usedSpan) / steps.length) : 0;
+
+      const bubbles: string[] = [];
+      let d = clearance + radii[0];
+      for (let i = 0; i < radii.length; i++) {
+        const [bx, by] = spine(tAtDistance(Math.max(0, Math.min(arcLen, d))));
+        const r = radii[i];
+        bubbles.push(
+          `M ${bx - r} ${by} a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0`,
+        );
+        if (i < steps.length) d += steps[i] + gap;
+      }
+
+      return `${cloud} Z ${bubbles.join(" ")}`;
     };
+
+    if (parsed.kind === "target") markDynamicPath(fn);
+    return fn;
   },
 };

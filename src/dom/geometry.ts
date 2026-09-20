@@ -2,7 +2,7 @@
  * Geometric calculation utilities for connector routing, bounding boxes, and perimeter intersections.
  */
 
-import { resolveAnchor } from "../core/interpolators";
+import { resolveAnchor, resolveCoordToPx } from "../core/interpolators";
 import type { AnchorMode, ElementAnchor, Point } from "../core/types";
 
 export type { AnchorMode, Point };
@@ -79,7 +79,7 @@ function normalize(vector: Point): Point {
 }
 
 /** Maps a world-space point into the box's local, unrotated and unscaled space. */
-function toLocalPoint(box: Box, target: Point): Point {
+export function toLocalPoint(box: Box, target: Point): Point {
   const scale = boxScale(box);
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
@@ -600,6 +600,138 @@ export function getPathAnchorPoint(
     side: dominantSide([target[0] - (box.x + box.width / 2), target[1] - (box.y + box.height / 2)]),
     normal: undefined,
   };
+}
+
+/**
+ * Resolved target geometry in world (stage) coordinates.
+ * @category Shape & Frame
+ */
+export interface ResolvedTarget {
+  /** World-space center point of the target. */
+  point: Point;
+  /** World-space box, present when the target is a DOM element. */
+  box?: Box;
+}
+
+/**
+ * Resolves a connector or tail target to world (stage) coordinates.
+ * Accepts a DOM element, an [x, y] point, or coordinate strings and percentages.
+ * Shared by Connector endpoints and live bubble tails.
+ * @category Shape & Frame
+ */
+export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080): ResolvedTarget {
+  if (
+    typeof target === "object" &&
+    target !== null &&
+    "domElement" in target &&
+    (target as { domElement: unknown }).domElement instanceof HTMLElement
+  ) {
+    const el = target as {
+      domElement: HTMLElement;
+      scale?: number | string;
+      rotation?: number | string;
+      x?: number | string;
+      y?: number | string;
+    };
+    const dom = el.domElement;
+    const viewport =
+      (dom.parentElement?.closest("[style*='container-type']") as HTMLElement) || dom.parentElement;
+
+    if (viewport && dom.isConnected) {
+      const vRect = viewport.getBoundingClientRect();
+      const dRect = dom.getBoundingClientRect();
+      const scale = vRect.width > 0 ? vRect.width / stageW : 1;
+      const cx = (dRect.left - vRect.left + dRect.width / 2) / scale;
+      const cy = (dRect.top - vRect.top + dRect.height / 2) / scale;
+      let width = dom.offsetWidth;
+      let height = dom.offsetHeight;
+      if (width <= 0) width = Number.parseFloat(dom.style.width) || dRect.width / scale;
+      if (height <= 0) height = Number.parseFloat(dom.style.height) || dRect.height / scale;
+
+      return {
+        point: [cx, cy],
+        box: {
+          x: cx - width / 2,
+          y: cy - height / 2,
+          width,
+          height,
+          scale: typeof el.scale === "number" ? el.scale : 1,
+          rotation: typeof el.rotation === "number" ? el.rotation : 0,
+        },
+      };
+    }
+
+    const width = dom.offsetWidth || 120;
+    const height = dom.offsetHeight || 60;
+    const rawX = resolveCoordToPx(
+      typeof el.x === "number" || typeof el.x === "string" ? el.x : 0,
+      stageW,
+    );
+    const rawY = resolveCoordToPx(
+      typeof el.y === "number" || typeof el.y === "string" ? el.y : 0,
+      stageH,
+    );
+
+    return {
+      point: [rawX + width / 2, rawY + height / 2],
+      box: { x: rawX, y: rawY, width, height },
+    };
+  }
+
+  if (Array.isArray(target) && target.length >= 2) {
+    return {
+      point: [
+        resolveCoordToPx(target[0] as number | string, stageW),
+        resolveCoordToPx(target[1] as number | string, stageH),
+      ],
+    };
+  }
+
+  return { point: [0, 0] };
+}
+
+/**
+ * Resolves the attachment point on a target outline (or its box) towards a reference point.
+ * Reuses perimeter providers (Shape/Frame) plus closest-point and box-anchor math.
+ * @category Shape & Frame
+ */
+export function resolveTargetAnchor(
+  target: unknown,
+  box: Box,
+  targetPt: Point,
+  anchor: AnchorMode | ElementAnchor,
+  padding = 6,
+): AnchorPoint {
+  if (isAnchorMode(anchor)) {
+    if (isPerimeterProvider(target)) {
+      return target.getPerimeterPoint(box, targetPt, padding, anchor);
+    }
+    if (anchor === "closest") return getClosestBoxPoint(box, targetPt, padding);
+    return getBoxAnchorPoint(box, "auto", targetPt, padding);
+  }
+  return getBoxAnchorPoint(box, anchor, targetPt, padding);
+}
+
+/**
+ * Resolves a live tail target to a point in the source element's local coordinate space.
+ * `self` is the source element, `target` is the element or point the tail points to.
+ * @category Shape & Frame
+ */
+export function resolveTailLocalPoint(
+  self: unknown,
+  target: unknown,
+  anchor: AnchorMode | ElementAnchor,
+  padding: number,
+  stageW: number,
+  stageH: number,
+): Point | null {
+  const selfResolved = resolveTargetBox(self, stageW, stageH);
+  if (!selfResolved.box) return null;
+  const targetResolved = resolveTargetBox(target, stageW, stageH);
+  const tipWorld = targetResolved.box
+    ? resolveTargetAnchor(target, targetResolved.box, selfResolved.point, anchor, padding).point
+    : targetResolved.point;
+  return toLocalPoint(selfResolved.box, tipWorld);
 }
 
 /**

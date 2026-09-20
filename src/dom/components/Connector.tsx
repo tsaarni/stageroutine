@@ -7,17 +7,13 @@ import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
-  type AnchorPoint,
-  type Box,
   type CardinalSide,
   computeArcPath,
   computeBezierPath,
   computeOrthogonalPath,
-  getBoxAnchorPoint,
-  getClosestBoxPoint,
-  isAnchorMode,
-  isPerimeterProvider,
   type Point,
+  resolveTargetAnchor,
+  resolveTargetBox,
 } from "../geometry";
 
 /**
@@ -634,70 +630,6 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     };
   }
 
-  private resolveBoxOrPoint(
-    target: ConnectorTarget,
-    stageW = 1920,
-    stageH = 1080,
-  ): { point: Point; box?: Box } {
-    if ("domElement" in target && target.domElement instanceof HTMLElement) {
-      const el = target as DOMElement;
-      const dom = el.domElement;
-      const viewport =
-        (dom.parentElement?.closest("[style*='container-type']") as HTMLElement) ||
-        dom.parentElement;
-
-      if (viewport && dom.isConnected) {
-        const vRect = viewport.getBoundingClientRect();
-        const dRect = dom.getBoundingClientRect();
-        const scale = vRect.width > 0 ? vRect.width / stageW : 1;
-        const cx = (dRect.left - vRect.left + dRect.width / 2) / scale;
-        const cy = (dRect.top - vRect.top + dRect.height / 2) / scale;
-        let width = dom.offsetWidth;
-        let height = dom.offsetHeight;
-        if (width <= 0) width = parseFloat(dom.style.width) || dRect.width / scale;
-        if (height <= 0) height = parseFloat(dom.style.height) || dRect.height / scale;
-        const x = cx - width / 2;
-        const y = cy - height / 2;
-
-        return {
-          point: [cx, cy],
-          box: {
-            x,
-            y,
-            width,
-            height,
-            scale: typeof el.scale === "number" ? el.scale : 1,
-            rotation: typeof el.rotation === "number" ? el.rotation : 0,
-          },
-        };
-      }
-
-      const width = dom.offsetWidth || 120;
-      const height = dom.offsetHeight || 60;
-      const rawX = resolveCoordToPx(
-        typeof el.x === "number" || typeof el.x === "string" ? el.x : 0,
-        stageW,
-      );
-      const rawY = resolveCoordToPx(
-        typeof el.y === "number" || typeof el.y === "string" ? el.y : 0,
-        stageH,
-      );
-
-      return {
-        point: [rawX + width / 2, rawY + height / 2],
-        box: { x: rawX, y: rawY, width, height },
-      };
-    }
-
-    if (Array.isArray(target) && target.length >= 2) {
-      const px = resolveCoordToPx(target[0], stageW);
-      const py = resolveCoordToPx(target[1], stageH);
-      return { point: [px, py] };
-    }
-
-    return { point: [0, 0] };
-  }
-
   update(): void {
     if (this.isMounted && !this.isActive) {
       return;
@@ -706,8 +638,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const { width: stageW, height: stageH } = this.getStageDimensions();
     this.domElement.setAttribute("viewBox", `0 0 ${stageW} ${stageH}`);
 
-    const fromResolved = this.resolveBoxOrPoint(this.fromTarget, stageW, stageH);
-    const toResolved = this.resolveBoxOrPoint(this.toTarget, stageW, stageH);
+    const fromResolved = resolveTargetBox(this.fromTarget, stageW, stageH);
+    const toResolved = resolveTargetBox(this.toTarget, stageW, stageH);
 
     let startPt = fromResolved.point;
     let endPt = toResolved.point;
@@ -715,28 +647,14 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     let endSide: CardinalSide = "center";
     let startNormal: Point | undefined;
     let endNormal: Point | undefined;
-    const resolveEndpoint = (
-      target: ConnectorTarget,
-      box: Box,
-      targetPt: Point,
-      anchor: AnchorMode | ElementAnchor,
-    ): AnchorPoint => {
-      if (isAnchorMode(anchor)) {
-        if (isPerimeterProvider(target)) {
-          return target.getPerimeterPoint(box, targetPt, this.padding, anchor);
-        }
-        if (anchor === "closest") return getClosestBoxPoint(box, targetPt, this.padding);
-        return getBoxAnchorPoint(box, "auto", targetPt, this.padding);
-      }
-      return getBoxAnchorPoint(box, anchor, targetPt, this.padding);
-    };
 
     if (fromResolved.box) {
-      const res = resolveEndpoint(
+      const res = resolveTargetAnchor(
         this.fromTarget,
         fromResolved.box,
         toResolved.point,
         this.fromAnchor,
+        this.padding,
       );
       startPt = res.point;
       startSide = res.side;
@@ -744,7 +662,13 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     }
 
     if (toResolved.box) {
-      const res = resolveEndpoint(this.toTarget, toResolved.box, fromResolved.point, this.toAnchor);
+      const res = resolveTargetAnchor(
+        this.toTarget,
+        toResolved.box,
+        fromResolved.point,
+        this.toAnchor,
+        this.padding,
+      );
       endPt = res.point;
       endSide = res.side;
       endNormal = res.normal;

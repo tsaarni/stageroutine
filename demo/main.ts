@@ -1133,6 +1133,98 @@ stage
   .with(brandTitle, dreamKicker, dreamHeading, dreamLead, dreamCard1, dreamCard2, dreamCard3);
 stage.pause();
 
+// Scene: Callout Geometries & Dynamic Tails
+
+const calloutKicker = Kicker("12 / Callout Geometries");
+const calloutHeading = Title("Dynamic Speech & Thought Tails", {
+  width: "34cqw",
+});
+const calloutDescription = Text(
+  "Speech and thought bubbles connect their tails to live targets. The tail re-aims every frame as the target moves, and points land on the target outline.",
+  { width: "34cqw" },
+);
+
+const agentAlpha = Card(
+  [Sparkles({ size: 36, color: "#38bdf8" }), Kicker("Agent Alpha", { color: "#38bdf8" })],
+  { width: 170, height: 110, align: "center" },
+);
+
+const agentBeta = Card(
+  [Cpu({ size: 36, color: "#a855f7" }), Kicker("Agent Beta", { color: "#a855f7" })],
+  { width: 170, height: 110, align: "center" },
+);
+
+const speechBubble = Shape(
+  paths.speechBubble({ tail: { to: agentAlpha, anchor: "top" }, radius: 14 }),
+  "Directing query to Alpha",
+  {
+    width: 250,
+    height: 120,
+    borderColor: "#38bdf8",
+    strokeWidth: 2,
+  },
+);
+
+const thoughtBubble = Shape(
+  paths.thoughtBubble({ tail: { to: agentBeta, anchor: "top" }, lobes: 9 }),
+  "Evaluating Beta response...",
+  {
+    width: 250,
+    height: 120,
+    borderColor: "#a855f7",
+    strokeWidth: 2,
+  },
+);
+
+layout.vstack([calloutKicker, calloutHeading, calloutDescription], {
+  x: 6,
+  y: 18,
+  gap: 2,
+});
+
+layout.grid(
+  [
+    [speechBubble, thoughtBubble],
+    [agentAlpha, agentBeta],
+  ],
+  {
+    x: 44,
+    y: 20,
+    gapX: 4,
+    gapY: 4,
+  },
+);
+
+stage
+  .scene("Callout Geometries")
+  .with(
+    brandTitle,
+    calloutKicker,
+    calloutHeading,
+    calloutDescription,
+    speechBubble,
+    thoughtBubble,
+    agentAlpha,
+    agentBeta,
+  );
+stage.pause();
+
+// Step 1: Agents slide apart. Tails track their live positions and re-aim.
+agentAlpha.to({ x: (x: number) => x - 9 }).ease("cubicInOut");
+agentBeta.to({ x: (x: number) => x + 9 }).ease("cubicInOut");
+speechBubble.text = "Following Alpha left";
+thoughtBubble.text = "Following Beta right";
+speechBubble.to({ borderColor: "#f59e0b" }).ease("cubicInOut");
+thoughtBubble.to({ borderColor: "#10b981" }).ease("cubicInOut");
+stage.pause();
+
+// Step 2: Agents drop lower. Tails stretch to stay attached.
+agentAlpha.to({ y: (y: number) => y + 10 }).ease("cubicInOut");
+agentBeta.to({ y: (y: number) => y + 10 }).ease("cubicInOut");
+speechBubble.text = "Still attached to Alpha";
+thoughtBubble.text = "Still attached to Beta";
+stage.pause();
+
 // Scene: Conclusion
 
 stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);

@@ -5,6 +5,7 @@
 import "./Shape.css";
 import {
   type Align,
+  type ElementAnchor,
   type FlowEffect,
   getActiveStage,
   type ReactiveElementBase,
@@ -18,8 +19,9 @@ import {
   type Box,
   getPathAnchorPoint,
   type Point,
+  resolveTailLocalPoint,
 } from "../geometry";
-import { type PathFunction, paths } from "../paths";
+import { isDynamicPath, type PathFunction, type PathRuntimeContext, paths } from "../paths";
 import { type PingHandle, spawnPingPacket } from "./ping";
 
 export type { PathFunction };
@@ -91,6 +93,7 @@ export interface ShapeElement extends DOMElement {
 class ShapeElementImpl extends DOMElement implements ShapeElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
+    "path",
     "start",
     "end",
     "flow",
@@ -450,7 +453,9 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       | "bottom"
       | undefined;
 
-    if (w !== this.lastW || h !== this.lastH) {
+    // Live tails re-resolve their target every frame; static paths only on size change.
+    const dynamic = isDynamicPath(this._path);
+    if (dynamic || w !== this.lastW || h !== this.lastH) {
       this.lastW = w;
       this.lastH = h;
       this.svgElement.setAttribute("viewBox", `0 0 ${w} ${h}`);
@@ -459,19 +464,18 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
         strokeWidth: this.strokeWidth,
         inset: 0,
         ruleSide: ruleSideAttr,
-      } as import("../paths").PathContext);
+        resolveTail: dynamic ? this.resolveTailPoint : undefined,
+      } as PathRuntimeContext);
       this.pathNode.setAttribute("d", strokeD);
-      const svgMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'%3E%3Cpath fill='black' d='${encodeURIComponent(strokeD)}'/%3E%3C/svg%3E")`;
-      this.frostDiv.style.maskImage = svgMask;
-      (this.frostDiv.style as CSSStyleDeclaration & { webkitMaskImage?: string }).webkitMaskImage =
-        svgMask;
+      this.applyFrostMask(strokeD, w, h);
 
       if (this.doubleBorder) {
         const innerD = this._path(w, h, {
           strokeWidth: this.strokeWidth,
           inset: 4,
           ruleSide: ruleSideAttr,
-        } as import("../paths").PathContext);
+          resolveTail: dynamic ? this.resolveTailPoint : undefined,
+        } as PathRuntimeContext);
         this.innerPathNode.setAttribute("d", innerD);
         this.innerPathNode.style.display = "";
       } else {
@@ -482,12 +486,34 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
         strokeWidth: this.strokeWidth,
         inset: 4,
         ruleSide: ruleSideAttr,
-      } as import("../paths").PathContext);
+      } as PathRuntimeContext);
       this.innerPathNode.setAttribute("d", innerD);
       this.innerPathNode.style.display = "";
     } else if (!this.doubleBorder && this.innerPathNode.style.display !== "none") {
       this.innerPathNode.style.display = "none";
     }
+  }
+
+  /**
+   * Masks the frosted body to the path outline, growing the masked layer to cover
+   * a pointy tail that extends beyond the element bounds.
+   */
+  private applyFrostMask(strokeD: string, w: number, h: number): void {
+    let overflow = 0;
+    try {
+      const bbox = this.pathNode.getBBox();
+      overflow = Math.max(0, -bbox.x, -bbox.y, bbox.x + bbox.width - w, bbox.y + bbox.height - h);
+    } catch {
+      overflow = 0;
+    }
+
+    const pad = overflow > 0 ? Math.ceil(overflow + this.strokeWidth / 2 + 2) : 0;
+    this.domElement.style.setProperty("--sr-frost-overflow", `${pad}px`);
+    const viewBox = pad > 0 ? `${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}` : `0 0 ${w} ${h}`;
+    const svgMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='${viewBox}'%3E%3Cpath fill='black' d='${encodeURIComponent(strokeD)}'/%3E%3C/svg%3E")`;
+    this.frostDiv.style.maskImage = svgMask;
+    (this.frostDiv.style as CSSStyleDeclaration & { webkitMaskImage?: string }).webkitMaskImage =
+      svgMask;
   }
 
   private updateFlowClasses(): void {
@@ -639,6 +665,25 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   getPerimeterPoint(box: Box, target: Point, padding = 6, mode: AnchorMode = "auto"): AnchorPoint {
     return getPathAnchorPoint(this.pathNode, box, target, padding, mode);
   }
+
+  /**
+   * Resolves a live tail target to the shape's local coordinate space.
+   */
+  private resolveTailPoint = (
+    target: unknown,
+    anchor: AnchorMode | ElementAnchor,
+    padding: number,
+  ): Point | null => {
+    const stage = getActiveStage();
+    return resolveTailLocalPoint(
+      this,
+      target,
+      anchor,
+      padding,
+      stage?.width ?? 1920,
+      stage?.height ?? 1080,
+    );
+  };
 }
 
 /**

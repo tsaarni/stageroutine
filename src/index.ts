@@ -216,6 +216,7 @@ export type {
 export { layout } from "./dom/layout";
 export type {
   BoxPathOptions,
+  BubbleTail,
   CirclePathOptions,
   DiamondPathOptions,
   HexagonPathOptions,
@@ -225,6 +226,7 @@ export type {
   SpeechBubblePathOptions,
   SquirclePathOptions,
   StarPathOptions,
+  TailTargetSpec,
   ThoughtBubblePathOptions,
   TrianglePathOptions,
 } from "./dom/paths";

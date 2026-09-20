@@ -113,6 +113,16 @@ Here we showcase custom visual decorators using the dream effect.
 
 Liquid SVG displacement ripples create an organic focus-pull entrance with prismatic chromatic aberration.
 
+## Callout Geometries
+
+Here we demonstrate speech and thought bubbles whose tails connect to live targets.
+
+> [!STEP] Lateral Tracking
+Agent Alpha and Agent Beta slide apart. Each bubble's tail re-aims every frame to stay attached to its target.
+
+> [!STEP] Stretch Tracking
+Agents drop lower. The tails stretch and keep pointing at the target outline as it moves.
+
 ## Conclusion
 
 To wrap up, StageRoutine empowers developers to program presentation state with familiar code paradigms.

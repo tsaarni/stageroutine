@@ -1089,7 +1089,8 @@ export class Stage {
       }
     }
 
-    // 3. Update and show elements active in the target step
+    // 3. Write all property values and DOM transforms for the target step first.
+    const restored: ReactiveElementBase[] = [];
     for (const id of snap.activeElementIds) {
       const el = this.elementRegistry.get(id);
       if (!el) continue;
@@ -1102,7 +1103,18 @@ export class Stage {
           // ignore read-only
         }
       }
-      this._applyStyles(el, props);
+      this._applyStyles(el, props, true, false);
+      restored.push(el);
+    }
+
+    // 4. Re-dispatch once every transform is in place, so derived geometry
+    // (connectors, live tails) resolves against the restored target positions.
+    for (const el of restored) {
+      if (typeof el._dispatchUpdate === "function") {
+        el._dispatchUpdate(1);
+      } else {
+        el.update?.();
+      }
     }
 
     // Apply snapshot theme if present

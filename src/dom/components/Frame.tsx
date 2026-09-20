@@ -2,7 +2,12 @@
  * Geometric clipping container that shapes media and child elements to custom SVG contours.
  */
 import "./Frame.css";
-import { getActiveStage, type ReactiveElementBase, type ReactiveProp } from "../../core/index";
+import {
+  type ElementAnchor,
+  getActiveStage,
+  type ReactiveElementBase,
+  type ReactiveProp,
+} from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
 import {
   type AnchorMode,
@@ -10,8 +15,9 @@ import {
   type Box,
   getPathAnchorPoint,
   type Point,
+  resolveTailLocalPoint,
 } from "../geometry";
-import type { PathFunction } from "../paths";
+import { isDynamicPath, type PathFunction, type PathRuntimeContext } from "../paths";
 
 /**
  * Configuration options for the Frame clipping component.
@@ -51,6 +57,7 @@ export interface FrameElement extends DOMElement {
 class FrameElementImpl extends DOMElement implements FrameElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
+    "path",
     "active",
     "borderColor",
   ]);
@@ -243,17 +250,23 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     let h = this.domElement.offsetHeight;
     if (w <= 0 && typeof this.width === "number") w = this.width;
     if (h <= 0 && typeof this.height === "number") h = this.height;
-    if (w <= 0) w = parseFloat(this.domElement.style.width) || 0;
-    if (h <= 0) h = parseFloat(this.domElement.style.height) || 0;
+    if (w <= 0) w = Number.parseFloat(this.domElement.style.width) || 0;
+    if (h <= 0) h = Number.parseFloat(this.domElement.style.height) || 0;
 
     if (w <= 0 || h <= 0) return;
 
-    if (Math.abs(w - this.lastW) > 0.5 || Math.abs(h - this.lastH) > 0.5) {
+    // Live tails re-resolve their target every frame; static paths only on size change.
+    const dynamic = isDynamicPath(this._path);
+    if (dynamic || Math.abs(w - this.lastW) > 0.5 || Math.abs(h - this.lastH) > 0.5) {
       this.lastW = w;
       this.lastH = h;
       this.svgElement.setAttribute("viewBox", `0 0 ${w} ${h}`);
 
-      const strokeD = this._path(w, h, { strokeWidth: this.strokeWidth, inset: 0 });
+      const strokeD = this._path(w, h, {
+        strokeWidth: this.strokeWidth,
+        inset: 0,
+        resolveTail: dynamic ? this.resolveTailPoint : undefined,
+      } as PathRuntimeContext);
       this.pathNode.setAttribute("d", strokeD);
 
       const svgMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'%3E%3Cpath fill='black' d='${encodeURIComponent(strokeD)}'/%3E%3C/svg%3E")`;
@@ -270,6 +283,25 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   getPerimeterPoint(box: Box, target: Point, padding = 6, mode: AnchorMode = "auto"): AnchorPoint {
     return getPathAnchorPoint(this.pathNode, box, target, padding, mode);
   }
+
+  /**
+   * Resolves a live tail target to the frame's local coordinate space.
+   */
+  private resolveTailPoint = (
+    target: unknown,
+    anchor: AnchorMode | ElementAnchor,
+    padding: number,
+  ): Point | null => {
+    const stage = getActiveStage();
+    return resolveTailLocalPoint(
+      this,
+      target,
+      anchor,
+      padding,
+      stage?.width ?? 1920,
+      stage?.height ?? 1080,
+    );
+  };
 }
 
 /**

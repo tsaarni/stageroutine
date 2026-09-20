@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 179 symbols |
+| `stageroutine` | 181 symbols |
 | `stageroutine/jsx-runtime` | 19 symbols |
 | `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -1593,8 +1593,15 @@ export interface ShapeOptions extends ElementOptions {
 export interface SpeechBubblePathOptions {
     /** Corner radius in pixels (default: 12). */
     radius?: number;
-    /** Pointer tail height in pixels. The body is inset by the same amount so it stays centered (default: 16). */
-    tail?: number;
+    /**
+     * Tail placement:
+     * - Live target: a DOM element, `{ to, anchor?, padding? }`, or a stage `[x, y]` point. Tracks the target each frame.
+     * - Local preset: `"bottom"` (default) | `"bottom-left"` | `"top-right"` | `"left"` | `"right"` | etc.
+     * - Number: tail length in pixels for the local preset (default: 16).
+     */
+    tail?: BubbleTail;
+    /** Width of the tail base where it joins the bubble body (default: 24). */
+    tailWidth?: number;
 }
 
 /**
@@ -1789,6 +1796,19 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
     interactive?: boolean;
 }
 
+/**
+ * Explicit live tail target with an attachment anchor and clearance padding.
+ * @category Shape & Frame
+ */
+export interface TailTargetSpec {
+    /** Element or stage point the tail points to. */
+    to: DOMElement | Point;
+    /** Attachment on the target outline (default: "auto"). */
+    anchor?: AnchorMode | ElementAnchor;
+    /** Clearance in pixels between the tail tip and the target outline (default: 0). */
+    padding?: number;
+}
+
 /** Public controls for a terminal block. @category Components */
 export interface TerminalBlockElement extends DOMElement {
 }
@@ -1889,8 +1909,13 @@ export interface ThemeConfig {
  * @category Shape & Frame
  */
 export interface ThoughtBubblePathOptions {
-    /** Vertical space reserved for the bubble trail in pixels (default: 30). */
-    tail?: number;
+    /**
+     * Trail placement:
+     * - Live target: a DOM element, `{ to, anchor?, padding? }`, or a stage `[x, y]` point. Tracks the target each frame.
+     * - Local preset: `"bottom-left"` (default) | `"bottom-right"` | `"top-left"` | `"top-right"` | etc.
+     * - Number: trail length in pixels for the local preset (default: 30).
+     */
+    tail?: BubbleTail;
     /** Number of cloud puffs (default: 9). */
     lobes?: number;
 }
@@ -2117,6 +2142,13 @@ export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void
  * @category Decorators
  */
 export type BracketStyle = "curly" | "square" | "round" | "corners";
+
+/**
+ * Accepted forms of the bubble `tail` option: a length, a local anchor, a target spec,
+ * or a bare target element/point for live tracking.
+ * @category Shape & Frame
+ */
+export type BubbleTail = number | ElementAnchor | TailTargetSpec | DOMElement;
 
 /**
  * Built-in named easing curves supported by StageRoutine transitions.

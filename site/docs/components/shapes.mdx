@@ -125,8 +125,8 @@ The `paths` object provides generators for the standard diagram shapes:
 | `paths.squircle()` | `{ curvature: 0.82 }` | Continuous G2 curvature superellipse. |
 | `paths.heart()` | None | Symmetrical heart shape. |
 | `paths.polygon()` | `{ sides: 5 }` | Regular N-sided polygon. |
-| `paths.speechBubble()` | `{ radius: 12, tail: 16 }` | Rounded bubble with a downward pointer tail. |
-| `paths.thoughtBubble()` | `{ tail: 30, lobes: 9 }` | Scalloped cloud with a trail of shrinking bubbles. |
+| `paths.speechBubble()` | `{ radius: 12, tail: "bottom", tailWidth: 24 }` | Rounded bubble with a pointy pointer tail. |
+| `paths.thoughtBubble()` | `{ tail: "bottom-left", lobes: 9 }` | Scalloped cloud with a curved trail of shrinking bubbles. |
 
 The same geometry powers every primitive. Pass extra options to change the silhouette:
 
@@ -135,7 +135,7 @@ const rating = Shape(paths.star({ points: 6 }), "Featured", { size: 140 });
 const gateway = Shape(paths.hexagon({ orientation: "flat" }), "Gateway", { size: 130 });
 ```
 
-The bubble generators are ready to use as callouts:
+The bubble generators accept a tail length, a local anchor preset (`"bottom-left"`, `"top-right"`, etc.), or a live target:
 
 <DemoFrame src="/stageroutine/previews/bubbles.html" />
 
@@ -146,14 +146,14 @@ const stage = new Stage();
 // hide-end
 import { layout, paths, Shape } from "stageroutine";
 
-const question = Shape(paths.speechBubble(), "Hello, world!", {
+const question = Shape(paths.speechBubble({ tail: "bottom-left" }), "Hello, world!", {
   width: 220,
   height: 140,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });
 
-const idea = Shape(paths.thoughtBubble(), "Thinking...", {
+const idea = Shape(paths.thoughtBubble({ tail: "bottom-right" }), "Thinking...", {
   width: 220,
   height: 140,
   borderColor: "#38bdf8",
@@ -167,6 +167,22 @@ stage.pause();
 stage.mount("#stage");
 // hide-end
 ```
+
+Pass a `{ to, anchor }` object or an element directly to connect the tail to a live target. The tip re-aims every frame as the target moves and lands on the target outline:
+
+```typescript
+const agent = Card("Agent Alpha", { width: 170, height: 110 });
+
+const bubble = Shape(
+  paths.speechBubble({ tail: { to: agent, anchor: "top" } }),
+  "Following the agent",
+  { width: 250, height: 120 },
+);
+
+agent.to({ x: 60 }).ease("cubicInOut"); // the tail follows live
+```
+
+Targets also accept an attachment mode (`"auto"` (default), `"closest"`, `"ray"`), a clearance `padding`, or a fixed stage point via `{ to: [x, y] }`.
 
 ## Connector Perimeter Tracking
 
@@ -196,3 +212,4 @@ For complete instructions and tutorial examples on building custom geometries, s
 - [`Card`](../api/functions/Card.md)
 - [`paths`](../api/variables/paths.md)
 - [`PathFunction`](../api/type-aliases/PathFunction.md)
+

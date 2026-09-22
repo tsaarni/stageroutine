@@ -3016,6 +3016,12 @@ export interface StageRoutinePluginOptions {
      * Defaults to true. Pass `false` to omit it from builds and the dev server.
      */
     presenter?: boolean;
+    /**
+     * Emit a single self-contained HTML file with all JS, CSS, and assets inlined.
+     * Implies `presenter: false` (presenter console is excluded).
+     * Defaults to false.
+     */
+    singleFile?: boolean;
     /** Enable automatic on-demand icon resolution (defaults to true). */
     icons?: boolean;
     /** Additional custom options forwarded to unplugin-icons. */

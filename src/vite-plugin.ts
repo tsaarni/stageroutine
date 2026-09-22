@@ -7,6 +7,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
 /**
  * Options for configuring the StageRoutine Vite plugin.
@@ -33,6 +34,12 @@ export interface StageRoutinePluginOptions {
    * Defaults to true. Pass `false` to omit it from builds and the dev server.
    */
   presenter?: boolean;
+  /**
+   * Emit a single self-contained HTML file with all JS, CSS, and assets inlined.
+   * Implies `presenter: false` (presenter console is excluded).
+   * Defaults to false.
+   */
+  singleFile?: boolean;
   /** Enable automatic on-demand icon resolution (defaults to true). */
   icons?: boolean;
   /** Additional custom options forwarded to unplugin-icons. */
@@ -53,7 +60,8 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
   const presenterDir = resolve(__dirname, "presenter");
   const presenterHtmlPath = resolve(presenterDir, "presenter.html");
   const presenterTsxPath = resolve(presenterDir, "presenter.tsx");
-  const isPresenterEnabled = options.presenter !== false;
+  const isPresenterEnabled = options.presenter !== false && !options.singleFile;
+  const isSingleFile = options.singleFile === true;
 
   const resolveMainEntry = (): string => {
     if (options.entry) return resolve(rootDir, options.entry);
@@ -89,12 +97,25 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
           target: userConfig.build?.target ?? "es2022",
           outDir: userConfig.build?.outDir ?? options.outDir ?? "dist",
           emptyOutDir: userConfig.build?.emptyOutDir ?? true,
-          rollupOptions: {
-            input: userConfig.build?.rollupOptions?.input ?? {
-              main: resolveMainEntry(),
-              ...(isPresenterEnabled ? { presenter: resolve(rootDir, "presenter.html") } : {}),
-            },
-          },
+          ...(isSingleFile
+            ? {
+                assetsInlineLimit: Number.MAX_SAFE_INTEGER,
+                cssCodeSplit: false,
+                rollupOptions: {
+                  input: userConfig.build?.rollupOptions?.input ?? resolveMainEntry(),
+                  output: { inlineDynamicImports: true },
+                },
+              }
+            : {
+                rollupOptions: {
+                  input: userConfig.build?.rollupOptions?.input ?? {
+                    main: resolveMainEntry(),
+                    ...(isPresenterEnabled
+                      ? { presenter: resolve(rootDir, "presenter.html") }
+                      : {}),
+                  },
+                },
+              }),
         },
         esbuild: {
           jsx: "automatic",
@@ -346,6 +367,10 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
   };
 
   const plugins: PluginOption[] = [corePlugin];
+
+  if (isSingleFile) {
+    plugins.push(viteSingleFile());
+  }
 
   if (options.icons !== false) {
     const processLocalSvg = async (rawSvg: string): Promise<string> => {

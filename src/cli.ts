@@ -21,6 +21,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       channel: { type: "string" },
       presenter: { type: "boolean" },
       "no-presenter": { type: "boolean" },
+      "single-file": { type: "boolean" },
       version: { type: "boolean", short: "v" },
       help: { type: "boolean" },
     },
@@ -53,6 +54,7 @@ Options:
       --height <number>   Virtual stage height in pixels (default: 1080)
       --channel <name>    BroadcastChannel name for presenter sync
       --no-presenter      Disable presenter console build and routes
+      --single-file       Emit a single self-contained HTML file
   -v, --version           Show version number
       --help              Show help
 `);
@@ -79,6 +81,7 @@ Options:
         }
       : {}),
     ...(isPresenterEnabled !== undefined ? { presenter: isPresenterEnabled } : {}),
+    ...(values["single-file"] ? { singleFile: true } : {}),
   };
 
   const serverOptions = {

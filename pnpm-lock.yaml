@@ -38,6 +38,9 @@ importers:
       vite:
         specifier: ^6.2.0
         version: 6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
+      vite-plugin-singlefile:
+        specifier: ^2.3.3
+        version: 2.3.3(rollup@4.62.5)(vite@6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.13
@@ -5700,6 +5703,16 @@ packages:
 
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
+
+  vite-plugin-singlefile@2.3.3:
+    resolution: {integrity: sha512-XVnGH0QzbOa8fxRSsHdCarVN1BSBXNi7uLMQYlrGRN5apdHkk62XQWRJhVever0lnfuyBkwn+kvVChdm/OoOUg==}
+    engines: {node: '>18.0.0'}
+    peerDependencies:
+      rollup: ^4.59.0
+      vite: ^5.4.21 || ^6.0.0 || ^7.0.0 || ^8.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
 
   vite@6.4.3:
     resolution: {integrity: sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==}
@@ -13003,6 +13016,13 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
+
+  vite-plugin-singlefile@2.3.3(rollup@4.62.5)(vite@6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)):
+    dependencies:
+      micromatch: 4.0.8
+      vite: 6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
+    optionalDependencies:
+      rollup: 4.62.5
 
   vite@6.4.3(@types/node@26.2.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0):
     dependencies:

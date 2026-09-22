@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "stageroutine dev",
-    "build": "stageroutine build"
+    "build": "stageroutine build",
+    "build:single": "stageroutine build --single-file"
   },
   "dependencies": {
     "stageroutine": "github:tsaarni/stageroutine"

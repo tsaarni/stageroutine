@@ -105,6 +105,43 @@ yarn build
 
 The output is written to `dist/`, containing both `index.html` and `presenter.html`. It is ready to upload to any static web host.
 
+## Building a Single Standalone File
+
+To generate a single, self-contained HTML file that can be emailed or opened directly from disk (`file://`) without a web server:
+
+<Tabs groupId="package-manager">
+  <TabItem value="pnpm" label="pnpm" default>
+
+```bash
+pnpm build:single
+```
+
+  </TabItem>
+  <TabItem value="npm" label="npm">
+
+```bash
+npm run build:single
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```bash
+bun run build:single
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn build:single
+```
+
+  </TabItem>
+</Tabs>
+
+This bundles all styles, fonts, and scripts directly into `dist/index.html`. Presenter console routes are excluded in single-file mode.
+
 ## Next Steps
 
 - [Concepts](./concepts) - Core mental model and differences from slide decks

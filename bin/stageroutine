@@ -1,5 +1,11 @@
 #!/usr/bin/env node
-import { runCli } from "../src/cli.ts";
+// jiti runs the TypeScript CLI because Node.js refuses .ts files under
+// node_modules (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING).
+// Full reasoning: src/vite.js
+import { createJiti } from "jiti";
+
+const jiti = createJiti(import.meta.url);
+const { runCli } = await jiti.import("../src/cli.ts");
 
 runCli().catch((err) => {
   console.error(err);

@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 181 symbols |
+| `stageroutine` | 182 symbols |
 | `stageroutine/jsx-runtime` | 19 symbols |
 | `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -570,6 +570,26 @@ export interface BracketOptions {
     className?: string;
 }
 
+/**
+ * A single bullet item with optional per-item overrides.
+ * @category Components
+ * @inline
+ */
+export interface BulletItem {
+    /** Item text. */
+    text: string;
+    /** Marker glyph for this item (overrides list-level `marker`). */
+    marker?: string;
+    /** Text and marker color for this item (overrides list-level `color`). */
+    color?: string;
+    /** Additional CSS class name. */
+    className?: string;
+    /** Inline styles for this item. */
+    style?: CSSProperties | Partial<CSSStyleDeclaration>;
+    /** Theme token overrides for this item. */
+    theme?: Partial<ThemeConfig>;
+}
+
 /** Public controls for a bullet list. @category Components */
 export interface BulletListElement extends DOMElement {
     readonly items: DOMElement[];
@@ -584,7 +604,7 @@ export interface BulletListElement extends DOMElement {
 export interface BulletListOptions extends ElementOptions {
     /** Vertical spacing between bullet items in pixels (default: 16). */
     itemSpacing?: number;
-    /** Marker symbol(s) for bullet points (default: "–"). Can be a single symbol or an array per depth level. */
+    /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
     marker?: string | string[];
     /** Foreground text and bullet marker color. */
     color?: string;
@@ -2157,10 +2177,10 @@ export type BubbleTail = number | ElementAnchor | TailTargetSpec | DOMElement;
 export type BuiltinEase = "linear" | "cubicOut" | "cubicInOut" | "quartOut" | "quartInOut" | "quintOut" | "quintInOut" | "expoOut" | "expoInOut" | "smooth" | "gentle";
 
 /**
- * Item specification for a bullet list. Can be a string or a nested array of items.
+ * Item specification for a bullet list: plain text, a styled item, or a nested array for indentation.
  * @category Components
  */
-export type BulletItemInput = string | BulletItemInput[];
+export type BulletItemInput = string | BulletItem | BulletItemInput[];
 
 /**
  * Head marker decoration types at the endpoints of a Connector line.

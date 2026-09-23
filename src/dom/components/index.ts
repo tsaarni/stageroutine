@@ -7,6 +7,7 @@
  */
 
 export {
+  type BulletItem,
   type BulletItemInput,
   BulletList,
   type BulletListElement,

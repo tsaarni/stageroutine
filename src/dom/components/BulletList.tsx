@@ -3,16 +3,38 @@
  */
 
 import "./BulletList.css";
+import type { Properties as CSSProperties } from "csstype";
 import { getActiveStage } from "../../core/stage";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
+import type { ThemeConfig } from "../../theme/tokens";
 import { DOMElement, type ElementOptions } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
- * Item specification for a bullet list. Can be a string or a nested array of items.
+ * A single bullet item with optional per-item overrides.
+ * @category Components
+ * @inline
+ */
+export interface BulletItem {
+  /** Item text. */
+  text: string;
+  /** Marker glyph for this item (overrides list-level `marker`). */
+  marker?: string;
+  /** Text and marker color for this item (overrides list-level `color`). */
+  color?: string;
+  /** Additional CSS class name. */
+  className?: string;
+  /** Inline styles for this item. */
+  style?: CSSProperties | Partial<CSSStyleDeclaration>;
+  /** Theme token overrides for this item. */
+  theme?: Partial<ThemeConfig>;
+}
+
+/**
+ * Item specification for a bullet list: plain text, a styled item, or a nested array for indentation.
  * @category Components
  */
-export type BulletItemInput = string | BulletItemInput[];
+export type BulletItemInput = string | BulletItem | BulletItemInput[];
 
 /**
  * Configuration options for the BulletList component.
@@ -22,7 +44,7 @@ export type BulletItemInput = string | BulletItemInput[];
 export interface BulletListOptions extends ElementOptions {
   /** Vertical spacing between bullet items in pixels (default: 16). */
   itemSpacing?: number;
-  /** Marker symbol(s) for bullet points (default: "–"). Can be a single symbol or an array per depth level. */
+  /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
   marker?: string | string[];
   /** Foreground text and bullet marker color. */
   color?: string;
@@ -35,6 +57,11 @@ export interface BulletListOptions extends ElementOptions {
 interface FlattenedBulletItem {
   readonly text: string;
   readonly level: number;
+  readonly item?: BulletItem;
+}
+
+function isBulletItem(value: BulletItemInput): value is BulletItem {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function flattenBulletItems(items: readonly BulletItemInput[], level = 0): FlattenedBulletItem[] {
@@ -42,8 +69,10 @@ function flattenBulletItems(items: readonly BulletItemInput[], level = 0): Flatt
   for (const item of items) {
     if (Array.isArray(item)) {
       result.push(...flattenBulletItems(item, level + 1));
+    } else if (isBulletItem(item)) {
+      result.push({ text: item.text, level, item });
     } else {
-      result.push({ text: String(item), level });
+      result.push({ text: item, level });
     }
   }
   return result;
@@ -83,7 +112,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
     const childElements: DOMElement[] = [];
     const flattened = flattenBulletItems(items);
 
-    for (const { text: itemText, level } of flattened) {
+    for (const { text: itemText, level, item } of flattened) {
       const itemEl = document.createElement("div");
       itemEl.className = "sr-bullet-item";
       if (level > 0) {
@@ -92,14 +121,16 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
       }
       rawItemElements.push(itemEl);
 
+      const color = item?.color ?? options.color;
+
       const markerEl = document.createElement("span");
       markerEl.className = "sr-bullet-marker";
-      markerEl.textContent = resolveMarker(options.marker, level);
-      if (options.color) markerEl.style.color = options.color;
+      markerEl.textContent = item?.marker ?? resolveMarker(options.marker, level);
+      if (color) markerEl.style.color = color;
 
       const text = document.createElement("span");
       text.textContent = itemText;
-      if (options.color) text.style.color = options.color;
+      if (color) text.style.color = color;
 
       itemEl.appendChild(markerEl);
       itemEl.appendChild(text);
@@ -109,9 +140,12 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
         opacity: isHiddenInitially ? 0 : 1,
         x: isHiddenInitially ? 2 : 0,
         y: 0,
+        className: item?.className,
         style: {
           position: "relative",
-        },
+          ...item?.style,
+        } as CSSProperties | Partial<CSSStyleDeclaration>,
+        theme: item?.theme,
       });
 
       const proxyItem = stage ? (stage.registerElement(childDOM) as DOMElement) : childDOM;

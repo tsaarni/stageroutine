@@ -33,7 +33,42 @@ stage.mount("#stage");
 // hide-end
 ```
 
-Pass nested arrays to create indented sub-items.
+Pass nested arrays to create indented sub-items. Items can also be objects with per-item `marker`, `color`, `className`, `style`, and `theme`.
+
+## Per-Item Properties
+
+Each row can override list-level properties.
+
+<DemoFrame src="/stageroutine/previews/bullet-list-procon.html" />
+
+```typescript preview="bullet-list-procon.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { BulletList } from "stageroutine";
+
+// Small helpers that build pre-styled items.
+const pro = (text: string) => ({ text, marker: "+", color: "#22c55e" });
+const con = (text: string) => ({ text, marker: "-", color: "#ef4444" });
+
+const list = BulletList([
+  pro("Fast startup"),
+  pro("Tiny bundle size"),
+  con("More memory usage"),
+  con("Steeper learning curve"),
+], {
+  x: "center",
+  y: "center",
+});
+// hide-start
+stage.scene("BulletList").with(list);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+Any item without a `marker` falls back to the list-level `marker`.
 
 ## Item Selection
 

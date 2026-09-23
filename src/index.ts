@@ -132,6 +132,7 @@ export { AsciiFluid, CSSBackground, GradientFluid, Starfield } from "./dom/backg
 export type {
   ActivationBarElement,
   ActivationOptions,
+  BulletItem,
   BulletItemInput,
   BulletListElement,
   BulletListOptions,

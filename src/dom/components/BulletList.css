@@ -1,7 +1,7 @@
 @layer sr-components {
   .sr-bullet-marker {
     display: inline-block;
-    color: var(--sr-text-dim);
+    color: var(--sr-bullet-marker-color, var(--sr-text-dim));
     flex-shrink: 0;
     user-select: none;
     line-height: inherit;
@@ -34,8 +34,8 @@
       transform: translateX(8px) !important;
 
       & .sr-bullet-marker {
-        color: var(--sr-primary) !important;
-        text-shadow: 0 0 10px var(--sr-primary);
+        color: var(--sr-bullet-marker-color, var(--sr-primary)) !important;
+        text-shadow: 0 0 10px var(--sr-bullet-marker-color, var(--sr-primary));
       }
     }
 

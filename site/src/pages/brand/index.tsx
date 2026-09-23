@@ -4,6 +4,7 @@ import MicroLogo from "@site/static/img/stageroutine-logo-micro.svg";
 import Layout from "@theme/Layout";
 import type React from "react";
 import { useState } from "react";
+import { themes } from "../../../../src/theme/presets";
 import styles from "./brand.module.css";
 
 interface ThemePreset {
@@ -20,41 +21,41 @@ const THEME_PRESETS: ThemePreset[] = [
     id: "defaultDark",
     name: "Default Dark",
     tag: "Native Dark",
-    background: "#0c0d12",
-    text: "#ffffff",
-    primary: "#38bdf8",
+    background: themes.defaultDark.background ?? "#0c0d12",
+    text: themes.defaultDark.text ?? "#ffffff",
+    primary: themes.defaultDark.primary ?? "#38bdf8",
   },
   {
     id: "tokyoNight",
     name: "Tokyo Night",
     tag: "Navy & Blue",
-    background: "#1a1b26",
-    text: "#c0caf5",
-    primary: "#7aa2f7",
+    background: themes.tokyoNight.background ?? "#1a1b26",
+    text: themes.tokyoNight.text ?? "#c0caf5",
+    primary: themes.tokyoNight.primary ?? "#7aa2f7",
   },
   {
     id: "dracula",
     name: "Dracula",
     tag: "Violet & Pink",
-    background: "#282a36",
-    text: "#f8f8f2",
-    primary: "#ff79c6",
+    background: themes.dracula.background ?? "#282a36",
+    text: themes.dracula.text ?? "#f8f8f2",
+    primary: themes.dracula.primary ?? "#ff79c6",
   },
   {
     id: "cyberpunk",
     name: "Cyberpunk",
     tag: "Neon & Crimson",
-    background: "#0d0221",
-    text: "#00f0ff",
-    primary: "#ff003c",
+    background: themes.cyberpunk.background ?? "#0d0221",
+    text: themes.cyberpunk.text ?? "#00f0ff",
+    primary: themes.cyberpunk.primary ?? "#ff003c",
   },
   {
     id: "defaultLight",
     name: "Clean Light",
     tag: "Editorial Light",
-    background: "#fafafa",
-    text: "#09090b",
-    primary: "#0284c7",
+    background: themes.defaultLight.background ?? "#fafafa",
+    text: themes.defaultLight.text ?? "#09090b",
+    primary: themes.defaultLight.primary ?? "#0284c7",
   },
 ];
 

@@ -4,6 +4,7 @@
 
 import { builtinEasings } from "../motion/transitions";
 import { PresenterHost } from "../presenter/host";
+import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
@@ -292,7 +293,7 @@ export class Stage {
 
     this.options = {
       defaultDuration: 0.6,
-      theme: { background: "#09090b", text: "#ffffff" },
+      theme: defaultDark,
       ...options,
       width: options.width ?? defaultWidth,
       height: options.height ?? defaultHeight,
@@ -300,8 +301,7 @@ export class Stage {
     };
 
     this.currentTheme = {
-      background: "#09090b",
-      text: "#ffffff",
+      ...defaultDark,
       ...(this.options.theme || {}),
     };
 

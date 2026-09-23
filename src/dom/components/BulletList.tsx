@@ -20,6 +20,8 @@ export interface BulletItem {
   text: string;
   /** Marker glyph for this item (overrides list-level `marker`). */
   marker?: string;
+  /** Marker color for this item (overrides list-level `markerColor` and fallback `color`). */
+  markerColor?: string;
   /** Text and marker color for this item (overrides list-level `color`). */
   color?: string;
   /** Additional CSS class name. */
@@ -28,6 +30,8 @@ export interface BulletItem {
   style?: CSSProperties | Partial<CSSStyleDeclaration>;
   /** Theme token overrides for this item. */
   theme?: Partial<ThemeConfig>;
+  /** Nested sub-items indented under this bullet item. */
+  children?: BulletItemInput | BulletItemInput[];
 }
 
 /**
@@ -46,6 +50,8 @@ export interface BulletListOptions extends ElementOptions {
   itemSpacing?: number;
   /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
   marker?: string | string[];
+  /** Default marker color for bullet points (overrides `color` for markers). A per-item `markerColor` overrides this. */
+  markerColor?: string;
   /** Foreground text and bullet marker color. */
   color?: string;
   /** Additional CSS class name. */
@@ -54,28 +60,43 @@ export interface BulletListOptions extends ElementOptions {
   interactive?: boolean;
 }
 
-interface FlattenedBulletItem {
-  readonly text: string;
+interface NormalizedBulletItem extends Omit<BulletItem, "children"> {
   readonly level: number;
-  readonly item?: BulletItem;
 }
 
-function isBulletItem(value: BulletItemInput): value is BulletItem {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function formatInvalidItem(item: unknown): string {
+  if (item === null) return "null";
+  if (typeof item === "object") return JSON.stringify(item);
+  return String(item);
 }
 
-function flattenBulletItems(items: readonly BulletItemInput[], level = 0): FlattenedBulletItem[] {
-  const result: FlattenedBulletItem[] = [];
+function* flattenBulletItems(
+  items: readonly BulletItemInput[],
+  level = 0,
+): Generator<NormalizedBulletItem> {
   for (const item of items) {
     if (Array.isArray(item)) {
-      result.push(...flattenBulletItems(item, level + 1));
-    } else if (isBulletItem(item)) {
-      result.push({ text: item.text, level, item });
+      yield* flattenBulletItems(item, level + 1);
+    } else if (typeof item === "string") {
+      yield { text: item, level };
+    } else if (
+      typeof item === "object" &&
+      item !== null &&
+      "text" in item &&
+      typeof item.text === "string"
+    ) {
+      const { children, ...bulletItem } = item;
+      yield { ...bulletItem, level };
+      if (children) {
+        const childList = Array.isArray(children) ? children : [children];
+        yield* flattenBulletItems(childList, level + 1);
+      }
     } else {
-      result.push({ text: item, level });
+      throw new TypeError(
+        `[BulletList] Invalid item at level ${level}: expected string or object with 'text', received ${formatInvalidItem(item)}`,
+      );
     }
   }
-  return result;
 }
 
 function resolveMarker(marker: string | readonly string[] | undefined, level: number): string {
@@ -102,7 +123,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
     const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;
     const container = document.createElement("div");
     container.className = ["sr-bullet-list", options.className].filter(Boolean).join(" ");
-    if (options.itemSpacing) {
+    if (options.itemSpacing !== undefined) {
       container.style.gap = `${options.itemSpacing}px`;
     }
 
@@ -110,27 +131,30 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
     const rawItemElements: HTMLElement[] = [];
     const stage = getActiveStage();
     const childElements: DOMElement[] = [];
-    const flattened = flattenBulletItems(items);
 
-    for (const { text: itemText, level, item } of flattened) {
+    for (const item of flattenBulletItems(items)) {
       const itemEl = document.createElement("div");
       itemEl.className = "sr-bullet-item";
-      if (level > 0) {
-        itemEl.dataset.level = String(level);
-        itemEl.style.setProperty("--sr-bullet-level", String(level));
+      if (item.level > 0) {
+        itemEl.dataset.level = String(item.level);
+        itemEl.style.setProperty("--sr-bullet-level", String(item.level));
       }
       rawItemElements.push(itemEl);
 
-      const color = item?.color ?? options.color;
+      const markerColor = item.markerColor ?? options.markerColor ?? item.color ?? options.color;
+      const textColor = item.color ?? options.color;
 
       const markerEl = document.createElement("span");
       markerEl.className = "sr-bullet-marker";
-      markerEl.textContent = item?.marker ?? resolveMarker(options.marker, level);
-      if (color) markerEl.style.color = color;
+      markerEl.textContent = item.marker ?? resolveMarker(options.marker, item.level);
+      if (markerColor) {
+        markerEl.style.color = markerColor;
+        markerEl.style.setProperty("--sr-bullet-marker-color", markerColor);
+      }
 
       const text = document.createElement("span");
-      text.textContent = itemText;
-      if (color) text.style.color = color;
+      text.textContent = item.text;
+      if (textColor) text.style.color = textColor;
 
       itemEl.appendChild(markerEl);
       itemEl.appendChild(text);
@@ -140,12 +164,12 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
         opacity: isHiddenInitially ? 0 : 1,
         x: isHiddenInitially ? 2 : 0,
         y: 0,
-        className: item?.className,
+        className: item.className,
         style: {
           position: "relative",
-          ...item?.style,
+          ...item.style,
         } as CSSProperties | Partial<CSSStyleDeclaration>,
-        theme: item?.theme,
+        theme: item.theme,
       });
 
       const proxyItem = stage ? (stage.registerElement(childDOM) as DOMElement) : childDOM;

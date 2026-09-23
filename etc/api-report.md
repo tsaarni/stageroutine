@@ -580,6 +580,8 @@ export interface BulletItem {
     text: string;
     /** Marker glyph for this item (overrides list-level `marker`). */
     marker?: string;
+    /** Marker color for this item (overrides list-level `markerColor` and fallback `color`). */
+    markerColor?: string;
     /** Text and marker color for this item (overrides list-level `color`). */
     color?: string;
     /** Additional CSS class name. */
@@ -588,6 +590,8 @@ export interface BulletItem {
     style?: CSSProperties | Partial<CSSStyleDeclaration>;
     /** Theme token overrides for this item. */
     theme?: Partial<ThemeConfig>;
+    /** Nested sub-items indented under this bullet item. */
+    children?: BulletItemInput | BulletItemInput[];
 }
 
 /** Public controls for a bullet list. @category Components */
@@ -606,6 +610,8 @@ export interface BulletListOptions extends ElementOptions {
     itemSpacing?: number;
     /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
     marker?: string | string[];
+    /** Default marker color for bullet points (overrides `color` for markers). A per-item `markerColor` overrides this. */
+    markerColor?: string;
     /** Foreground text and bullet marker color. */
     color?: string;
     /** Additional CSS class name. */

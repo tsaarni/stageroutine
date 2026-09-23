@@ -33,7 +33,7 @@
     /* Core Canvas & Palette */
     --sr-background: #0c0d12;
     --sr-text: #ffffff;
-    --sr-primary: #f97316;
+    --sr-primary: #38bdf8;
     --sr-accent: var(--sr-primary);
 
     /* Secondary Text (Auto-derived from text color) */

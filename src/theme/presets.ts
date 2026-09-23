@@ -11,7 +11,7 @@ import type { ThemeConfig } from "./tokens";
 export const defaultDark: ThemeConfig = {
   background: "#0c0d12",
   text: "#ffffff",
-  primary: "#f97316",
+  primary: "#38bdf8",
 };
 
 /**
@@ -21,7 +21,7 @@ export const defaultDark: ThemeConfig = {
 export const defaultLight: ThemeConfig = {
   background: "#fafafa",
   text: "#09090b",
-  primary: "#ea580c",
+  primary: "#0284c7",
 };
 
 /**

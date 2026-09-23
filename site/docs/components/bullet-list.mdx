@@ -33,7 +33,7 @@ stage.mount("#stage");
 // hide-end
 ```
 
-Pass nested arrays to create indented sub-items. Items can also be objects with per-item `marker`, `color`, `className`, `style`, and `theme`.
+Pass nested arrays or per-item `children` to create indented sub-items. Items can also be objects with per-item `marker`, `markerColor`, `color`, `className`, `style`, `theme`, and `children`.
 
 ## Per-Item Properties
 
@@ -49,8 +49,8 @@ const stage = new Stage();
 import { BulletList } from "stageroutine";
 
 // Small helpers that build pre-styled items.
-const pro = (text: string) => ({ text, marker: "+", color: "#22c55e" });
-const con = (text: string) => ({ text, marker: "-", color: "#ef4444" });
+const pro = (text: string) => ({ text, marker: "+", markerColor: "#22c55e" });
+const con = (text: string) => ({ text, marker: "-", markerColor: "#ef4444" });
 
 const list = BulletList([
   pro("Fast startup"),

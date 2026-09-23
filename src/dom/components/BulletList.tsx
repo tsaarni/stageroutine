@@ -30,8 +30,6 @@ export interface BulletItem {
   style?: CSSProperties | Partial<CSSStyleDeclaration>;
   /** Theme token overrides for this item. */
   theme?: Partial<ThemeConfig>;
-  /** Nested sub-items indented under this bullet item. */
-  children?: BulletItemInput | BulletItemInput[];
 }
 
 /**
@@ -60,7 +58,7 @@ export interface BulletListOptions extends ElementOptions {
   interactive?: boolean;
 }
 
-interface NormalizedBulletItem extends Omit<BulletItem, "children"> {
+interface NormalizedBulletItem extends BulletItem {
   readonly level: number;
 }
 
@@ -85,12 +83,7 @@ function* flattenBulletItems(
       "text" in item &&
       typeof item.text === "string"
     ) {
-      const { children, ...bulletItem } = item;
-      yield { ...bulletItem, level };
-      if (children) {
-        const childList = Array.isArray(children) ? children : [children];
-        yield* flattenBulletItems(childList, level + 1);
-      }
+      yield { ...item, level };
     } else {
       throw new TypeError(
         `[BulletList] Invalid item at level ${level}: expected string or object with 'text', received ${formatInvalidItem(item)}`,

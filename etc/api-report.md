@@ -590,8 +590,6 @@ export interface BulletItem {
     style?: CSSProperties | Partial<CSSStyleDeclaration>;
     /** Theme token overrides for this item. */
     theme?: Partial<ThemeConfig>;
-    /** Nested sub-items indented under this bullet item. */
-    children?: BulletItemInput | BulletItemInput[];
 }
 
 /** Public controls for a bullet list. @category Components */

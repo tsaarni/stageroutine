@@ -318,7 +318,6 @@ export class DOMElement implements ReactiveElementBase {
         typeof this.height === "number" ? `${this.height}px` : String(this.height);
     }
 
-    this.domElement.style.willChange = "transform, opacity, filter";
     if (!this.domElement.style.pointerEvents) {
       this.domElement.style.pointerEvents = "auto";
     }

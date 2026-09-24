@@ -371,15 +371,16 @@ export class Stage {
       }));
     });
 
-    // DOM Elements Overview & Active breakdown
+    // DOM Elements Overview & Active / Dormant breakdown
     this.metrics.register("dom", () => {
       const step = this.steps[this.currentStepIndex];
       const activeIds = step?.activeElementIds;
       let totalRegistered = 0;
       let activeInScene = 0;
       let visibleCount = 0;
+      let dormantCount = 0;
 
-      for (const [id] of this.elementRegistry.entries()) {
+      for (const [id, el] of this.elementRegistry.entries()) {
         totalRegistered++;
         const inActiveScene = activeIds ? activeIds.has(id) : false;
         if (inActiveScene) {
@@ -390,26 +391,93 @@ export class Stage {
         if (inActiveScene && opacity > 0) {
           visibleCount++;
         }
+        if (el.domElement?.style.display === "none") {
+          dormantCount++;
+        }
       }
 
       return {
         total_registered: totalRegistered,
         active_in_scene: activeInScene,
         visible_in_scene: visibleCount,
+        dormant_elements: dormantCount,
+        stage_total_nodes: this.viewport ? this.viewport.getElementsByTagName("*").length : 0,
       };
     });
 
-    // Browser Engine stats (strictly reads cached properties, only reports RUNNING animations)
-    this.metrics.register("browser", () => {
+    // GPU & Canvas Footprint
+    this.metrics.register("gpu", () => {
+      const canvases = Array.from(document.querySelectorAll("canvas"));
+      let totalCanvasPixels = 0;
+      for (const c of canvases) {
+        totalCanvasPixels += c.width * c.height;
+      }
+
+      let layersActive = 0;
+      if (this.viewport) {
+        const willChangeNodes = this.viewport.querySelectorAll('[style*="will-change"]');
+        for (let i = 0; i < willChangeNodes.length; i++) {
+          const style = (willChangeNodes[i] as HTMLElement).style.willChange;
+          if (style && style !== "auto") {
+            layersActive++;
+          }
+        }
+      }
+
+      return {
+        layers_active: layersActive,
+        canvas_count: canvases.length,
+        canvas_pixels: totalCanvasPixels,
+      };
+    });
+
+    // Memory Footprint & Leak Detection
+    this.metrics.register("memory", () => {
+      const result: Record<string, unknown> = {};
+
+      if (typeof performance !== "undefined" && "memory" in performance) {
+        const mem = (
+          performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }
+        ).memory;
+        result.heap_used_bytes = mem.usedJSHeapSize;
+        result.heap_total_bytes = mem.totalJSHeapSize;
+      }
+
+      if (document.body) {
+        const leakedNodes: Record<string, unknown>[] = [];
+        for (const child of document.body.children) {
+          if (
+            child !== this.container &&
+            child.id !== "stage" &&
+            child.tagName.toLowerCase() !== "script"
+          ) {
+            const filterId = child.querySelector("filter")?.id;
+            leakedNodes.push({
+              tag: child.tagName.toLowerCase(),
+              id: child.id || undefined,
+              filter_id: filterId || undefined,
+              class:
+                typeof child.className === "string" && child.className
+                  ? child.className
+                  : undefined,
+            });
+          }
+        }
+        result.body_leaked_nodes = leakedNodes;
+      }
+
+      return result;
+    });
+
+    // Animation & Background Activity Diagnostics
+    this.metrics.register("animation", () => {
       const result: Record<string, unknown> = {};
       const allAnimations = document.getAnimations();
-      let runningCount = 0;
       let hiddenRunningCount = 0;
       const runningList: Record<string, unknown>[] = [];
 
       for (const anim of allAnimations) {
         if (anim.playState !== "running") continue;
-        runningCount++;
 
         const target = (anim.effect as { target?: Element } | null)?.target;
         // Check both HTMLElement and SVGElement; SVG nodes do not inherit HTMLElement.
@@ -446,29 +514,9 @@ export class Stage {
       }
 
       const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
-      result["connectors.total_active_pulses"] = pulsePackets.length;
-      result["animations.total_running"] = runningCount;
-      result["animations.hidden_running"] = hiddenRunningCount;
-      if (runningList.length > 0) {
-        result["animations.running"] = runningList;
-      }
-
-      const canvases = Array.from(document.querySelectorAll("canvas"));
-      let totalCanvasPixels = 0;
-      for (const c of canvases) {
-        totalCanvasPixels += c.width * c.height;
-      }
-      result["canvas.count"] = canvases.length;
-      result["canvas.total_pixels"] = totalCanvasPixels;
-      result["canvas.total_megapixels"] = Number((totalCanvasPixels / 1_000_000).toFixed(2));
-
-      if (typeof performance !== "undefined" && "memory" in performance) {
-        const mem = (
-          performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }
-        ).memory;
-        result["memory.js_heap_used_bytes"] = mem.usedJSHeapSize;
-        result["memory.js_heap_total_bytes"] = mem.totalJSHeapSize;
-      }
+      result.connector_pulses = pulsePackets.length;
+      result.hidden_running = hiddenRunningCount;
+      result.running = runningList;
 
       return result;
     });
@@ -1095,6 +1143,11 @@ export class Stage {
       const el = this.elementRegistry.get(id);
       if (!el) continue;
 
+      if (el.domElement) {
+        el.domElement.style.display = "";
+        el.domElement.style.willChange = "auto";
+      }
+
       const props = snap.properties.get(id) || this.initialProperties.get(id) || {};
       for (const [key, val] of Object.entries(props)) {
         try {
@@ -1282,8 +1335,18 @@ export class Stage {
     for (const id of participatingIds) {
       const el = this.elementRegistry.get(id);
       if (!el) continue;
+      if (el.domElement) {
+        el.domElement.style.display = "";
+      }
       const props = this.propertyState.get(id) || this.initialProperties.get(id) || {};
       this._applyStyles(el, props);
+    }
+
+    for (const id of transitioningIds) {
+      const el = this.elementRegistry.get(id);
+      if (el?.domElement && el.kind !== "Shape" && el.kind !== "Frame") {
+        el.domElement.style.willChange = "transform, opacity";
+      }
     }
 
     if (step.actions) {
@@ -1424,6 +1487,8 @@ export class Stage {
     if (!node) return;
     node.style.opacity = "0";
     node.style.visibility = "hidden";
+    node.style.display = "none";
+    node.style.willChange = "auto";
     node.style.pointerEvents = "none";
     element._deactivate?.();
   }
@@ -1472,6 +1537,9 @@ export class Stage {
       // ignore read-only properties
     }
     node.style.visibility = opacity === 0 ? "hidden" : "visible";
+    if (opacity > 0 && node.style.display === "none") {
+      node.style.display = "";
+    }
     if (triggerLifecycle) {
       if (opacity > 0) {
         element._activate?.();

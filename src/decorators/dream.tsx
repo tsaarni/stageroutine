@@ -170,7 +170,7 @@ export function dream(options: DreamOptions = {}): ElementDecorator {
       </svg>
     );
 
-    document.body.appendChild(svg);
+    el.appendChild(svg);
     warmUpDreamShader(filterId);
 
     const reset = () => {

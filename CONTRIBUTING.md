@@ -19,13 +19,13 @@ Inspect runtime performance and background tasks programmatically by querying th
 window.__STAGEROUTINE_DEV__.getMetrics()
 ```
 
-This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `animation.hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor `dom.dormant_elements` and `gpu.layers_active` to confirm inactive elements enter true dormancy.
+This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `animation.hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor `dom.dormant_elements`, `dom.detached_elements`, and `gpu.layers_active` to confirm inactive elements enter true dormancy and remain attached to the stage.
 
 ### Identifying CPU and GPU consumers
 
 - **GPU load**: Check `gpu.canvas_pixels` and `gpu.layers_active`. Check `background.<kind>.total_pixels` for large canvas surfaces.
 - **CPU load**: Check `background.<kind>.is_running` and `stage.active_raf_count` to find continuous render loops. Check `animation.running.count` and `animation.hidden_running` for continuous animations. Use `performance_start_trace` to profile main thread execution.
-- **Memory footprint**: Check `memory.heap_used_bytes` and ensure `memory.body_leaked_nodes.count` is 0.
+- **Memory footprint**: Check `memory.heap_used_bytes` for JS heap allocation.
 
 ## Modifying the documentation site
 

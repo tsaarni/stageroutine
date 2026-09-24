@@ -3,7 +3,8 @@
   "plugins": [
     "./.biome/rules/no-browser-guards.grit",
     "./.biome/rules/enforce-timer-cleanup.grit",
-    "./.biome/rules/enforce-sr-class-prefix.grit"
+    "./.biome/rules/enforce-sr-class-prefix.grit",
+    "./.biome/rules/no-body-append.grit"
   ],
   "formatter": {
     "indentStyle": "space",

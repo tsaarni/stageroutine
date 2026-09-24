@@ -173,13 +173,10 @@ export class PresenterRecorder {
     const blob = new Blob(this.recordedChunks, { type: "video/webm" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.style.display = "none";
     a.href = url;
     a.download = `stageroutine_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, "-")}.webm`;
-    document.body.appendChild(a);
     a.click();
     setTimeout(() => {
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, 100);
   }

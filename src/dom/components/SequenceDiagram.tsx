@@ -5,6 +5,7 @@
 import "./SequenceDiagram.css";
 import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
 import { DOMElement, type ElementOptions } from "../element";
+import { measureOffscreen } from "../layout";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";
 
 function getActorY(actor: DOMElement): unknown {
@@ -55,19 +56,8 @@ function getActorHeightPx(actor: DOMElement, stageH: number): number {
     }
     // Temporarily attach unmounted nodes offscreen to measure computed height.
     if (!dom.isConnected) {
-      const prevVis = dom.style.visibility;
-      const prevPos = dom.style.position;
-      const prevLeft = dom.style.left;
-      dom.style.visibility = "hidden";
-      dom.style.position = "absolute";
-      dom.style.left = "-9999px";
-      document.body.appendChild(dom);
-      const h = dom.offsetHeight;
-      dom.remove();
-      dom.style.visibility = prevVis;
-      dom.style.position = prevPos;
-      dom.style.left = prevLeft;
-      if (h > 0) return h;
+      const { height } = measureOffscreen(dom);
+      if (height > 0) return height;
     }
   }
   return (9.25 / 100) * stageH;

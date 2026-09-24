@@ -1,0 +1,8 @@
+`document.body.$method($args)` as $call where {
+  $method <: or {
+    `appendChild`,
+    `append`,
+    `prepend`
+  },
+  register_diagnostic(span=$call, message="Do not attach DOM nodes directly to document.body. Attach to element.domElement or stage container instead.", severity="error")
+}

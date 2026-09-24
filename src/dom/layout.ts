@@ -128,6 +128,31 @@ export interface CircleLayoutOptions {
   duration?: number;
 }
 
+/**
+ * Temporarily attaches an unmounted DOM element offscreen to measure its computed layout dimensions.
+ * @internal
+ */
+export function measureOffscreen(dom: HTMLElement): { width: number; height: number } {
+  if (dom.isConnected) {
+    return { width: dom.offsetWidth, height: dom.offsetHeight };
+  }
+  const prevVis = dom.style.visibility;
+  const prevPos = dom.style.position;
+  const prevLeft = dom.style.left;
+  dom.style.visibility = "hidden";
+  dom.style.position = "absolute";
+  dom.style.left = "-9999px";
+  // biome-ignore lint/plugin: offscreen measurement
+  document.body.appendChild(dom);
+  const width = dom.offsetWidth;
+  const height = dom.offsetHeight;
+  dom.remove();
+  dom.style.visibility = prevVis;
+  dom.style.position = prevPos;
+  dom.style.left = prevLeft;
+  return { width, height };
+}
+
 function measureElement(
   el: LayoutElement,
   explicitWidth?: number | string,
@@ -165,25 +190,9 @@ function measureElement(
     }
   }
 
-  let w = dom.offsetWidth;
-  let h = dom.offsetHeight;
-
-  // Temporarily attach unmounted elements offscreen to measure computed dimensions.
-  if (!dom.isConnected) {
-    const prevVis = dom.style.visibility;
-    const prevPos = dom.style.position;
-    const prevLeft = dom.style.left;
-    dom.style.visibility = "hidden";
-    dom.style.position = "absolute";
-    dom.style.left = "-9999px";
-    document.body.appendChild(dom);
-    w = dom.offsetWidth;
-    h = dom.offsetHeight;
-    dom.remove();
-    dom.style.visibility = prevVis;
-    dom.style.position = prevPos;
-    dom.style.left = prevLeft;
-  }
+  const { width: measuredW, height: measuredH } = measureOffscreen(dom);
+  let w = measuredW;
+  let h = measuredH;
 
   // Restore the original inline style width so elements keep their reactive cqw units
   dom.style.width = prevWidth;

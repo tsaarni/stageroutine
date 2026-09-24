@@ -343,7 +343,9 @@ export class Stage {
   }
 
   private _registerCoreMetrics(): void {
-    // Stage Aggregates
+    // Stage Render Loop & Frame Diagnostics
+    // - active_raf_count: active requestAnimationFrame loops driven by stage core. Must be 0 at rest.
+    // - is_animating: 1 during active slide transitions, 0 when settled.
     this.metrics.register("stage", () => {
       const step = this.steps[this.currentStepIndex];
       return {
@@ -371,7 +373,9 @@ export class Stage {
       }));
     });
 
-    // DOM Elements Overview & Active / Dormant breakdown
+    // DOM Footprint, Dormancy & Retention Diagnostics
+    // - dormant_elements: inactive elements set to `display: none` to bypass layout and rendering.
+    // - detached_elements: registered elements missing from the DOM tree (true memory retention leak).
     this.metrics.register("dom", () => {
       const step = this.steps[this.currentStepIndex];
       const activeIds = step?.activeElementIds;
@@ -379,6 +383,7 @@ export class Stage {
       let activeInScene = 0;
       let visibleCount = 0;
       let dormantCount = 0;
+      let detachedCount = 0;
 
       for (const [id, el] of this.elementRegistry.entries()) {
         totalRegistered++;
@@ -394,6 +399,10 @@ export class Stage {
         if (el.domElement?.style.display === "none") {
           dormantCount++;
         }
+        // Elements registered in stage memory that are disconnected from the active DOM tree
+        if (el.domElement && !el.domElement.isConnected) {
+          detachedCount++;
+        }
       }
 
       return {
@@ -401,6 +410,7 @@ export class Stage {
         active_in_scene: activeInScene,
         visible_in_scene: visibleCount,
         dormant_elements: dormantCount,
+        detached_elements: detachedCount,
         stage_total_nodes: this.viewport ? this.viewport.getElementsByTagName("*").length : 0,
       };
     });
@@ -431,7 +441,8 @@ export class Stage {
       };
     });
 
-    // Memory Footprint & Leak Detection
+    // Memory Footprint Diagnostics
+    // Tracks V8 JS heap memory allocation in bytes (Chromium).
     this.metrics.register("memory", () => {
       const result: Record<string, unknown> = {};
 
@@ -443,33 +454,12 @@ export class Stage {
         result.heap_total_bytes = mem.totalJSHeapSize;
       }
 
-      if (document.body) {
-        const leakedNodes: Record<string, unknown>[] = [];
-        for (const child of document.body.children) {
-          if (
-            child !== this.container &&
-            child.id !== "stage" &&
-            child.tagName.toLowerCase() !== "script"
-          ) {
-            const filterId = child.querySelector("filter")?.id;
-            leakedNodes.push({
-              tag: child.tagName.toLowerCase(),
-              id: child.id || undefined,
-              filter_id: filterId || undefined,
-              class:
-                typeof child.className === "string" && child.className
-                  ? child.className
-                  : undefined,
-            });
-          }
-        }
-        result.body_leaked_nodes = leakedNodes;
-      }
-
       return result;
     });
 
     // Animation & Background Activity Diagnostics
+    // Inspects running Web Animations API instances and CSS keyframes.
+    // - hidden_running: animations running on invisible elements (wasted CPU/GPU cycles).
     this.metrics.register("animation", () => {
       const result: Record<string, unknown> = {};
       const allAnimations = document.getAnimations();

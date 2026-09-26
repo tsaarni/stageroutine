@@ -9,28 +9,27 @@ import styles from "./StageLighting.module.css";
 export const STAGE_LIGHTING_CONFIG = {
   // Overhead light fixture at the ceiling
   fixture: {
-    x: 722.5,
-    y: -20,
-    volumetricWidth: 75,
-    coreWidth: 35,
+    x: 680,
+    y: 40,
+    volumetricWidth: 72,
+    coreWidth: 33,
     gradientX: "72%",
     gradientY: "0%",
   },
   // Default beam target coordinates on the stage floor
   target: {
-    baseX: 600,
-    baseY: 460,
-    volumetricRadiusX: 290,
+    baseX: 560,
+    baseY: 480,
+    volumetricRadiusX: 282,
     volumetricRadiusY: 68,
-    coreRadiusX: 190,
+    coreRadiusX: 184,
     coreRadiusY: 45,
     gradientX: "50%",
     gradientY: "58%",
   },
   // Cursor tracking responsiveness & limits
   motion: {
-    maxOffsetX: 110,
-    maxOffsetY: 45,
+    maxOffsetX: 60,
     damping: 0.08,
     epsilon: 0.05,
   },
@@ -40,8 +39,8 @@ export const STAGE_LIGHTING_CONFIG = {
     heightRatio: 0.56,
     proximityRadius: 140,
     shiftFactorX: 0.08,
-    baseBlur: 12,
-    maxBlurBonus: 8,
+    baseBlur: 14,
+    maxBlurBonus: 10,
   },
 } as const;
 
@@ -72,9 +71,7 @@ export function StageLighting(): React.JSX.Element {
     const coreRight = fixture.x + fixture.coreWidth / 2;
 
     let targetX = 0;
-    let targetY = 0;
     let currentX = 0;
-    let currentY = 0;
     let rafId: number | null = null;
     let isAnimating = false;
     let isLightOn = false;
@@ -95,8 +92,8 @@ export function StageLighting(): React.JSX.Element {
       const bloomX = (-relX * logoBloom.shiftFactorX).toFixed(1);
       const bloomY = (1 + Math.abs(relX) * 0.02).toFixed(1);
       const blur = (logoBloom.baseBlur + proximity * logoBloom.maxBlurBonus).toFixed(1);
-      const haloAlpha = (0.2 + proximity * 0.18).toFixed(2);
-      const coreAlpha = (0.35 + proximity * 0.25).toFixed(2);
+      const haloAlpha = (0.18 + proximity * 0.14).toFixed(2);
+      const coreAlpha = (0.32 + proximity * 0.2).toFixed(2);
 
       parentEl.style.setProperty(
         "--logo-bloom-filter",
@@ -125,21 +122,18 @@ export function StageLighting(): React.JSX.Element {
 
     const tick = () => {
       const dx = targetX - currentX;
-      const dy = targetY - currentY;
 
       // When settled within epsilon, halt the RAF loop completely
-      if (Math.abs(dx) < motion.epsilon && Math.abs(dy) < motion.epsilon) {
+      if (Math.abs(dx) < motion.epsilon) {
         currentX = targetX;
-        currentY = targetY;
-        updateScene(target.baseX + currentX, target.baseY + currentY);
+        updateScene(target.baseX + currentX, target.baseY);
         isAnimating = false;
         rafId = null;
         return;
       }
 
       currentX += dx * motion.damping;
-      currentY += dy * motion.damping;
-      updateScene(target.baseX + currentX, target.baseY + currentY);
+      updateScene(target.baseX + currentX, target.baseY);
 
       rafId = requestAnimationFrame(tick);
     };
@@ -174,20 +168,16 @@ export function StageLighting(): React.JSX.Element {
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
+      if (rect.width <= 0) return;
 
       const nx = Math.max(-1, Math.min(1, ((e.clientX - rect.left) / rect.width - 0.5) * 2));
-      const ny = Math.max(-1, Math.min(1, ((e.clientY - rect.top) / rect.height - 0.5) * 2));
-
       targetX = nx * motion.maxOffsetX;
-      targetY = ny * motion.maxOffsetY;
 
       startAnimation();
     };
 
     const handlePointerLeave = () => {
       targetX = 0;
-      targetY = 0;
       startAnimation();
     };
 
@@ -247,10 +237,10 @@ export function StageLighting(): React.JSX.Element {
             x2={target.gradientX}
             y2={target.gradientY}
           >
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
-            <stop offset="12%" stopColor="#e0f2fe" stopOpacity="0.38" />
-            <stop offset="38%" stopColor="#38bdf8" stopOpacity="0.20" />
-            <stop offset="72%" stopColor="#38bdf8" stopOpacity="0.08" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.48" />
+            <stop offset="12%" stopColor="#e0f2fe" stopOpacity="0.32" />
+            <stop offset="38%" stopColor="#38bdf8" stopOpacity="0.16" />
+            <stop offset="72%" stopColor="#38bdf8" stopOpacity="0.06" />
             <stop offset="100%" stopColor="#818cf8" stopOpacity="0.02" />
           </linearGradient>
 
@@ -262,9 +252,9 @@ export function StageLighting(): React.JSX.Element {
             x2={target.gradientX}
             y2={target.gradientY}
           >
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.65" />
-            <stop offset="15%" stopColor="#ffffff" stopOpacity="0.40" />
-            <stop offset="45%" stopColor="#bae6fd" stopOpacity="0.20" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="15%" stopColor="#ffffff" stopOpacity="0.5" />
+            <stop offset="45%" stopColor="#bae6fd" stopOpacity="0.26" />
             <stop offset="80%" stopColor="#38bdf8" stopOpacity="0.06" />
             <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
           </linearGradient>

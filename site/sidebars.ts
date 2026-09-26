@@ -52,7 +52,6 @@ const sidebars: SidebarsConfig = {
         },
         "advanced/overlays-and-events",
         "advanced/custom-paths",
-        "advanced/patterns",
         "advanced/under-the-hood",
       ],
     },

@@ -77,23 +77,28 @@ class SceneBuilder {
     )[]
   ): this {
     const flattened: ReactiveElementBase[] = [];
-    const registerAndPush = (item: unknown) => {
+    const registerAndPush = (item: unknown, ownerId?: string) => {
       if (!item || typeof item !== "object") return;
+      let elementId: string | undefined;
       if ("id" in item && "domElement" in item) {
         const reactiveEl = item as ReactiveElementBase;
-        if (!this.stage.hasElement(reactiveEl.id)) {
+        elementId = reactiveEl.id;
+        if (!this.stage.hasElement(elementId)) {
           this.stage.registerElement(reactiveEl);
         }
         flattened.push(reactiveEl);
+        if (ownerId) {
+          this.stage._markParentOwned(elementId);
+        }
       }
       if ("items" in item && Array.isArray((item as { items?: unknown[] }).items)) {
         for (const sub of (item as { items: unknown[] }).items) {
-          registerAndPush(sub);
+          registerAndPush(sub, elementId);
         }
       }
       if ("rows" in item && Array.isArray((item as { rows?: unknown[] }).rows)) {
         for (const sub of (item as { rows: unknown[] }).rows) {
-          registerAndPush(sub);
+          registerAndPush(sub, elementId);
         }
       }
       if ("elements" in item && Array.isArray((item as { elements?: unknown[] }).elements)) {
@@ -145,6 +150,8 @@ export class Stage {
   private currentSceneName = "Default";
   private activeElementIds = new Set<string>();
   private elementRegistry = new Map<string, ReactiveElementBase>();
+  /** Ids of elements nested inside a parent container (items/rows); the parent owns their visibility. */
+  private ownedByParent = new Set<string>();
   private initialProperties = new Map<string, Record<string, unknown>>();
   private propertyState = new Map<string, Record<string, unknown>>();
   private currentTheme: ThemeConfig = {};
@@ -181,6 +188,10 @@ export class Stage {
   private presenterHost: PresenterHost | null = null;
   private activeSceneName = "";
   private listeners = new Map<string, Set<(data: unknown) => void>>();
+  /** Undo functions for DOM and global listeners registered by `mount()`. */
+  private mountCleanups: (() => void)[] = [];
+  /** Overlays that have received a mount context, in mount order. */
+  private mountedOverlays: OverlayPlugin[] = [];
 
   // Metrics & Performance Tracking
   readonly metrics = new MetricRegistry();
@@ -216,11 +227,20 @@ export class Stage {
   overlay(plugin: OverlayPlugin): this {
     this.overlays.push(plugin);
     if (this.container) {
-      plugin.mount(this._createOverlayContext());
-      const initialActive = storage.runtime.get<boolean>("pointer.active", false);
-      this.emit("evt:pointer:stateChanged", { active: initialActive });
+      this._mountOverlay(plugin);
+      this._broadcastPointerState();
     }
     return this;
+  }
+
+  private _mountOverlay(plugin: OverlayPlugin): void {
+    plugin.mount(this._createOverlayContext());
+    this.mountedOverlays.push(plugin);
+  }
+
+  private _broadcastPointerState(): void {
+    const active = storage.runtime.get<boolean>("pointer.active", false);
+    this.emit("evt:pointer:stateChanged", { active });
   }
 
   private _createOverlayContext(): OverlayContext {
@@ -624,6 +644,11 @@ export class Stage {
     return this.elementRegistry.has(id);
   }
 
+  /** @internal Marks an element as owned by a parent container (its visibility is managed by the parent). */
+  _markParentOwned(elementId: string): void {
+    this.ownedByParent.add(elementId);
+  }
+
   registerElement<T extends ReactiveElementBase>(element: T): T {
     if (this.elementRegistry.has(element.id)) {
       return createReactiveProxy(this.elementRegistry.get(element.id) as T, this);
@@ -841,7 +866,9 @@ export class Stage {
     this.container.style.userSelect = "none";
     this.container.style.webkitUserSelect = "none";
 
-    this.container.addEventListener("selectstart", (e) => e.preventDefault());
+    const onSelectStart = (e: Event) => e.preventDefault();
+    el.addEventListener("selectstart", onSelectStart);
+    this.mountCleanups.push(() => el.removeEventListener("selectstart", onSelectStart));
 
     this._applyTheme(this.currentTheme);
 
@@ -895,20 +922,19 @@ export class Stage {
     };
 
     window.addEventListener("resize", updateScale);
+    this.mountCleanups.push(() => window.removeEventListener("resize", updateScale));
     updateScale();
 
     // Mount queued overlay plugins
     if (this.overlays.length > 0) {
-      const ctx = this._createOverlayContext();
       for (const plugin of this.overlays) {
-        plugin.mount(ctx);
+        this._mountOverlay(plugin);
       }
-      const initialActive = storage.runtime.get<boolean>("pointer.active", false);
-      this.emit("evt:pointer:stateChanged", { active: initialActive });
+      this._broadcastPointerState();
     }
 
     // Keyboard controls (navigation and pointer mode)
-    window.addEventListener("keydown", (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       // Don't intercept when focus is in an input field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
@@ -941,45 +967,82 @@ export class Stage {
           this.emit("req:pointer:setState", { active: false });
         }
       }
-    });
+    };
+    window.addEventListener("keydown", onKeyDown);
+    this.mountCleanups.push(() => window.removeEventListener("keydown", onKeyDown));
 
     // Check URL Hash for live HMR positioning
     const initialIndex = this._resolveHashTarget();
     this.currentStepIndex = initialIndex;
     this._applySnapshot(initialIndex);
 
-    window.addEventListener("hashchange", () => {
+    const onHashChange = () => {
       const idx = this._resolveHashTarget();
       if (idx !== this.currentStepIndex) {
         this.currentStepIndex = idx;
         this._applySnapshot(idx);
       }
-    });
+    };
+    window.addEventListener("hashchange", onHashChange);
+    this.mountCleanups.push(() => window.removeEventListener("hashchange", onHashChange));
 
     this.isMountedState = true;
 
     // Attach global dev diagnostics hook
-    (
-      window as unknown as {
-        __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
-      }
-    ).__STAGEROUTINE_DEV__ = {
-      getMetrics: () => this.metrics.collect(),
+    const devWindow = window as unknown as {
+      __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
     };
+    const devHook = { getMetrics: () => this.metrics.collect() };
+    devWindow.__STAGEROUTINE_DEV__ = devHook;
+    this.mountCleanups.push(() => {
+      if (devWindow.__STAGEROUTINE_DEV__ === devHook) {
+        delete devWindow.__STAGEROUTINE_DEV__;
+      }
+    });
 
     return this;
   }
 
   /**
-   * Disposes the stage, closing communication channels, clearing listeners, and stopping animation loops.
+   * Tears down the stage: stops animation loops and releases the background,
+   * overlays, element media, DOM, and communication resources.
+   *
+   * Disposal is final. A disposed stage cannot be mounted again.
    */
   dispose(): void {
-    this.presenterHost?.dispose();
-    this.presenterHost = null;
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
+
+    // Stops element timers, RAF loops, and media streams.
+    for (const element of this.elementRegistry.values()) {
+      element._unmount?.();
+    }
+
+    for (const plugin of this.mountedOverlays) {
+      plugin.destroy();
+    }
+    this.mountedOverlays.length = 0;
+
+    if (this.backgroundSource && typeof this.backgroundSource !== "string") {
+      (this.backgroundSource as Background).dispose?.();
+    }
+
+    for (const cleanup of this.mountCleanups) {
+      cleanup();
+    }
+    this.mountCleanups.length = 0;
+
+    this.viewport?.remove();
+    this.viewport = null;
+    this.container = null;
+    this.isMountedState = false;
+
+    this.presenterHost?.dispose();
+    this.presenterHost = null;
+
+    this.pendingMotionFlushes.clear();
     this.listeners.clear();
   }
 
@@ -1123,7 +1186,7 @@ export class Stage {
     // 2. Hide elements that are not in the target step snapshot
     for (const [id, el] of this.elementRegistry.entries()) {
       if (!snap.activeElementIds.has(id)) {
-        if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+        if (this.ownedByParent.has(id)) {
           continue;
         }
         this._hideElement(el);
@@ -1218,7 +1281,7 @@ export class Stage {
         if (!step.activeElementIds.has(id) && !explicitOpacityElementIds.has(id)) {
           const el = this.elementRegistry.get(id);
           if (!el) continue;
-          if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+          if (this.ownedByParent.has(id)) {
             continue;
           }
           const currentOpacity = (this.propertyState.get(id)?.opacity as number) ?? 1;
@@ -1251,7 +1314,7 @@ export class Stage {
         if (!prevSnap.activeElementIds.has(id) && !explicitOpacityElementIds.has(id)) {
           const el = this.elementRegistry.get(id);
           if (!el) continue;
-          if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+          if (this.ownedByParent.has(id)) {
             continue;
           }
           const enterDurationSec = el.enterDuration ?? this.options.defaultDuration ?? 0.6;
@@ -1322,7 +1385,7 @@ export class Stage {
     // Hide any element in registry that is neither active in the new step nor transitioning
     for (const [id, el] of this.elementRegistry.entries()) {
       if (!participatingIds.has(id)) {
-        if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+        if (this.ownedByParent.has(id)) {
           continue;
         }
         this._hideElement(el);

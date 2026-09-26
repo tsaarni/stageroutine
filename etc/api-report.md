@@ -240,6 +240,8 @@ export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>>;
  *   "Ready!",
  * ]));
  * ```
+ *
+ * Use `loop: true` to repeat the script. A trailing `{ pause }` step holds before each restart.
  */
 export function typewriter(optionsOrScript?: TypewriterOptions | TypewriterStep[]): ElementDecorator;
 
@@ -456,7 +458,12 @@ export class Stage {
   pause(): void;
   /** Mounts the presentation stage into the target container element and begins playback. */
   mount(target?: string | HTMLElement): Stage;
-  /** Disposes the stage, closing communication channels, clearing listeners, and stopping animation loops. */
+  /**
+   * Tears down the stage: stops animation loops and releases the background,
+   * overlays, element media, DOM, and communication resources.
+   *
+   * Disposal is final. A disposed stage cannot be mounted again.
+   */
   dispose(): void;
 }
 
@@ -2089,6 +2096,8 @@ export interface TypewriterOptions {
      * All time values in script steps are in **seconds** (float).
      */
     script?: TypewriterStep[];
+    /** Restart the script from the beginning when it finishes (default: `false`). */
+    loop?: boolean;
 }
 
 /** Public controls for a video. @category Components */

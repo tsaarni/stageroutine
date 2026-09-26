@@ -138,6 +138,11 @@ body {
   background: var(--ifm-navbar-background-color);
 }
 
+/* Hide the navbar on the front page for a full-bleed hero */
+body:has(.homepage) .navbar {
+  display: none;
+}
+
 .navbar__logo {
   height: 24px;
   width: 24px;

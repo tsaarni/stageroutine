@@ -19,7 +19,11 @@ const stage = new Stage().background(
 
 // 1. Scene: Welcome
 // Coordinates use percentage of stage dimensions (0-100)
-const title = Title("Hello, World!", { variant: "hero", x: "center", y: 44, opacity: 0 });
+const title = Title("Hello, World!", {
+  variant: "hero",
+  position: ["center", 44],
+  opacity: 0,
+});
 const subtitle = Title("My first StageRoutine presentation", {
   variant: "serif",
   x: "center",
@@ -51,8 +55,7 @@ stage.scene("Next Steps").with(title, step1, step2, step3);
 
 // Existing elements smoothly transition to their new state
 subtitle.opacity = to(0);
-title.x = to(6);
-title.y = to(6);
+title.position = to([6, 6]);
 title.scale = to(0.6);
 
 // Stagger step animations

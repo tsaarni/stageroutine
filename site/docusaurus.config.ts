@@ -146,6 +146,7 @@ const config: Config = {
                     "glow",
                     "gradient",
                     "grain",
+                    "kenBurns",
                     "rule",
                     "scrim",
                     "typewriter",

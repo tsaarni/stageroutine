@@ -28,6 +28,8 @@ function HomepageHeader() {
       <AsciiFluidCanvas color="#38bdf8" backgroundColor="#09090b" opacity={0.38} cellSize={18} />
       <div className={styles.heroVignette} aria-hidden="true" />
       <StageLighting />
+      <div className={styles.letterboxTop} aria-hidden="true" />
+      <div className={styles.letterboxBottom} aria-hidden="true" />
       <div
         className={styles.heroContent}
         style={{
@@ -41,11 +43,8 @@ function HomepageHeader() {
         <h1 className={styles.heroTitle}>{siteConfig.title}</h1>
         <StageSubtitle>Code-driven presentations built for the stage.</StageSubtitle>
         <div className={styles.buttons}>
-          <Link className={styles.secondaryButton} to="/docs/intro">
-            Introduction
-          </Link>
-          <Link className={styles.secondaryButton} to="/docs/getting-started/quickstart">
-            Quick Start
+          <Link className={styles.primaryButton} to="/docs/getting-started/quickstart">
+            Get Started
           </Link>
           <a
             className={`${styles.secondaryButton} ${styles.demoButton}`}
@@ -54,8 +53,8 @@ function HomepageHeader() {
           >
             Live Demo
           </a>
-          <Link className={styles.secondaryButton} to="/docs/api/">
-            API Reference
+          <Link className={styles.secondaryButton} to="/docs/intro">
+            Documentation
           </Link>
         </div>
       </div>
@@ -69,7 +68,7 @@ export default function Home(): React.JSX.Element {
     <Layout
       title={siteConfig.title}
       description={siteConfig.tagline}
-      wrapperClassName={styles.homePageWrapper}
+      wrapperClassName={`${styles.homePageWrapper} homepage`}
       noFooter
     >
       <HomepageHeader />

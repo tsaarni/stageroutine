@@ -20,12 +20,10 @@ import { Card, Stage, Title, to } from "stageroutine";
 const stage = new Stage();
 const title = Title("Hello, World!", {
   variant: "hero",
-  x: "center",
-  y: 44,
+  position: ["center", 44],
 });
 const card = Card("Press Space to begin", {
-  x: "center",
-  y: 56,
+  position: ["center", 56],
   opacity: 0,
 });
 

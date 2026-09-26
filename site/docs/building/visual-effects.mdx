@@ -2,47 +2,302 @@
 sidebar_position: 5
 ---
 
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
 # Visual Effects
 
-Enhance elements and the stage with built-in decorators, WebGL backgrounds, and icons.
+Enhance elements and the stage with built-in decorators and procedural backgrounds.
 
 ## Decorators
 
-Decorators add visual effects to elements via `.decorate()` without modifying their positioning or layout.
+Decorators add visual styling, atmospheric effects, or camera motion to elements via `.decorate()` without modifying stage positioning or layout coordinates.
+
+Multiple decorators can be chained in sequence:
 
 ```typescript
-import { Title, CodeBlock, gradient, glow, rule, bracket, typewriter } from "stageroutine";
+import { Title, gradient, glow } from "stageroutine";
 
-// Apply visual styles
-const title = Title("StageRoutine").decorate(gradient()).decorate(glow());
-
-// Add technical divider rules and brackets to code blocks
-const terminal = CodeBlock(["pnpm dev"]).decorate(rule()).decorate(bracket());
+const title = Title("StageRoutine")
+  .decorate(gradient())
+  .decorate(glow());
 ```
 
-### Built-in Decorators
-- `gradient()`: Text or container gradient fills
-- `glow()`: Neon glowing drop-shadows
-- `rule()`: Accent rule / divider line (straight, dashed, or bracketed)
-- `bracket()`: Technical framing brackets
-- `typewriter()`: Animated typewriter text reveal
+StageRoutine includes 10 built-in decorators:
+
+- **Camera & Motion**: `kenBurns()`, `dream()`, `typewriter()`
+- **Lighting & Atmosphere**: `glow()`, `gradient()`, `scrim()`
+- **Framing & Accents**: `bracket()`, `rule()`
+- **Texture & Underlays**: `grain()`, `vignette()`
+
+### Camera Pan & Zoom {#kenburns}
+
+`kenBurns()` applies authentic camera panning and slow zooming across an `Image`, clipping `Frame`, or media container.
+
+Camera motion restarts from frame zero whenever the scene activates and pauses when deactivated, keeping backward navigation (`stage.prev()`) snapshot-safe. Translations clamp to frame bounds so edges never reveal empty margins.
+
+<DemoFrame src="/stageroutine/previews/ken-burns.html" />
+
+```typescript preview="ken-burns.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Frame, Image, kenBurns, paths } from "stageroutine";
+
+// Photo from https://images.nasa.gov/details/GSFC_20171208_Archive_e000383
+const photo = Image(
+  "/stageroutine/img/GSFC_20171208_Archive_e000383~large.jpg",
+  { fit: "cover" },
+);
+
+const frame = Frame(paths.box({ radius: 12 }), photo, {
+  position: ["center", "center"],
+  width: 480,
+  height: 320,
+}).decorate(
+  kenBurns({
+    scale: 1.35,
+    focus: "top-right",
+    duration: 10,
+    loop: "alternate",
+  }),
+);
+// hide-start
+stage.scene("KenBurns").with(frame);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+For configuration options such as focal anchors, durations, and directional keyframes, see the [`kenBurns`](../api/functions/kenBurns.md) API reference.
+
+### Gradient & Glow
+
+Combine `gradient()` and `glow()` to create luminous, animated typography for titles and key metrics.
+
+`gradient()` flows multi-stop color sweeps across text. `glow()` casts an ambient neon drop-shadow aura with continuous pulsing.
+
+<DemoFrame src="/stageroutine/previews/gradient-glow.html" />
+
+```typescript preview="gradient-glow.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Title, glow, gradient } from "stageroutine";
+
+const title = Title("StageRoutine", {
+  variant: "hero",
+  position: ["center", "center"],
+})
+  .decorate(
+    gradient({
+      colors: ["#38bdf8", "#818cf8", "#c084fc", "#818cf8", "#38bdf8"],
+    }),
+  )
+  .decorate(glow({ pulse: true, duration: 3 }));
+// hide-start
+stage.scene("GradientGlow").with(title);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+For configuration options, see the [`gradient`](../api/functions/gradient.md) and [`glow`](../api/functions/glow.md) API references.
+
+### Framing Brackets
+
+`bracket()` attaches technical framing brackets around code blocks, cards, or shapes.
+
+Supported styles include corner HUD brackets (`"corners"`), curly braces (`"curly"`), square brackets (`"square"`), and rounded parentheses (`"round"`), with optional apex labels and neon bloom.
+
+<DemoFrame src="/stageroutine/previews/bracket.html" />
+
+```typescript preview="bracket.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { CodeBlock, bracket } from "stageroutine";
+
+const code = CodeBlock(
+  [
+    "// Create a stage",
+    "const stage = new Stage();",
+    "stage.mount('#stage');",
+  ],
+  {
+    position: ["center", "center"],
+  },
+).decorate(
+  bracket({
+    style: "corners",
+    color: "#38bdf8",
+    offset: 14,
+  }),
+);
+// hide-start
+stage.scene("Bracket").with(code);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+For configuration options, see the [`bracket`](../api/functions/bracket.md) API reference.
+
+### Typewriter
+
+`typewriter()` animates text letter-by-letter with simulated human typing cadence, backspaces, pauses, and a blinking cursor.
+
+Typing triggers automatically whenever the element enters active visibility, and resets cleanly when stepping backward.
+
+Set `loop: true` to restart the script when it finishes. A trailing `{ pause }` step holds before each restart.
+
+<DemoFrame src="/stageroutine/previews/typewriter.html" />
+
+```typescript preview="typewriter.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
+import { Title, typewriter } from "stageroutine";
+
+const text = Title("", {
+  position: ["center", "center"],
+}).decorate(
+  typewriter({
+    delay: 0.2,
+    loop: true,
+    script: [
+      "Code-driven presentations",
+      { pause: 0.8 },
+      { delete: 13 },
+      "built for the stage.",
+      { pause: 1.5 },
+    ],
+  }),
+);
+// hide-start
+stage.scene("Typewriter").with(text);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+For configuration options and custom typing scripts, see the [`typewriter`](../api/functions/typewriter.md) API reference.
+
+### Liquid Ripple
+
+Materializes elements through undulating liquid ripples, prismatic dispersion, and soft defocus blur settling into sharp focus during entrance transitions.
+
+```typescript
+import { Title, dream } from "stageroutine";
+
+const title = Title("Dream Entrance").decorate(
+  dream({ duration: 1.8, intensity: 40 }),
+);
+```
+
+For configuration options, see the [`dream`](../api/functions/dream.md) API reference.
+
+### Film Grain
+
+Adds an animated film grain texture overlay to give elements or backgrounds a tactile, cinematic look.
+
+```typescript
+import { Card, grain } from "stageroutine";
+
+const card = Card("Film Grain").decorate(
+  grain({ opacity: 0.1, granularity: 1 }),
+);
+```
+
+For configuration options, see the [`grain`](../api/functions/grain.md) API reference.
+
+### Readability Scrim
+
+Places a soft radial dark underlay behind text to ensure readability over busy or animated backgrounds.
+
+```typescript
+import { Title, scrim } from "stageroutine";
+
+const headline = Title("High Contrast").decorate(
+  scrim({ spread: "wide", opacity: 0.85 }),
+);
+```
+
+For configuration options, see the [`scrim`](../api/functions/scrim.md) API reference.
+
+### Edge Vignette
+
+Darkens the outer boundaries of the canvas or element with a smooth radial falloff to direct viewer attention inward.
+
+```typescript
+import { Card, vignette } from "stageroutine";
+
+const card = Card("Vignette Focus").decorate(
+  vignette({ opacity: 0.8 }),
+);
+```
+
+For configuration options, see the [`vignette`](../api/functions/vignette.md) API reference.
+
+### Side Accents
+
+Attaches an accent divider line or corner-wrapping bracket to any side of an element.
+
+```typescript
+import { CodeBlock, rule } from "stageroutine";
+
+const code = CodeBlock(["const app = express();"]).decorate(
+  rule({ side: "left", color: "#38bdf8", thickness: 3 }),
+);
+```
+
+For configuration options, see the [`rule`](../api/functions/rule.md) API reference.
 
 ## Backgrounds
 
 Backgrounds provide procedural canvas or WebGL backdrops beneath the stage:
 
 ```typescript
-import { Stage, AsciiFluid, Starfield, GradientFluid, vignette } from "stageroutine";
+import { Stage, AsciiFluid, vignette } from "stageroutine";
 
 const stage = new Stage().background(
-  AsciiFluid().decorate(vignette())
+  AsciiFluid().decorate(vignette({ opacity: 0.85 })),
 );
 ```
 
 ### Built-in Backgrounds
+
 - `AsciiFluid()`: WebGL fluid simulation rendered with ASCII characters
 - `GradientFluid()`: Smooth colorful fluid simulation
 - `Starfield()`: Procedural 3D perspective stars
 - `CSSBackground()`: Gradients and solid colors
 
+### Background Decorators
 
+Backgrounds support decorators via `.decorate()`. Both `vignette()` and `grain()` can decorate backgrounds directly:
+
+```typescript
+import { AsciiFluid, Starfield, grain, vignette } from "stageroutine";
+
+// Soft edge vignette on fluid simulation
+const fluidBg = AsciiFluid().decorate(vignette());
+
+// Subtle tactile grain on starfield
+const starsBg = Starfield().decorate(grain({ opacity: 0.08 }));
+```
+
+## API Reference
+
+- [`bracket`](../api/functions/bracket.md)
+- [`dream`](../api/functions/dream.md)
+- [`glow`](../api/functions/glow.md)
+- [`gradient`](../api/functions/gradient.md)
+- [`grain`](../api/functions/grain.md)
+- [`kenBurns`](../api/functions/kenBurns.md)
+- [`rule`](../api/functions/rule.md)
+- [`scrim`](../api/functions/scrim.md)
+- [`typewriter`](../api/functions/typewriter.md)
+- [`vignette`](../api/functions/vignette.md)

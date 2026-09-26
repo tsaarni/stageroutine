@@ -1,5 +1,5 @@
 .homePageWrapper {
-  min-height: calc(100vh - var(--ifm-navbar-height));
+  min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
@@ -9,7 +9,7 @@
 .heroWrapper {
   position: relative;
   flex: 1;
-  min-height: calc(100vh - var(--ifm-navbar-height));
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -34,14 +34,35 @@
   z-index: 0;
 }
 
+.letterboxTop,
+.letterboxBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(3.5rem, 9vh, 6.5rem);
+  background: #000000;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.letterboxTop {
+  top: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.letterboxBottom {
+  bottom: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
 .heroContent {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   text-align: center;
   max-width: 860px;
   padding: 2rem 1.5rem;
   /* Positioned elegantly in the light beam */
-  transform: translateY(-0.75rem);
+  transform: translateY(1rem);
 }
 
 .heroLogoWrapper {
@@ -59,7 +80,7 @@
   color: #ffffff;
   filter: var(
     --logo-bloom-filter,
-    drop-shadow(0 0 14px rgba(224, 242, 254, 0.28)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.45))
+    drop-shadow(0 0 14px rgba(224, 242, 254, 0.18)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.32))
   );
   transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }

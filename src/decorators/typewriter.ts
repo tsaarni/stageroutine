@@ -45,6 +45,8 @@ export interface TypewriterOptions {
    * All time values in script steps are in **seconds** (float).
    */
   script?: TypewriterStep[];
+  /** Restart the script from the beginning when it finishes (default: `false`). */
+  loop?: boolean;
 }
 
 /**
@@ -76,6 +78,8 @@ export interface TypewriterOptions {
  *   "Ready!",
  * ]));
  * ```
+ *
+ * Use `loop: true` to repeat the script. A trailing `{ pause }` step holds before each restart.
  */
 export function typewriter(
   optionsOrScript: TypewriterOptions | TypewriterStep[] = {},
@@ -93,6 +97,7 @@ export function typewriter(
     delay = 0,
     cursor = "▋",
     script,
+    loop = false,
   } = options;
 
   return (element: DOMElement) => {
@@ -137,7 +142,14 @@ export function typewriter(
 
     function executeStep() {
       if (stepIndex >= steps.length) {
-        _isPlaying = false;
+        if (loop) {
+          textSpan.textContent = "";
+          stepIndex = 0;
+          charIndex = 0;
+          activeTimer = setTimeout(executeStep, 0);
+        } else {
+          _isPlaying = false;
+        }
         return;
       }
 

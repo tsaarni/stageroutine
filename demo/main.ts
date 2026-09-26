@@ -357,8 +357,7 @@ layout.vstack([tableKicker, tableHeading, tableText], {
   y: 18,
   width: 42,
 });
-serviceMetricsTable.x = 6;
-serviceMetricsTable.y = 48;
+serviceMetricsTable.position = [6, 48];
 
 const tableCode = CodeBlock(
   [
@@ -1238,6 +1237,7 @@ const mediaDescription = Text(
   "Embedded HTML5 video player, reactive live webcam feeds, and Ken Burns slow zoom across deep space imagery.",
 );
 
+// Video: NASA - https://www.nasa.gov/video-detail/earth-solar-array-timelapse/
 const sampleVideo = Video(
   "https://upload.wikimedia.org/wikipedia/commons/3/31/Earth-solar-array-timelapse.webm",
   {
@@ -1250,8 +1250,9 @@ const sampleVideo = Video(
   },
 );
 
+// Photo from https://images.nasa.gov/details/GSFC_20171208_Archive_e000383
 const spaceImage = Image(
-  "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop",
+  "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e000383/GSFC_20171208_Archive_e000383~large.jpg",
   {
     fit: "cover",
     alt: "NASA Deep Space Cosmic Nebula",
@@ -1305,13 +1306,19 @@ stage
 stage.pause();
 
 // Step 1: Re-position video and image independently into a vertical column (one above another)
-sampleVideo.to({ x: 12, y: 38 }).duration(0.65).ease("cubicInOut");
+sampleVideo
+  .to({ position: [12, 38] })
+  .duration(0.65)
+  .ease("cubicInOut");
 spaceFrame.to({ x: 12, y: 67 }).duration(0.75).delay(0.12).ease("quartOut");
 camBubble.to({ position: [68, 52], scale: 2.0, borderColor: "#a855f7" }).ease("cubicInOut");
 stage.pause();
 
 // Step 2: Swap layout - webcam moves to presenter PIP corner, media returns side by side
-sampleVideo.to({ x: 6, y: 44 }).duration(0.65).ease("cubicInOut");
+sampleVideo
+  .to({ position: [6, 44] })
+  .duration(0.65)
+  .ease("cubicInOut");
 spaceFrame.to({ x: 37, y: 44 }).duration(0.75).delay(0.1).ease("cubicInOut");
 camBubble.to({ position: [82, 72], scale: 0.9, borderColor: "#38bdf8" }).ease("cubicInOut");
 stage.pause();

@@ -3,7 +3,7 @@
  */
 
 import "./Connector.css";
-import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
+import { type Gauge, getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions } from "../element";
 import {
@@ -367,6 +367,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
   private _flow: FlowEffect = "none";
   private _flowPingActive = false;
+  private metricDisposables: Gauge[] = [];
 
   get flow(): FlowEffect {
     return this._flow;
@@ -598,13 +599,26 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
     // Register diagnostics metrics for background loop monitoring
     if (stage?.metrics) {
-      stage.metrics.register(`connector.${this.id}`, () => ({
-        raf_loop_active: 0,
-        periodic_pulse_active: this.periodicIntervalTimer !== null ? 1 : 0,
-        active_pulses_count: this.activePulseDots.size,
-        dom_pulse_packets_count: this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
-        is_mounted: Boolean(this.domElement?.isConnected),
-      }));
+      this.metricDisposables = [
+        stage.metrics.gauge({
+          name: "connector_periodic_pulse_active",
+          help: "Periodic pulse interval timer active state (1 = active, 0 = idle).",
+          labels: { id: this.id },
+          collect: () => (this.periodicIntervalTimer !== null ? 1 : 0),
+        }),
+        stage.metrics.gauge({
+          name: "connector_active_pulses",
+          help: "Active pulsing dots animating along path. Must be 0 when idle.",
+          labels: { id: this.id },
+          collect: () => this.activePulseDots.size,
+        }),
+        stage.metrics.gauge({
+          name: "connector_dom_packets",
+          help: "DOM pulse packet elements inside connector SVG. Must be 0 when idle.",
+          labels: { id: this.id },
+          collect: () => this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
+        }),
+      ];
     }
   }
 
@@ -616,6 +630,10 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   }
 
   override _unmount(): void {
+    for (const m of this.metricDisposables) {
+      m.dispose();
+    }
+    this.metricDisposables = [];
     this.cancelPulses();
     this._pausePeriodicPulse();
     this._pauseFlowAnimation();

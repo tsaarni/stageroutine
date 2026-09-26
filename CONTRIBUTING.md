@@ -19,15 +19,17 @@ Inspect runtime performance and background tasks programmatically by querying th
 window.__STAGEROUTINE_DEV__.getMetrics()
 ```
 
-This returns a flat key-value dictionary of engine stats. Look for `stage.is_animating` and `stage.active_raf_count` to ensure loops stop at rest. Check `animation.hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor `dom.dormant_elements`, `dom.detached_elements`, and `dom.promoted_elements` to confirm inactive elements enter true dormancy and remain attached to the stage.
+You can also press **`Shift + M`** on the presentation at any time to open or refresh a dedicated browser tab displaying the formatted metrics.
 
-- **Promotion leaks**: `dom.promoted_elements` counts every element in the stage holding CSS `will-change`, including pulse packets and ken-burns targets. It should read `0` once all animations settle; a non-zero value while idle means a promoted layer was never released. When non-zero, inspect `dom.promoted.<index>` (`tag`, `class`, `will_change`) to identify the leaked element.
+This returns engine stats with inline descriptions. Look for `stage_is_animating` and `stage_active_raf_count` to ensure loops stop at rest. Check `animation_hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor `dom_dormant_elements`, `dom_detached_elements`, and `dom_promoted_count` to confirm inactive elements enter true dormancy and remain attached to the stage.
+
+- **Promotion leaks**: `dom_promoted_count` counts elements holding CSS `will-change`. It must be `0` when the stage is at rest. When non-zero, inspect `dom_promoted` to identify which elements leaked animation promotion.
 
 ### Identifying CPU and GPU consumers
 
-- **GPU load**: Check `gpu.canvas_pixels`. Check `background.<kind>.total_pixels` for large canvas surfaces.
-- **CPU load**: Check `background.<kind>.is_running` and `stage.active_raf_count` to find continuous render loops. Check `animation.running.count` and `animation.hidden_running` for continuous animations. Use `performance_start_trace` to profile main thread execution.
-- **Memory footprint**: Check `memory.heap_used_bytes` for JS heap allocation.
+- **GPU load**: Check `gpu_canvas_pixels` and `background_canvas_pixels` for large canvas surfaces.
+- **CPU load**: Check `background_running` and `stage_active_raf_count` to find continuous render loops. Check `animation_running_count` and `animation_hidden_running` for continuous animations. Use `performance_start_trace` to profile main thread execution.
+- **Memory footprint**: Check `memory_heap_used_bytes` for JS heap allocation.
 
 ## Modifying the documentation site
 

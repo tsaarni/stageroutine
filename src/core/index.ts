@@ -11,7 +11,20 @@ export {
   resolveCoordToPx,
 } from "./interpolators";
 export { type LogLevel, logger } from "./logger";
-export { type MetricGetter, type MetricMap, MetricRegistry, type MetricValue } from "./metrics";
+export {
+  type BaseMetricOptions,
+  Counter,
+  type CounterOptions,
+  Gauge,
+  type GaugeOptions,
+  type LabeledItem,
+  type MetricFamily,
+  type MetricGaugeValue,
+  type MetricLabels,
+  MetricRegistry,
+  type MetricSample,
+  type MetricType,
+} from "./metrics";
 export { createReactiveProxy } from "./proxy";
 export {
   CORE_REACTIVE_KEYS,

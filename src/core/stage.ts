@@ -55,6 +55,54 @@ function resolveDefaultHeight(): number {
   );
 }
 
+const VALID_CLASS_IDENTIFIER = /^[a-zA-Z_-][\w-]*$/;
+
+function getElementTargetInfo(node: Element): {
+  elementId?: string;
+  target: string;
+} {
+  const root = node.closest?.("[data-sr-id]");
+  const elementId = root?.getAttribute("data-sr-id") ?? undefined;
+
+  const parts: string[] = [];
+  let curr: Element | null = node;
+
+  while (curr && curr !== document.body && parts.length < 5) {
+    if (curr === root && elementId) {
+      parts.unshift(`[data-sr-id=${elementId}]`);
+      break;
+    }
+    if (curr.id) {
+      parts.unshift(`#${curr.id}`);
+      break;
+    }
+    let part = curr.tagName.toLowerCase();
+    const rawClass = curr.getAttribute("class");
+    if (rawClass) {
+      const firstClass = rawClass.trim().split(/\s+/)[0];
+      if (firstClass && VALID_CLASS_IDENTIFIER.test(firstClass)) {
+        part += `.${firstClass}`;
+      }
+    }
+    parts.unshift(part);
+    curr = curr.parentElement;
+  }
+
+  if (
+    elementId &&
+    parts.length > 0 &&
+    !parts[0].startsWith("[data-sr-id=") &&
+    !parts[0].startsWith("#")
+  ) {
+    parts.unshift(`[data-sr-id=${elementId}]`);
+  }
+
+  return {
+    elementId,
+    target: parts.join(" > ") || node.tagName.toLowerCase(),
+  };
+}
+
 class SceneBuilder {
   private stage: Stage;
   readonly name: string;
@@ -363,221 +411,529 @@ export class Stage {
     this.emit("evt:pointer:stateChanged", { active });
   }
 
+  private _cachedDomMetrics: {
+    time: number;
+    totalRegistered: number;
+    activeInScene: number;
+    visibleInScene: number;
+    dormantCount: number;
+    detachedCount: number;
+    promotedNodes: HTMLElement[];
+    stageTotalNodes: number;
+  } | null = null;
+
+  private _getDomMetrics() {
+    const now = performance.now();
+    if (this._cachedDomMetrics && now - this._cachedDomMetrics.time < 50) {
+      return this._cachedDomMetrics;
+    }
+    const step = this.steps[this.currentStepIndex];
+    const activeIds = step?.activeElementIds;
+    let totalRegistered = 0;
+    let activeInScene = 0;
+    let visibleCount = 0;
+    let dormantCount = 0;
+    let detachedCount = 0;
+
+    for (const [id, el] of this.elementRegistry.entries()) {
+      totalRegistered++;
+      const inActiveScene = activeIds ? activeIds.has(id) : false;
+      if (inActiveScene) activeInScene++;
+      const props = this.propertyState.get(id) || {};
+      const opacity = (props.opacity as number) ?? 1;
+      if (inActiveScene && opacity > 0) visibleCount++;
+      if (el.domElement?.style.display === "none") dormantCount++;
+      if (el.domElement && !el.domElement.isConnected) detachedCount++;
+    }
+
+    const promotedNodes = this.viewport
+      ? (Array.from(this.viewport.querySelectorAll('[style*="will-change"]')).filter((node) => {
+          const s = (node as HTMLElement).style.willChange;
+          return s && s !== "auto";
+        }) as HTMLElement[])
+      : [];
+
+    const stats = {
+      time: now,
+      totalRegistered,
+      activeInScene,
+      visibleInScene: visibleCount,
+      dormantCount,
+      detachedCount,
+      promotedNodes,
+      stageTotalNodes: this.viewport ? this.viewport.getElementsByTagName("*").length : 0,
+    };
+    this._cachedDomMetrics = stats;
+    return stats;
+  }
+
+  private _cachedAnimationMetrics: {
+    time: number;
+    hiddenRunningCount: number;
+    runningList: { labels: Record<string, string>; value: number }[];
+    connectorPulses: number;
+  } | null = null;
+
+  private _getAnimationMetrics() {
+    const now = performance.now();
+    if (this._cachedAnimationMetrics && now - this._cachedAnimationMetrics.time < 50) {
+      return this._cachedAnimationMetrics;
+    }
+
+    const allAnimations = document.getAnimations();
+    let hiddenRunningCount = 0;
+    const runningList: { labels: Record<string, string>; value: number }[] = [];
+
+    for (const anim of allAnimations) {
+      if (anim.playState !== "running") continue;
+
+      const target = (anim.effect as { target?: Element } | null)?.target;
+      const isElement = target instanceof HTMLElement || target instanceof SVGElement;
+      const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
+      const inlineOpacity = targetEl?.style.opacity ? Number.parseFloat(targetEl.style.opacity) : 1;
+      const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
+      const parentOpacity = parentEl?.style.opacity ? Number.parseFloat(parentEl.style.opacity) : 1;
+      const isHidden =
+        targetEl !== null &&
+        (inlineOpacity === 0 ||
+          parentOpacity === 0 ||
+          targetEl.style.display === "none" ||
+          targetEl.style.visibility === "hidden" ||
+          parentEl?.style.display === "none" ||
+          parentEl?.style.visibility === "hidden" ||
+          !targetEl.isConnected);
+      if (isHidden) hiddenRunningCount++;
+
+      const info = targetEl ? getElementTargetInfo(targetEl) : { target: "unknown" };
+      const labels: Record<string, string> = {
+        name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
+        target: info.target,
+        hidden: isHidden ? "1" : "0",
+      };
+      if (info.elementId) {
+        labels.element_id = info.elementId;
+      }
+
+      runningList.push({
+        labels,
+        value: 1,
+      });
+    }
+
+    const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
+    const stats = {
+      time: now,
+      hiddenRunningCount,
+      runningList,
+      connectorPulses: pulsePackets.length,
+    };
+    this._cachedAnimationMetrics = stats;
+    return stats;
+  }
+
+  private _getBackgroundMetrics(): Record<string, unknown> | null {
+    if (!this.backgroundSource) return null;
+    if (typeof this.backgroundSource === "string") {
+      return { kind: "color", value: this.backgroundSource };
+    }
+    const bg = this.backgroundSource as {
+      _getMetrics?: () => Record<string, unknown>;
+      kind?: string;
+      isRunning?: boolean;
+    };
+    if (typeof bg._getMetrics === "function") {
+      return bg._getMetrics();
+    }
+    return {
+      kind: bg.kind ?? "custom",
+      is_running: bg.isRunning ? 1 : 0,
+    };
+  }
+
   private _registerCoreMetrics(): void {
     // Stage Render Loop & Frame Diagnostics
-    // - active_raf_count: active requestAnimationFrame loops driven by stage core. Must be 0 at rest.
-    // - is_animating: 1 during active slide transitions, 0 when settled.
-    this.metrics.register("stage", () => {
-      const step = this.steps[this.currentStepIndex];
-      return {
-        scene_name: step?.sceneName ?? "Default",
-        step_index: this.currentStepIndex,
-        total_steps: this.steps.length,
-        is_animating: this.isAnimating ? 1 : 0,
-        active_raf_count: this.animFrameId !== null ? 1 : 0,
-        fps: Math.round(this.currentFps),
-        last_frame_duration_ms: Number(this.lastFrameDurationMs.toFixed(2)),
-        max_frame_duration_ms: Number(this.maxFrameDurationMs.toFixed(2)),
-      };
+    this.metrics.gauge({
+      name: "stage_is_animating",
+      help: "Slide transition active state (1 = animating transition, 0 = settled at rest).",
+      collect: () => (this.isAnimating ? 1 : 0),
+    });
+
+    this.metrics.gauge({
+      name: "stage_active_raf_count",
+      help: "Active requestAnimationFrame loops driven by stage core. Must be 0 at rest.",
+      collect: () => (this.animFrameId !== null ? 1 : 0),
+    });
+
+    this.metrics.gauge({
+      name: "stage_fps",
+      help: "Measured presentation render frames per second.",
+      unit: "fps",
+      collect: () => Math.round(this.currentFps),
+    });
+
+    this.metrics.gauge({
+      name: "stage_last_frame_duration_ms",
+      help: "Duration of the last rendered frame in milliseconds.",
+      unit: "ms",
+      collect: () => Number(this.lastFrameDurationMs.toFixed(2)),
+    });
+
+    this.metrics.gauge({
+      name: "stage_max_frame_duration_ms",
+      help: "Peak frame duration observed in milliseconds.",
+      unit: "ms",
+      collect: () => Number(this.maxFrameDurationMs.toFixed(2)),
+    });
+
+    this.metrics.gauge({
+      name: "stage_step_index",
+      help: "Current presentation step index (0-based).",
+      collect: () => this.currentStepIndex,
+    });
+
+    this.metrics.gauge({
+      name: "stage_total_steps",
+      help: "Total steps defined in the presentation.",
+      collect: () => this.steps.length,
+    });
+
+    this.metrics.gauge({
+      name: "stage_scene_info",
+      help: "Current presentation scene information.",
+      collect: () => {
+        const step = this.steps[this.currentStepIndex];
+        return {
+          labels: { scene: step?.sceneName ?? "Default" },
+          value: 1,
+        };
+      },
     });
 
     // Active Transitions Breakdown
-    this.metrics.register("stage.transitions", () => {
-      return this.activeTransitionsSnapshot.map((t) => ({
-        element_id: t.elementId,
-        property: t.property,
-        from: t.startFrom,
-        to: t.to,
-        duration_ms: t.durationMs,
-        elapsed_ms: Math.round(t.elapsedMs),
-        progress: Number(t.progress.toFixed(3)),
-      }));
+    this.metrics.gauge({
+      name: "stage_transitions",
+      help: "Active element property transitions and interpolation progress (0.0 to 1.0).",
+      collect: () =>
+        this.activeTransitionsSnapshot.map((t) => ({
+          labels: {
+            element: t.elementId,
+            property: t.property,
+          },
+          value: Number(t.progress.toFixed(3)),
+        })),
     });
 
     // DOM Footprint, Dormancy & Retention Diagnostics
-    // - dormant_elements: inactive elements set to `display: none` to bypass layout and rendering.
-    // - detached_elements: registered elements missing from the DOM tree (true memory retention leak).
-    this.metrics.register("dom", () => {
-      const step = this.steps[this.currentStepIndex];
-      const activeIds = step?.activeElementIds;
-      let totalRegistered = 0;
-      let activeInScene = 0;
-      let visibleCount = 0;
-      let dormantCount = 0;
-      let detachedCount = 0;
+    this.metrics.gauge({
+      name: "dom_total_registered",
+      help: "Total elements registered in stage memory.",
+      collect: () => this._getDomMetrics().totalRegistered,
+    });
 
-      for (const [id, el] of this.elementRegistry.entries()) {
-        totalRegistered++;
-        const inActiveScene = activeIds ? activeIds.has(id) : false;
-        if (inActiveScene) {
-          activeInScene++;
-        }
-        const props = this.propertyState.get(id) || {};
-        const opacity = (props.opacity as number) ?? 1;
-        if (inActiveScene && opacity > 0) {
-          visibleCount++;
-        }
-        if (el.domElement?.style.display === "none") {
-          dormantCount++;
-        }
-        // Elements registered in stage memory that are disconnected from the active DOM tree
-        if (el.domElement && !el.domElement.isConnected) {
-          detachedCount++;
-        }
-      }
+    this.metrics.gauge({
+      name: "dom_active_in_scene",
+      help: "Registered elements belonging to the active scene.",
+      collect: () => this._getDomMetrics().activeInScene,
+    });
 
-      // Collect elements promoted for animation (holding will-change)
-      const promotedNodes = this.viewport
-        ? Array.from(this.viewport.querySelectorAll('[style*="will-change"]')).filter((node) => {
-            const s = (node as HTMLElement).style.willChange;
-            return s && s !== "auto";
-          })
-        : [];
+    this.metrics.gauge({
+      name: "dom_visible_in_scene",
+      help: "Active elements with opacity > 0.",
+      collect: () => this._getDomMetrics().visibleInScene,
+    });
 
-      return {
-        total_registered: totalRegistered,
-        active_in_scene: activeInScene,
-        visible_in_scene: visibleCount,
-        dormant_elements: dormantCount,
-        detached_elements: detachedCount,
-        promoted_elements: promotedNodes.length,
-        promoted: promotedNodes.map((n) => {
-          const el = n as HTMLElement;
+    this.metrics.gauge({
+      name: "dom_dormant_elements",
+      help: "Inactive elements set to display:none to bypass layout and rendering.",
+      collect: () => this._getDomMetrics().dormantCount,
+    });
+
+    this.metrics.gauge({
+      name: "dom_detached_elements",
+      help: "Registered elements missing from active DOM tree (retention leak). Must be 0.",
+      collect: () => this._getDomMetrics().detachedCount,
+    });
+
+    this.metrics.gauge({
+      name: "dom_promoted",
+      help: "Elements holding CSS will-change. Leaks GPU layer memory if non-zero at rest.",
+      collect: () =>
+        this._getDomMetrics().promotedNodes.map((n) => {
+          const info = getElementTargetInfo(n);
+          const labels: Record<string, string> = {
+            target: info.target,
+            will_change: n.style.willChange,
+          };
+          if (info.elementId) {
+            labels.element_id = info.elementId;
+          }
           return {
-            tag: el.tagName,
-            class: el.className || undefined,
-            will_change: el.style.willChange,
+            labels,
+            value: 1,
           };
         }),
-        stage_total_nodes: this.viewport ? this.viewport.getElementsByTagName("*").length : 0,
-      };
+    });
+
+    this.metrics.gauge({
+      name: "dom_stage_total_nodes",
+      help: "Total DOM node count inside stage viewport.",
+      collect: () => this._getDomMetrics().stageTotalNodes,
     });
 
     // GPU & Canvas Footprint
-    this.metrics.register("gpu", () => {
-      const canvases = Array.from(document.querySelectorAll("canvas"));
-      let totalCanvasPixels = 0;
-      for (const c of canvases) {
-        totalCanvasPixels += c.width * c.height;
-      }
+    this.metrics.gauge({
+      name: "gpu_canvas_count",
+      help: "Total canvas elements in document.",
+      collect: () => document.querySelectorAll("canvas").length,
+    });
 
-      return {
-        canvas_count: canvases.length,
-        canvas_pixels: totalCanvasPixels,
-      };
+    this.metrics.gauge({
+      name: "gpu_canvas_pixels",
+      help: "Total surface area of all canvases in pixels.",
+      collect: () => {
+        let pixels = 0;
+        for (const c of document.querySelectorAll("canvas")) {
+          pixels += c.width * c.height;
+        }
+        return pixels;
+      },
     });
 
     // Memory Footprint Diagnostics
-    // Tracks V8 JS heap memory allocation in bytes (Chromium).
-    this.metrics.register("memory", () => {
-      const result: Record<string, unknown> = {};
+    this.metrics.gauge({
+      name: "memory_heap_used_bytes",
+      help: "V8 JS heap memory used in bytes (Chromium).",
+      unit: "bytes",
+      collect: () => {
+        if (typeof performance !== "undefined" && "memory" in performance) {
+          return (performance as unknown as { memory: { usedJSHeapSize: number } }).memory
+            .usedJSHeapSize;
+        }
+        return null;
+      },
+    });
 
-      if (typeof performance !== "undefined" && "memory" in performance) {
-        const mem = (
-          performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }
-        ).memory;
-        result.heap_used_bytes = mem.usedJSHeapSize;
-        result.heap_total_bytes = mem.totalJSHeapSize;
-      }
-
-      return result;
+    this.metrics.gauge({
+      name: "memory_heap_total_bytes",
+      help: "V8 JS heap total allocated memory in bytes (Chromium).",
+      unit: "bytes",
+      collect: () => {
+        if (typeof performance !== "undefined" && "memory" in performance) {
+          return (performance as unknown as { memory: { totalJSHeapSize: number } }).memory
+            .totalJSHeapSize;
+        }
+        return null;
+      },
     });
 
     // Animation & Background Activity Diagnostics
-    // Inspects running Web Animations API instances and CSS keyframes.
-    // - hidden_running: animations running on invisible elements (wasted CPU/GPU cycles).
-    this.metrics.register("animation", () => {
-      const result: Record<string, unknown> = {};
-      const allAnimations = document.getAnimations();
-      let hiddenRunningCount = 0;
-      const runningList: Record<string, unknown>[] = [];
+    this.metrics.gauge({
+      name: "animation_hidden_running",
+      help: "Running animations on invisible elements (wasted CPU/GPU cycles). Must be 0.",
+      collect: () => this._getAnimationMetrics().hiddenRunningCount,
+    });
 
-      for (const anim of allAnimations) {
-        if (anim.playState !== "running") continue;
+    this.metrics.gauge({
+      name: "animation_running",
+      help: "Running Web Animations API and CSS keyframe instances. Must be 0 at rest.",
+      collect: () => this._getAnimationMetrics().runningList,
+    });
 
-        const target = (anim.effect as { target?: Element } | null)?.target;
-        // Check both HTMLElement and SVGElement; SVG nodes do not inherit HTMLElement.
-        // Check target and parent visibility to detect hidden background animations.
-        const isElement = target instanceof HTMLElement || target instanceof SVGElement;
-        const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
-        const inlineOpacity = targetEl?.style.opacity
-          ? Number.parseFloat(targetEl.style.opacity)
-          : 1;
-        const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
-        const parentOpacity = parentEl?.style.opacity
-          ? Number.parseFloat(parentEl.style.opacity)
-          : 1;
-        const isHidden =
-          targetEl !== null &&
-          (inlineOpacity === 0 ||
-            parentOpacity === 0 ||
-            targetEl.style.display === "none" ||
-            targetEl.style.visibility === "hidden" ||
-            parentEl?.style.display === "none" ||
-            parentEl?.style.visibility === "hidden" ||
-            !targetEl.isConnected);
-        if (isHidden) hiddenRunningCount++;
-
-        runningList.push({
-          name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
-          target_tag: target?.tagName,
-          target_class:
-            typeof target?.className === "string"
-              ? target.className
-              : target?.classList?.toString() || undefined,
-          is_hidden: isHidden ? 1 : 0,
-        });
-      }
-
-      const pulsePackets = document.querySelectorAll(".sr-pulse-packet");
-      result.connector_pulses = pulsePackets.length;
-      result.hidden_running = hiddenRunningCount;
-      result.running = runningList;
-
-      return result;
+    this.metrics.gauge({
+      name: "animation_connector_pulses",
+      help: "Connector pulse packet elements in document. Must be 0 when idle.",
+      collect: () => this._getAnimationMetrics().connectorPulses,
     });
 
     // Background Diagnostics
-    this.metrics.register("background", () => {
-      if (!this.backgroundSource) return null;
-      if (typeof this.backgroundSource === "string") {
-        return { kind: "color", value: this.backgroundSource };
-      }
-      const bg = this.backgroundSource as { _getMetrics?: () => Record<string, unknown> };
-      if (typeof bg._getMetrics === "function") {
-        return bg._getMetrics();
-      }
-      return null;
+    this.metrics.gauge({
+      name: "background_running",
+      help: "Background continuous animation loop running state. Must be 0 at rest.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m ? Number(m.is_running) || 0 : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_is_mounted",
+      help: "Background DOM element connection state (1 = connected, 0 = detached).",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        if (m && "is_mounted" in m) {
+          return m.is_mounted ? 1 : 0;
+        }
+        return null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_opacity",
+      help: "Background opacity level (0.0 to 1.0).",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.opacity === "number" ? m.opacity : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_canvas_width",
+      help: "Background canvas surface pixel width.",
+      unit: "px",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.canvas_width === "number" ? m.canvas_width : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_canvas_height",
+      help: "Background canvas surface pixel height.",
+      unit: "px",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.canvas_height === "number" ? m.canvas_height : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_pixel_ratio",
+      help: "Background canvas device pixel ratio.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.pixel_ratio === "number" ? m.pixel_ratio : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_canvas_pixels",
+      help: "Total pixel surface area of background canvas.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.total_pixels === "number" ? m.total_pixels : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_star_count",
+      help: "Starfield background star particle count.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.star_count === "number" ? m.star_count : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_speed",
+      help: "Starfield background speed setting.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        return m && typeof m.speed === "number" ? m.speed : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "background_info",
+      help: "Background configuration details.",
+      collect: () => {
+        const m = this._getBackgroundMetrics();
+        if (!m) return { labels: { kind: "none" }, value: 1 };
+        const kind = String(m.kind ?? "custom");
+        const labels: Record<string, string> = { kind };
+        if (m.value) labels.value = String(m.value);
+        return { labels, value: 1 };
+      },
     });
 
     // Overlay Diagnostics
-    this.metrics.register("overlay", () => {
-      if (this.overlays.length === 0) return null;
-      const result: Record<string, unknown> = {};
-      for (const overlay of this.overlays) {
-        const o = overlay as {
-          id?: string;
-          name?: string;
-          _getMetrics?: () => Record<string, unknown>;
-        };
-        if (typeof o._getMetrics === "function") {
-          const key = o.id || o.name || "plugin";
-          result[key] = o._getMetrics();
+    this.metrics.gauge({
+      name: "overlay_laser_active",
+      help: "Laser pointer overlay active state.",
+      collect: () => {
+        for (const overlay of this.overlays) {
+          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
+          if (o.id === "laser" && typeof o._getMetrics === "function") {
+            const m = o._getMetrics();
+            return m.is_active ? 1 : 0;
+          }
         }
-      }
-      return Object.keys(result).length > 0 ? result : null;
+        return null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_laser_raf_active",
+      help: "Laser pointer continuous animation loop state. Must be 0 when idle.",
+      collect: () => {
+        for (const overlay of this.overlays) {
+          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
+          if (o.id === "laser" && typeof o._getMetrics === "function") {
+            const m = o._getMetrics();
+            return m.raf_loop_active ? 1 : 0;
+          }
+        }
+        return null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_laser_points_count",
+      help: "Active points count in laser pointer trail.",
+      collect: () => {
+        for (const overlay of this.overlays) {
+          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
+          if (o.id === "laser" && typeof o._getMetrics === "function") {
+            const m = o._getMetrics();
+            return typeof m.active_points_count === "number" ? m.active_points_count : 0;
+          }
+        }
+        return null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_laser_has_canvas",
+      help: "Laser pointer canvas element state (1 = canvas mounted, 0 = unmounted).",
+      collect: () => {
+        for (const overlay of this.overlays) {
+          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
+          if (o.id === "laser" && typeof o._getMetrics === "function") {
+            const m = o._getMetrics();
+            return m.has_canvas ? 1 : 0;
+          }
+        }
+        return null;
+      },
     });
 
     // Multi-Window / Tab Synchronization Metrics
-    this.metrics.register("sync", () => ({
-      channel_messages_sent: this.presenterHost?.messagesSent ?? 0,
-      channel_messages_received: this.presenterHost?.messagesReceived ?? 0,
-      state_broadcasts: this.syncStateBroadcasts,
-      last_msg_elapsed_ms:
+    this.metrics.counter({
+      name: "sync_channel_messages_sent",
+      help: "Total messages broadcast to other windows over BroadcastChannel.",
+      collect: () => this.presenterHost?.messagesSent ?? 0,
+    });
+
+    this.metrics.counter({
+      name: "sync_channel_messages_received",
+      help: "Total messages received from other windows over BroadcastChannel.",
+      collect: () => this.presenterHost?.messagesReceived ?? 0,
+    });
+
+    this.metrics.counter({
+      name: "sync_state_broadcasts",
+      help: "Total slide state broadcasts transmitted to presenter console.",
+      collect: () => this.syncStateBroadcasts,
+    });
+
+    this.metrics.gauge({
+      name: "sync_last_msg_elapsed_ms",
+      help: "Elapsed milliseconds since last received sync message (-1 if none).",
+      unit: "ms",
+      collect: () =>
         this.presenterHost && this.presenterHost.lastMsgTime > 0
           ? Math.round(performance.now() - this.presenterHost.lastMsgTime)
           : -1,
-    }));
+    });
   }
 
   // ElementHost Implementation
@@ -966,6 +1322,15 @@ export class Stage {
         e.preventDefault();
         const current = storage.runtime.get<boolean>("pointer.active", false);
         this.emit("req:pointer:setState", { active: !current });
+      } else if (
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        e.shiftKey &&
+        (e.key === "M" || e.key === "m")
+      ) {
+        e.preventDefault();
+        this._openMetricsWindow();
       } else if (e.key === "Escape") {
         const current = storage.runtime.get<boolean>("pointer.active", false);
         if (current) {
@@ -996,9 +1361,15 @@ export class Stage {
 
     // Attach global dev diagnostics hook
     const devWindow = window as unknown as {
-      __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+      __STAGEROUTINE_DEV__?: {
+        getMetrics: () => string;
+        showMetrics: () => void;
+      };
     };
-    const devHook = { getMetrics: () => this.metrics.collect() };
+    const devHook = {
+      getMetrics: () => this.metrics.getMetrics(),
+      showMetrics: () => this._openMetricsWindow(),
+    };
     devWindow.__STAGEROUTINE_DEV__ = devHook;
     this.mountCleanups.push(() => {
       if (devWindow.__STAGEROUTINE_DEV__ === devHook) {
@@ -1007,6 +1378,21 @@ export class Stage {
     });
 
     return this;
+  }
+
+  private _openMetricsWindow(): void {
+    const text = this.metrics.getMetrics();
+    const w = window.open("", "stageroutine_metrics");
+    if (!w?.document.body) return;
+    w.document.title = "StageRoutine Metrics";
+    w.document.body.innerHTML = "";
+    w.document.body.style.cssText =
+      "margin:0;padding:24px;background:#0f172a;color:#e2e8f0;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.6;";
+    const pre = w.document.createElement("pre");
+    pre.style.cssText = "margin:0;white-space:pre-wrap;word-break:break-all;";
+    pre.textContent = text;
+    w.document.body.appendChild(pre);
+    w.focus?.();
   }
 
   /**

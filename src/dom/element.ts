@@ -286,6 +286,7 @@ export class DOMElement implements ReactiveElementBase {
     } else {
       this.domElement = html as HTMLElement;
     }
+    this.domElement.dataset.srId = this.id;
 
     if (options.align) {
       this.align = options.align;

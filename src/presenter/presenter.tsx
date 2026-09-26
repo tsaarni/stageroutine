@@ -26,24 +26,32 @@ const recorder = new PresenterRecorder();
 
 // Metrics & Diagnostics
 const metrics = new MetricRegistry();
-let updatesReceived = 0;
-let notesRendered = 0;
-let scrollInvocations = 0;
+const updatesCounter = metrics.counter({
+  name: "presenter_updates_received",
+  help: "Total scene updates received by presenter console over BroadcastChannel.",
+});
+const notesCounter = metrics.counter({
+  name: "presenter_notes_rendered",
+  help: "Total presenter note render cycles executed.",
+});
+const scrollCounter = metrics.counter({
+  name: "presenter_scroll_invocations",
+  help: "Total scroll synchronizations triggered in presenter console.",
+});
 let lastUpdateTime = 0;
-
-metrics.register("presenter", () => ({
-  updates_received: updatesReceived,
-  notes_rendered: notesRendered,
-  scroll_invocations: scrollInvocations,
-  last_update_elapsed_ms: lastUpdateTime > 0 ? Math.round(performance.now() - lastUpdateTime) : -1,
-}));
+metrics.gauge({
+  name: "presenter_last_update_elapsed_ms",
+  help: "Elapsed milliseconds since last received scene update (-1 if none).",
+  unit: "ms",
+  collect: () => (lastUpdateTime > 0 ? Math.round(performance.now() - lastUpdateTime) : -1),
+});
 
 (
   window as unknown as {
-    __STAGEROUTINE_DEV__?: { getMetrics: () => Record<string, unknown> };
+    __STAGEROUTINE_DEV__?: { getMetrics: () => string };
   }
 ).__STAGEROUTINE_DEV__ = {
-  getMetrics: () => metrics.collect(),
+  getMetrics: () => metrics.getMetrics(),
 };
 
 // DOM References
@@ -380,7 +388,7 @@ function updateNotesDisplay(msg: PresenterMessage): void {
 
   if (doc !== lastRenderedDoc) {
     lastRenderedDoc = doc;
-    notesRendered++;
+    notesCounter.inc();
     currentNotes.innerHTML = parseMarkdownDocument(doc);
   }
 
@@ -432,7 +440,7 @@ function updateNotesDisplay(msg: PresenterMessage): void {
       const activeBlock =
         targetSection.querySelector(`.notes-step-block[data-step-index="${targetStepIdx}"]`) ||
         targetSection;
-      scrollInvocations++;
+      scrollCounter.inc();
       activeBlock.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }
@@ -476,7 +484,7 @@ currentNotes?.addEventListener("click", (e) => {
 // 2. Presenter Client State Sync
 // ============================================================================
 client.onUpdate((msg) => {
-  updatesReceived++;
+  updatesCounter.inc();
   lastUpdateTime = performance.now();
   const currentSceneIdx =
     typeof msg.sceneIndex === "number" && !Number.isNaN(msg.sceneIndex) ? msg.sceneIndex : 0;

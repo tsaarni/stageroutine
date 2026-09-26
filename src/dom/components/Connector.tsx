@@ -608,19 +608,19 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       this.metricDisposables = [
         stage.metrics.gauge({
           name: "connector_periodic_pulse_active",
-          help: "Periodic pulse interval timer active state (1 = active, 0 = idle).",
+          help: "Periodic pulse timer running (1 = active).",
           labels: { id: this.id },
           collect: () => (this.periodicIntervalTimer !== null ? 1 : 0),
         }),
         stage.metrics.gauge({
           name: "connector_active_pulses",
-          help: "Active pulsing dots animating along path. Must be 0 when idle.",
+          help: "Pulsing dots on path. Must be 0 when idle.",
           labels: { id: this.id },
           collect: () => this.activePulseDots.size,
         }),
         stage.metrics.gauge({
           name: "connector_dom_packets",
-          help: "DOM pulse packet elements inside connector SVG. Must be 0 when idle.",
+          help: "Pulse packets in SVG. Must be 0 when idle.",
           labels: { id: this.id },
           collect: () => this.svgRoot.querySelectorAll(".sr-pulse-packet").length,
         }),

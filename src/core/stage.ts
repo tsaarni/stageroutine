@@ -9,6 +9,7 @@ import { applyThemeTokens } from "../theme/tokens";
 import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
+import { createPerfProbe, type PerfProbe } from "./perf";
 import { createReactiveProxy } from "./proxy";
 import { getReactiveKeys } from "./reactive";
 import { storage } from "./storage";
@@ -56,6 +57,25 @@ function resolveDefaultHeight(): number {
 }
 
 const VALID_CLASS_IDENTIFIER = /^[a-zA-Z_-][\w-]*$/;
+const TRANSITION_START_MARK = "sr/start";
+const TRANSITION_END_MARK = "sr/end";
+
+/** A single step in the dev outline. */
+interface OutlineStep {
+  /** Global 0-based step index, matching the URL fragment (`#scene/<step>`). */
+  step: number;
+  /** Speaker notes for the step, if any. */
+  notes?: string;
+  /** Number of elements active on this step. */
+  elements: number;
+}
+
+/** A scene in the dev outline, with its steps in order. */
+interface OutlineScene {
+  /** Scene name. */
+  name: string;
+  steps: OutlineStep[];
+}
 
 function getElementTargetInfo(node: Element): {
   elementId?: string;
@@ -474,6 +494,8 @@ export class Stage {
     connectorPulses: number;
   } | null = null;
 
+  private _cachedVisibleVideos: { time: number; count: number } | null = null;
+
   private _getAnimationMetrics() {
     const now = performance.now();
     if (this._cachedAnimationMetrics && now - this._cachedAnimationMetrics.time < 50) {
@@ -560,56 +582,77 @@ export class Stage {
     };
   }
 
+  private _visibleVideos(): number {
+    const now = performance.now();
+    if (this._cachedVisibleVideos && now - this._cachedVisibleVideos.time < 50) {
+      return this._cachedVisibleVideos.count;
+    }
+    let count = 0;
+    for (const video of document.querySelectorAll("video")) {
+      if (!video.currentSrc && !video.srcObject) continue;
+      if (typeof video.checkVisibility === "function") {
+        if (!video.checkVisibility()) continue;
+      } else if (!video.offsetParent) {
+        continue;
+      }
+      const rect = video.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) continue;
+      count++;
+    }
+    this._cachedVisibleVideos = { time: now, count };
+    return count;
+  }
+
   private _registerCoreMetrics(): void {
     // Stage Render Loop & Frame Diagnostics
     this.metrics.gauge({
       name: "stage_is_animating",
-      help: "Slide transition active state (1 = animating transition, 0 = settled at rest).",
+      help: "Transition playing (1 = animating, 0 = at rest).",
       collect: () => (this.isAnimating ? 1 : 0),
     });
 
     this.metrics.gauge({
       name: "stage_active_raf_count",
-      help: "Active requestAnimationFrame loops driven by stage core. Must be 0 at rest.",
+      help: "Stage rAF loops running. Must be 0 at rest.",
       collect: () => (this.animFrameId !== null ? 1 : 0),
     });
 
     this.metrics.gauge({
       name: "stage_fps",
-      help: "Measured presentation render frames per second.",
+      help: "FPS of the last step transition. Frozen at rest; cross-check stage_is_animating.",
       unit: "fps",
       collect: () => Math.round(this.currentFps),
     });
 
     this.metrics.gauge({
       name: "stage_last_frame_duration_ms",
-      help: "Duration of the last rendered frame in milliseconds.",
+      help: "Last transition frame duration (ms). Frozen at rest.",
       unit: "ms",
       collect: () => Number(this.lastFrameDurationMs.toFixed(2)),
     });
 
     this.metrics.gauge({
       name: "stage_max_frame_duration_ms",
-      help: "Peak frame duration observed in milliseconds.",
+      help: "Peak transition frame duration (ms). Frozen at rest.",
       unit: "ms",
       collect: () => Number(this.maxFrameDurationMs.toFixed(2)),
     });
 
     this.metrics.gauge({
       name: "stage_step_index",
-      help: "Current presentation step index (0-based).",
+      help: "Current step index (0-based).",
       collect: () => this.currentStepIndex,
     });
 
     this.metrics.gauge({
       name: "stage_total_steps",
-      help: "Total steps defined in the presentation.",
+      help: "Total steps.",
       collect: () => this.steps.length,
     });
 
     this.metrics.gauge({
       name: "stage_scene_info",
-      help: "Current presentation scene information.",
+      help: "Current scene.",
       collect: () => {
         const step = this.steps[this.currentStepIndex];
         return {
@@ -622,7 +665,7 @@ export class Stage {
     // Active Transitions Breakdown
     this.metrics.gauge({
       name: "stage_transitions",
-      help: "Active element property transitions and interpolation progress (0.0 to 1.0).",
+      help: "Active property transitions (progress 0..1).",
       collect: () =>
         this.activeTransitionsSnapshot.map((t) => ({
           labels: {
@@ -636,37 +679,37 @@ export class Stage {
     // DOM Footprint, Dormancy & Retention Diagnostics
     this.metrics.gauge({
       name: "dom_total_registered",
-      help: "Total elements registered in stage memory.",
+      help: "Registered elements.",
       collect: () => this._getDomMetrics().totalRegistered,
     });
 
     this.metrics.gauge({
       name: "dom_active_in_scene",
-      help: "Registered elements belonging to the active scene.",
+      help: "Elements in the active scene.",
       collect: () => this._getDomMetrics().activeInScene,
     });
 
     this.metrics.gauge({
       name: "dom_visible_in_scene",
-      help: "Active elements with opacity > 0.",
+      help: "Visible elements (opacity > 0).",
       collect: () => this._getDomMetrics().visibleInScene,
     });
 
     this.metrics.gauge({
       name: "dom_dormant_elements",
-      help: "Inactive elements set to display:none to bypass layout and rendering.",
+      help: "Inactive elements (display:none).",
       collect: () => this._getDomMetrics().dormantCount,
     });
 
     this.metrics.gauge({
       name: "dom_detached_elements",
-      help: "Registered elements missing from active DOM tree (retention leak). Must be 0.",
+      help: "Elements missing from the DOM (retention leak). Must be 0.",
       collect: () => this._getDomMetrics().detachedCount,
     });
 
     this.metrics.gauge({
       name: "dom_promoted",
-      help: "Elements holding CSS will-change. Leaks GPU layer memory if non-zero at rest.",
+      help: "Elements holding will-change (GPU layer leak). Must be 0 at rest. Labels name the element.",
       collect: () =>
         this._getDomMetrics().promotedNodes.map((n) => {
           const info = getElementTargetInfo(n);
@@ -686,20 +729,20 @@ export class Stage {
 
     this.metrics.gauge({
       name: "dom_stage_total_nodes",
-      help: "Total DOM node count inside stage viewport.",
+      help: "DOM nodes in the stage viewport.",
       collect: () => this._getDomMetrics().stageTotalNodes,
     });
 
     // GPU & Canvas Footprint
     this.metrics.gauge({
       name: "gpu_canvas_count",
-      help: "Total canvas elements in document.",
+      help: "Canvas elements.",
       collect: () => document.querySelectorAll("canvas").length,
     });
 
     this.metrics.gauge({
       name: "gpu_canvas_pixels",
-      help: "Total surface area of all canvases in pixels.",
+      help: "Canvas pixels (all surfaces).",
       collect: () => {
         let pixels = 0;
         for (const c of document.querySelectorAll("canvas")) {
@@ -712,7 +755,7 @@ export class Stage {
     // Memory Footprint Diagnostics
     this.metrics.gauge({
       name: "memory_heap_used_bytes",
-      help: "V8 JS heap memory used in bytes (Chromium).",
+      help: "JS heap used (bytes).",
       unit: "bytes",
       collect: () => {
         if (typeof performance !== "undefined" && "memory" in performance) {
@@ -725,7 +768,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "memory_heap_total_bytes",
-      help: "V8 JS heap total allocated memory in bytes (Chromium).",
+      help: "JS heap total (bytes).",
       unit: "bytes",
       collect: () => {
         if (typeof performance !== "undefined" && "memory" in performance) {
@@ -739,26 +782,33 @@ export class Stage {
     // Animation & Background Activity Diagnostics
     this.metrics.gauge({
       name: "animation_hidden_running",
-      help: "Running animations on invisible elements (wasted CPU/GPU cycles). Must be 0.",
+      help: "Animations on hidden elements. Must be 0.",
       collect: () => this._getAnimationMetrics().hiddenRunningCount,
     });
 
     this.metrics.gauge({
       name: "animation_running",
-      help: "Running Web Animations API and CSS keyframe instances. Must be 0 at rest.",
+      help: "Running animations. Must be 0 at rest.",
       collect: () => this._getAnimationMetrics().runningList,
     });
 
     this.metrics.gauge({
       name: "animation_connector_pulses",
-      help: "Connector pulse packet elements in document. Must be 0 when idle.",
+      help: "Connector pulse packets. Must be 0 when idle.",
       collect: () => this._getAnimationMetrics().connectorPulses,
+    });
+
+    // Media Diagnostics
+    this.metrics.gauge({
+      name: "media_visible_videos",
+      help: "Visible playing videos. Two or more lock Chrome to 30fps; hide one.",
+      collect: () => this._visibleVideos(),
     });
 
     // Background Diagnostics
     this.metrics.gauge({
       name: "background_running",
-      help: "Background continuous animation loop running state. Must be 0 at rest.",
+      help: "Background render loop running. May be 1 at rest.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m ? Number(m.is_running) || 0 : null;
@@ -767,7 +817,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_is_mounted",
-      help: "Background DOM element connection state (1 = connected, 0 = detached).",
+      help: "Background mounted (1 = connected, 0 = detached).",
       collect: () => {
         const m = this._getBackgroundMetrics();
         if (m && "is_mounted" in m) {
@@ -779,7 +829,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_opacity",
-      help: "Background opacity level (0.0 to 1.0).",
+      help: "Background opacity (0..1).",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m && typeof m.opacity === "number" ? m.opacity : null;
@@ -788,7 +838,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_canvas_width",
-      help: "Background canvas surface pixel width.",
+      help: "Background canvas width (px).",
       unit: "px",
       collect: () => {
         const m = this._getBackgroundMetrics();
@@ -798,7 +848,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_canvas_height",
-      help: "Background canvas surface pixel height.",
+      help: "Background canvas height (px).",
       unit: "px",
       collect: () => {
         const m = this._getBackgroundMetrics();
@@ -808,7 +858,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_pixel_ratio",
-      help: "Background canvas device pixel ratio.",
+      help: "Background canvas DPR.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m && typeof m.pixel_ratio === "number" ? m.pixel_ratio : null;
@@ -817,7 +867,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_canvas_pixels",
-      help: "Total pixel surface area of background canvas.",
+      help: "Background canvas pixels.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m && typeof m.total_pixels === "number" ? m.total_pixels : null;
@@ -826,7 +876,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_star_count",
-      help: "Starfield background star particle count.",
+      help: "Starfield particle count.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m && typeof m.star_count === "number" ? m.star_count : null;
@@ -835,7 +885,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_speed",
-      help: "Starfield background speed setting.",
+      help: "Starfield speed.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m && typeof m.speed === "number" ? m.speed : null;
@@ -844,7 +894,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "background_info",
-      help: "Background configuration details.",
+      help: "Background kind.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         if (!m) return { labels: { kind: "none" }, value: 1 };
@@ -858,7 +908,7 @@ export class Stage {
     // Overlay Diagnostics
     this.metrics.gauge({
       name: "overlay_laser_active",
-      help: "Laser pointer overlay active state.",
+      help: "Laser overlay active.",
       collect: () => {
         for (const overlay of this.overlays) {
           const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
@@ -873,7 +923,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "overlay_laser_raf_active",
-      help: "Laser pointer continuous animation loop state. Must be 0 when idle.",
+      help: "Laser animation loop running. Must be 0 when idle.",
       collect: () => {
         for (const overlay of this.overlays) {
           const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
@@ -888,7 +938,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "overlay_laser_points_count",
-      help: "Active points count in laser pointer trail.",
+      help: "Laser trail points.",
       collect: () => {
         for (const overlay of this.overlays) {
           const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
@@ -903,7 +953,7 @@ export class Stage {
 
     this.metrics.gauge({
       name: "overlay_laser_has_canvas",
-      help: "Laser pointer canvas element state (1 = canvas mounted, 0 = unmounted).",
+      help: "Laser canvas mounted (1 = yes).",
       collect: () => {
         for (const overlay of this.overlays) {
           const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
@@ -919,25 +969,25 @@ export class Stage {
     // Multi-Window / Tab Synchronization Metrics
     this.metrics.counter({
       name: "sync_channel_messages_sent",
-      help: "Total messages broadcast to other windows over BroadcastChannel.",
+      help: "Messages sent over BroadcastChannel.",
       collect: () => this.presenterHost?.messagesSent ?? 0,
     });
 
     this.metrics.counter({
       name: "sync_channel_messages_received",
-      help: "Total messages received from other windows over BroadcastChannel.",
+      help: "Messages received over BroadcastChannel.",
       collect: () => this.presenterHost?.messagesReceived ?? 0,
     });
 
     this.metrics.counter({
       name: "sync_state_broadcasts",
-      help: "Total slide state broadcasts transmitted to presenter console.",
+      help: "State broadcasts sent to presenter.",
       collect: () => this.syncStateBroadcasts,
     });
 
     this.metrics.gauge({
       name: "sync_last_msg_elapsed_ms",
-      help: "Elapsed milliseconds since last received sync message (-1 if none).",
+      help: "Ms since last received sync message (-1 if none).",
       unit: "ms",
       collect: () =>
         this.presenterHost && this.presenterHost.lastMsgTime > 0
@@ -1374,11 +1424,15 @@ export class Stage {
       __STAGEROUTINE_DEV__?: {
         getMetrics: () => string;
         showMetrics: () => void;
+        perf: PerfProbe;
+        outline: () => OutlineScene[];
       };
     };
     const devHook = {
       getMetrics: () => this.metrics.getMetrics(),
       showMetrics: () => this._openMetricsWindow(),
+      perf: createPerfProbe(this),
+      outline: () => this._getOutline(),
     };
     devWindow.__STAGEROUTINE_DEV__ = devHook;
     this.mountCleanups.push(() => {
@@ -1490,6 +1544,21 @@ export class Stage {
       }
     }
     return scenes;
+  }
+
+  /**
+   * Builds a scene-grouped outline of the presentation for dev diagnostics.
+   * @internal
+   */
+  private _getOutline(): OutlineScene[] {
+    return this._getScenes().map((sc) => ({
+      name: sc.sceneName,
+      steps: this.steps.slice(sc.startStepIndex, sc.startStepIndex + sc.stepCount).map((s) => ({
+        step: s.stepIndex,
+        notes: s.notes,
+        elements: s.activeElementIds.size,
+      })),
+    }));
   }
 
   /**
@@ -1662,6 +1731,7 @@ export class Stage {
 
     this.isAnimating = true;
     const startTime = performance.now();
+    this._beginTransitionMark(step.sceneName, stepIdx);
 
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
 
@@ -1938,6 +2008,7 @@ export class Stage {
         this.isAnimating = false;
         this.animFrameId = null;
         this.activeTransitionsSnapshot = [];
+        this._endTransitionMark(step.sceneName, stepIdx);
         // Snap to exact end snapshot
         this._applySnapshot(stepIdx);
       }
@@ -2075,6 +2146,21 @@ export class Stage {
         element.update();
       }
     }
+  }
+
+  private _beginTransitionMark(scene: string, step: number): void {
+    performance.clearMarks(TRANSITION_START_MARK);
+    performance.clearMarks(TRANSITION_END_MARK);
+    performance.mark(TRANSITION_START_MARK, { detail: { scene, step } });
+  }
+
+  private _endTransitionMark(scene: string, step: number): void {
+    const name = `sr/${this._slugifySceneName(scene)}/${step}`;
+    performance.mark(TRANSITION_END_MARK);
+    performance.measure(name, TRANSITION_START_MARK, TRANSITION_END_MARK);
+    performance.clearMarks(TRANSITION_START_MARK);
+    performance.clearMarks(TRANSITION_END_MARK);
+    performance.clearMeasures(name);
   }
 
   private _slugifySceneName(name: string): string {

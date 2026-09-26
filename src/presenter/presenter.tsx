@@ -28,20 +28,20 @@ const recorder = new PresenterRecorder();
 const metrics = new MetricRegistry();
 const updatesCounter = metrics.counter({
   name: "presenter_updates_received",
-  help: "Total scene updates received by presenter console over BroadcastChannel.",
+  help: "Scene updates received.",
 });
 const notesCounter = metrics.counter({
   name: "presenter_notes_rendered",
-  help: "Total presenter note render cycles executed.",
+  help: "Note render cycles.",
 });
 const scrollCounter = metrics.counter({
   name: "presenter_scroll_invocations",
-  help: "Total scroll synchronizations triggered in presenter console.",
+  help: "Scroll syncs.",
 });
 let lastUpdateTime = 0;
 metrics.gauge({
   name: "presenter_last_update_elapsed_ms",
-  help: "Elapsed milliseconds since last received scene update (-1 if none).",
+  help: "Ms since last scene update (-1 if none).",
   unit: "ms",
   collect: () => (lastUpdateTime > 0 ? Math.round(performance.now() - lastUpdateTime) : -1),
 });

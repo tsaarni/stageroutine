@@ -5,36 +5,33 @@
 | Command | Description |
 |---|---|
 | `pnpm dev` | Start Vite dev server |
-| `pnpm build` | Build production bundles for stage and presenter console |
-| `pnpm verify` | Format code, fix safe issues, and run TypeScript check |
-| `pnpm chrome-dev` | Launch Chrome with remote debugging on port 9222 (macOS & Linux) |
+| `pnpm build` | Build production bundles |
+| `pnpm verify` | Format, fix, and type-check |
+| `pnpm chrome-dev` | Launch Chrome with remote debugging (port 9222) |
 | `pnpm docs:serve` | Start local documentation server |
 | `pnpm docs:build` | Build production documentation site |
 
-## Troubleshooting with Chrome DevTools MCP
+## DevTools diagnostics
 
-Inspect runtime performance and background tasks programmatically by querying the global diagnostics hook with the Chrome DevTools MCP `evaluate_script` tool:
+The presentation exposes a diagnostics hook. Query it with the Chrome DevTools MCP `evaluate_script` tool, or press `Shift + M` for formatted metrics.
 
 ```js
-window.__STAGEROUTINE_DEV__.getMetrics()
+window.__STAGEROUTINE_DEV__.getMetrics()                           // gauges/counters
+window.__STAGEROUTINE_DEV__.showMetrics()                          // open metrics in a tab
+window.__STAGEROUTINE_DEV__.perf.sample(ms?)                       // frame cadence right now
+window.__STAGEROUTINE_DEV__.perf.run({ first, last, ms?, minHz? }) // walk steps; rest + entering Hz
+window.__STAGEROUTINE_DEV__.outline()                              // scenes -> steps map
 ```
 
-You can also press **`Shift + M`** on the presentation at any time to open or refresh a dedicated browser tab displaying the formatted metrics.
+- `getMetrics()`: read at rest (`stage_is_animating` = `0`). Then these must be `0` — `stage_active_raf_count`, `dom_detached_elements`, `dom_promoted`, `animation_running`, `animation_hidden_running`; `media_visible_videos` must be `< 2`; `background_running` may be `1`. Resource load: `gpu_canvas_pixels`, `background_canvas_pixels`, `memory_heap_used_bytes`.
+- `perf`: `sample` measures current cadence (`hz`, `p50Ms`, `p95Ms`, `maxMs`, `dropped`). `run` navigates steps and reports `restHz` / `enterHz` plus `bestHz` (display-refresh proxy). `minHz` flags steps below a floor.
+- `outline()`: returns `[{ name, steps: [{ step, notes?, elements }] }]`.
 
-This returns engine stats with inline descriptions. Look for `stage_is_animating` and `stage_active_raf_count` to ensure loops stop at rest. Check `animation_hidden_running` to spot CSS and SVG animations running on hidden elements. Monitor `dom_dormant_elements`, `dom_detached_elements`, and `dom_promoted_count` to confirm inactive elements enter true dormancy and remain attached to the stage.
+## Gotchas
 
-- **Promotion leaks**: `dom_promoted_count` counts elements holding CSS `will-change`. It must be `0` when the stage is at rest. When non-zero, inspect `dom_promoted` to identify which elements leaked animation promotion.
+- `stage_fps` and the two frame-duration gauges update only during transitions; they read stale at rest. Cross-check `stage_is_animating`.
+- Two visible `<video>` elements lock Chrome to 30fps (issue 543049039). Hide one and re-measure.
+- Compare against display refresh (`bestHz`), not 60fps.
+- Pin viewport/DPR (`emulate`) before comparing runs.
+- Transitions emit a `sr/<scene>/<step>` measure (cleared right after); run `performance_start_trace` during one to see step boundaries.
 
-### Identifying CPU and GPU consumers
-
-- **GPU load**: Check `gpu_canvas_pixels` and `background_canvas_pixels` for large canvas surfaces.
-- **CPU load**: Check `background_running` and `stage_active_raf_count` to find continuous render loops. Check `animation_running_count` and `animation_hidden_running` for continuous animations. Use `performance_start_trace` to profile main thread execution.
-- **Memory footprint**: Check `memory_heap_used_bytes` for JS heap allocation.
-
-## Modifying the documentation site
-
-To run the documentation site locally:
-
-```bash
-pnpm docs:serve
-```

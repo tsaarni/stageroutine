@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 182 symbols |
+| `stageroutine` | 186 symbols |
 | `stageroutine/jsx-runtime` | 19 symbols |
 | `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -125,6 +125,14 @@ export function Icon(nameOrOptions?: string | IconOptions, maybeOptions?: IconOp
  * ```
  */
 export function Image(srcOrOptions?: string | ImageOptions, maybeOptions?: ImageOptions): ImageElement;
+
+/**
+ * Decorates an element or frame with authentic Ken Burns camera panning and slow zooming.
+ *
+ * Supports pure zoom, tracking pans, and combined pan-and-zoom shots.
+ * Restarts the shot from frame zero whenever entering active scene visibility.
+ */
+export function kenBurns(options?: KenBurnsOptions): ElementDecorator;
 
 /** Micro-label component used for chapter indices and section category tags. */
 export function Kicker(label: string, options?: KickerOptions): DOMElement;
@@ -1061,6 +1069,56 @@ export interface ImageOptions extends ElementOptions {
     alt?: string;
     /** Object sizing fit: "contain" (default) | "cover" | "fill" | "none" | "scale-down". */
     fit?: ImageFit;
+}
+
+/**
+ * Keyframe snapshot for Ken Burns camera motion.
+ * @category Decorators
+ */
+export interface KenBurnsKeyframe {
+    /** Scale factor (default: 1.0, minimum: 1.0). */
+    scale?: number;
+    /** Focus anchor point or percentage coordinates [x, y] from 0 to 100 (default: "center"). Explicit `pan` takes precedence. */
+    focus?: KenBurnsFocus;
+    /** Explicit translation percentage offset [x, y], clamped to safe frame bounds. Takes precedence over `focus`. */
+    pan?: [
+        number,
+        number
+    ];
+}
+
+/**
+ * Configuration options for the Ken Burns camera pan and zoom decorator.
+ *
+ * All time durations are expressed in seconds.
+ *
+ * @category Decorators
+ * @inline
+ */
+export interface KenBurnsOptions {
+    /** Peak zoom magnification factor (default: 1.35). For zoom-in, this is the end scale; for zoom-out, the start scale. */
+    scale?: number;
+    /** Target focus shorthand when `to` is omitted (default: "center"). Explicit `pan` takes precedence over `focus`. */
+    focus?: KenBurnsFocus;
+    /** Explicit target pan translation percentages [x, y] when `to` is omitted. Takes precedence over `focus`. */
+    pan?: [
+        number,
+        number
+    ];
+    /** Direction shorthand: "in" (default) zooms 1.0 to scale; "out" zooms scale to 1.0. */
+    direction?: "in" | "out";
+    /** Starting keyframe or focus anchor (default: full frame scale 1.0 at center). */
+    from?: KenBurnsKeyframe | KenBurnsFocus;
+    /** Ending keyframe or focus anchor (default: peak scale and focus). */
+    to?: KenBurnsKeyframe | KenBurnsFocus;
+    /** Animation duration in seconds (default: 20s). */
+    duration?: number;
+    /** Initial delay before motion begins in seconds (default: 0s). */
+    delay?: number;
+    /** CSS easing timing curve (default: "ease-out"). */
+    ease?: string;
+    /** Whether motion loops continuously or alternates directions (default: false, holds end frame). */
+    loop?: boolean | "alternate";
 }
 
 /**
@@ -2257,6 +2315,15 @@ export type GridSlot = LayoutElement | null | undefined;
  * @category Components
  */
 export type ImageFit = "contain" | "cover" | "fill" | "none" | "scale-down";
+
+/**
+ * Target focal anchor point or normalized percentage coordinate pair `[x, y]`.
+ * @category Decorators
+ */
+export type KenBurnsFocus = ElementAnchor | [
+    number,
+    number
+];
 
 /**
  * Responsive offset for adjusting label badge position.

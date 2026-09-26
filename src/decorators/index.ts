@@ -7,6 +7,12 @@ export { type DreamOptions, dream } from "./dream";
 export { type GlowOptions, glow } from "./glow";
 export { type GradientOptions, gradient } from "./gradient";
 export { type GrainOptions, grain } from "./grain";
+export {
+  type KenBurnsFocus,
+  type KenBurnsKeyframe,
+  type KenBurnsOptions,
+  kenBurns,
+} from "./ken-burns";
 export { type RuleOptions, rule } from "./rule";
 export { type ScrimOptions, scrim } from "./scrim";
 export { type TypewriterOptions, type TypewriterStep, typewriter } from "./typewriter";

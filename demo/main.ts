@@ -16,6 +16,7 @@ import {
   group,
   Image,
   Kicker,
+  kenBurns,
   LaserPointer,
   layout,
   NavigationOverlay,
@@ -1230,17 +1231,17 @@ stage.pause();
 // Scene: Video & Live Camera
 
 const mediaKicker = Kicker("13 / Live Media & Camera");
-const mediaHeading = Title("Video & Presenter Feeds", {
+const mediaHeading = Title("Video, Photography & Camera", {
   variant: "serif",
 });
 const mediaDescription = Text(
-  "Embedded HTML5 video player and reactive live webcam feeds with smooth spatial transitions.",
+  "Embedded HTML5 video player, reactive live webcam feeds, and Ken Burns slow zoom across deep space imagery.",
 );
 
 const sampleVideo = Video(
   "https://upload.wikimedia.org/wikipedia/commons/3/31/Earth-solar-array-timelapse.webm",
   {
-    width: "44cqw",
+    width: "28cqw",
     height: "26cqh",
     muted: true,
     loop: true,
@@ -1248,6 +1249,21 @@ const sampleVideo = Video(
     fit: "cover",
   },
 );
+
+const spaceImage = Image(
+  "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop",
+  {
+    fit: "cover",
+    alt: "NASA Deep Space Cosmic Nebula",
+  },
+);
+
+const spaceFrame = Frame(paths.box({ radius: 10 }), spaceImage, {
+  width: "28cqw",
+  height: "26cqh",
+  borderColor: "rgba(255, 255, 255, 0.2)",
+  strokeWidth: 1.5,
+}).decorate(kenBurns({ scale: 1.5, focus: "top-right", duration: 15 }));
 
 const presenterCam = Webcam({
   fit: "cover",
@@ -1261,25 +1277,42 @@ const camBubble = Frame(paths.circle(), presenterCam, {
   active: true,
 });
 
-layout.hstack([[mediaKicker, mediaHeading, mediaDescription, sampleVideo], camBubble], {
+layout.vstack([mediaKicker, mediaHeading, mediaDescription], {
   x: 6,
   y: 18,
-  width: [54, 32],
+  width: 54,
+  gap: 1.5,
+});
+
+layout.hstack([sampleVideo, spaceFrame, camBubble], {
+  x: 6,
+  y: 44,
+  gap: 3,
   align: "center",
 });
 
 stage
   .scene("Live Media & Video")
-  .with(brandTitle, mediaKicker, mediaHeading, mediaDescription, sampleVideo, camBubble);
+  .with(
+    brandTitle,
+    mediaKicker,
+    mediaHeading,
+    mediaDescription,
+    sampleVideo,
+    spaceFrame,
+    camBubble,
+  );
 stage.pause();
 
-// Step 1: Animate video position across the canvas and enlarge webcam avatar
-sampleVideo.to({ x: (x: number) => x + 8, scale: 1.05 }).ease("cubicInOut");
-camBubble.to({ position: [78, 55], scale: 1.25, borderColor: "#a855f7" }).ease("cubicInOut");
+// Step 1: Re-position video and image independently into a vertical column (one above another)
+sampleVideo.to({ x: 12, y: 38 }).duration(0.65).ease("cubicInOut");
+spaceFrame.to({ x: 12, y: 67 }).duration(0.75).delay(0.12).ease("quartOut");
+camBubble.to({ position: [68, 52], scale: 2.0, borderColor: "#a855f7" }).ease("cubicInOut");
 stage.pause();
 
-// Step 2: Swap layout - webcam moves to presenter PIP corner, video returns
-sampleVideo.to({ x: (x: number) => x - 8, scale: 1 }).ease("cubicInOut");
+// Step 2: Swap layout - webcam moves to presenter PIP corner, media returns side by side
+sampleVideo.to({ x: 6, y: 44 }).duration(0.65).ease("cubicInOut");
+spaceFrame.to({ x: 37, y: 44 }).duration(0.75).delay(0.1).ease("cubicInOut");
 camBubble.to({ position: [82, 72], scale: 0.9, borderColor: "#38bdf8" }).ease("cubicInOut");
 stage.pause();
 

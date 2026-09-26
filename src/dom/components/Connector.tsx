@@ -940,8 +940,13 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     // Position Label at path midpoint
     if (this.labelGroup && this.labelText && this.labelBg) {
       if (endVal <= 0.2) {
+        // Hide instantly. A CSS opacity transition here would fade a stale
+        // visible label out over the first frames of the draw-in, flashing the
+        // label before the connector has grown.
+        this.labelGroup.style.transition = "none";
         this.labelGroup.style.opacity = "0";
       } else {
+        this.labelGroup.style.transition = "";
         this.labelGroup.style.opacity = "1";
         try {
           const bbox = this.labelText.getBBox();

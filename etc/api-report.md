@@ -911,6 +911,8 @@ export interface FrameOptions extends ElementOptions {
     borderColor?: ReactiveProp<string>;
     /** Optional accent / text color. */
     color?: string;
+    /** Optional background fill color. */
+    background?: string;
     /** Border stroke outline width in virtual canvas pixels (default: 0). */
     strokeWidth?: number;
     /** Highlighted / glowing active state. */
@@ -2041,6 +2043,8 @@ export interface VideoElement extends DOMElement {
     volume: number;
     muted: boolean;
     loop: boolean;
+    play(): Promise<void>;
+    pause(): void;
 }
 
 /**
@@ -2052,13 +2056,13 @@ export interface VideoOptions extends ElementOptions {
     /** Video source URL or media asset path (optional if passed as first argument). */
     src?: string;
     /** Whether the video is currently playing. Defaults to false. */
-    playing?: ReactiveProp<boolean>;
+    playing?: boolean;
     /** Initial or target playback position in seconds. */
-    currentTime?: ReactiveProp<number>;
+    currentTime?: number;
     /** Playback speed multiplier (e.g. 1.0, 1.5, 2.0). Defaults to 1.0. */
-    playbackRate?: ReactiveProp<number>;
+    playbackRate?: number;
     /** Volume level from 0.0 (silent) to 1.0 (maximum). Defaults to 1.0. */
-    volume?: ReactiveProp<number>;
+    volume?: number;
     /** Whether audio track is muted. Defaults to true (required for browser autoplay). */
     muted?: boolean;
     /** Whether the video loops automatically when reaching the end. Defaults to false. */
@@ -2067,7 +2071,7 @@ export interface VideoOptions extends ElementOptions {
     fit?: ImageFit;
     /** Preload policy: "metadata" (default) | "auto" | "none". */
     preload?: "metadata" | "auto" | "none";
-    /** Whether clicking the video toggles play/pause interactively. Defaults to true. */
+    /** Whether clicking the video toggles play/pause interactively. Defaults to true when controls is false. */
     interactive?: boolean;
     /** Whether to show native browser video controls. Defaults to false. */
     controls?: boolean;
@@ -2117,6 +2121,8 @@ export interface WebcamOptions extends ElementOptions {
     idealHeight?: number;
     /** Double-click webcam to cycle through connected cameras. Defaults to true. */
     cycleOnClick?: boolean;
+    /** Optional background fill color behind the video. Defaults to var(--sr-surface-subtle, #1e293b). */
+    background?: string;
 }
 
 ```

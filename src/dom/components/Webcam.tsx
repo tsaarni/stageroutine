@@ -4,6 +4,7 @@
 
 import "./Media.css";
 import { getActiveStage } from "../../core/index";
+import { logger } from "../../core/logger";
 import { storage } from "../../core/storage";
 import { DOMElement, type ElementOptions } from "../element";
 import type { ImageFit } from "./Image";
@@ -37,6 +38,8 @@ export interface WebcamOptions extends ElementOptions {
   idealHeight?: number;
   /** Double-click webcam to cycle through connected cameras. Defaults to true. */
   cycleOnClick?: boolean;
+  /** Optional background fill color behind the video. Defaults to var(--sr-surface-subtle, #1e293b). */
+  background?: string;
 }
 
 /** Public controls for a webcam. @category Components */
@@ -54,14 +57,23 @@ export interface WebcamElement extends DOMElement {
  * @internal
  */
 class WebcamElementImpl extends DOMElement implements WebcamElement {
+  static override reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement.reactiveKeys,
+    "fit",
+    "mirror",
+    "deviceId",
+  ]);
+
   readonly videoElement: HTMLVideoElement;
   private stream: MediaStream | null = null;
   private _fit: ImageFit = "cover";
   private _mirror = true;
+  private autoMirror = true;
   private _deviceId?: string;
   private _facingMode: "user" | "environment" = "user";
   private idealWidth = 1280;
   private idealHeight = 720;
+  private currentRequestId = 0;
 
   get fit(): ImageFit {
     return this._fit;
@@ -78,6 +90,7 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
 
   set mirror(val: boolean) {
     this._mirror = val;
+    this.autoMirror = false;
     if (val) {
       this.videoElement.classList.add("is-mirrored");
     } else {
@@ -110,7 +123,7 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       return devices
-        .filter((d) => d.kind === "videoinput")
+        .filter((d) => d.kind === "videoinput" && (d.deviceId || d.label))
         .map((d, index) => ({
           id: d.deviceId,
           label: d.label || `Camera ${index + 1}`,
@@ -128,26 +141,39 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     }
   }
 
+  private frameCallbackId: number | null = null;
+
   constructor(options: WebcamOptions = {}) {
+    const container = document.createElement("div");
+    container.className = ["sr-webcam", options.className].filter(Boolean).join(" ");
+    if (options.background) {
+      container.style.backgroundColor = options.background;
+    }
+
     const video = document.createElement("video");
-    video.className = ["sr-webcam", options.className].filter(Boolean).join(" ");
+    video.className = "sr-webcam-video";
     video.autoplay = true;
     video.playsInline = true;
     video.muted = true; // prevent any audio feedback loops
+    video.style.opacity = "0";
 
     const fit = options.fit ?? "cover";
     video.style.objectFit = fit;
 
+    const autoMirror = options.mirror === undefined;
     const mirror = options.mirror ?? options.facingMode !== "environment";
     if (mirror) {
       video.classList.add("is-mirrored");
     }
 
-    super("Webcam", video, options);
+    container.appendChild(video);
+
+    super("Webcam", container, options);
 
     this.videoElement = video;
     this._fit = fit;
     this._mirror = mirror;
+    this.autoMirror = autoMirror;
     this._deviceId =
       options.deviceId ?? storage.local.get<string | undefined>("components.webcam.deviceId");
     this._facingMode = options.facingMode ?? "user";
@@ -155,21 +181,25 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     this.idealHeight = options.idealHeight ?? 720;
 
     if (options.cycleOnClick ?? true) {
-      video.style.cursor = "pointer";
-      video.title = "Double-click to cycle cameras";
-      video.addEventListener("dblclick", (e) => {
+      container.style.cursor = "pointer";
+      container.title = "Double-click to cycle cameras";
+      container.addEventListener("dblclick", (e) => {
         e.stopPropagation();
         void this.cycleCamera();
       });
     }
 
     // React to multi-window / presenter console camera switches
-    storage.local.subscribe<string>("components.webcam.deviceId", (newId) => {
+    const unsubscribe = storage.local.subscribe<string>("components.webcam.deviceId", (newId) => {
       if (newId && newId !== this._deviceId) {
         this._deviceId = newId;
-        void this.start();
+        if (this.isActive || this.stream) {
+          void this.start();
+        }
       }
     });
+
+    this.onUnmount(unsubscribe);
 
     this.onActivate(() => {
       void this.start();
@@ -178,6 +208,70 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     this.onDeactivate(() => {
       this.stop();
     });
+  }
+
+  private syncAutoMirror(facingMode?: string, label?: string): void {
+    if (!this.autoMirror) return;
+    let isMirrored = true;
+    if (facingMode === "environment") {
+      isMirrored = false;
+    } else if (facingMode === "user") {
+      isMirrored = true;
+    } else if (label && /back|rear|environment/i.test(label)) {
+      isMirrored = false;
+    }
+    this._mirror = isMirrored;
+    if (isMirrored) {
+      this.videoElement.classList.add("is-mirrored");
+    } else {
+      this.videoElement.classList.remove("is-mirrored");
+    }
+  }
+
+  private attachStream(stream: MediaStream): void {
+    this.stream = stream;
+    this.videoElement.srcObject = stream;
+    const track = stream.getVideoTracks()[0];
+    const settings = track?.getSettings();
+    this.syncAutoMirror(settings?.facingMode, track?.label);
+  }
+
+  private showVideo(): void {
+    const video = this.videoElement;
+    const vid = video as unknown as {
+      requestVideoFrameCallback?: (cb: (now: number, metadata: unknown) => void) => number;
+    };
+    if (typeof vid.requestVideoFrameCallback === "function") {
+      this.frameCallbackId = vid.requestVideoFrameCallback(() => {
+        this.frameCallbackId = null;
+        video.style.opacity = "1";
+      });
+    } else {
+      const onFrame = () => {
+        video.style.opacity = "1";
+        video.removeEventListener("timeupdate", onFrame);
+      };
+      video.addEventListener("timeupdate", onFrame, { once: true });
+    }
+  }
+
+  private stopStream(): void {
+    const video = this.videoElement;
+    const vid = video as unknown as {
+      cancelVideoFrameCallback?: (id: number) => void;
+    };
+    if (this.frameCallbackId !== null && typeof vid.cancelVideoFrameCallback === "function") {
+      vid.cancelVideoFrameCallback(this.frameCallbackId);
+      this.frameCallbackId = null;
+    }
+    if (this.stream) {
+      for (const track of this.stream.getTracks()) {
+        track.stop();
+      }
+      this.stream = null;
+      this.videoElement.srcObject = null;
+      this.videoElement.style.opacity = "0";
+    }
   }
 
   /**
@@ -189,8 +283,9 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
       return;
     }
 
+    const requestId = ++this.currentRequestId;
     // Stop existing stream tracks first
-    this.stop();
+    this.stopStream();
 
     const constraints: MediaStreamConstraints = {
       audio: false,
@@ -205,23 +300,47 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.stream = stream;
-      this.videoElement.srcObject = stream;
+      if (this.currentRequestId !== requestId) {
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        return;
+      }
+      this.attachStream(stream);
       await this.videoElement.play();
-    } catch {
-      // Fallback: try default without strict constraints if exact deviceId failed
+      this.showVideo();
+    } catch (err) {
+      if (this.currentRequestId !== requestId) return;
+
+      // Fallback: clear stale deviceId from storage and retry with facingMode
       if (this._deviceId) {
+        this._deviceId = undefined;
+        storage.local.delete("components.webcam.deviceId");
         try {
           const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
             audio: false,
+            video: {
+              width: { ideal: this.idealWidth },
+              height: { ideal: this.idealHeight },
+              facingMode: this._facingMode,
+            },
           });
-          this.stream = fallbackStream;
-          this.videoElement.srcObject = fallbackStream;
+          if (this.currentRequestId !== requestId) {
+            for (const track of fallbackStream.getTracks()) {
+              track.stop();
+            }
+            return;
+          }
+          this.attachStream(fallbackStream);
           await this.videoElement.play();
-        } catch {
-          // webcam access denied or unavailable
+          this.showVideo();
+        } catch (fallbackErr) {
+          if (this.currentRequestId === requestId) {
+            logger.warn("[StageRoutine] Webcam stream fallback failed:", fallbackErr);
+          }
         }
+      } else {
+        logger.warn("[StageRoutine] Webcam stream failed:", err);
       }
     }
   }
@@ -230,13 +349,8 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
    * Stops the webcam video stream and releases the camera hardware.
    */
   stop(): void {
-    if (this.stream) {
-      for (const track of this.stream.getTracks()) {
-        track.stop();
-      }
-      this.stream = null;
-      this.videoElement.srcObject = null;
-    }
+    this.currentRequestId++;
+    this.stopStream();
   }
 
   /**

@@ -7,7 +7,30 @@
     -webkit-user-drag: none;
   }
 
-  .sr-webcam.is-mirrored {
-    transform: scaleX(-1);
+  .sr-webcam {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--sr-surface-subtle, #1e293b);
+    border-radius: inherit;
+  }
+
+  .sr-webcam-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: transparent;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.35s ease-out;
+    pointer-events: auto;
+  }
+
+  .sr-webcam-video.is-mirrored {
+    transform-origin: 50% 50% !important;
+    scale: -1 1;
   }
 }

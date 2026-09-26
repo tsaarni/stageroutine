@@ -1123,6 +1123,9 @@ export class Stage {
     // 2. Hide elements that are not in the target step snapshot
     for (const [id, el] of this.elementRegistry.entries()) {
       if (!snap.activeElementIds.has(id)) {
+        if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+          continue;
+        }
         this._hideElement(el);
       }
     }
@@ -1218,11 +1221,11 @@ export class Stage {
           if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
             continue;
           }
-          el._deactivate?.();
           const currentOpacity = (this.propertyState.get(id)?.opacity as number) ?? 1;
           if (currentOpacity > 0) {
             const exitDurationSec = el.exitDuration ?? this.options.defaultDuration ?? 0.6;
             if (exitDurationSec <= 0) {
+              el._deactivate?.();
               this.setCurrentPropertyValue(id, "opacity", 0);
               this._applyStyles(el, { opacity: 0 });
               continue;
@@ -1237,6 +1240,8 @@ export class Stage {
               delayMs: exitDelaySec * 1000,
               curve: builtinEasings.quartOut,
             });
+          } else {
+            el._deactivate?.();
           }
         }
       }
@@ -1317,6 +1322,9 @@ export class Stage {
     // Hide any element in registry that is neither active in the new step nor transitioning
     for (const [id, el] of this.elementRegistry.entries()) {
       if (!participatingIds.has(id)) {
+        if (el.domElement?.parentElement && el.domElement.parentElement !== this.viewport) {
+          continue;
+        }
         this._hideElement(el);
       }
     }

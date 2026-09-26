@@ -32,7 +32,9 @@ import {
   Title,
   to,
   typewriter,
+  Video,
   vignette,
+  Webcam,
 } from "stageroutine";
 import Cpu from "~iconify/lucide/cpu";
 import Database from "~iconify/lucide/database";
@@ -1223,6 +1225,62 @@ agentAlpha.to({ y: (y: number) => y + 10 }).ease("cubicInOut");
 agentBeta.to({ y: (y: number) => y + 10 }).ease("cubicInOut");
 speechBubble.text = "Still attached to Alpha";
 thoughtBubble.text = "Still attached to Beta";
+stage.pause();
+
+// Scene: Video & Live Camera
+
+const mediaKicker = Kicker("13 / Live Media & Camera");
+const mediaHeading = Title("Video & Presenter Feeds", {
+  variant: "serif",
+});
+const mediaDescription = Text(
+  "Embedded HTML5 video player and reactive live webcam feeds with smooth spatial transitions.",
+);
+
+const sampleVideo = Video(
+  "https://upload.wikimedia.org/wikipedia/commons/3/31/Earth-solar-array-timelapse.webm",
+  {
+    width: "44cqw",
+    height: "26cqh",
+    muted: true,
+    loop: true,
+    playing: true,
+    fit: "cover",
+  },
+);
+
+const presenterCam = Webcam({
+  fit: "cover",
+  mirror: true,
+});
+
+const camBubble = Frame(paths.circle(), presenterCam, {
+  size: 160,
+  borderColor: "#38bdf8",
+  strokeWidth: 3,
+  active: true,
+});
+
+layout.hstack([[mediaKicker, mediaHeading, mediaDescription, sampleVideo], camBubble], {
+  x: 6,
+  y: 18,
+  width: [54, 32],
+  align: "center",
+});
+
+stage
+  .scene("Live Media & Video")
+  .with(brandTitle, mediaKicker, mediaHeading, mediaDescription, sampleVideo, camBubble);
+stage.pause();
+
+// Step 1: Animate video position across the canvas and enlarge webcam avatar
+sampleVideo.to({ x: (x: number) => x + 8, scale: 1.05 }).ease("cubicInOut");
+camBubble.to({ position: [78, 55], scale: 1.25, borderColor: "#a855f7" }).ease("cubicInOut");
+stage.pause();
+
+// Step 2: Swap layout - webcam moves to presenter PIP corner, video returns
+sampleVideo.to({ x: (x: number) => x - 8, scale: 1 }).ease("cubicInOut");
+camBubble.to({ position: [82, 72], scale: 0.9, borderColor: "#38bdf8" }).ease("cubicInOut");
 stage.pause();
 
 // Scene: Conclusion

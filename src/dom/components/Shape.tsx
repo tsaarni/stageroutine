@@ -279,6 +279,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       ) {
         const childEl = children as unknown as ReactiveElementBase;
         childItems.push(childEl);
+        childEl.isCustomPositioned = true;
         childEl.domElement.style.position = "relative";
         childEl.domElement.style.left = "auto";
         childEl.domElement.style.top = "auto";
@@ -294,6 +295,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
           ) {
             const childEl = child as unknown as ReactiveElementBase;
             childItems.push(childEl);
+            childEl.isCustomPositioned = true;
             childEl.domElement.style.position = "relative";
             childEl.domElement.style.left = "auto";
             childEl.domElement.style.top = "auto";
@@ -353,6 +355,9 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       if (this.flow === "ping") {
         this._startPeriodicPing();
       }
+      for (const item of this.items) {
+        item._activate?.();
+      }
       this.update();
     });
 
@@ -360,6 +365,9 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       this.pathNode.style.animationPlayState = "paused";
       this.innerPathNode.style.animationPlayState = "paused";
       this._stopPeriodicPing();
+      for (const item of this.items) {
+        item._deactivate?.();
+      }
     });
 
     if (typeof ResizeObserver !== "undefined") {

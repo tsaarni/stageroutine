@@ -35,6 +35,8 @@ export interface FrameOptions extends ElementOptions {
   borderColor?: ReactiveProp<string>;
   /** Optional accent / text color. */
   color?: string;
+  /** Optional background fill color. */
+  background?: string;
   /** Border stroke outline width in virtual canvas pixels (default: 0). */
   strokeWidth?: number;
   /** Highlighted / glowing active state. */
@@ -139,36 +141,31 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     const childItems: ReactiveElementBase[] = [];
 
     if (children !== undefined && children !== null) {
-      if (children instanceof Node) {
-        contentDiv.appendChild(children);
-      } else if (
-        children instanceof DOMElement ||
-        (children && typeof children === "object" && "domElement" in children)
-      ) {
-        const childEl = children as unknown as ReactiveElementBase;
-        childItems.push(childEl);
-        childEl.domElement.style.position = "relative";
-        childEl.domElement.style.left = "auto";
-        childEl.domElement.style.top = "auto";
-        childEl.domElement.style.transform = "none";
-        contentDiv.appendChild(childEl.domElement);
-      } else if (Array.isArray(children)) {
-        for (const child of children) {
-          if (child instanceof Node) {
-            contentDiv.appendChild(child);
-          } else if (
-            child instanceof DOMElement ||
-            (child && typeof child === "object" && "domElement" in child)
-          ) {
-            const childEl = child as unknown as ReactiveElementBase;
-            childItems.push(childEl);
-            childEl.domElement.style.position = "relative";
-            childEl.domElement.style.left = "auto";
-            childEl.domElement.style.top = "auto";
-            childEl.domElement.style.transform = "none";
-            contentDiv.appendChild(childEl.domElement);
-          }
+      const attachChild = (child: unknown) => {
+        if (child instanceof Node) {
+          contentDiv.appendChild(child);
+        } else if (
+          child instanceof DOMElement ||
+          (child && typeof child === "object" && "domElement" in child)
+        ) {
+          const childEl = child as DOMElement;
+          childItems.push(childEl);
+          childEl.isCustomPositioned = true;
+          childEl.domElement.style.position = "relative";
+          childEl.domElement.style.left = "auto";
+          childEl.domElement.style.top = "auto";
+          childEl.domElement.style.transform = "none";
+          childEl.domElement.style.transformOrigin = "50% 50%";
+          contentDiv.appendChild(childEl.domElement);
         }
+      };
+
+      if (Array.isArray(children)) {
+        for (const child of children) {
+          attachChild(child);
+        }
+      } else {
+        attachChild(children);
       }
     }
 
@@ -190,10 +187,26 @@ class FrameElementImpl extends DOMElement implements FrameElement {
       this.borderColor = opts.color;
     }
 
+    if (opts.background) {
+      contentDiv.style.background = opts.background;
+    }
+
     if (opts.active !== undefined) this._active = !!opts.active;
 
     this.onMount(() => {
       this.update();
+    });
+
+    this.onActivate(() => {
+      for (const item of this.items) {
+        item._activate?.();
+      }
+    });
+
+    this.onDeactivate(() => {
+      for (const item of this.items) {
+        item._deactivate?.();
+      }
     });
 
     if (typeof ResizeObserver !== "undefined") {

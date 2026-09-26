@@ -4,7 +4,7 @@
 
 import "./Media.css";
 import { getActiveStage } from "../../core/index";
-import type { ReactiveProp } from "../../core/types";
+import { logger } from "../../core/logger";
 import { DOMElement, type ElementOptions } from "../element";
 import type { ImageFit } from "./Image";
 
@@ -17,13 +17,13 @@ export interface VideoOptions extends ElementOptions {
   /** Video source URL or media asset path (optional if passed as first argument). */
   src?: string;
   /** Whether the video is currently playing. Defaults to false. */
-  playing?: ReactiveProp<boolean>;
+  playing?: boolean;
   /** Initial or target playback position in seconds. */
-  currentTime?: ReactiveProp<number>;
+  currentTime?: number;
   /** Playback speed multiplier (e.g. 1.0, 1.5, 2.0). Defaults to 1.0. */
-  playbackRate?: ReactiveProp<number>;
+  playbackRate?: number;
   /** Volume level from 0.0 (silent) to 1.0 (maximum). Defaults to 1.0. */
-  volume?: ReactiveProp<number>;
+  volume?: number;
   /** Whether audio track is muted. Defaults to true (required for browser autoplay). */
   muted?: boolean;
   /** Whether the video loops automatically when reaching the end. Defaults to false. */
@@ -32,7 +32,7 @@ export interface VideoOptions extends ElementOptions {
   fit?: ImageFit;
   /** Preload policy: "metadata" (default) | "auto" | "none". */
   preload?: "metadata" | "auto" | "none";
-  /** Whether clicking the video toggles play/pause interactively. Defaults to true. */
+  /** Whether clicking the video toggles play/pause interactively. Defaults to true when controls is false. */
   interactive?: boolean;
   /** Whether to show native browser video controls. Defaults to false. */
   controls?: boolean;
@@ -48,6 +48,8 @@ export interface VideoElement extends DOMElement {
   volume: number;
   muted: boolean;
   loop: boolean;
+  play(): Promise<void>;
+  pause(): void;
 }
 
 /**
@@ -55,8 +57,20 @@ export interface VideoElement extends DOMElement {
  * @internal
  */
 class VideoElementImpl extends DOMElement implements VideoElement {
+  static override reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement.reactiveKeys,
+    "fit",
+    "src",
+    "playing",
+    "playbackRate",
+    "volume",
+    "muted",
+    "loop",
+  ]);
+
   readonly videoElement: HTMLVideoElement;
   private _fit: ImageFit = "contain";
+  private _playing = false;
 
   get fit(): ImageFit {
     return this._fit;
@@ -72,21 +86,55 @@ class VideoElementImpl extends DOMElement implements VideoElement {
   }
 
   set src(val: string) {
+    if (!val) {
+      if (this.videoElement.src) {
+        this.videoElement.removeAttribute("src");
+        this.videoElement.load();
+      }
+      return;
+    }
+    try {
+      const resolved = new URL(val, window.location.href).href;
+      if (this.videoElement.src === resolved || this.videoElement.currentSrc === resolved) {
+        return;
+      }
+    } catch {
+      if (this.videoElement.src === val) return;
+    }
     this.videoElement.src = val;
   }
 
   get playing(): boolean {
-    return !this.videoElement.paused && !this.videoElement.ended;
+    return this._playing;
   }
 
   set playing(val: boolean) {
+    this._playing = val;
     if (val) {
-      this.videoElement.play().catch(() => {
-        // Autoplay may require user interaction or muted audio
-      });
+      if (this.isActive && this.videoElement.paused) {
+        this.videoElement.play().catch((err) => {
+          logger.warn("[StageRoutine] Video playback failed:", err);
+        });
+      }
     } else {
-      this.videoElement.pause();
+      if (!this.videoElement.paused) {
+        this.videoElement.pause();
+      }
     }
+  }
+
+  async play(): Promise<void> {
+    this._playing = true;
+    try {
+      await this.videoElement.play();
+    } catch (err) {
+      logger.warn("[StageRoutine] Video playback failed:", err);
+      throw err;
+    }
+  }
+
+  pause(): void {
+    this.playing = false;
   }
 
   get currentTime(): number {
@@ -94,14 +142,7 @@ class VideoElementImpl extends DOMElement implements VideoElement {
   }
 
   set currentTime(val: number) {
-    if (
-      typeof (this.videoElement as HTMLVideoElement & { fastSeek?: (t: number) => void })
-        .fastSeek === "function"
-    ) {
-      (this.videoElement as HTMLVideoElement & { fastSeek: (t: number) => void }).fastSeek(val);
-    } else {
-      this.videoElement.currentTime = val;
-    }
+    this.videoElement.currentTime = Math.max(0, val);
   }
 
   get playbackRate(): number {
@@ -148,7 +189,7 @@ class VideoElementImpl extends DOMElement implements VideoElement {
     const options =
       typeof srcOrOptions === "string" ? { ...maybeOptions, src: srcOrOptions } : srcOrOptions;
     const video = document.createElement("video");
-    video.className = ["sr-video", options.className].filter(Boolean).join(" ");
+    video.className = "sr-video";
     video.preload = options.preload ?? "metadata";
     video.playsInline = true;
     video.muted = options.muted ?? true;
@@ -159,7 +200,7 @@ class VideoElementImpl extends DOMElement implements VideoElement {
       video.playbackRate = options.playbackRate;
     }
     if (options.volume !== undefined && typeof options.volume === "number") {
-      video.volume = options.volume;
+      video.volume = Math.max(0, Math.min(1, options.volume));
     }
 
     const fit = options.fit ?? "contain";
@@ -180,7 +221,7 @@ class VideoElementImpl extends DOMElement implements VideoElement {
       video.controls = true;
     }
 
-    const isInteractive = options.interactive ?? true;
+    const isInteractive = options.interactive ?? !options.controls;
     if (isInteractive) {
       video.style.cursor = "pointer";
       video.addEventListener("click", (e) => {
@@ -189,10 +230,18 @@ class VideoElementImpl extends DOMElement implements VideoElement {
       });
     }
 
+    video.addEventListener("ended", () => {
+      if (!this.loop) {
+        this._playing = false;
+      }
+    });
+
     // Resume video playback when active and pause when hidden
     this.onActivate(() => {
-      if (this.playing && this.videoElement.paused) {
-        this.videoElement.play().catch(() => {});
+      if (this._playing && this.videoElement.paused) {
+        this.videoElement.play().catch((err) => {
+          logger.warn("[StageRoutine] Video autoplay failed on scene activate:", err);
+        });
       }
     });
 

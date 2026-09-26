@@ -376,9 +376,15 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const prev = this._flow;
     this._flow = val ?? "none";
     if (this._flow === "ping") {
-      if (this.periodicIntervalTimer === null && this.periodicTimeoutTimer === null) {
-        this._flowPingActive = true;
+      this._flowPingActive = true;
+      if (
+        this.isActive &&
+        this.periodicIntervalTimer === null &&
+        this.periodicTimeoutTimer === null
+      ) {
         this.startPeriodicPulse();
+      } else if (!this.periodicOptions) {
+        this.periodicOptions = { interval: 2.0 };
       }
     } else if (prev === "ping" && this._flowPingActive) {
       this._flowPingActive = false;
@@ -1135,6 +1141,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
   /**
    * Starts emitting repeating glowing packet pulses at regular intervals.
+   * If called while dormant, pulses will begin when the connector becomes active.
    */
   startPeriodicPulse(options?: number | PeriodicPulseOptions): this {
     if (typeof options === "number") {
@@ -1144,7 +1151,9 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     } else if (!this.periodicOptions) {
       this.periodicOptions = { interval: 2.0 };
     }
-    this._startPeriodicTimer();
+    if (this.isActive) {
+      this._startPeriodicTimer();
+    }
     return this;
   }
 
@@ -1159,20 +1168,17 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
   private _startPeriodicTimer(): void {
     this._pausePeriodicPulse();
-    if (!this.periodicOptions) return;
-
-    const opacity = typeof this.opacity === "number" ? this.opacity : 1;
-    if (opacity <= 0.01) return;
+    if (!this.periodicOptions || !this.isActive) return;
 
     const intervalMs = (this.periodicOptions.interval ?? 2.0) * 1000;
     const delayMs = (this.periodicOptions.delay ?? 0) * 1000;
 
     const startLoop = () => {
       this.periodicTimeoutTimer = null;
-      if (typeof this.opacity === "number" && this.opacity <= 0.01) return;
+      if (!this.isActive) return;
       this._executePulse(this.periodicOptions || {});
       this.periodicIntervalTimer = window.setInterval(() => {
-        if (typeof this.opacity === "number" && this.opacity <= 0.01) {
+        if (!this.isActive) {
           this._pausePeriodicPulse();
           return;
         }

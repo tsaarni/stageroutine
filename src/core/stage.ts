@@ -490,18 +490,28 @@ export class Stage {
       const target = (anim.effect as { target?: Element } | null)?.target;
       const isElement = target instanceof HTMLElement || target instanceof SVGElement;
       const targetEl = isElement ? (target as HTMLElement | SVGElement) : null;
-      const inlineOpacity = targetEl?.style.opacity ? Number.parseFloat(targetEl.style.opacity) : 1;
-      const parentEl = targetEl?.parentElement as (HTMLElement | SVGElement) | null;
-      const parentOpacity = parentEl?.style.opacity ? Number.parseFloat(parentEl.style.opacity) : 1;
-      const isHidden =
-        targetEl !== null &&
-        (inlineOpacity === 0 ||
-          parentOpacity === 0 ||
-          targetEl.style.display === "none" ||
-          targetEl.style.visibility === "hidden" ||
-          parentEl?.style.display === "none" ||
-          parentEl?.style.visibility === "hidden" ||
-          !targetEl.isConnected);
+      let isHidden = false;
+      if (targetEl) {
+        if (!targetEl.isConnected) {
+          isHidden = true;
+        } else if (typeof targetEl.checkVisibility === "function") {
+          isHidden = !targetEl.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+        } else {
+          let curr: Element | null = targetEl;
+          while (curr && curr !== document.body) {
+            const s = (curr as HTMLElement | SVGElement).style;
+            if (
+              s.display === "none" ||
+              s.visibility === "hidden" ||
+              (s.opacity && Number.parseFloat(s.opacity) === 0)
+            ) {
+              isHidden = true;
+              break;
+            }
+            curr = curr.parentElement;
+          }
+        }
+      }
       if (isHidden) hiddenRunningCount++;
 
       const info = targetEl ? getElementTargetInfo(targetEl) : { target: "unknown" };

@@ -376,10 +376,13 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       });
       ro.observe(this.domElement);
       this.onUnmount(() => {
-        this._stopPeriodicPing();
         ro.disconnect();
       });
     }
+
+    this.onUnmount(() => {
+      this._stopPeriodicPing();
+    });
 
     this.update();
   }
@@ -547,7 +550,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   private updatePingFlow(): void {
     const flowVal = typeof this.flow === "string" ? this.flow : "none";
     if (flowVal === "ping") {
-      if (this.pingIntervalTimer === null && this.pingTimeoutTimer === null) {
+      if (this.isActive && this.pingIntervalTimer === null && this.pingTimeoutTimer === null) {
         this._startPeriodicPing();
       }
     } else {
@@ -564,18 +567,17 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   private _startPeriodicPing(): void {
     this._stopPeriodicPing();
 
-    const opacity = typeof this.opacity === "number" ? this.opacity : 1;
-    if (opacity <= 0.01) return;
+    if (!this.isActive) return;
 
     const delayMs = 300;
     const intervalMs = 2200;
 
     const startLoop = () => {
       this.pingTimeoutTimer = null;
-      if (typeof this.opacity === "number" && this.opacity <= 0.01) return;
+      if (!this.isActive) return;
       this._emitPing();
       this.pingIntervalTimer = window.setInterval(() => {
-        if (typeof this.opacity === "number" && this.opacity <= 0.01) {
+        if (!this.isActive) {
           this._stopPeriodicPing();
           return;
         }
@@ -603,11 +605,21 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       ping.cancel();
     }
     this.activePings.clear();
+
+    const stray = this.svgElement.querySelectorAll(".sr-pulse-packet");
+    for (let i = 0; i < stray.length; i++) {
+      const node = stray[i] as SVGElement;
+      if (typeof node.getAnimations === "function") {
+        for (const a of node.getAnimations()) {
+          a.cancel();
+        }
+      }
+      node.remove();
+    }
   }
 
   private _emitPing(): void {
-    const opacity = typeof this.opacity === "number" ? this.opacity : 1;
-    if (opacity <= 0.01) return;
+    if (!this.isActive) return;
 
     const pathD = this.pathNode.getAttribute("d");
     if (!pathD) return;

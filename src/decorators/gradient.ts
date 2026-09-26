@@ -76,6 +76,7 @@ export function gradient(options: GradientOptions = {}): ElementDecorator {
     inner.style.webkitBackgroundClip = "text";
     inner.style.webkitTextFillColor = "transparent";
     inner.style.display = "inline-block";
+    inner.style.lineHeight = "1.2";
     el.style.display = "inline-block";
 
     if (flow) {

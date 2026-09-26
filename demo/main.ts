@@ -1311,7 +1311,7 @@ sampleVideo
   .duration(0.65)
   .ease("cubicInOut");
 spaceFrame.to({ x: 12, y: 67 }).duration(0.75).delay(0.12).ease("quartOut");
-camBubble.to({ position: [68, 52], scale: 2.0, borderColor: "#a855f7" }).ease("cubicInOut");
+camBubble.to({ position: [68, 52], size: 320, borderColor: "#a855f7" }).ease("cubicInOut");
 stage.pause();
 
 // Step 2: Swap layout - webcam moves to presenter PIP corner, media returns side by side
@@ -1320,7 +1320,7 @@ sampleVideo
   .duration(0.65)
   .ease("cubicInOut");
 spaceFrame.to({ x: 37, y: 44 }).duration(0.75).delay(0.1).ease("cubicInOut");
-camBubble.to({ position: [82, 72], scale: 0.9, borderColor: "#38bdf8" }).ease("cubicInOut");
+camBubble.to({ position: [82, 72], size: 144, borderColor: "#38bdf8" }).ease("cubicInOut");
 stage.pause();
 
 // Scene: Conclusion

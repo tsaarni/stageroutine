@@ -187,6 +187,7 @@ export class Stage {
   private animFrameId: number | null = null;
   private presenterHost: PresenterHost | null = null;
   private activeSceneName = "";
+  private promotedElements = new Set<HTMLElement>();
   private listeners = new Map<string, Set<(data: unknown) => void>>();
   /** Undo functions for DOM and global listeners registered by `mount()`. */
   private mountCleanups: (() => void)[] = [];
@@ -425,12 +426,29 @@ export class Stage {
         }
       }
 
+      // Collect elements promoted for animation (holding will-change)
+      const promotedNodes = this.viewport
+        ? Array.from(this.viewport.querySelectorAll('[style*="will-change"]')).filter((node) => {
+            const s = (node as HTMLElement).style.willChange;
+            return s && s !== "auto";
+          })
+        : [];
+
       return {
         total_registered: totalRegistered,
         active_in_scene: activeInScene,
         visible_in_scene: visibleCount,
         dormant_elements: dormantCount,
         detached_elements: detachedCount,
+        promoted_elements: promotedNodes.length,
+        promoted: promotedNodes.map((n) => {
+          const el = n as HTMLElement;
+          return {
+            tag: el.tagName,
+            class: el.className || undefined,
+            will_change: el.style.willChange,
+          };
+        }),
         stage_total_nodes: this.viewport ? this.viewport.getElementsByTagName("*").length : 0,
       };
     });
@@ -443,19 +461,7 @@ export class Stage {
         totalCanvasPixels += c.width * c.height;
       }
 
-      let layersActive = 0;
-      if (this.viewport) {
-        const willChangeNodes = this.viewport.querySelectorAll('[style*="will-change"]');
-        for (let i = 0; i < willChangeNodes.length; i++) {
-          const style = (willChangeNodes[i] as HTMLElement).style.willChange;
-          if (style && style !== "auto") {
-            layersActive++;
-          }
-        }
-      }
-
       return {
-        layers_active: layersActive,
         canvas_count: canvases.length,
         canvas_pixels: totalCanvasPixels,
       };
@@ -1176,6 +1182,7 @@ export class Stage {
       this.animFrameId = null;
     }
     this.isAnimating = false;
+    this._clearPromotedElements();
 
     // 1. Restore propertyState map from immutable snapshot
     this.propertyState.clear();
@@ -1254,6 +1261,7 @@ export class Stage {
 
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
+      this._clearPromotedElements();
     }
 
     this.isAnimating = true;
@@ -1407,6 +1415,7 @@ export class Stage {
       const el = this.elementRegistry.get(id);
       if (el?.domElement && el.kind !== "Shape" && el.kind !== "Frame") {
         el.domElement.style.willChange = "transform, opacity";
+        this.promotedElements.add(el.domElement);
       }
     }
 
@@ -1543,6 +1552,13 @@ export class Stage {
     this._broadcastState();
   }
 
+  private _clearPromotedElements(): void {
+    for (const el of this.promotedElements) {
+      el.style.willChange = "auto";
+    }
+    this.promotedElements.clear();
+  }
+
   private _hideElement(element: ReactiveElementBase): void {
     const node = element.domElement;
     if (!node) return;
@@ -1551,6 +1567,7 @@ export class Stage {
     node.style.display = "none";
     node.style.willChange = "auto";
     node.style.pointerEvents = "none";
+    this.promotedElements.delete(node);
     element._deactivate?.();
   }
 

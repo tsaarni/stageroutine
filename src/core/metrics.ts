@@ -316,10 +316,11 @@ export class MetricRegistry {
   /**
    * Returns a snapshot of metrics as a structured map.
    */
-  collect(): Record<string, unknown> {
+  collect(pattern?: RegExp): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
-    for (const members of this.families.values()) {
+    for (const [name, members] of this.families.entries()) {
+      if (pattern && !pattern.test(name)) continue;
       for (const member of members) {
         const samples = member.collect();
         for (const sample of samples) {
@@ -333,12 +334,13 @@ export class MetricRegistry {
   }
 
   /**
-   * Formats all registered metrics into standard Prometheus exposition text.
+   * Formats registered metrics into standard Prometheus exposition text.
    */
-  exportText(): string {
+  exportText(pattern?: RegExp): string {
     const lines: string[] = [];
 
     for (const [name, members] of this.families.entries()) {
+      if (pattern && !pattern.test(name)) continue;
       if (members.length === 0) continue;
       const allSamples = members.flatMap((m) => m.collect());
       if (allSamples.length === 0) continue;
@@ -362,7 +364,7 @@ export class MetricRegistry {
   /**
    * Primary inspection hook called by DevTools MCP or window.__STAGEROUTINE_DEV__.getMetrics().
    */
-  getMetrics(): string {
-    return this.exportText();
+  getMetrics(pattern?: RegExp): string {
+    return this.exportText(pattern);
   }
 }

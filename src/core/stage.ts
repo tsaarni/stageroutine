@@ -1422,14 +1422,14 @@ export class Stage {
     // Attach global dev diagnostics hook
     const devWindow = window as unknown as {
       __STAGEROUTINE_DEV__?: {
-        getMetrics: () => string;
+        getMetrics: (pattern?: RegExp) => string;
         showMetrics: () => void;
         perf: PerfProbe;
         outline: () => OutlineScene[];
       };
     };
     const devHook = {
-      getMetrics: () => this.metrics.getMetrics(),
+      getMetrics: (pattern?: RegExp) => this.metrics.getMetrics(pattern),
       showMetrics: () => this._openMetricsWindow(),
       perf: createPerfProbe(this),
       outline: () => this._getOutline(),

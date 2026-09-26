@@ -16,7 +16,7 @@
 The presentation exposes a diagnostics hook. Query it with the Chrome DevTools MCP `evaluate_script` tool, or press `Shift + M` for formatted metrics.
 
 ```js
-window.__STAGEROUTINE_DEV__.getMetrics()                           // gauges/counters
+window.__STAGEROUTINE_DEV__.getMetrics(pattern?)                   // gauges/counters (optional RegExp)
 window.__STAGEROUTINE_DEV__.showMetrics()                          // open metrics in a tab
 window.__STAGEROUTINE_DEV__.perf.sample(ms?)                       // frame cadence right now
 window.__STAGEROUTINE_DEV__.perf.run({ first, last, ms?, minHz? }) // walk steps; rest + entering Hz

@@ -539,7 +539,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Hero Scale</span>
-                  <span className={styles.typeScaleVar}>--sr-font-hero (6.5rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-hero (6.5rem)</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
@@ -552,7 +552,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Title Scale</span>
-                  <span className={styles.typeScaleVar}>--sr-font-title (3.85rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-title (3.85rem)</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
@@ -565,7 +565,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Lead / Subtitle</span>
-                  <span className={styles.typeScaleVar}>--sr-font-lead (2.45rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-lead (2.45rem)</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
@@ -583,7 +583,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Body &amp; Code</span>
-                  <span className={styles.typeScaleVar}>--sr-font-body / code</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-body / code</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}

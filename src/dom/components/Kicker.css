@@ -1,7 +1,7 @@
 @layer sr-components {
   .sr-kicker {
     font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-kicker);
+    font-size: var(--sr-font-size-kicker);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.18em;

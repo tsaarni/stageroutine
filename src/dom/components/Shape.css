@@ -5,7 +5,7 @@
     padding: 0.35rem 1.1rem;
     border-radius: 9999px;
     font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-kicker);
+    font-size: var(--sr-font-size-kicker);
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -30,7 +30,7 @@
     padding: 0.8rem 1.4rem;
     color: var(--sr-text);
     font-family: var(--sr-font-sans);
-    font-size: var(--sr-font-code);
+    font-size: var(--sr-font-size-code);
     font-weight: 500;
     line-height: 1.35;
     text-align: center;

@@ -19,12 +19,12 @@
     border-collapse: collapse;
     text-align: left;
     font-family: var(--sr-font-sans);
-    font-size: var(--sr-font-body);
+    font-size: var(--sr-font-size-body);
     color: var(--sr-text-muted);
 
     & th {
       font-family: var(--sr-font-mono);
-      font-size: var(--sr-font-kicker);
+      font-size: var(--sr-font-size-kicker);
       font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: uppercase;

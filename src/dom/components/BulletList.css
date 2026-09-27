@@ -15,7 +15,7 @@
     align-items: baseline;
     gap: 1.25rem;
     font-family: var(--sr-font-sans);
-    font-size: var(--sr-font-body);
+    font-size: var(--sr-font-size-body);
     color: var(--sr-text-muted);
     line-height: 1.55;
     letter-spacing: -0.01em;
@@ -40,7 +40,7 @@
     }
 
     &[data-level]:not([data-level="0"]) {
-      font-size: calc(var(--sr-font-body) * 0.9);
+      font-size: calc(var(--sr-font-size-body) * 0.9);
     }
   }
 
@@ -48,7 +48,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
-    font-size: var(--sr-font-body);
+    font-size: var(--sr-font-size-body);
 
     &.has-focus .sr-bullet-item {
       transition:

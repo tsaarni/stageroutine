@@ -53,17 +53,17 @@ export interface ThemeConfig {
   /** Monospace font family. */
   fontMono?: string;
   /** Hero title typography scale. */
-  fontHero?: string;
+  fontSizeHero?: string;
   /** Title typography scale. */
-  fontTitle?: string;
+  fontSizeTitle?: string;
   /** Lead paragraph typography scale. */
-  fontLead?: string;
+  fontSizeLead?: string;
   /** Body paragraph typography scale. */
-  fontBody?: string;
+  fontSizeBody?: string;
   /** Code snippet typography scale. */
-  fontCode?: string;
+  fontSizeCode?: string;
   /** Kicker label typography scale. */
-  fontKicker?: string;
+  fontSizeKicker?: string;
 }
 
 /**
@@ -90,12 +90,12 @@ export const TOKEN_MAP: Record<keyof ThemeConfig, string> = {
   fontSans: "--sr-font-sans",
   fontSerif: "--sr-font-serif",
   fontMono: "--sr-font-mono",
-  fontHero: "--sr-font-hero",
-  fontTitle: "--sr-font-title",
-  fontLead: "--sr-font-lead",
-  fontBody: "--sr-font-body",
-  fontCode: "--sr-font-code",
-  fontKicker: "--sr-font-kicker",
+  fontSizeHero: "--sr-font-size-hero",
+  fontSizeTitle: "--sr-font-size-title",
+  fontSizeLead: "--sr-font-size-lead",
+  fontSizeBody: "--sr-font-size-body",
+  fontSizeCode: "--sr-font-size-code",
+  fontSizeKicker: "--sr-font-size-kicker",
 };
 
 /**

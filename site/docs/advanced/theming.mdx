@@ -50,7 +50,7 @@ stage.theme({
 
 ![Automatic Palette Derivation](/img/adaptive-theming.svg)
 
-You can also provide optional overrides for fonts, border radius, and surfaces:
+You can also provide optional overrides for border radius and surfaces:
 
 ```typescript
 stage.theme({
@@ -58,7 +58,74 @@ stage.theme({
   text: "#f8fafc",
   primary: "#38bdf8",
   radius: "0.75rem",
-  fontSans: '"Fira Code", monospace',
+  surface: "#1e293b",
+});
+```
+
+## Typography & Custom Fonts
+
+StageRoutine bundles three font families by default using `@fontsource`:
+
+- **Sans-serif (`fontSans`)**: `"Inter"` (weights 400, 500, 600, 700). Default for `Title`, `Text`, `BulletList`, and `Table`.
+- **Serif (`fontSerif`)**: `"Newsreader"` (weights 300, 400, italic). Default for `Title({ variant: "serif" })` and emphasized text (`<em>`, `<i>`) inside titles.
+- **Monospace (`fontMono`)**: `"JetBrains Mono"` (weights 400, 500, 600). Default for `CodeBlock`, `TerminalBlock`, `Kicker`, and connector labels.
+
+### Using Custom Fonts
+
+StageRoutine presentations are designed to run offline and export to self-contained single-file HTML. Install fonts as `@fontsource` packages so Vite bundles and inlines them directly into your build. Search and preview thousands of open-source fonts at [fontsource.org](https://fontsource.org).
+
+#### 1. Install the font package
+
+```bash
+pnpm add @fontsource/plus-jakarta-sans @fontsource/fira-code
+```
+
+#### 2. Import the font weights
+
+Import the font weights in your entry file (`src/main.ts`):
+
+```typescript
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/fira-code/400.css";
+import "@fontsource/fira-code/600.css";
+```
+
+#### 3. Assign the font family in your theme
+
+```typescript
+import { Stage } from "stageroutine";
+
+const stage = new Stage({
+  theme: {
+    fontSans: '"Plus Jakarta Sans", sans-serif',
+    fontMono: '"Fira Code", monospace',
+  },
+});
+```
+
+StageRoutine waits for `document.fonts.ready` on startup. Fonts load before layout helpers calculate bounding boxes and connector paths, preventing layout shifts.
+
+### Typographic Scale
+
+StageRoutine scales typography for standard 1080p canvas dimensions. You can customize the scale using font size tokens:
+
+| Token | CSS Variable | Default Value | Target Components |
+| :--- | :--- | :--- | :--- |
+| `fontSizeHero` | `--sr-font-size-hero` | `6.5rem` | `Title({ variant: "hero" })` |
+| `fontSizeTitle` | `--sr-font-size-title` | `3.85rem` | `Title()` |
+| `fontSizeLead` | `--sr-font-size-lead` | `2.45rem` | `Title({ variant: "serif" })` |
+| `fontSizeBody` | `--sr-font-size-body` | `1.85rem` | `Text()`, `BulletList()`, `Table()` |
+| `fontSizeCode` | `--sr-font-size-code` | `1.45rem` | `CodeBlock()`, `TerminalBlock()` body |
+| `fontSizeKicker` | `--sr-font-size-kicker` | `1.2rem` | `Kicker()`, `TerminalBlock()` header |
+
+Override scale tokens in your theme configuration:
+
+```typescript
+stage.theme({
+  fontSizeTitle: "3.2rem",
+  fontSizeBody: "1.6rem",
+  fontSizeCode: "1.3rem",
 });
 ```
 
@@ -140,6 +207,7 @@ When building custom components, bind colors and metrics to `--sr-*` CSS variabl
 | `--sr-surface-border`| Subtle outline | Container edges |
 | `--sr-radius` | Global border radius | Cards, buttons, terminals |
 | `--sr-font-sans` | Sans-serif typography | Titles, descriptions |
+| `--sr-font-serif` | Serif typography | Italic titles, editorial emphasis |
 | `--sr-font-mono` | Monospace typography | Code blocks, terminals, kickers |
 
 Referencing these variables ensures your custom elements automatically respond when `stage.theme(...)` is called:

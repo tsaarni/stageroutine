@@ -2056,17 +2056,17 @@ export interface ThemeConfig {
     /** Monospace font family. */
     fontMono?: string;
     /** Hero title typography scale. */
-    fontHero?: string;
+    fontSizeHero?: string;
     /** Title typography scale. */
-    fontTitle?: string;
+    fontSizeTitle?: string;
     /** Lead paragraph typography scale. */
-    fontLead?: string;
+    fontSizeLead?: string;
     /** Body paragraph typography scale. */
-    fontBody?: string;
+    fontSizeBody?: string;
     /** Code snippet typography scale. */
-    fontCode?: string;
+    fontSizeCode?: string;
     /** Kicker label typography scale. */
-    fontKicker?: string;
+    fontSizeKicker?: string;
 }
 
 /**

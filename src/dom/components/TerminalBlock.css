@@ -33,7 +33,7 @@
     & .sr-terminal-title {
       margin-left: 0.6rem;
       font-family: var(--sr-font-mono);
-      font-size: var(--sr-font-kicker);
+      font-size: var(--sr-font-size-kicker);
       color: var(--sr-text-muted);
       letter-spacing: 0.05em;
     }
@@ -41,7 +41,7 @@
     & .sr-terminal-body {
       padding: 1.75rem;
       font-family: var(--sr-font-mono);
-      font-size: var(--sr-font-code);
+      font-size: var(--sr-font-size-code);
       line-height: 1.7;
       color: var(--sr-text);
 

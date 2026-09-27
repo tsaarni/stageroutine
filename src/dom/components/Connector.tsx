@@ -5,7 +5,7 @@
 import "./Connector.css";
 import { type Gauge, getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import {
   type CardinalSide,
   computeArcPath,
@@ -15,6 +15,7 @@ import {
   resolveTargetAnchor,
   resolveTargetBox,
 } from "../geometry";
+import { type PingHandle, spawnPingPacket } from "./ping";
 
 /**
  * Options for triggering glowing packet animations along a connector.
@@ -430,8 +431,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   private periodicIntervalTimer: number | null = null;
   private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
-  private activePulseDots = new Set<SVGElement>();
-  private activeAnimations = new Set<Animation>();
+  private activePulses = new Set<PingHandle>();
   constructor(from: ConnectorTarget, to: ConnectorTarget, options: ConnectorOptions = {}) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.style.position = "absolute";
@@ -595,16 +595,17 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     });
 
     const stage = getActiveStage();
-    if (stage && typeof stage.on === "function") {
+
+    this.onUnmount(
       stage.on("evt:stage:resized", () => {
         if (this.isActive) {
           this.update();
         }
-      });
-    }
+      }),
+    );
 
     // Register diagnostics metrics for background loop monitoring
-    if (stage?.metrics) {
+    if (stage.metrics) {
       this.metricDisposables = [
         stage.metrics.gauge({
           name: "connector_periodic_pulse_active",
@@ -616,7 +617,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
           name: "connector_active_pulses",
           help: "Pulsing dots on path. Must be 0 when idle.",
           labels: { id: this.id },
-          collect: () => this.activePulseDots.size,
+          collect: () => this.activePulses.size,
         }),
         stage.metrics.gauge({
           name: "connector_dom_packets",
@@ -814,10 +815,10 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       this.pathNode.setAttribute("stroke", currentStroke);
     }
 
-    if (this.activePulseDots.size > 0) {
+    if (this.activePulses.size > 0) {
       const pathStyle = `path('${d}')`;
-      for (const dot of this.activePulseDots) {
-        dot.style.offsetPath = pathStyle;
+      for (const ping of this.activePulses) {
+        ping.element.style.offsetPath = pathStyle;
       }
     }
 
@@ -1050,86 +1051,30 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const pathD = this.pathNode.getAttribute("d");
     if (!pathD) return;
 
-    const duration = (options.duration ?? 0.6) * 1000;
-    const color = options.color ?? this.connectorColor;
-    const size = options.size ?? 12;
-
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.classList.add("sr-pulse-packet");
-    g.style.offsetPath = `path('${pathD}')`;
-    g.style.offsetRotate = "auto";
-    g.style.willChange = "offset-distance, opacity";
-
-    // Outer blooming neon aura
-    const halo = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    halo.setAttribute("r", String(size / 2 + 1));
-    halo.setAttribute("fill", color);
-    halo.style.filter = `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 10px ${color}) drop-shadow(0 0 18px ${color})`;
-
-    // High-intensity incandescent center
-    const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    core.setAttribute("r", String(Math.max(2, size / 3.5)));
-    core.setAttribute("fill", "#ffffff");
-
-    g.appendChild(halo);
-    g.appendChild(core);
-    this.svgRoot.appendChild(g);
-    this.activePulseDots.add(g);
-
-    const startPct = `${startVal * 100}%`;
-    const endPct = `${endVal * 100}%`;
-
-    const anim = g.animate(
-      [
-        { offsetDistance: startPct, opacity: 0 },
-        { offsetDistance: startPct, opacity: 1, offset: 0.08 },
-        { offsetDistance: endPct, opacity: 1, offset: 0.92 },
-        { offsetDistance: endPct, opacity: 0, offset: 1.0 },
-      ],
-      {
-        duration,
-        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-        fill: "forwards",
-      },
-    );
-    this.activeAnimations.add(anim);
-
-    let finished = false;
-    const cleanup = (triggerComplete: boolean) => {
-      if (finished) return;
-      finished = true;
-      this.activeAnimations.delete(anim);
-      this.activePulseDots.delete(g);
-      g.remove();
-      if (triggerComplete) {
+    const ping = spawnPingPacket(this.svgRoot, pathD, {
+      color: options.color ?? this.connectorColor,
+      duration: options.duration ?? 0.6,
+      size: options.size ?? 12,
+      start: startVal,
+      end: endVal,
+      onComplete: () => {
+        if (ping) this.activePulses.delete(ping);
         options.onComplete?.();
-      }
-    };
-
-    anim.onfinish = () => cleanup(true);
-    anim.oncancel = () => cleanup(false);
+      },
+    });
+    if (ping) {
+      this.activePulses.add(ping);
+    }
   }
 
   /**
    * Cancels and removes all in-flight pulse packets on this connector.
    */
   cancelPulses(): this {
-    for (const anim of Array.from(this.activeAnimations)) {
-      try {
-        anim.cancel();
-      } catch {
-        // ignore
-      }
+    for (const ping of Array.from(this.activePulses)) {
+      ping.cancel();
     }
-    this.activeAnimations.clear();
-
-    for (const dot of Array.from(this.activePulseDots)) {
-      for (const a of dot.getAnimations()) {
-        a.cancel();
-      }
-      dot.remove();
-    }
-    this.activePulseDots.clear();
+    this.activePulses.clear();
 
     const stray = this.svgRoot.querySelectorAll(".sr-pulse-packet");
     for (let i = 0; i < stray.length; i++) {
@@ -1222,12 +1167,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
   private updateFlowClasses(): void {
     const flowVal = typeof this.flow === "string" ? this.flow : "none";
-    this.svgRoot.classList.remove(
-      "sr-flow-traveling",
-      "sr-flow-chase",
-      "sr-flow-pulse",
-      "sr-flow-ping",
-    );
+    this.svgRoot.classList.remove("sr-flow-traveling", "sr-flow-chase", "sr-flow-ping");
 
     if (flowVal && flowVal !== "none") {
       this.svgRoot.classList.add(`sr-flow-${flowVal}`);
@@ -1277,8 +1217,11 @@ export function pulseSequence(
   const loop = options.loop ?? true;
 
   const stepList: PulseSequenceStep[] = steps.map((s) => ("connector" in s ? s : { connector: s }));
+  const stage = getActiveStage();
+  const disposers: (() => void)[] = [];
+  let attached = false;
 
-  const stop = () => {
+  const halt = () => {
     running = false;
     if (timer !== null) {
       clearTimeout(timer);
@@ -1287,6 +1230,11 @@ export function pulseSequence(
     for (const s of stepList) {
       s.connector.cancelPulses();
     }
+  };
+
+  const stop = () => {
+    halt();
+    detach();
   };
 
   const runStep = (idx: number, retryCount = 0) => {
@@ -1318,8 +1266,9 @@ export function pulseSequence(
       return;
     }
 
-    // Wait until the connector has finished drawing in (end >= 0.95), capped at 25 retries (~1.25s)
-    if (endVal < 0.95 || endVal - startVal < 0.8) {
+    // Wait until the stage is mounted and the connector has finished drawing in
+    // (end >= 0.95), capped at 25 retries (~1.25s).
+    if (!stage.isMounted() || endVal < 0.95 || endVal - startVal < 0.8) {
       if (retryCount >= 25) {
         stop();
         return;
@@ -1351,33 +1300,33 @@ export function pulseSequence(
   };
 
   const start = () => {
-    stop();
+    halt();
+    attach();
     running = true;
     runStep(0);
   };
 
-  // Bind deactivation listeners on all participating connectors
-  for (const s of stepList) {
-    s.connector.onDeactivate(() => {
-      stop();
-    });
-  }
+  const attach = () => {
+    if (attached) return;
+    attached = true;
+    for (const s of stepList) {
+      disposers.push(s.connector.onDeactivate(halt));
+    }
+    const first = stepList[0]?.connector;
+    if (first) {
+      disposers.push(first.onActivate(start));
+    }
+  };
 
-  // Bind activation on first connector to start
-  if (stepList.length > 0) {
-    const first = stepList[0].connector;
-    first.onActivate(() => {
-      start();
-    });
-  }
+  const detach = () => {
+    for (const dispose of disposers) {
+      dispose();
+    }
+    disposers.length = 0;
+    attached = false;
+  };
 
-  // Listen to stage navigation to ensure sequence stops when scenes change
-  const stage = getActiveStage();
-  if (stage && typeof stage.on === "function") {
-    stage.on("evt:nav:sceneChanged", () => {
-      stop();
-    });
-  }
+  attach();
 
   return {
     start,
@@ -1395,7 +1344,5 @@ export function Connector(
   to: ConnectorTarget,
   options?: ConnectorOptions,
 ): ConnectorElement {
-  const stage = getActiveStage();
-  const el = new ConnectorElementImpl(from, to, options);
-  return stage.registerElement(el) as ConnectorElement;
+  return mount(new ConnectorElementImpl(from, to, options));
 }

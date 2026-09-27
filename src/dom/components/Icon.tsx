@@ -3,8 +3,8 @@
  */
 
 import "./Icon.css";
-import { getActiveStage } from "../../core/index";
-import { DOMElement, type ElementOptions } from "../element";
+import { logger } from "../../core/index";
+import { DOMElement, type ElementOptions, mount } from "../element";
 
 /**
  * Definition for registering an icon namespace or resolver.
@@ -78,8 +78,6 @@ function resolveIconSvg(nameOrSvg: string): string | undefined {
 export interface IconOptions extends ElementOptions {
   /** Icon identifier (e.g. "lucide:heart", "mycompany:logo") or raw SVG markup. */
   name?: string;
-  /** Force registration as top-level stage element (default: false). */
-  asElement?: boolean;
 }
 
 /** Public controls for an icon. @category Components */
@@ -146,7 +144,7 @@ class IconElementImpl extends DOMElement implements IconElement {
     if (svg) {
       this.domElement.innerHTML = svg;
     } else {
-      console.warn(`[StageRoutine] Icon "${this._name}" could not be resolved.`);
+      logger.warn(`[StageRoutine] Icon "${this._name}" could not be resolved.`);
       this.domElement.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><rect width="24" height="24" fill="none" stroke="currentColor" stroke-dasharray="2 2" rx="4"/></svg>`;
     }
   }
@@ -170,9 +168,5 @@ export function Icon(
   nameOrOptions: string | IconOptions = {},
   maybeOptions: IconOptions = {},
 ): IconElement {
-  const stage = getActiveStage();
-  const el = new IconElementImpl(nameOrOptions, maybeOptions);
-  return stage && typeof stage.registerElement === "function"
-    ? (stage.registerElement(el) as IconElement)
-    : el;
+  return mount(new IconElementImpl(nameOrOptions, maybeOptions));
 }

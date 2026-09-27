@@ -3,40 +3,21 @@
  */
 
 import "./Kicker.css";
-import { getActiveStage } from "../../core/stage";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 
 /**
  * Configuration options for the Kicker component.
  * @category Components
  * @inline
  */
-export interface KickerOptions extends ElementOptions {
-  /** Foreground label color. */
-  color?: string;
-  /** Additional CSS class name. */
-  className?: string;
-}
+export type KickerOptions = ElementOptions;
 
 /**
  * Micro-label component used for chapter indices and section category tags.
  * @category Components
  */
 export function Kicker(label: string, options: KickerOptions = {}): DOMElement {
-  const { className, color, style: customStyle, ...restOptions } = options;
+  const { className, ...restOptions } = options;
   const classes = ["sr-kicker", className].filter(Boolean).join(" ");
-  const mergedStyle = {
-    ...(color ? { color } : {}),
-    ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
-  };
-
-  const div = (
-    <div className={classes} style={mergedStyle}>
-      {label}
-    </div>
-  );
-
-  const stage = getActiveStage();
-  const el = new DOMElement("Kicker", div, restOptions);
-  return stage.registerElement(el);
+  return mount(new DOMElement("Kicker", <div className={classes}>{label}</div>, restOptions));
 }

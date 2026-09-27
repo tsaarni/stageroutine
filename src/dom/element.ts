@@ -9,6 +9,7 @@ import {
   resolveCoordNumber,
 } from "../core/interpolators";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
+import { getActiveStage } from "../core/stage";
 import type {
   Align,
   CoordProp,
@@ -486,4 +487,13 @@ export class DOMElement implements ReactiveElementBase {
     decorator(this);
     return this;
   }
+}
+
+/**
+ * Registers a component element on the active stage and returns its reactive proxy.
+ * Throws when no Stage has been created.
+ * @internal
+ */
+export function mount<T extends ReactiveElementBase>(element: T): T {
+  return getActiveStage().registerElement(element);
 }

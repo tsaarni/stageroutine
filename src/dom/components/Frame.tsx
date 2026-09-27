@@ -8,7 +8,7 @@ import {
   type ReactiveElementBase,
   type ReactiveProp,
 } from "../../core/index";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import {
   type AnchorMode,
   type AnchorPoint,
@@ -25,16 +25,8 @@ import { isDynamicPath, type PathFunction, type PathRuntimeContext } from "../pa
  * @inline
  */
 export interface FrameOptions extends ElementOptions {
-  /** Uniform width and height shorthand. */
-  size?: number | string;
-  /** Explicit width in pixels or container units. */
-  width?: number | string;
-  /** Explicit height in pixels or container units. */
-  height?: number | string;
   /** Optional border outline color. */
   borderColor?: ReactiveProp<string>;
-  /** Optional accent / text color. */
-  color?: string;
   /** Optional background fill color. */
   background?: string;
   /** Border stroke outline width in virtual canvas pixels (default: 0). */
@@ -178,7 +170,10 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     this.pathNode = pathNode;
     this.items = childItems;
 
-    this.primaryColor = opts.color ?? (opts.borderColor as string | undefined) ?? "#38bdf8";
+    this.primaryColor =
+      (typeof opts.color === "string" ? opts.color : undefined) ??
+      (typeof opts.borderColor === "string" ? opts.borderColor : undefined) ??
+      "#38bdf8";
     this.strokeWidth = opts.strokeWidth ?? (opts.borderColor ? 2 : 0);
 
     if (opts.borderColor !== undefined) {
@@ -326,10 +321,5 @@ export function Frame(
   childOrOptions?: unknown,
   options: FrameOptions = {},
 ): FrameElement {
-  const stage = getActiveStage();
-  const el = new FrameElementImpl(path, childOrOptions, options);
-  if (stage && typeof stage.registerElement === "function") {
-    return stage.registerElement(el) as FrameElement;
-  }
-  return el;
+  return mount(new FrameElementImpl(path, childOrOptions, options));
 }

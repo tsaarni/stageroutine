@@ -5,8 +5,7 @@
 
 import "./CodeBlock.css";
 import { codeToHtml } from "shiki";
-import { getActiveStage } from "../../core/stage";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -85,9 +84,12 @@ class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
       interactive: isInteractive,
     });
 
+    let destroyed = false;
+
     // Highlight with Shiki TextMate engine
     codeToHtml(trimmed, { lang, theme: shikiTheme })
       .then((html) => {
+        if (destroyed) return;
         const temp = document.createElement("div");
         temp.innerHTML = html;
         const innerCode = temp.querySelector("code");
@@ -103,6 +105,11 @@ class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
 
     const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
     super("CodeBlock", preEl, { ...options, theme: elementTheme });
+
+    this.onUnmount(() => {
+      destroyed = true;
+      controller.destroy();
+    });
   }
 }
 
@@ -115,7 +122,5 @@ export function CodeBlock(
   snippet: string | string[],
   options: CodeBlockOptions = {},
 ): CodeBlockElement {
-  const stage = getActiveStage();
-  const el = new CodeBlockElementImpl(snippet, options);
-  return stage ? (stage.registerElement(el) as CodeBlockElement) : el;
+  return mount(new CodeBlockElementImpl(snippet, options));
 }

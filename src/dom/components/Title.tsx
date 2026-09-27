@@ -3,8 +3,7 @@
  */
 
 import "./Title.css";
-import { getActiveStage } from "../../core/stage";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 
 /**
  * Visual typography variant for the Title component.
@@ -20,42 +19,28 @@ export type TitleVariant = "title" | "hero" | "serif";
 export interface TitleOptions extends ElementOptions {
   /** Visual typography variant: "title" (default), "hero" (large display), or "serif" (editorial italic). */
   variant?: TitleVariant;
-  /** Foreground text color. */
-  color?: string;
   /** Optional section kicker displayed above the title. */
   kicker?: string;
-  className?: string;
 }
+
+const TITLE_CLASSES: Record<TitleVariant, string> = {
+  title: "sr-title",
+  hero: "sr-hero",
+  serif: "sr-serif-lead",
+};
 
 /**
  * Headline typography component supporting default title, hero, and serif editorial variants.
  * @category Components
  */
 export function Title(text: string, options: TitleOptions = {}): DOMElement {
-  const variant = options.variant ?? "title";
-
-  let baseClass = "sr-title";
-  if (variant === "hero") {
-    baseClass = "sr-hero";
-  } else if (variant === "serif") {
-    baseClass = "sr-serif-lead";
-  }
-
-  const { className, variant: _variant, color, style: customStyle, ...restOptions } = options;
-  const classes = [baseClass, className].filter(Boolean).join(" ");
-  const mergedStyle = {
-    ...(color ? { color } : {}),
-    ...(customStyle && typeof customStyle === "object" ? customStyle : {}),
-  };
-
+  const { className, variant = "title", ...restOptions } = options;
+  const classes = [TITLE_CLASSES[variant], className].filter(Boolean).join(" ");
   const div = (
-    <div className={classes} style={mergedStyle}>
+    <div className={classes}>
       {options.kicker && <span className="sr-kicker">{options.kicker}</span>}
       {text}
     </div>
   );
-
-  const stage = getActiveStage();
-  const el = new DOMElement("Title", div, restOptions);
-  return stage.registerElement(el);
+  return mount(new DOMElement("Title", div, restOptions));
 }

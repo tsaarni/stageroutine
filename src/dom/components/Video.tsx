@@ -2,11 +2,8 @@
  * Standalone reactive Video element for screen recordings, video walkthroughs, and animated media.
  */
 
-import "./Media.css";
-import { getActiveStage } from "../../core/index";
-import { logger } from "../../core/logger";
-import { DOMElement, type ElementOptions } from "../element";
-import type { ImageFit } from "./Image";
+import { DOMElement, type ElementOptions, mount } from "../element";
+import { type ImageFit, VideoSurface } from "./media";
 
 /**
  * Configuration options for the Video component.
@@ -56,7 +53,7 @@ export interface VideoElement extends DOMElement {
  * Reactive Video element wrapping a native <video> DOM node.
  * @internal
  */
-class VideoElementImpl extends DOMElement implements VideoElement {
+class VideoElementImpl extends VideoSurface implements VideoElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "fit",
@@ -69,16 +66,9 @@ class VideoElementImpl extends DOMElement implements VideoElement {
   ]);
 
   readonly videoElement: HTMLVideoElement;
-  private _fit: ImageFit = "contain";
-  private _playing = false;
 
-  get fit(): ImageFit {
-    return this._fit;
-  }
-
-  set fit(val: ImageFit) {
-    this._fit = val;
-    this.videoElement.style.objectFit = val;
+  protected override get videoNode(): HTMLVideoElement {
+    return this.videoElement;
   }
 
   get src(): string {
@@ -102,39 +92,6 @@ class VideoElementImpl extends DOMElement implements VideoElement {
       if (this.videoElement.src === val) return;
     }
     this.videoElement.src = val;
-  }
-
-  get playing(): boolean {
-    return this._playing;
-  }
-
-  set playing(val: boolean) {
-    this._playing = val;
-    if (val) {
-      if (this.isActive && this.videoElement.paused) {
-        this.videoElement.play().catch((err) => {
-          logger.warn("[StageRoutine] Video playback failed:", err);
-        });
-      }
-    } else {
-      if (!this.videoElement.paused) {
-        this.videoElement.pause();
-      }
-    }
-  }
-
-  async play(): Promise<void> {
-    this._playing = true;
-    try {
-      await this.videoElement.play();
-    } catch (err) {
-      logger.warn("[StageRoutine] Video playback failed:", err);
-      throw err;
-    }
-  }
-
-  pause(): void {
-    this.playing = false;
   }
 
   get currentTime(): number {
@@ -177,14 +134,6 @@ class VideoElementImpl extends DOMElement implements VideoElement {
     this.videoElement.loop = val;
   }
 
-  override update(): void {
-    if (this.videoElement) {
-      if (this._fit && this.videoElement.style.objectFit !== this._fit) {
-        this.videoElement.style.objectFit = this._fit;
-      }
-    }
-  }
-
   constructor(srcOrOptions: string | VideoOptions = {}, maybeOptions: VideoOptions = {}) {
     const options =
       typeof srcOrOptions === "string" ? { ...maybeOptions, src: srcOrOptions } : srcOrOptions;
@@ -203,13 +152,10 @@ class VideoElementImpl extends DOMElement implements VideoElement {
       video.volume = Math.max(0, Math.min(1, options.volume));
     }
 
-    const fit = options.fit ?? "contain";
-    video.style.objectFit = fit;
-
     super("Video", video, options);
 
     this.videoElement = video;
-    this._fit = fit;
+    this.applyInitialFit(options.fit ?? "contain");
 
     if (options.currentTime !== undefined && typeof options.currentTime === "number") {
       this.currentTime = options.currentTime;
@@ -232,24 +178,11 @@ class VideoElementImpl extends DOMElement implements VideoElement {
 
     video.addEventListener("ended", () => {
       if (!this.loop) {
-        this._playing = false;
+        this.playing = false;
       }
     });
 
-    // Resume video playback when active and pause when hidden
-    this.onActivate(() => {
-      if (this._playing && this.videoElement.paused) {
-        this.videoElement.play().catch((err) => {
-          logger.warn("[StageRoutine] Video autoplay failed on scene activate:", err);
-        });
-      }
-    });
-
-    this.onDeactivate(() => {
-      if (!this.videoElement.paused) {
-        this.videoElement.pause();
-      }
-    });
+    this.bindPlaybackLifecycle();
   }
 }
 
@@ -275,10 +208,5 @@ export function Video(
   srcOrOptions: string | VideoOptions = {},
   maybeOptions: VideoOptions = {},
 ): VideoElement {
-  const stage = getActiveStage();
-  const el = new VideoElementImpl(srcOrOptions, maybeOptions);
-  if (stage && typeof stage.registerElement === "function") {
-    return stage.registerElement(el) as VideoElement;
-  }
-  return el;
+  return mount(new VideoElementImpl(srcOrOptions, maybeOptions));
 }

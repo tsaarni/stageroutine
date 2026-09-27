@@ -977,16 +977,8 @@ export interface FrameElement extends DOMElement {
  * @inline
  */
 export interface FrameOptions extends ElementOptions {
-    /** Uniform width and height shorthand. */
-    size?: number | string;
-    /** Explicit width in pixels or container units. */
-    width?: number | string;
-    /** Explicit height in pixels or container units. */
-    height?: number | string;
     /** Optional border outline color. */
     borderColor?: ReactiveProp<string>;
-    /** Optional accent / text color. */
-    color?: string;
     /** Optional background fill color. */
     background?: string;
     /** Border stroke outline width in virtual canvas pixels (default: 0). */
@@ -1114,8 +1106,6 @@ export interface IconElement extends DOMElement {
 export interface IconOptions extends ElementOptions {
     /** Icon identifier (e.g. "lucide:heart", "mycompany:logo") or raw SVG markup. */
     name?: string;
-    /** Force registration as top-level stage element (default: false). */
-    asElement?: boolean;
 }
 
 /** Public controls for an image. @category Components */
@@ -1187,18 +1177,6 @@ export interface KenBurnsOptions {
     ease?: string;
     /** Whether motion loops continuously or alternates directions (default: false, holds end frame). */
     loop?: boolean | "alternate";
-}
-
-/**
- * Configuration options for the Kicker component.
- * @category Components
- * @inline
- */
-export interface KickerOptions extends ElementOptions {
-    /** Foreground label color. */
-    color?: string;
-    /** Additional CSS class name. */
-    className?: string;
 }
 
 /**
@@ -1712,26 +1690,16 @@ export interface ShapeElement extends DOMElement {
 export interface ShapeOptions extends ElementOptions {
     /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
     variant?: ShapeVariant;
-    /** Uniform width and height shorthand (ideal for circles and diamonds). */
-    size?: number | string;
-    /** Explicit width in pixels or container units. */
-    width?: number | string;
-    /** Explicit height in pixels or container units. */
-    height?: number | string;
     /** Border stroke color. */
     borderColor?: ReactiveProp<string>;
     /** Optional text content inside the shape container. */
     text?: string;
     /** Background fill color. */
     background?: string;
-    /** Foreground text / accent color. */
-    color?: string;
     /** Highlighted / glowing active state. */
     active?: boolean;
     /** Double border outline (e.g. for final states, nested rings). */
     doubleBorder?: boolean;
-    /** Content alignment inside the shape container (default: "center"). */
-    align?: Align;
     /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
     start?: ReactiveProp<number>;
     /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
@@ -1995,18 +1963,6 @@ export interface TerminalBlockOptions extends ElementOptions {
 }
 
 /**
- * Configuration options for the Text component.
- * @category Components
- * @inline
- */
-export interface TextOptions extends ElementOptions {
-    /** Foreground text color. */
-    color?: string;
-    /** Additional CSS class name. */
-    className?: string;
-}
-
-/**
  * Strictly typed design tokens and theme engine for StageRoutine.
  */
 /**
@@ -2093,11 +2049,8 @@ export interface ThoughtBubblePathOptions {
 export interface TitleOptions extends ElementOptions {
     /** Visual typography variant: "title" (default), "hero" (large display), or "serif" (editorial italic). */
     variant?: TitleVariant;
-    /** Foreground text color. */
-    color?: string;
     /** Optional section kicker displayed above the title. */
     kicker?: string;
-    className?: string;
 }
 
 /**
@@ -2389,11 +2342,11 @@ export type FlowEffect = "none" | "traveling" | "chase" | "ping";
 export type GridSlot = LayoutElement | null | undefined;
 
 /**
- * Image object-fit scaling mode:
- * - "contain" (default): Scales image to fit inside bounds while preserving aspect ratio.
+ * Media object-fit scaling mode:
+ * - "contain" (default): Scales media to fit inside bounds while preserving aspect ratio.
  * - "cover": Zooms and fills bounds completely, cropping overflow.
- * - "fill": Stretches image to exact bounds.
- * - "none": Displays image at intrinsic pixel size.
+ * - "fill": Stretches media to exact bounds.
+ * - "none": Displays media at intrinsic pixel size.
  * - "scale-down": Scales down like "contain" if larger than container, otherwise behaves like "none".
  * @category Components
  */
@@ -2407,6 +2360,13 @@ export type KenBurnsFocus = ElementAnchor | [
     number,
     number
 ];
+
+/**
+ * Configuration options for the Kicker component.
+ * @category Components
+ * @inline
+ */
+export type KickerOptions = ElementOptions;
 
 /**
  * Responsive offset for adjusting label badge position.
@@ -2535,6 +2495,13 @@ export type ShapeVariant = "surface" | "ghost" | "solid";
  * @category Layout
  */
 export type StackSlot = LayoutElement | LayoutElement[];
+
+/**
+ * Configuration options for the Text component.
+ * @category Components
+ * @inline
+ */
+export type TextOptions = ElementOptions;
 
 /**
  * Visual typography variant for the Title component.

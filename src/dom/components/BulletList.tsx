@@ -4,10 +4,10 @@
 
 import "./BulletList.css";
 import type { Properties as CSSProperties } from "csstype";
-import { getActiveStage } from "../../core/stage";
+import { getActiveStage } from "../../core/index";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import type { ThemeConfig } from "../../theme/tokens";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -122,7 +122,6 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
 
     const isInteractive = options.interactive ?? true;
     const rawItemElements: HTMLElement[] = [];
-    const stage = getActiveStage();
     const childElements: DOMElement[] = [];
 
     for (const item of flattenBulletItems(items)) {
@@ -165,7 +164,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
         theme: item.theme,
       });
 
-      const proxyItem = stage ? (stage.registerElement(childDOM) as DOMElement) : childDOM;
+      const proxyItem = mount(childDOM);
       childElements.push(proxyItem);
     }
 
@@ -173,11 +172,13 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
 
     this.items = childElements;
 
-    attachRangeSelection({
+    const controller = attachRangeSelection({
       container,
       getItems: () => rawItemElements,
       interactive: isInteractive,
     });
+
+    this.onUnmount(() => controller.destroy());
   }
 
   reveal(options?: StaggerOptions): StaggerTransition {
@@ -216,7 +217,5 @@ export function BulletList(
   items: BulletItemInput[],
   options: BulletListOptions = {},
 ): BulletListElement {
-  const stage = getActiveStage();
-  const el = new BulletListElementImpl(items, options);
-  return stage ? (stage.registerElement(el) as BulletListElement) : el;
+  return mount(new BulletListElementImpl(items, options));
 }

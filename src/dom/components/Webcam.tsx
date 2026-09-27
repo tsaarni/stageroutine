@@ -2,12 +2,10 @@
  * Standalone reactive Webcam component for live presenter video feeds.
  */
 
-import "./Media.css";
-import { getActiveStage } from "../../core/index";
-import { logger } from "../../core/logger";
+import { logger } from "../../core/index";
 import { storage } from "../../core/storage";
-import { DOMElement, type ElementOptions } from "../element";
-import type { ImageFit } from "./Image";
+import { DOMElement, type ElementOptions, mount } from "../element";
+import { type ImageFit, MediaSurface } from "./media";
 
 /**
  * Camera device info descriptor.
@@ -56,7 +54,7 @@ export interface WebcamElement extends DOMElement {
  * Reactive Webcam element wrapping a native <video> element connected to getUserMedia stream.
  * @internal
  */
-class WebcamElementImpl extends DOMElement implements WebcamElement {
+class WebcamElementImpl extends MediaSurface implements WebcamElement {
   static override reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement.reactiveKeys,
     "fit",
@@ -66,7 +64,6 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
 
   readonly videoElement: HTMLVideoElement;
   private stream: MediaStream | null = null;
-  private _fit: ImageFit = "cover";
   private _mirror = true;
   private autoMirror = true;
   private _deviceId?: string;
@@ -75,13 +72,8 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
   private idealHeight = 720;
   private currentRequestId = 0;
 
-  get fit(): ImageFit {
-    return this._fit;
-  }
-
-  set fit(val: ImageFit) {
-    this._fit = val;
-    this.videoElement.style.objectFit = val;
+  protected override get mediaNode(): HTMLElement {
+    return this.videoElement;
   }
 
   get mirror(): boolean {
@@ -109,35 +101,6 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     }
     if (this.stream) {
       void this.start();
-    }
-  }
-
-  /**
-   * Discovers and lists all connected video input cameras.
-   */
-  static async getCameras(): Promise<CameraDevice[]> {
-    // mediaDevices is undefined in insecure contexts (non-HTTPS/non-localhost)
-    if (!navigator.mediaDevices?.enumerateDevices) {
-      return [];
-    }
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices
-        .filter((d) => d.kind === "videoinput" && (d.deviceId || d.label))
-        .map((d, index) => ({
-          id: d.deviceId,
-          label: d.label || `Camera ${index + 1}`,
-        }));
-    } catch {
-      return [];
-    }
-  }
-
-  override update(): void {
-    if (this.videoElement) {
-      if (this._fit && this.videoElement.style.objectFit !== this._fit) {
-        this.videoElement.style.objectFit = this._fit;
-      }
     }
   }
 
@@ -171,7 +134,7 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
     super("Webcam", container, options);
 
     this.videoElement = video;
-    this._fit = fit;
+    this.applyInitialFit(fit);
     this._mirror = mirror;
     this.autoMirror = autoMirror;
     this._deviceId =
@@ -357,7 +320,7 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
    * Cycles to the next connected camera.
    */
   async cycleCamera(): Promise<void> {
-    const cameras = await WebcamElementImpl.getCameras();
+    const cameras = await listCameras();
     if (cameras.length <= 1) return;
 
     const currentIndex = cameras.findIndex((c) => c.id === this._deviceId);
@@ -386,12 +349,28 @@ class WebcamElementImpl extends DOMElement implements WebcamElement {
  * ```
  */
 export function Webcam(options: WebcamOptions = {}): WebcamElement {
-  const stage = getActiveStage();
-  const el = new WebcamElementImpl(options);
-  if (stage && typeof stage.registerElement === "function") {
-    return stage.registerElement(el) as WebcamElement;
+  return mount(new WebcamElementImpl(options));
+}
+
+/**
+ * Discovers and lists all connected video input cameras.
+ */
+async function listCameras(): Promise<CameraDevice[]> {
+  // mediaDevices is undefined in insecure contexts (non-HTTPS/non-localhost)
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    return [];
   }
-  return el;
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+      .filter((d) => d.kind === "videoinput" && (d.deviceId || d.label))
+      .map((d, index) => ({
+        id: d.deviceId,
+        label: d.label || `Camera ${index + 1}`,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -400,7 +379,5 @@ export function Webcam(options: WebcamOptions = {}): WebcamElement {
  */
 export namespace Webcam {
   /** Discovers and lists all connected video input cameras. */
-  export async function getCameras(): Promise<CameraDevice[]> {
-    return WebcamElementImpl.getCameras();
-  }
+  export const getCameras = listCameras;
 }

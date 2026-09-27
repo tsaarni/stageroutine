@@ -3,10 +3,9 @@
  */
 
 import "./Table.css";
-import { getActiveStage } from "../../core/stage";
-import type { Align } from "../../core/types";
+import { type Align, getActiveStage } from "../../core/index";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 function resolveColumnTextAlign(align?: Align): "left" | "center" | "right" | undefined {
@@ -58,7 +57,6 @@ class TableElementImpl extends DOMElement implements TableElement {
     container.appendChild(table);
 
     const align = options.align || [];
-    const stage = getActiveStage();
 
     if (options.headers && options.headers.length > 0) {
       const thead = document.createElement("thead");
@@ -112,11 +110,11 @@ class TableElementImpl extends DOMElement implements TableElement {
           position: "relative",
         },
       });
-      const proxyRow = stage ? (stage.registerElement(rowDOM) as DOMElement) : rowDOM;
+      const proxyRow = mount(rowDOM);
       childRowElements.push(proxyRow);
     }
 
-    attachRangeSelection({
+    const controller = attachRangeSelection({
       container,
       getItems: () => rawRowElements,
       interactive: isInteractive,
@@ -124,6 +122,7 @@ class TableElementImpl extends DOMElement implements TableElement {
 
     super("Table", container, containerOptions);
 
+    this.onUnmount(() => controller.destroy());
     this.rows = childRowElements;
   }
 
@@ -160,7 +159,5 @@ class TableElementImpl extends DOMElement implements TableElement {
  * @category Components
  */
 export function Table(options: TableOptions): TableElement {
-  const stage = getActiveStage();
-  const el = new TableElementImpl(options);
-  return stage ? (stage.registerElement(el) as TableElement) : el;
+  return mount(new TableElementImpl(options));
 }

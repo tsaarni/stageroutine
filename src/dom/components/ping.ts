@@ -5,11 +5,11 @@
 export interface PingPacketOptions {
   /** Color of the glowing packet particle. */
   color?: string;
-  /** Duration of the traversal in seconds (default: 0.8s). */
+  /** Duration of the traversal in seconds (default: 0.6s). */
   duration?: number;
   /** Diameter of the particle in virtual canvas pixels (default: 12). */
   size?: number;
-  /** Easing function (default: "linear"). */
+  /** Easing function (default: "cubic-bezier(0.4, 0, 0.2, 1)"). */
   easing?: string;
   /** Start trim offset from 0.0 to 1.0 (default: 0). */
   start?: number;
@@ -35,10 +35,10 @@ export function spawnPingPacket(
 ): PingHandle | null {
   if (!pathD) return null;
 
-  const duration = (options.duration ?? 0.8) * 1000;
+  const duration = (options.duration ?? 0.6) * 1000;
   const color = options.color ?? "#38bdf8";
   const size = options.size ?? 12;
-  const easing = options.easing ?? "linear";
+  const easing = options.easing ?? "cubic-bezier(0.4, 0, 0.2, 1)";
   const startVal = options.start ?? 0;
   const endVal = options.end ?? 1;
   const dist = endVal - startVal;

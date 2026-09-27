@@ -3,8 +3,7 @@
  */
 
 import "./TerminalBlock.css";
-import { getActiveStage } from "../../core/stage";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -65,13 +64,15 @@ class TerminalBlockElementImpl extends DOMElement implements TerminalBlockElemen
       rawLineElements.push(lineEl);
     }
 
-    attachRangeSelection({
+    const controller = attachRangeSelection({
       container: body,
       getItems: () => rawLineElements,
       interactive: isInteractive,
     });
 
     super("TerminalBlock", container, options);
+
+    this.onUnmount(() => controller.destroy());
   }
 }
 
@@ -80,7 +81,5 @@ class TerminalBlockElementImpl extends DOMElement implements TerminalBlockElemen
  * @category Components
  */
 export function TerminalBlock(options: TerminalBlockOptions = {}): TerminalBlockElement {
-  const stage = getActiveStage();
-  const el = new TerminalBlockElementImpl(options);
-  return stage ? (stage.registerElement(el) as TerminalBlockElement) : el;
+  return mount(new TerminalBlockElementImpl(options));
 }

@@ -4,7 +4,7 @@
 
 import "./SequenceDiagram.css";
 import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 import { measureOffscreen } from "../layout";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";
 
@@ -248,7 +248,7 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
       this.setLength(needed);
     }
 
-    return stage.registerElement(el) as ActivationBarElementImpl;
+    return mount(el);
   }
 
   hasActivationAt(yPx: number): boolean {
@@ -510,7 +510,5 @@ export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagr
  * Module-internal: lifelines are created and owned by the SequenceDiagram coordinator.
  */
 const Lifeline = (actor: DOMElement, options?: LifelineOptions): LifelineElementImpl => {
-  const stage = getActiveStage();
-  const el = new LifelineElementImpl(actor, options);
-  return stage.registerElement(el) as LifelineElementImpl;
+  return mount(new LifelineElementImpl(actor, options));
 };

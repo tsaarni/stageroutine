@@ -4,14 +4,13 @@
 
 import "./Shape.css";
 import {
-  type Align,
   type ElementAnchor,
   type FlowEffect,
   getActiveStage,
   type ReactiveElementBase,
   type ReactiveProp,
 } from "../../core/index";
-import { DOMElement, type ElementOptions } from "../element";
+import { DOMElement, type ElementOptions, mount } from "../element";
 
 import {
   type AnchorMode,
@@ -40,26 +39,16 @@ export type ShapeVariant = "surface" | "ghost" | "solid";
 export interface ShapeOptions extends ElementOptions {
   /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
   variant?: ShapeVariant;
-  /** Uniform width and height shorthand (ideal for circles and diamonds). */
-  size?: number | string;
-  /** Explicit width in pixels or container units. */
-  width?: number | string;
-  /** Explicit height in pixels or container units. */
-  height?: number | string;
   /** Border stroke color. */
   borderColor?: ReactiveProp<string>;
   /** Optional text content inside the shape container. */
   text?: string;
   /** Background fill color. */
   background?: string;
-  /** Foreground text / accent color. */
-  color?: string;
   /** Highlighted / glowing active state. */
   active?: boolean;
   /** Double border outline (e.g. for final states, nested rings). */
   doubleBorder?: boolean;
-  /** Content alignment inside the shape container (default: "center"). */
-  align?: Align;
   /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
   start?: ReactiveProp<number>;
   /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
@@ -231,7 +220,8 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     const customStyles: Record<string, string> = {};
 
     if (typeof opts.borderColor === "string") customStyles.borderColor = opts.borderColor;
-    if (opts.color) customStyles.color = opts.color;
+    const colorStr = typeof opts.color === "string" ? opts.color : undefined;
+    if (colorStr) customStyles.color = colorStr;
 
     Object.assign(el.style, customStyles);
 
@@ -328,7 +318,10 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     this.items = childItems;
     this._path = pathFn;
     this.variant = variant;
-    this.primaryColor = opts.color ?? (opts.borderColor as string | undefined) ?? "#38bdf8";
+    this.primaryColor =
+      colorStr ??
+      (typeof opts.borderColor === "string" ? opts.borderColor : undefined) ??
+      "#38bdf8";
     this.strokeWidth = opts.strokeWidth ?? 2;
 
     if (opts.borderColor !== undefined) {
@@ -530,7 +523,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   private updateFlowClasses(): void {
     const flowVal = typeof this.flow === "string" ? this.flow : "none";
     const svg = this.svgElement;
-    svg.classList.remove("sr-flow-traveling", "sr-flow-chase", "sr-flow-pulse", "sr-flow-ping");
+    svg.classList.remove("sr-flow-traveling", "sr-flow-chase", "sr-flow-ping");
 
     if (flowVal && flowVal !== "none") {
       svg.classList.add(`sr-flow-${flowVal}`);
@@ -715,12 +708,7 @@ export function Shape(
   childrenOrOptions?: unknown,
   options: ShapeOptions = {},
 ): ShapeElement {
-  const stage = getActiveStage();
-  const el = new ShapeElementImpl(path, childrenOrOptions, options);
-  if (stage && typeof stage.registerElement === "function") {
-    return stage.registerElement(el) as ShapeElement;
-  }
-  return el;
+  return mount(new ShapeElementImpl(path, childrenOrOptions, options));
 }
 
 /**

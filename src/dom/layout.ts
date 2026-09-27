@@ -11,7 +11,7 @@ import {
 } from "../core/index";
 import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
-import { DOMElement } from "./element";
+import { DOMElement, mount } from "./element";
 
 export type { RuleOptions };
 
@@ -219,17 +219,10 @@ function applyPosition(
   index = 0,
 ): void {
   const stage = getActiveStage();
-  if (
-    stage &&
-    typeof stage.registerElement === "function" &&
-    el &&
-    typeof el === "object" &&
-    "id" in el &&
-    "domElement" in el
-  ) {
+  if (el && typeof el === "object" && "id" in el && "domElement" in el) {
     const reactiveEl = el as ReactiveElementBase;
-    if (typeof stage.hasElement === "function" ? !stage.hasElement(reactiveEl.id) : true) {
-      stage.registerElement(reactiveEl);
+    if (!stage.hasElement(reactiveEl.id)) {
+      mount(reactiveEl);
     }
   }
 
@@ -403,7 +396,7 @@ function createLayoutRule(
     width,
     height,
   });
-  return getActiveStage().registerElement(el) as DOMElement;
+  return mount(el);
 }
 
 /**

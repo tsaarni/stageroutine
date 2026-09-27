@@ -441,13 +441,13 @@ export class DOMElement implements ReactiveElementBase {
    * Notifies registered `onActivate` listeners to start timers, RAF loops, or media streams.
    */
   _activate(): void {
+    if (this.isActive) return;
+    this.isActive = true;
     if (typeof this.domElement?.getAnimations === "function") {
       for (const anim of this.domElement.getAnimations({ subtree: true })) {
         anim.play();
       }
     }
-    if (this.isActive) return;
-    this.isActive = true;
     for (const listener of this.activateListeners) {
       listener();
     }

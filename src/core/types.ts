@@ -242,6 +242,14 @@ export interface StageEventMap {
   "req:pointer:setState": PointerSetStateEvent;
   "evt:pointer:stateChanged": PointerStateChangedEvent;
 
+  // Annotation requests & notifications (drawn while the pointer tool is active)
+  "req:annotation:clear": undefined;
+  "evt:annotation:cleared": undefined;
+  "req:annotation:undo": undefined;
+  "req:annotation:redo": undefined;
+  "evt:annotation:undone": undefined;
+  "evt:annotation:redone": undefined;
+
   // Stage lifecycle
   "evt:stage:resized": StageResizedEvent;
   "req:stage:requestState": undefined;
@@ -276,6 +284,8 @@ export interface OverlayContext {
   width: number;
   /** Virtual stage height in pixels (e.g. 1080). */
   height: number;
+  /** Active stage theme configuration. */
+  readonly theme: ThemeConfig;
   /** Advance to the next step. */
   next(): void;
   /** Go back to the previous step. */
@@ -321,6 +331,8 @@ export interface OverlayContext {
  * @category Core
  */
 export interface OverlayPlugin {
+  /** Optional unique identifier for the overlay plugin. */
+  readonly id?: string;
   /** Called once when the overlay is attached to the stage. */
   mount(ctx: OverlayContext): void;
   /** Show the overlay. */
@@ -329,6 +341,8 @@ export interface OverlayPlugin {
   hide(): void;
   /** Remove overlay from the DOM and clean up all listeners. */
   destroy(): void;
+  /** Optional metrics reporter for dev diagnostics. */
+  getMetrics?(): Record<string, unknown>;
 }
 
 /**

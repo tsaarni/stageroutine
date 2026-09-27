@@ -1,10 +1,21 @@
 @layer sr-components {
-  /* Presenter Cursor Suppression */
+  /* Presenter Cursor Suppression & Annotation Mode */
   .sr-pointer-mode,
   .sr-pointer-mode *,
   .sr-cursor-hidden,
   .sr-cursor-hidden * {
     cursor: none !important;
+  }
+
+  /* Annotation drawing surface uses a crosshair when no laser pointer is active. */
+  .sr-annotation-mode {
+    cursor: crosshair;
+  }
+
+  .sr-annotation-mode,
+  .sr-annotation-mode * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
   }
 
   /* Navigation Overlay */

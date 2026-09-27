@@ -3,6 +3,7 @@
  */
 
 import {
+  Annotation,
   AsciiFluid,
   BulletList,
   bracket,
@@ -1334,6 +1335,7 @@ heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 
 // Register overlays and mount the stage into the DOM.
+stage.overlay(Annotation());
 stage.overlay(LaserPointer());
 stage.overlay(NavigationOverlay());
 stage.mount("#stage");

@@ -11,16 +11,29 @@ Overlays and the presenter console communicate through a central, typed event bu
 Overlays attach interactive UI widgets over the stage canvas (such as laser pointers, drawing tools, and navigation buttons):
 
 ```typescript
-import { Stage, NavigationOverlay, LaserPointer } from "stageroutine";
+import { Stage, NavigationOverlay, LaserPointer, Annotation } from "stageroutine";
 
 const stage = new Stage();
 stage.overlay(LaserPointer());
+stage.overlay(Annotation());
 stage.overlay(NavigationOverlay());
 ```
 
 ### Built-in Overlays
-- **`LaserPointer()`**: WebGL glowing laser pointer. Toggle with the `P` key (or `Esc` to exit).
+- **`LaserPointer()`**: WebGL glowing red laser pointer.
+- **`Annotation()`**: Smooth variable-width ink drawn over slides. The ink color follows the active theme `primary` color.
 - **`NavigationOverlay()`**: Next/Previous step buttons, scene jumpers, and pointer toggle that appear on hover near the screen bottom.
+
+### The Presenter Pointer Tool
+`LaserPointer()` and `Annotation()` share one tool state. Toggle it with `P` or `Escape`. While the tool is active, moving shows the laser beam and press-and-drag draws ink. The tools are implemented separately but activate together, so there is no separate draw mode.
+
+| Key | Action |
+|---|---|
+| `P` | Toggle the pointer tool |
+| `C` | Clear annotations (150ms dissolve) |
+| `Cmd/Ctrl+Z` or `Z` | Undo last stroke |
+| `Cmd/Ctrl+Shift+Z` or `Shift+Z` | Redo stroke |
+| `Escape` | Exit the pointer tool |
 
 ## Event System
 

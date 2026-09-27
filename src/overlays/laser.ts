@@ -134,7 +134,7 @@ interface RawPoint {
 export function LaserPointer(
   options: LaserPointerOptions = {},
 ): OverlayPlugin & LaserPointerController {
-  const colorRgb = hexToRgb(options.color ?? "#ff0055");
+  const colorRgb = hexToRgb(options.color ?? "#ff2d2d");
   const trailDurationMs = options.trailDurationMs ?? 160;
   const idleTimeoutMs = options.idleTimeoutMs ?? 2000;
   const cursorIdleMs = options.cursorIdleMs ?? 2000;
@@ -387,28 +387,26 @@ export function LaserPointer(
     }
   };
 
-  const controller: OverlayPlugin &
-    LaserPointerController & { readonly id?: string; _getMetrics?: () => Record<string, unknown> } =
-    {
-      id: "laser",
-      get active(): boolean {
-        return isActive;
-      },
+  const controller: OverlayPlugin & LaserPointerController = {
+    id: "laser",
+    get active(): boolean {
+      return isActive;
+    },
 
-      set active(value: boolean) {
-        if (ctx) {
-          ctx.emit("req:pointer:setState", { active: value });
-        } else {
-          setActive(value);
-        }
-      },
+    set active(value: boolean) {
+      if (ctx) {
+        ctx.emit("req:pointer:setState", { active: value });
+      } else {
+        setActive(value);
+      }
+    },
 
-      mount(context: OverlayContext) {
-        ctx = context;
+    mount(context: OverlayContext) {
+      ctx = context;
 
-        canvas = document.createElement("canvas");
-        canvas.className = "sr-laser-gl-canvas";
-        canvas.style.cssText = `
+      canvas = document.createElement("canvas");
+      canvas.className = "sr-laser-gl-canvas";
+      canvas.style.cssText = `
         position: fixed;
         inset: 0;
         pointer-events: none;
@@ -417,107 +415,106 @@ export function LaserPointer(
         transition: opacity 0.25s ease-out;
       `;
 
-        initGL();
-        resizeCanvas();
+      initGL();
+      resizeCanvas();
 
-        boundOnResize = resizeCanvas;
-        window.addEventListener("resize", boundOnResize);
+      boundOnResize = resizeCanvas;
+      window.addEventListener("resize", boundOnResize);
 
-        ctx.container.appendChild(canvas);
+      ctx.container.appendChild(canvas);
 
-        boundOnPointerMove = (e: PointerEvent) => {
-          updateCursorVisibility();
-          const coords = toPointerCoords(e);
-          if (typeof e.getCoalescedEvents === "function") {
-            const events = e.getCoalescedEvents();
-            if (events && events.length > 0) {
-              for (const ce of events) {
-                const c = toPointerCoords(ce);
-                moveTo(c.screenX, c.screenY, c.virtualX, c.virtualY);
-              }
-              return;
+      boundOnPointerMove = (e: PointerEvent) => {
+        updateCursorVisibility();
+        const coords = toPointerCoords(e);
+        if (typeof e.getCoalescedEvents === "function") {
+          const events = e.getCoalescedEvents();
+          if (events && events.length > 0) {
+            for (const ce of events) {
+              const c = toPointerCoords(ce);
+              moveTo(c.screenX, c.screenY, c.virtualX, c.virtualY);
             }
+            return;
           }
-          moveTo(coords.screenX, coords.screenY, coords.virtualX, coords.virtualY);
-        };
-        window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
+        }
+        moveTo(coords.screenX, coords.screenY, coords.virtualX, coords.virtualY);
+      };
+      window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
 
-        boundOnPointerDown = (_e: PointerEvent) => {};
-        window.addEventListener("pointerdown", boundOnPointerDown);
+      boundOnPointerDown = (_e: PointerEvent) => {};
+      window.addEventListener("pointerdown", boundOnPointerDown);
 
-        boundOnPointerUp = (_e: PointerEvent) => {};
-        window.addEventListener("pointerup", boundOnPointerUp);
+      boundOnPointerUp = (_e: PointerEvent) => {};
+      window.addEventListener("pointerup", boundOnPointerUp);
 
-        unsubPointerState = ctx.on("evt:pointer:stateChanged", ({ active }) => {
-          setActive(active);
-        });
+      unsubPointerState = ctx.on("evt:pointer:stateChanged", ({ active }) => {
+        setActive(active);
+      });
 
-        if (isActive) {
-          ctx.emit("req:pointer:setState", { active: true });
-        } else {
-          updateCursorVisibility();
-        }
-      },
+      if (isActive) {
+        ctx.emit("req:pointer:setState", { active: true });
+      } else {
+        updateCursorVisibility();
+      }
+    },
 
-      show() {
-        if (ctx) {
-          ctx.emit("req:pointer:setState", { active: true });
-        } else {
-          setActive(true);
-        }
-      },
+    show() {
+      if (ctx) {
+        ctx.emit("req:pointer:setState", { active: true });
+      } else {
+        setActive(true);
+      }
+    },
 
-      hide() {
-        if (ctx) {
-          ctx.emit("req:pointer:setState", { active: false });
-        } else {
-          setActive(false);
-        }
-      },
+    hide() {
+      if (ctx) {
+        ctx.emit("req:pointer:setState", { active: false });
+      } else {
+        setActive(false);
+      }
+    },
 
-      destroy() {
-        if (pointerIdleTimer !== null) {
-          window.clearTimeout(pointerIdleTimer);
-          pointerIdleTimer = null;
-        }
-        if (cursorIdleTimer !== null) {
-          window.clearTimeout(cursorIdleTimer);
-          cursorIdleTimer = null;
-        }
-        if (rafId !== null) {
-          cancelAnimationFrame(rafId);
-          rafId = null;
-        }
-        if (boundOnResize) window.removeEventListener("resize", boundOnResize);
-        if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
-        if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
-        if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
-        if (unsubPointerState) {
-          unsubPointerState();
-          unsubPointerState = null;
-        }
-        if (ctx) {
-          ctx.container.classList.remove("sr-pointer-mode");
-          ctx.container.classList.remove("sr-cursor-hidden");
-        }
-        if (canvas) {
-          canvas.remove();
-          canvas = null;
-        }
-        gl = null;
-        ctx = null;
-      },
+    destroy() {
+      if (pointerIdleTimer !== null) {
+        window.clearTimeout(pointerIdleTimer);
+        pointerIdleTimer = null;
+      }
+      if (cursorIdleTimer !== null) {
+        window.clearTimeout(cursorIdleTimer);
+        cursorIdleTimer = null;
+      }
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (boundOnResize) window.removeEventListener("resize", boundOnResize);
+      if (boundOnPointerMove) window.removeEventListener("pointermove", boundOnPointerMove);
+      if (boundOnPointerDown) window.removeEventListener("pointerdown", boundOnPointerDown);
+      if (boundOnPointerUp) window.removeEventListener("pointerup", boundOnPointerUp);
+      if (unsubPointerState) {
+        unsubPointerState();
+        unsubPointerState = null;
+      }
+      if (ctx) {
+        ctx.container.classList.remove("sr-pointer-mode");
+        ctx.container.classList.remove("sr-cursor-hidden");
+      }
+      if (canvas) {
+        canvas.remove();
+        canvas = null;
+      }
+      gl = null;
+      ctx = null;
+    },
 
-      /** @internal */
-      _getMetrics() {
-        return {
-          is_active: isActive ? 1 : 0,
-          raf_loop_active: rafId !== null ? 1 : 0,
-          active_points_count: rawPoints.length,
-          has_canvas: canvas !== null ? 1 : 0,
-        };
-      },
-    };
+    getMetrics() {
+      return {
+        is_active: isActive ? 1 : 0,
+        raf_loop_active: rafId !== null ? 1 : 0,
+        active_points_count: rawPoints.length,
+        has_canvas: canvas !== null ? 1 : 0,
+      };
+    },
+  };
 
   return controller;
 }

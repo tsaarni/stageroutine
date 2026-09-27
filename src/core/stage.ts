@@ -308,8 +308,8 @@ export class Stage {
   }
 
   private _broadcastPointerState(): void {
-    const active = storage.runtime.get<boolean>("pointer.active", false);
-    this.emit("evt:pointer:stateChanged", { active });
+    const pointerActive = storage.runtime.get<boolean>("pointer.active", false);
+    this.emit("evt:pointer:stateChanged", { active: pointerActive });
   }
 
   private _createOverlayContext(): OverlayContext {
@@ -318,11 +318,15 @@ export class Stage {
     if (!container || !viewport) {
       throw new Error("Cannot create overlay context before stage is mounted");
     }
+    const self = this;
     return {
       container,
       viewport,
       width: this.options.width || 1920,
       height: this.options.height || 1080,
+      get theme() {
+        return self.currentTheme;
+      },
       next: () => this.emit("req:nav:nextStep"),
       prev: () => this.emit("req:nav:prevStep"),
       nextScene: () => this.emit("req:nav:nextScene"),
@@ -910,14 +914,9 @@ export class Stage {
       name: "overlay_laser_active",
       help: "Laser overlay active.",
       collect: () => {
-        for (const overlay of this.overlays) {
-          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
-          if (o.id === "laser" && typeof o._getMetrics === "function") {
-            const m = o._getMetrics();
-            return m.is_active ? 1 : 0;
-          }
-        }
-        return null;
+        const o = this.overlays.find((x) => x.id === "laser");
+        const m = o?.getMetrics?.();
+        return m && typeof m.is_active === "number" ? m.is_active : null;
       },
     });
 
@@ -925,14 +924,9 @@ export class Stage {
       name: "overlay_laser_raf_active",
       help: "Laser animation loop running. Must be 0 when idle.",
       collect: () => {
-        for (const overlay of this.overlays) {
-          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
-          if (o.id === "laser" && typeof o._getMetrics === "function") {
-            const m = o._getMetrics();
-            return m.raf_loop_active ? 1 : 0;
-          }
-        }
-        return null;
+        const o = this.overlays.find((x) => x.id === "laser");
+        const m = o?.getMetrics?.();
+        return m && typeof m.raf_loop_active === "number" ? m.raf_loop_active : null;
       },
     });
 
@@ -940,14 +934,9 @@ export class Stage {
       name: "overlay_laser_points_count",
       help: "Laser trail points.",
       collect: () => {
-        for (const overlay of this.overlays) {
-          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
-          if (o.id === "laser" && typeof o._getMetrics === "function") {
-            const m = o._getMetrics();
-            return typeof m.active_points_count === "number" ? m.active_points_count : 0;
-          }
-        }
-        return null;
+        const o = this.overlays.find((x) => x.id === "laser");
+        const m = o?.getMetrics?.();
+        return m && typeof m.active_points_count === "number" ? m.active_points_count : null;
       },
     });
 
@@ -955,14 +944,79 @@ export class Stage {
       name: "overlay_laser_has_canvas",
       help: "Laser canvas mounted (1 = yes).",
       collect: () => {
-        for (const overlay of this.overlays) {
-          const o = overlay as { id?: string; _getMetrics?: () => Record<string, unknown> };
-          if (o.id === "laser" && typeof o._getMetrics === "function") {
-            const m = o._getMetrics();
-            return m.has_canvas ? 1 : 0;
-          }
-        }
-        return null;
+        const o = this.overlays.find((x) => x.id === "laser");
+        const m = o?.getMetrics?.();
+        return m && typeof m.has_canvas === "number" ? m.has_canvas : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_active",
+      help: "Annotation overlay active.",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.is_active === "number" ? m.is_active : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_strokes_count",
+      help: "Annotation stroke count on current slide.",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.stroke_count === "number" ? m.stroke_count : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_can_undo",
+      help: "Annotation can undo (1 = yes, 0 = no).",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.can_undo === "number" ? m.can_undo : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_can_redo",
+      help: "Annotation can redo (1 = yes, 0 = no).",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.can_redo === "number" ? m.can_redo : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_has_canvas",
+      help: "Annotation canvas mounted (1 = yes).",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.has_canvas === "number" ? m.has_canvas : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_points_count",
+      help: "Total annotation points across recorded strokes.",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.points_count === "number" ? m.points_count : null;
+      },
+    });
+
+    this.metrics.gauge({
+      name: "overlay_annotation_last_redraw_ms",
+      help: "Duration of the last annotation repaint in milliseconds.",
+      collect: () => {
+        const o = this.overlays.find((x) => x.id === "annotation");
+        const m = o?.getMetrics?.();
+        return m && typeof m.last_redraw_ms === "number" ? m.last_redraw_ms : null;
       },
     });
 
@@ -1392,8 +1446,8 @@ export class Stage {
         e.preventDefault();
         this._openMetricsWindow();
       } else if (e.key === "Escape") {
-        const current = storage.runtime.get<boolean>("pointer.active", false);
-        if (current) {
+        const pointerActive = storage.runtime.get<boolean>("pointer.active", false);
+        if (pointerActive) {
           e.preventDefault();
           this.emit("req:pointer:setState", { active: false });
         }

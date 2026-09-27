@@ -150,8 +150,8 @@ function createButton(label: string, title: string): HTMLButtonElement {
 function createPointerButton(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "sr-nav-btn sr-nav-btn-pointer";
-  btn.title = "Toggle pointer (P)";
-  btn.setAttribute("aria-label", "Toggle pointer");
+  btn.title = "Pointer & annotate (P)";
+  btn.setAttribute("aria-label", "Pointer and annotate");
   // Diagonal wand/pen with a glowing tip — standard laser pointer iconography
   btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
     <line x1="5" y1="19" x2="17" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>

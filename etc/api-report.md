@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 186 symbols |
+| `stageroutine` | 189 symbols |
 | `stageroutine/jsx-runtime` | 19 symbols |
 | `stageroutine/jsx-dev-runtime` | 19 symbols |
 | `stageroutine/vite` | 2 symbols |
@@ -27,6 +27,21 @@ Primary entry point providing the stage director, built-in components, motion tr
 ### Functions
 
 ```ts
+/**
+ * Creates an annotation overlay plugin enabling the presenter to draw smooth,
+ * luminous ink directly over slide content.
+ *
+ * Annotation is part of the shared pointer tool, so it activates together with
+ * {@link LaserPointer }. Toggle the tool with `P`; press `Escape` to exit.
+ * `C` clears ink. `Cmd/Ctrl+Z` or `Z` undo, and `Cmd/Ctrl+Shift+Z` or `Shift+Z`
+ * redo. These act on existing ink regardless of whether the pointer tool is active.
+ * @example ```ts
+ * stage.overlay(Annotation());
+ * stage.overlay(LaserPointer());
+ * ```
+ */
+export function Annotation(options?: AnnotationOptions): OverlayPlugin & AnnotationController;
+
 /** Creates a procedural ASCII Fluid background element. */
 export function AsciiFluid(options?: AsciiFluidOptions): Background;
 
@@ -492,6 +507,52 @@ export interface ActivationOptions extends ElementOptions {
     height?: number;
     /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
     color?: string;
+}
+
+/**
+ * Controller interface for the annotation overlay.
+ * @category Presenter
+ */
+export interface AnnotationController {
+    /** Whether the presenter pointer tool is active. */
+    active: boolean;
+    /** Active ink color. */
+    color: string;
+    /** Number of recorded strokes on the current scene. */
+    readonly strokeCount: number;
+    /** Whether there are strokes that can be undone. */
+    readonly canUndo: boolean;
+    /** Whether there are undone strokes that can be redone. */
+    readonly canRedo: boolean;
+    /** Clears all annotations, optionally with a 150ms dissolve. */
+    clear(animate?: boolean): void;
+    /** Removes the last drawn stroke. */
+    undo(): void;
+    /** Restores the most recently undone stroke. */
+    redo(): void;
+}
+
+/**
+ * Configuration options for the annotation overlay.
+ * @category Presenter
+ * @inline
+ */
+export interface AnnotationOptions {
+    /** Ink color. Defaults to the active theme primary color. */
+    color?: string;
+    /** Base stroke width in virtual canvas pixels. Defaults to 3. */
+    strokeWidth?: number;
+    /**
+     * Pointer position smoothing from 0 (raw and responsive) to 1 (maximum).
+     * Defaults to 0.8. Higher values remove hand tremor at the cost of slight lag.
+     */
+    smoothing?: number;
+    /** Clear annotations when the scene changes. Defaults to true. */
+    autoClearOnScene?: boolean;
+    /** Clear annotations on every step advance, e.g. bullet reveals. Defaults to false. */
+    autoClearOnStep?: boolean;
+    /** Enable the presenter pointer tool immediately. Defaults to false. */
+    active?: boolean;
 }
 
 /**
@@ -1291,6 +1352,8 @@ export interface OverlayContext {
     width: number;
     /** Virtual stage height in pixels (e.g. 1080). */
     height: number;
+    /** Active stage theme configuration. */
+    readonly theme: ThemeConfig;
     /** Advance to the next step. */
     next(): void;
     /** Go back to the previous step. */
@@ -1333,6 +1396,8 @@ export interface OverlayContext {
  * @category Core
  */
 export interface OverlayPlugin {
+    /** Optional unique identifier for the overlay plugin. */
+    readonly id?: string;
     /** Called once when the overlay is attached to the stage. */
     mount(ctx: OverlayContext): void;
     /** Show the overlay. */
@@ -1341,6 +1406,8 @@ export interface OverlayPlugin {
     hide(): void;
     /** Remove overlay from the DOM and clean up all listeners. */
     destroy(): void;
+    /** Optional metrics reporter for dev diagnostics. */
+    getMetrics?(): Record<string, unknown>;
 }
 
 /**
@@ -1735,6 +1802,13 @@ export interface StageEventMap {
     // Pointer requests & notifications
     "req:pointer:setState": PointerSetStateEvent;
     "evt:pointer:stateChanged": PointerStateChangedEvent;
+    // Annotation requests & notifications (drawn while the pointer tool is active)
+    "req:annotation:clear": undefined;
+    "evt:annotation:cleared": undefined;
+    "req:annotation:undo": undefined;
+    "req:annotation:redo": undefined;
+    "evt:annotation:undone": undefined;
+    "evt:annotation:redone": undefined;
     // Stage lifecycle
     "evt:stage:resized": StageResizedEvent;
     "req:stage:requestState": undefined;

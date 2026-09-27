@@ -248,12 +248,14 @@ export type {
 // Motion
 export { replace, stagger, to } from "./motion/index";
 export type {
+  AnnotationController,
+  AnnotationOptions,
   LaserPointerController,
   LaserPointerOptions,
   NavigationOverlayOptions,
 } from "./overlays/index";
 // Overlays
-export { LaserPointer, NavigationOverlay } from "./overlays/index";
+export { Annotation, LaserPointer, NavigationOverlay } from "./overlays/index";
 
 // Presenter
 export { PresenterClient, PresenterRecorder } from "./presenter/index";

@@ -3,6 +3,7 @@
  * with optional curved corner wrapping (bracket accent) and dashed/dotted styling.
  */
 
+import { units } from "../core/units";
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 /**
@@ -17,10 +18,10 @@ export interface RuleOptions {
   color?: string | string[];
   /** Stroke style following standard CSS border-style (default: "solid"). */
   borderStyle?: "solid" | "dashed" | "dotted";
-  /** Rule stroke thickness in pixels or CSS unit (default: 2). */
+  /** Rule stroke thickness in canvas pixels or a CSS length (default: 2). */
   thickness?: number | string;
-  /** Inset padding/offset from endpoints in stage units or pixels (default: 0). */
-  inset?: number | string;
+  /** Inset from both endpoints in stage units (default: 0). */
+  inset?: number;
   /**
    * Curves the rule around adjacent corners, creating a stylized bracket / corner-hugging accent.
    * Pass `true` or an explicit bracket extension length in pixels (default: 10px).
@@ -137,7 +138,7 @@ export function rule(options: RuleOptions = {}): ElementDecorator {
   const isBorderStroke = borderStyle !== "solid";
 
   const formattedThickness = typeof rawThickness === "number" ? `${rawThickness}px` : rawThickness;
-  const formattedInset = typeof inset === "number" ? `${inset}px` : inset;
+  const formattedInset = units(inset);
   const formattedBracketLength = `${bracketLength}px`;
 
   return (element: DOMElement) => {

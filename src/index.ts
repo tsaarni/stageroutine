@@ -1,3 +1,5 @@
+/// <reference path="./vite-env.d.ts" />
+
 /**
  * Public API surface for StageRoutine.
  *
@@ -82,9 +84,11 @@ export type {
   PointerSetStateEvent,
   PointerStateChangedEvent,
   Position,
+  PositionCoord,
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
+  SizeProp,
   StageContext,
   StageEventMap,
   StageOptions,
@@ -126,7 +130,6 @@ export {
 export type {
   AsciiFluidOptions,
   BackgroundOptions,
-  BaseFluidOptions,
   CSSBackgroundOptions,
   GradientFluidOptions,
   StarfieldOptions,

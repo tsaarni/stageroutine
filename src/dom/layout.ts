@@ -3,11 +3,17 @@
  */
 
 import {
+  cssLength,
   getActiveStage,
   type Point,
   type ReactiveElementBase,
+  STAGE_UNIT_VAR,
+  STAGE_UNITS_TALL,
+  stageUnitPx,
+  stageUnitsWide,
   type TransitionDescriptor,
   tryGetActiveStage,
+  units,
 } from "../core/index";
 import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
@@ -62,19 +68,19 @@ export type StackSlot = LayoutElement | LayoutElement[];
  * @category Layout
  */
 export interface LayoutOptions {
-  /** Horizontal start position in stage width percentage units (`cqw`, 0..100) or `"center"`. */
+  /** Horizontal start position in stage units, or `"center"` to center the arrangement. */
   x?: number | "center";
-  /** Vertical start position in stage height percentage units (`cqh`, 0..100) or `"center"`. */
+  /** Vertical start position in stage units, or `"center"` to center the arrangement. */
   y?: number | "center";
-  /** Width constraint in stage width percentage units (`cqw`, 0..100), CSS unit string, or array per column. */
+  /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
   width?: number | string | (number | string)[];
-  /** Height constraint in stage height percentage units (`cqh`, 0..100), CSS unit string, or array per row. */
+  /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
   height?: number | string | (number | string)[];
-  /** Gutter spacing shorthand along the primary axis in stage percentage units (`cqw` horizontally, `cqh` vertically). Defaults to 4 for hstack, 3 for vstack, and 2 for relative layouts. */
+  /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
   gap?: number;
-  /** Horizontal gutter spacing in stage width percentage units (`cqw`, 0..100). */
+  /** Horizontal gutter spacing in stage units. */
   gapX?: number;
-  /** Vertical gutter spacing in stage height percentage units (`cqh`, 0..100). */
+  /** Vertical gutter spacing in stage units. */
   gapY?: number;
   /**
    * Whether or how to animate elements into target positions.
@@ -107,9 +113,9 @@ export type RelativeAlign = "start" | "center" | "end";
  * @category Layout
  */
 export interface CircleLayoutOptions {
-  /** Center anchor point as [x, y] or a center element (default: [50, 50]). */
+  /** Center anchor point as [x, y] in stage units, or a center element (default: stage center). */
   center?: Point | LayoutElement;
-  /** Horizontal orbit radius in cqw (default: 18). */
+  /** Orbit radius in stage units (default: 28). */
   radius?: number;
   /** Vertical squash factor, 0 = perfect circle, 1 = flat line (default: 0). */
   flatten?: number;
@@ -153,57 +159,46 @@ export function measureOffscreen(dom: HTMLElement): { width: number; height: num
   return { width, height };
 }
 
+/** Stage width in stage units, falling back to a 16:9 stage before mount. */
+function stageWidthUnits(): number {
+  return tryGetActiveStage()?.unitsWide ?? stageUnitsWide(1920, 1080);
+}
+
 function measureElement(
   el: LayoutElement,
   explicitWidth?: number | string,
-): { widthCqw: number; heightCqh: number } {
+): { width: number; height: number } {
   const dom = (el as { domElement?: HTMLElement }).domElement;
-  if (!dom) return { widthCqw: 15, heightCqh: 8 };
+  if (!dom) return { width: 24, height: 7.2 };
 
   const stage = tryGetActiveStage();
-  const BASE_WIDTH = stage?.width ?? 1920;
-  const BASE_HEIGHT = stage?.height ?? 1080;
+  const unitPx = stageUnitPx(stage?.height ?? 1080);
 
   const prevWidth = dom.style.width;
+  const prevUnit = dom.style.getPropertyValue(STAGE_UNIT_VAR);
+  dom.style.setProperty(STAGE_UNIT_VAR, `${unitPx}px`);
 
-  if (explicitWidth !== undefined) {
-    let formattedW: string;
-    if (typeof explicitWidth === "number") {
-      formattedW = `${(explicitWidth / 100) * BASE_WIDTH}px`;
-    } else if (explicitWidth.endsWith("cqw")) {
-      formattedW = `${(Number.parseFloat(explicitWidth) / 100) * BASE_WIDTH}px`;
-    } else {
-      formattedW = explicitWidth;
-    }
-    dom.style.width = formattedW;
-  } else {
-    const wProp = (el as Record<string, unknown>).width;
-    if (wProp !== undefined) {
-      const widthValue = String(wProp);
-      let formattedW = widthValue;
-      if (typeof wProp === "number") {
-        formattedW = `${wProp}px`;
-      } else if (widthValue.endsWith("cqw")) {
-        formattedW = `${(Number.parseFloat(widthValue) / 100) * BASE_WIDTH}px`;
-      }
-      dom.style.width = formattedW;
-    }
+  // Measure against the constrained width when one is given
+  const widthSource = explicitWidth ?? (el as Record<string, unknown>).width;
+  if (widthSource !== undefined) {
+    dom.style.width =
+      typeof widthSource === "number" ? `${widthSource * unitPx}px` : String(widthSource);
   }
 
   const { width: measuredW, height: measuredH } = measureOffscreen(dom);
-  let w = measuredW;
-  let h = measuredH;
 
-  // Restore the original inline style width so elements keep their reactive cqw units
+  // Restore the inline width and stage unit so the element keeps its reactive stage units
   dom.style.width = prevWidth;
+  if (prevUnit) {
+    dom.style.setProperty(STAGE_UNIT_VAR, prevUnit);
+  } else {
+    dom.style.removeProperty(STAGE_UNIT_VAR);
+  }
 
-  if (w === 0) w = 240;
-  if (h === 0) h = 80;
+  const w = measuredW || 240;
+  const h = measuredH || 80;
 
-  return {
-    widthCqw: (w / BASE_WIDTH) * 100,
-    heightCqh: (h / BASE_HEIGHT) * 100,
-  };
+  return { width: w / unitPx, height: h / unitPx };
 }
 
 function applyPosition(
@@ -221,7 +216,7 @@ function applyPosition(
   const stage = getActiveStage();
   if (el && typeof el === "object" && "id" in el && "domElement" in el) {
     const reactiveEl = el as ReactiveElementBase;
-    if (!stage.hasElement(reactiveEl.id)) {
+    if (!stage._hasElement(reactiveEl.id)) {
       mount(reactiveEl);
     }
   }
@@ -231,20 +226,20 @@ function applyPosition(
   const optHeight = Array.isArray(options.height) ? options.height[0] : options.height;
   if (optWidth !== undefined) {
     if (target.width === undefined) {
-      target.width = typeof optWidth === "number" ? `${optWidth}cqw` : optWidth;
+      target.width = optWidth;
     }
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.width) {
-      dom.style.width = typeof optWidth === "number" ? `${optWidth}cqw` : String(optWidth);
+      dom.style.width = cssLength(optWidth) ?? "";
     }
   }
   if (optHeight !== undefined) {
     if (target.height === undefined) {
-      target.height = typeof optHeight === "number" ? `${optHeight}cqh` : optHeight;
+      target.height = optHeight;
     }
     const dom = (el as { domElement?: HTMLElement }).domElement;
     if (dom && !dom.style.height) {
-      dom.style.height = typeof optHeight === "number" ? `${optHeight}cqh` : String(optHeight);
+      dom.style.height = cssLength(optHeight) ?? "";
     }
   }
   if (options.animate) {
@@ -275,7 +270,7 @@ function positionRelative(
   const list = Array.isArray(elements) ? elements : [elements];
   if (list.length === 0) return;
 
-  const gap = options.gap ?? 2;
+  const gap = options.gap ?? 3;
   const align = options.align ?? "start";
   const shouldStack = options.stack ?? true;
 
@@ -285,7 +280,7 @@ function positionRelative(
 
   if (placement === "bottom") {
     let refY = targetY;
-    let refHeight = targetM.heightCqh;
+    let refHeight = targetM.height;
     list.forEach((el, index) => {
       const elM = measureElement(el);
       const computedY = refY + refHeight + gap;
@@ -293,21 +288,21 @@ function positionRelative(
       if (!shouldStack && typeof el.x === "number") {
         computedX = el.x;
       } else if (align === "center") {
-        computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+        computedX = targetX + (targetM.width - elM.width) / 2;
       } else if (align === "end") {
-        computedX = targetX + targetM.widthCqw - elM.widthCqw;
+        computedX = targetX + targetM.width - elM.width;
       }
       applyPosition(el, computedX, computedY, options, index);
       if (shouldStack) {
         refY = computedY;
-        refHeight = elM.heightCqh;
+        refHeight = elM.height;
       }
     });
   } else if (placement === "top") {
     if (!shouldStack) {
       list.forEach((el, index) => {
         const elM = measureElement(el);
-        const computedY = targetY - elM.heightCqh - gap;
+        const computedY = targetY - elM.height - gap;
         const computedX = typeof el.x === "number" ? el.x : targetX;
         applyPosition(el, computedX, computedY, options, index);
       });
@@ -316,12 +311,12 @@ function positionRelative(
       for (let i = list.length - 1; i >= 0; i--) {
         const el = list[i];
         const elM = measureElement(el);
-        const computedY = refY - elM.heightCqh - gap;
+        const computedY = refY - elM.height - gap;
         let computedX = targetX;
         if (align === "center") {
-          computedX = targetX + (targetM.widthCqw - elM.widthCqw) / 2;
+          computedX = targetX + (targetM.width - elM.width) / 2;
         } else if (align === "end") {
-          computedX = targetX + targetM.widthCqw - elM.widthCqw;
+          computedX = targetX + targetM.width - elM.width;
         }
         applyPosition(el, computedX, computedY, options, i);
         refY = computedY;
@@ -329,7 +324,7 @@ function positionRelative(
     }
   } else if (placement === "right") {
     let refX = targetX;
-    let refWidth = targetM.widthCqw;
+    let refWidth = targetM.width;
     list.forEach((el, index) => {
       const elM = measureElement(el);
       const computedX = refX + refWidth + gap;
@@ -337,21 +332,21 @@ function positionRelative(
       if (!shouldStack && typeof el.y === "number") {
         computedY = el.y;
       } else if (align === "center") {
-        computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+        computedY = targetY + (targetM.height - elM.height) / 2;
       } else if (align === "end") {
-        computedY = targetY + targetM.heightCqh - elM.heightCqh;
+        computedY = targetY + targetM.height - elM.height;
       }
       applyPosition(el, computedX, computedY, options, index);
       if (shouldStack) {
         refX = computedX;
-        refWidth = elM.widthCqw;
+        refWidth = elM.width;
       }
     });
   } else if (placement === "left") {
     if (!shouldStack) {
       list.forEach((el, index) => {
         const elM = measureElement(el);
-        const computedX = targetX - elM.widthCqw - gap;
+        const computedX = targetX - elM.width - gap;
         const computedY = typeof el.y === "number" ? el.y : targetY;
         applyPosition(el, computedX, computedY, options, index);
       });
@@ -360,12 +355,12 @@ function positionRelative(
       for (let i = list.length - 1; i >= 0; i--) {
         const el = list[i];
         const elM = measureElement(el);
-        const computedX = refX - elM.widthCqw - gap;
+        const computedX = refX - elM.width - gap;
         let computedY = targetY;
         if (align === "center") {
-          computedY = targetY + (targetM.heightCqh - elM.heightCqh) / 2;
+          computedY = targetY + (targetM.height - elM.height) / 2;
         } else if (align === "end") {
-          computedY = targetY + targetM.heightCqh - elM.heightCqh;
+          computedY = targetY + targetM.height - elM.height;
         }
         applyPosition(el, computedX, computedY, options, i);
         refX = computedX;
@@ -412,20 +407,21 @@ export const layout = {
   hstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
     if (elements.length === 0) return [];
 
-    const gapX = options.gapX ?? options.gap ?? 4;
+    const gapX = options.gapX ?? options.gap ?? 6;
     const gapY = options.gapY ?? 3;
 
+    const stageW = stageWidthUnits();
     const slotCount = elements.length;
-    const defaultX = 10;
+    const defaultX = 16;
     const startXVal = typeof options.x === "number" ? options.x : defaultX;
     const totalGapsX = Math.max(0, slotCount - 1) * gapX;
-    const autoColWidth = Math.max(10, (100 - startXVal * 2 - totalGapsX) / slotCount);
+    const autoColWidth = Math.max(16, (stageW - startXVal * 2 - totalGapsX) / slotCount);
 
     interface MeasuredSlot {
-      widthCqw: number;
-      heightCqh: number;
+      width: number;
+      height: number;
       isColumn: boolean;
-      items: { el: LayoutElement; widthCqw: number; heightCqh: number }[];
+      items: { el: LayoutElement; width: number; height: number }[];
     }
 
     const slotMeasurements: MeasuredSlot[] = [];
@@ -445,8 +441,8 @@ export const layout = {
 
         for (const el of colElements) {
           if ((el as Record<string, unknown>).width === undefined) {
-            const formatted = `${colWidthVal}cqw`;
-            (el as Record<string, unknown>).width = formatted;
+            const formatted = cssLength(colWidthVal) ?? "";
+            (el as Record<string, unknown>).width = colWidthVal;
             const dom = (el as { domElement?: HTMLElement }).domElement;
             if (dom && !dom.style.width) {
               dom.style.width = formatted;
@@ -456,15 +452,15 @@ export const layout = {
 
         const items = colElements.map((el) => {
           const m = measureElement(el, colWidthVal);
-          return { el, widthCqw: m.widthCqw, heightCqh: m.heightCqh };
+          return { el, width: m.width, height: m.height };
         });
 
-        const maxW = Math.max(...items.map((it) => it.widthCqw));
-        const totalH = items.reduce((sum, it) => sum + it.heightCqh, 0) + totalGapsY;
+        const maxW = Math.max(...items.map((it) => it.width));
+        const totalH = items.reduce((sum, it) => sum + it.height, 0) + totalGapsY;
 
         slotMeasurements.push({
-          widthCqw: maxW,
-          heightCqh: totalH,
+          width: maxW,
+          height: totalH,
           isColumn: true,
           items,
         });
@@ -479,10 +475,10 @@ export const layout = {
           m = measureElement(slot, autoColWidth);
         }
         slotMeasurements.push({
-          widthCqw: m.widthCqw,
-          heightCqh: m.heightCqh,
+          width: m.width,
+          height: m.height,
           isColumn: false,
-          items: [{ el: slot, widthCqw: m.widthCqw, heightCqh: m.heightCqh }],
+          items: [{ el: slot, width: m.width, height: m.height }],
         });
       }
     });
@@ -490,19 +486,19 @@ export const layout = {
     let currentX: number;
     if (options.x === "center") {
       const totalWidth =
-        slotMeasurements.reduce((sum, sm) => sum + sm.widthCqw, 0) +
+        slotMeasurements.reduce((sum, sm) => sum + sm.width, 0) +
         Math.max(0, slotMeasurements.length - 1) * gapX;
-      currentX = Math.max(0, (100 - totalWidth) / 2);
+      currentX = Math.max(0, (stageW - totalWidth) / 2);
     } else if (typeof options.x === "number") {
       currentX = options.x;
     } else {
       currentX = defaultX;
     }
 
-    const y = options.y ?? 24;
-    const yNum = typeof y === "number" ? y : 24;
+    const y = options.y ?? 22;
+    const yNum = typeof y === "number" ? y : 22;
     const align = options.align ?? "start";
-    const maxH = Math.max(...slotMeasurements.map((sm) => sm.heightCqh));
+    const maxH = Math.max(...slotMeasurements.map((sm) => sm.height));
     const rules: DOMElement[] = [];
     let itemIdx = 0;
 
@@ -510,24 +506,24 @@ export const layout = {
       const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
       let slotY = yNum;
       if (align === "center") {
-        slotY = yNum + (maxH - sm.heightCqh) / 2;
+        slotY = yNum + (maxH - sm.height) / 2;
       } else if (align === "end") {
-        slotY = yNum + (maxH - sm.heightCqh);
+        slotY = yNum + (maxH - sm.height);
       }
 
       if (sm.isColumn) {
         let colY = slotY;
-        for (const { el, heightCqh } of sm.items) {
+        for (const { el, height } of sm.items) {
           const elWidth = (el as Record<string, unknown>).width as number | string | undefined;
           const appliedOptions = {
             ...options,
             width:
               explicitWidth !== undefined && explicitWidth !== "equal"
                 ? explicitWidth
-                : (elWidth ?? sm.widthCqw),
+                : (elWidth ?? sm.width),
           };
           applyPosition(el, currentX, colY, appliedOptions, itemIdx++);
-          colY += heightCqh + gapY;
+          colY += height + gapY;
         }
       } else {
         const item = sm.items[0];
@@ -541,14 +537,9 @@ export const layout = {
       }
 
       if (options.rule && index < slotMeasurements.length - 1) {
-        const ruleX = currentX + sm.widthCqw + gapX / 2;
+        const ruleX = currentX + sm.width + gapX / 2;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        let inset = 0;
-        if (typeof cfg.inset === "number") {
-          inset = cfg.inset;
-        } else if (typeof cfg.inset === "string") {
-          inset = Number.parseFloat(cfg.inset) || 0;
-        }
+        const inset = cfg.inset ?? 0;
         const thickness = cfg.thickness ?? 2;
         const isBracketed = !!cfg.bracket;
         const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
@@ -559,7 +550,7 @@ export const layout = {
         } else if (typeof thickness === "number") {
           ruleWidth = `${thickness}px`;
         }
-        const ruleHeight = `${maxH - 2 * inset}cqh`;
+        const ruleHeight = units(maxH - 2 * inset);
 
         const ruleEl = createLayoutRule(ruleX, yNum + inset, ruleWidth, ruleHeight, {
           ...cfg,
@@ -568,7 +559,7 @@ export const layout = {
         rules.push(ruleEl);
       }
 
-      currentX += sm.widthCqw + gapX;
+      currentX += sm.width + gapX;
     });
 
     return rules;
@@ -582,19 +573,20 @@ export const layout = {
   vstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
     if (elements.length === 0) return [];
 
-    const x = options.x ?? 10;
-    const xNum = typeof x === "number" ? x : 10;
+    const stageW = stageWidthUnits();
+    const x = options.x ?? 16;
+    const xNum = typeof x === "number" ? x : 16;
     const effectiveWidth =
-      options.width ?? (x === "center" ? 80 : Math.max(20, 100 - xNum - (xNum > 30 ? 4 : 6)));
+      options.width ?? (x === "center" ? 128 : Math.max(32, stageW - xNum - (xNum > 48 ? 6 : 10)));
 
     const gapY = options.gapY ?? options.gap ?? 3;
-    const gapX = options.gapX ?? 4;
+    const gapX = options.gapX ?? 6;
 
     interface MeasuredSlot {
-      widthCqw: number;
-      heightCqh: number;
+      width: number;
+      height: number;
       isRow: boolean;
-      items: { el: LayoutElement; widthCqw: number; heightCqh: number }[];
+      items: { el: LayoutElement; width: number; height: number }[];
     }
 
     const slotMeasurements: MeasuredSlot[] = [];
@@ -605,34 +597,34 @@ export const layout = {
       if (Array.isArray(slot)) {
         const rowElements = slot;
         const totalGapsX = Math.max(0, rowElements.length - 1) * gapX;
-        let widthVal = 80;
+        let widthVal = 128;
         if (typeof effectiveWidth === "number") {
           widthVal = effectiveWidth;
         } else if (Array.isArray(effectiveWidth) && typeof effectiveWidth[0] === "number") {
           widthVal = effectiveWidth[0];
         }
-        const autoItemWidth = Math.max(10, (widthVal - totalGapsX) / rowElements.length);
+        const autoItemWidth = Math.max(16, (widthVal - totalGapsX) / rowElements.length);
 
         for (const el of rowElements) {
           if ((el as Record<string, unknown>).width === undefined) {
-            (el as Record<string, unknown>).width = `${autoItemWidth}cqw`;
+            (el as Record<string, unknown>).width = autoItemWidth;
           }
         }
 
         const items = rowElements.map((el) => {
           const m = measureElement(el, autoItemWidth);
-          return { el, widthCqw: m.widthCqw, heightCqh: m.heightCqh };
+          return { el, width: m.width, height: m.height };
         });
 
-        const totalW = items.reduce((sum, it) => sum + it.widthCqw, 0) + totalGapsX;
+        const totalW = items.reduce((sum, it) => sum + it.width, 0) + totalGapsX;
         const maxH =
           typeof explicitHeight === "number"
             ? explicitHeight
-            : Math.max(...items.map((it) => it.heightCqh));
+            : Math.max(...items.map((it) => it.height));
 
         slotMeasurements.push({
-          widthCqw: totalW,
-          heightCqh: maxH,
+          width: totalW,
+          height: maxH,
           isRow: true,
           items,
         });
@@ -650,25 +642,25 @@ export const layout = {
           m = measureElement(slot, fallbackWidth);
         }
         slotMeasurements.push({
-          widthCqw: m.widthCqw,
-          heightCqh: typeof explicitHeight === "number" ? explicitHeight : m.heightCqh,
+          width: m.width,
+          height: typeof explicitHeight === "number" ? explicitHeight : m.height,
           isRow: false,
-          items: [{ el: slot, widthCqw: m.widthCqw, heightCqh: m.heightCqh }],
+          items: [{ el: slot, width: m.width, height: m.height }],
         });
       }
     });
 
     const totalHeight =
-      slotMeasurements.reduce((sum, sm) => sum + sm.heightCqh, 0) +
+      slotMeasurements.reduce((sum, sm) => sum + sm.height, 0) +
       Math.max(0, slotMeasurements.length - 1) * gapY;
 
     let currentY: number;
     if (options.y === "center") {
-      currentY = Math.max(0, (100 - totalHeight) / 2);
+      currentY = Math.max(0, (STAGE_UNITS_TALL - totalHeight) / 2);
     } else if (typeof options.y === "number") {
       currentY = options.y;
     } else {
-      currentY = 20;
+      currentY = 18;
     }
 
     const rules: DOMElement[] = [];
@@ -685,13 +677,13 @@ export const layout = {
 
       if (sm.isRow) {
         let rowX = xNum;
-        for (const { el, widthCqw } of sm.items) {
+        for (const { el, width } of sm.items) {
           const appliedOptions = {
             ...options,
             height: explicitH,
           };
           applyPosition(el, rowX, currentY, appliedOptions, itemIdx++);
-          rowX += widthCqw + gapX;
+          rowX += width + gapX;
         }
       } else {
         const item = sm.items[0];
@@ -713,14 +705,9 @@ export const layout = {
       }
 
       if (options.rule && index < slotMeasurements.length - 1) {
-        const ruleY = currentY + sm.heightCqh + gapY / 2;
+        const ruleY = currentY + sm.height + gapY / 2;
         const cfg = typeof options.rule === "object" ? options.rule : {};
-        let inset = 0;
-        if (typeof cfg.inset === "number") {
-          inset = cfg.inset;
-        } else if (typeof cfg.inset === "string") {
-          inset = Number.parseFloat(cfg.inset) || 0;
-        }
+        const inset = cfg.inset ?? 0;
         const thickness = cfg.thickness ?? 2;
         const isBracketed = !!cfg.bracket;
         const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
@@ -731,7 +718,7 @@ export const layout = {
         } else if (typeof thickness === "number") {
           ruleHeight = `${thickness}px`;
         }
-        const ruleWidth = `${widthNum - 2 * inset}cqw`;
+        const ruleWidth = units(widthNum - 2 * inset);
 
         const ruleEl = createLayoutRule(xNum + inset, ruleY, ruleWidth, ruleHeight, {
           ...cfg,
@@ -740,7 +727,7 @@ export const layout = {
         rules.push(ruleEl);
       }
 
-      currentY += sm.heightCqh + gapY;
+      currentY += sm.height + gapY;
     });
 
     return rules;
@@ -774,28 +761,28 @@ export const layout = {
     const measurements = flatNonNull.map((el) =>
       measureElement(el, Array.isArray(options.width) ? options.width[0] : options.width),
     );
-    const maxColWidth = Math.max(...measurements.map((m) => m.widthCqw));
-    const maxRowHeight = Math.max(...measurements.map((m) => m.heightCqh));
+    const maxColWidth = Math.max(...measurements.map((m) => m.width));
+    const maxRowHeight = Math.max(...measurements.map((m) => m.height));
 
     const totalGridWidth = cols * maxColWidth + Math.max(0, cols - 1) * gapX;
     const totalGridHeight = matrix.length * maxRowHeight + Math.max(0, matrix.length - 1) * gapY;
 
     let startX: number;
     if (options.x === "center") {
-      startX = Math.max(0, (100 - totalGridWidth) / 2);
+      startX = Math.max(0, (stageWidthUnits() - totalGridWidth) / 2);
     } else if (typeof options.x === "number") {
       startX = options.x;
     } else {
-      startX = 10;
+      startX = 16;
     }
 
     let startY: number;
     if (options.y === "center") {
-      startY = Math.max(0, (100 - totalGridHeight) / 2);
+      startY = Math.max(0, (STAGE_UNITS_TALL - totalGridHeight) / 2);
     } else if (typeof options.y === "number") {
       startY = options.y;
     } else {
-      startY = 20;
+      startY = 18;
     }
 
     let itemIdx = 0;
@@ -812,12 +799,7 @@ export const layout = {
     const rules: DOMElement[] = [];
     if (options.rule) {
       const cfg = typeof options.rule === "object" ? options.rule : {};
-      let inset = 0;
-      if (typeof cfg.inset === "number") {
-        inset = cfg.inset;
-      } else if (typeof cfg.inset === "string") {
-        inset = Number.parseFloat(cfg.inset) || 0;
-      }
+      const inset = cfg.inset ?? 0;
       const thickness = cfg.thickness ?? 2;
       const isBracketed = !!cfg.bracket;
       const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
@@ -828,7 +810,7 @@ export const layout = {
       } else if (typeof thickness === "number") {
         vertWidth = `${thickness}px`;
       }
-      const vertHeight = `${totalGridHeight - 2 * inset}cqh`;
+      const vertHeight = units(totalGridHeight - 2 * inset);
 
       // Vertical column dividers
       for (let c = 0; c < cols - 1; c++) {
@@ -847,7 +829,7 @@ export const layout = {
       } else if (typeof thickness === "number") {
         horizHeight = `${thickness}px`;
       }
-      const horizWidth = `${totalGridWidth - 2 * inset}cqw`;
+      const horizWidth = units(totalGridWidth - 2 * inset);
 
       // Horizontal row dividers
       for (let r = 0; r < matrix.length - 1; r++) {
@@ -923,8 +905,8 @@ export const layout = {
     const count = elements.length;
     if (count === 0) return;
 
-    let cx = 50;
-    let cy = 50;
+    let cx = stageWidthUnits() / 2;
+    let cy = STAGE_UNITS_TALL / 2;
 
     if (options.center) {
       if (Array.isArray(options.center)) {
@@ -935,20 +917,16 @@ export const layout = {
         const centerEl = options.center as LayoutElement;
         if ("domElement" in centerEl || "width" in centerEl) {
           const m = measureElement(centerEl);
-          if (typeof centerEl.x === "number") cx = centerEl.x + m.widthCqw / 2;
-          if (typeof centerEl.y === "number") cy = centerEl.y + m.heightCqh / 2;
+          if (typeof centerEl.x === "number") cx = centerEl.x + m.width / 2;
+          if (typeof centerEl.y === "number") cy = centerEl.y + m.height / 2;
         }
       }
     }
 
-    const radius = options.radius ?? 18;
-    // cqw vs cqh scale differently (1920 vs 1080 per 100 units);
-    // flatten 0 keeps a true pixel circle, higher values squash vertically.
-    const stage = tryGetActiveStage();
-    const stageW = stage?.width ?? 1920;
-    const stageH = stage?.height ?? 1080;
+    const radius = options.radius ?? 28;
+    // Units are isotropic, so the orbit is a true circle. flatten squashes it vertically.
     const rx = radius;
-    const ry = radius * (stageW / stageH) * (1 - (options.flatten ?? 0));
+    const ry = radius * (1 - (options.flatten ?? 0));
     const startAngleDeg = options.startAngle ?? -90; // Default 12 o'clock top
     const spanDeg = options.span ?? 360;
     const centerElements = options.centerElements ?? true;
@@ -966,8 +944,8 @@ export const layout = {
 
       if (centerElements) {
         const m = measureElement(el);
-        targetX -= m.widthCqw / 2;
-        targetY -= m.heightCqh / 2;
+        targetX -= m.width / 2;
+        targetY -= m.height / 2;
       }
 
       applyPosition(el, targetX, targetY, options);

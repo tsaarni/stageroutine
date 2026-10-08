@@ -15,9 +15,9 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 189 symbols |
-| `stageroutine/jsx-runtime` | 19 symbols |
-| `stageroutine/jsx-dev-runtime` | 19 symbols |
+| `stageroutine` | 190 symbols |
+| `stageroutine/jsx-runtime` | 8 symbols |
+| `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 2 symbols |
 
 ## `stageroutine`
@@ -304,21 +304,18 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
  */
 export class DOMElement implements ReactiveElementBase {
   constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
-  static reactiveKeys: ReadonlySet<string>;
-  reactiveKeys: ReadonlySet<string>;
+  static _reactiveKeys: ReadonlySet<string>;
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: CoordProp;
-  y: CoordProp;
-  width: CoordProp | undefined;
-  height: CoordProp | undefined;
+  /** Which point of the element sits on its coordinate. */
+  origin: ElementAnchor;
+  /** Horizontal coordinate in stage units. */
+  x: number;
+  /** Vertical coordinate in stage units. */
+  y: number;
+  width: SizeProp | undefined;
+  height: SizeProp | undefined;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   opacity: ReactiveProp<number>;
@@ -334,27 +331,22 @@ export class DOMElement implements ReactiveElementBase {
   /** Delay in seconds before entering scene transition begins (defaults to 0). */
   enterDelay: number | undefined;
   align: Align | undefined;
-  size: CoordProp | undefined;
+  size: SizeProp | undefined;
+  /** Coordinate pair in stage units. */
   position: Position;
-  /**
-   * Animates multiple reactive properties on this element simultaneously.
-   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
-   */
+  /** Sets multiple properties on this element with a unified transition descriptor or immediate values. */
   to(props: ElementTransitionProps): ElementTransition;
+  /** Whether this element is currently attached to the DOM tree. */
   isMounted: boolean;
+  /** Whether this element is visible and active in the current scene (opacity > 0). */
   isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
+  /** Registers a callback invoked when the element is attached to the stage DOM. */
   onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
+  /** Registers a callback invoked when the element is detached from the stage DOM. */
   onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
+  /** Registers a callback invoked when the element becomes visible in the active scene. */
   onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
+  /** Registers a callback invoked when the element transitions out of visibility. */
   onDeactivate(fn: () => void): () => void;
   /**
    * Registers a callback invoked whenever reactive properties are mutated during transitions.
@@ -416,10 +408,7 @@ export class Stage {
    * context will cause the latter instance to overwrite `activeStage`.
    */
   constructor(options?: StageOptions): Stage;
-  isMounted(): boolean;
-  registerPendingFlush(flush: () => void): () => void;
-  recordAction(action: () => void): void;
-  readonly metrics: MetricRegistry;
+  isMounted: boolean;
   /**
    * Attaches an overlay plugin to the stage.
    *
@@ -436,12 +425,10 @@ export class Stage {
   width: number;
   /** Virtual stage canvas height in pixels (default: 1080). */
   height: number;
-  recordMutation(elementId: string, property: string, from: unknown, to: unknown, durationMs: number, delayMs: number, curve: EaseCurve, triggerElementId?: string, triggerMilestone?: AnimationMilestone, triggerProperty?: string): void;
-  getCurrentPropertyValue(elementId: string, property: string): unknown;
-  setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
-  /** Checks whether an element is already registered with the stage. */
-  hasElement(id: string): boolean;
-  registerElement<T extends ReactiveElementBase>(element: T): T;
+  /** Stage width in stage units (160 on a 16:9 stage). */
+  unitsWide: number;
+  /** Stage height in stage units (always 90). */
+  unitsTall: number;
   /** Declares a new presentation scene and returns a builder to populate its elements. */
   scene(name: string): SceneBuilder;
   /**
@@ -497,13 +484,13 @@ export interface ActivationBarElement extends DOMElement {
  * @category Components
  */
 export interface ActivationOptions extends ElementOptions {
-    /** Starting message connector or Y coordinate anchor. */
+    /** Starting message connector, or a Y coordinate in stage units. */
     from?: ConnectorElement | number;
-    /** Ending message connector or Y coordinate anchor. */
+    /** Ending message connector, or a Y coordinate in stage units. */
     to?: ConnectorElement | number;
-    /** Explicit vertical offset along the lifeline in pixels or stage units. */
+    /** Explicit vertical offset along the lifeline in stage units. */
     y?: number;
-    /** Explicit bar height in pixels or stage units (default: 20). */
+    /** Explicit bar height in stage units (default: 18). */
     height?: number;
     /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
     color?: string;
@@ -560,7 +547,11 @@ export interface AnnotationOptions {
  * @category Backgrounds
  * @inline
  */
-export interface AsciiFluidOptions extends BaseFluidOptions {
+export interface AsciiFluidOptions extends BackgroundOptions {
+    /** Background color behind the fluid (default: "#09090b") */
+    backgroundColor?: string;
+    /** Speed of wave rolling across screen (default: 0.5) */
+    waveSpeed?: number;
     /** ASCII character ramp ordered from darkest to brightest */
     characters?: string;
     /** Size of each ASCII character cell in pixels (default: 18) */
@@ -591,18 +582,6 @@ export interface BackgroundOptions {
     className?: string;
     /** Optional initial opacity (default: 1). */
     opacity?: number;
-}
-
-/**
- * @internal
- */
-export interface BaseFluidOptions extends BackgroundOptions {
-    /** Background color behind the fluid (default: "#09090b") */
-    backgroundColor?: string;
-    /** Overall opacity / brightness factor (default: 0.28) */
-    opacity?: number;
-    /** Speed of wave rolling across screen (default: 0.5) */
-    waveSpeed?: number;
 }
 
 /**
@@ -680,8 +659,8 @@ export interface BulletListElement extends DOMElement {
  * @inline
  */
 export interface BulletListOptions extends ElementOptions {
-    /** Vertical spacing between bullet items in pixels (default: 16). */
-    itemSpacing?: number;
+    /** Vertical spacing between bullet items in stage units, or a CSS length. */
+    itemSpacing?: number | string;
     /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
     marker?: string | string[];
     /** Default marker color for bullet points (overrides `color` for markers). A per-item `markerColor` overrides this. */
@@ -708,9 +687,9 @@ export interface CameraDevice {
  * @category Layout
  */
 export interface CircleLayoutOptions {
-    /** Center anchor point as [x, y] or a center element (default: [50, 50]). */
+    /** Center anchor point as [x, y] in stage units, or a center element (default: stage center). */
     center?: Point | LayoutElement;
-    /** Horizontal orbit radius in cqw (default: 18). */
+    /** Orbit radius in stage units (default: 28). */
     radius?: number;
     /** Vertical squash factor, 0 = perfect circle, 1 = flat line (default: 0). */
     flatten?: number;
@@ -772,9 +751,9 @@ export interface ConnectorElement extends DOMElement {
     toAnchor: AnchorMode | ElementAnchor;
     connectorColor: string;
     labelPlacement: ReactiveProp<LabelPlacement>;
-    labelOffset: ReactiveProp<LabelOffset>;
-    labelOffsetX: ReactiveProp<number | string>;
-    labelOffsetY: ReactiveProp<number | string>;
+    labelOffset?: ReactiveProp<LabelOffset>;
+    labelOffsetX?: ReactiveProp<number | string>;
+    labelOffsetY?: ReactiveProp<number | string>;
     flow: FlowEffect;
     start: ReactiveProp<number>;
     end: ReactiveProp<number>;
@@ -794,11 +773,11 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     label?: string;
     /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
     labelPlacement?: ReactiveProp<LabelPlacement>;
-    /** Responsive offset to nudge the label ([x, y] in px, cqw, cqh, or rem). Reactive. */
+    /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
     labelOffset?: ReactiveProp<LabelOffset>;
-    /** Horizontal offset for the label in virtual pixels or container units. Reactive. */
+    /** Horizontal offset for the label in stage units, or a CSS length. Reactive. */
     labelOffsetX?: ReactiveProp<number | string>;
-    /** Vertical offset for the label in virtual pixels or container units. Reactive. */
+    /** Vertical offset for the label in stage units, or a CSS length. Reactive. */
     labelOffsetY?: ReactiveProp<number | string>;
     /** Routing style: straight line, 90° orthogonal corners, smooth cubic Bézier, or single-curvature circular arc. */
     routing?: "straight" | "corner" | "bezier" | "arc";
@@ -895,14 +874,15 @@ export interface DreamOptions {
  */
 export interface ElementOptions {
     id?: string;
-    anchor?: ElementAnchor;
+    /** Which point of the element sits on its coordinate (default: `"top-left"`). */
+    origin?: ElementAnchor;
     align?: Align;
     position?: Position;
     x?: CoordProp;
     y?: CoordProp;
-    width?: CoordProp;
-    height?: CoordProp;
-    size?: CoordProp;
+    width?: SizeProp;
+    height?: SizeProp;
+    size?: SizeProp;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
@@ -949,16 +929,16 @@ export interface ElementTransitionProps {
     x?: CoordProp;
     y?: CoordProp;
     position?: ReactiveProp<Position> | PositionUpdater;
-    width?: CoordProp;
-    height?: CoordProp;
-    size?: CoordProp;
+    width?: SizeProp;
+    height?: SizeProp;
+    size?: SizeProp;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
     blur?: ReactiveProp<number>;
     brightness?: ReactiveProp<number>;
     color?: ReactiveProp<string>;
-    anchor?: ReactiveProp<ElementAnchor>;
+    origin?: ReactiveProp<ElementAnchor>;
     align?: ReactiveProp<Align>;
     [key: string]: unknown;
 }
@@ -1006,7 +986,11 @@ export interface GlowOptions {
  * @category Backgrounds
  * @inline
  */
-export interface GradientFluidOptions extends BaseFluidOptions {
+export interface GradientFluidOptions extends BackgroundOptions {
+    /** Background color behind the fluid (default: "#09090b") */
+    backgroundColor?: string;
+    /** Speed of wave rolling across screen (default: 0.5) */
+    waveSpeed?: number;
     /**
      * Color palette from dark depth to luminous crest highlights.
      * Default: ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"]
@@ -1211,19 +1195,19 @@ export interface LaserPointerOptions {
  * @category Layout
  */
 export interface LayoutOptions {
-    /** Horizontal start position in stage width percentage units (`cqw`, 0..100) or `"center"`. */
+    /** Horizontal start position in stage units, or `"center"` to center the arrangement. */
     x?: number | "center";
-    /** Vertical start position in stage height percentage units (`cqh`, 0..100) or `"center"`. */
+    /** Vertical start position in stage units, or `"center"` to center the arrangement. */
     y?: number | "center";
-    /** Width constraint in stage width percentage units (`cqw`, 0..100), CSS unit string, or array per column. */
+    /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
     width?: number | string | (number | string)[];
-    /** Height constraint in stage height percentage units (`cqh`, 0..100), CSS unit string, or array per row. */
+    /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
     height?: number | string | (number | string)[];
-    /** Gutter spacing shorthand along the primary axis in stage percentage units (`cqw` horizontally, `cqh` vertically). Defaults to 4 for hstack, 3 for vstack, and 2 for relative layouts. */
+    /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
     gap?: number;
-    /** Horizontal gutter spacing in stage width percentage units (`cqw`, 0..100). */
+    /** Horizontal gutter spacing in stage units. */
     gapX?: number;
-    /** Vertical gutter spacing in stage height percentage units (`cqh`, 0..100). */
+    /** Vertical gutter spacing in stage units. */
     gapY?: number;
     /**
      * Whether or how to animate elements into target positions.
@@ -1256,7 +1240,7 @@ export interface LifelineElement extends DOMElement {
  * @category Components
  */
 export interface LifelineOptions extends ElementOptions {
-    /** Vertical length of the dashed line in pixels (default: 500). Automatically extends when activations exceed length. */
+    /** Vertical length of the dashed line in stage units (default: 42). Automatically extends when activations exceed length. */
     length?: number;
     /** Stroke color of the dashed line (default: "rgba(148, 163, 184, 0.7)"). */
     color?: string;
@@ -1501,24 +1485,14 @@ export interface ReactiveElementBase {
     readonly id: string;
     readonly kind: string;
     readonly domElement: HTMLElement;
-    anchor?: ReactiveProp<ElementAnchor>;
+    /** Which point of the element sits on its coordinate (default: `"top-left"`). */
+    origin?: ReactiveProp<ElementAnchor>;
     align?: ReactiveProp<Align>;
-    /**
-     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-     * When true, Stage does not overwrite `node.style.transform`.
-     * @internal Engine driver
-     */
-    isCustomPositioned?: boolean;
-    /**
-     * Default pointer-events style when element is visible.
-     * @internal Engine driver
-     */
-    _defaultPointerEvents?: string;
     opacity: ReactiveProp<number>;
     x: CoordProp;
     y: CoordProp;
     position?: ReactiveProp<Position> | PositionUpdater;
-    size?: CoordProp;
+    size?: SizeProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
     blur: ReactiveProp<number>;
@@ -1540,18 +1514,6 @@ export interface ReactiveElementBase {
     onDeactivate?(fn: () => void): () => void;
     onUpdate?(fn: (progress: number) => void): () => void;
     onClick?(handler: (event: MouseEvent) => void): this;
-    /** Recomputes layout or path coordinates on visual changes. */
-    update?(): void;
-    /** @internal Engine driver */
-    _dispatchUpdate?(progress?: number): void;
-    /** @internal Engine driver */
-    _mount?(parent: HTMLElement): void;
-    /** @internal Engine driver */
-    _unmount?(): void;
-    /** @internal Engine driver */
-    _activate?(): void;
-    /** @internal Engine driver */
-    _deactivate?(): void;
 }
 
 /**
@@ -1599,10 +1561,10 @@ export interface RuleOptions {
     color?: string | string[];
     /** Stroke style following standard CSS border-style (default: "solid"). */
     borderStyle?: "solid" | "dashed" | "dotted";
-    /** Rule stroke thickness in pixels or CSS unit (default: 2). */
+    /** Rule stroke thickness in canvas pixels or a CSS length (default: 2). */
     thickness?: number | string;
-    /** Inset padding/offset from endpoints in stage units or pixels (default: 0). */
-    inset?: number | string;
+    /** Inset from both endpoints in stage units (default: 0). */
+    inset?: number;
     /**
      * Curves the rule around adjacent corners, creating a stylized bracket / corner-hugging accent.
      * Pass `true` or an explicit bracket extension length in pixels (default: 10px).
@@ -1653,17 +1615,17 @@ export interface SequenceDiagramController {
 export interface SequenceDiagramOptions {
     /** Initial actor elements to register as diagram participants. */
     participants?: DOMElement[];
-    /** Vertical start position for the first message in stage height percentage (default: 36). */
+    /** Vertical start position for the first message in stage units (default: 32). */
     startY?: number;
-    /** Vertical spacing between message rows in stage height percentage (default: 9). */
+    /** Vertical spacing between message rows in stage units (default: 8). */
     gapY?: number;
-    /** Minimum length of participant lifelines in pixels (default: 500). Automatically extends to fit messages and activations. */
+    /** Minimum length of participant lifelines in stage units (default: 42). Automatically extends to fit messages and activations. */
     lifelineLength?: number;
     /** Stroke color of participant lifelines (default: "rgba(148, 163, 184, 0.7)"). */
     lifelineColor?: string;
     /** Initial opacity of participant lifelines (default: 1). Set to 0 if animating lifelines in. */
     lifelineOpacity?: number;
-    /** Padding in pixels below the lowest message or activation (default: 48). */
+    /** Padding in stage units below the lowest message or activation (default: 4). */
     paddingBottom?: number;
 }
 
@@ -2232,7 +2194,7 @@ export interface WebcamOptions extends ElementOptions {
 export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
 
 /**
- * Standard named position or anchor keyword.
+ * Standard named box point keyword.
  * @category Core
  */
 export type AnchorKeyword = Align;
@@ -2302,11 +2264,11 @@ export type ConnectorTarget = DOMElement | Point | readonly [
 ];
 
 /**
- * Stage coordinate or dimension property.
- * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * Stage coordinate in stage units (or `"center"` to center along that axis).
+ * Accepts a number, `"center"`, a transition, or a relative-delta updater.
  * @category Core
  */
-export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+export type CoordProp = ReactiveProp<PositionCoord>;
 
 /**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
@@ -2318,7 +2280,8 @@ export type CoordProp = ReactiveProp<number | string> | ((current: number) => nu
 export type EaseCurve = (t: number) => number;
 
 /**
- * Element or connector anchor: either a named keyword or an [x, y] percentage point.
+ * A point on an element box: a named keyword or an [x, y] percentage pair.
+ * Used by element `origin` and by connector anchors.
  * @category Core
  */
 export type ElementAnchor = AnchorKeyword | Point;
@@ -2369,9 +2332,10 @@ export type KenBurnsFocus = ElementAnchor | [
 export type KickerOptions = ElementOptions;
 
 /**
- * Responsive offset for adjusting label badge position.
- * Supports a 2D tuple `[x, y]` or a scalar vertical offset number/string ("cqw", "cqh", "rem", "px").
- * e.g. `[0, "-1.5cqh"]` or `["2cqw", -8]`.
+ * Offset for adjusting label badge position.
+ * A number is stage units. A string is a CSS length ("rem", "px").
+ * Accepts a 2D tuple `[x, y]` or a single vertical offset.
+ * e.g. `[0, -1.5]` or `["2rem", -8]`.
  * @category Components
  */
 export type LabelOffset = readonly [
@@ -2434,8 +2398,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 export type PathFunction = (width: number, height: number, context?: PathContext) => string;
 
 /**
- * 2D coordinate point or vector as a fixed-length [x, y] tuple.
- * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
+ * 2D point as a fixed-length [x, y] tuple.
  * @category Core
  */
 export type Point = readonly [
@@ -2444,36 +2407,39 @@ export type Point = readonly [
 ];
 
 /**
- * 2D coordinate point or vector as an [x, y] tuple.
- * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * Stage coordinate pair in stage units, or `"center"` to center on both axes.
  * @category Core
  */
 export type Position = readonly [
-    x: number | string,
-    y: number | string
-] | readonly (number | string)[];
+    x: PositionCoord,
+    y: PositionCoord
+] | readonly PositionCoord[] | "center";
 
 /**
- * 2D coordinate delta updater function.
- * Accepts either `(x, y)` coordinates or a `([x, y])` tuple and returns target coordinates.
+ * Coordinate value on a stage axis: a number in stage units, or `"center"`.
  * @category Core
  */
-export type PositionUpdater = ((x: number, y: number) => [
-    number | string,
-    number | string
+export type PositionCoord = number | "center";
+
+/**
+ * 2D coordinate updater function.
+ * Accepts `(x, y)` or a `([x, y])` tuple and returns the target coordinate in stage units.
+ * @category Core
+ */
+export type PositionUpdater = ((x: number, y: number) => readonly [
+    PositionCoord,
+    PositionCoord
 ]) | ((current: [
     number,
     number
-]) => [
-    number | string,
-    number | string
+]) => readonly [
+    PositionCoord,
+    PositionCoord
 ]);
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
  * or a numeric relative-delta updater.
- * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
- * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
 export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
@@ -2489,6 +2455,12 @@ export type RelativeAlign = "start" | "center" | "end";
  * @category Shape & Frame
  */
 export type ShapeVariant = "surface" | "ghost" | "solid";
+
+/**
+ * Element size in stage units, or an authored CSS length such as `"40rem"`.
+ * @category Core
+ */
+export type SizeProp = ReactiveProp<number | string>;
 
 /**
  * A slot in a stack layout: either a single element or a nested array of elements (column/row).
@@ -2577,256 +2549,18 @@ Production JSX factory compiling TSX markup directly into native DOM elements wi
 ### Functions
 
 ```ts
-export function createElement(type: string | typeof Fragment | ComponentFunction, props?: JSXProps | null, ...children: unknown[]): HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export function createElement(type: string | typeof Fragment | ComponentFunction, props?: JSXProps | null, ...children: unknown[]): JSX.Element;
 
-export function jsx(type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string): HTMLElement | SVGElement | DocumentFragment | DOMElement;
-
-```
-
-### Classes
-
-```ts
-/**
- * Animated DOM element instance managed by the reactive Stage runtime.
- * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
- */
-export class DOMElement implements ReactiveElementBase {
-  constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
-  static reactiveKeys: ReadonlySet<string>;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: CoordProp;
-  y: CoordProp;
-  width: CoordProp | undefined;
-  height: CoordProp | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: CoordProp | undefined;
-  position: Position;
-  /**
-   * Animates multiple reactive properties on this element simultaneously.
-   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
-   */
-  to(props: ElementTransitionProps): ElementTransition;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): DOMElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): DOMElement;
-}
-
-```
-
-### Interfaces
-
-```ts
-/**
- * Base interface for all reactive presentation elements on stage.
- * @category Core
- */
-export interface ReactiveElementBase {
-    readonly id: string;
-    readonly kind: string;
-    readonly domElement: HTMLElement;
-    anchor?: ReactiveProp<ElementAnchor>;
-    align?: ReactiveProp<Align>;
-    /**
-     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-     * When true, Stage does not overwrite `node.style.transform`.
-     * @internal Engine driver
-     */
-    isCustomPositioned?: boolean;
-    /**
-     * Default pointer-events style when element is visible.
-     * @internal Engine driver
-     */
-    _defaultPointerEvents?: string;
-    opacity: ReactiveProp<number>;
-    x: CoordProp;
-    y: CoordProp;
-    position?: ReactiveProp<Position> | PositionUpdater;
-    size?: CoordProp;
-    scale: ReactiveProp<number>;
-    rotation: ReactiveProp<number>;
-    blur: ReactiveProp<number>;
-    brightness: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    readonly isMounted?: boolean;
-    readonly isActive?: boolean;
-    onMount?(fn: () => void): () => void;
-    onUnmount?(fn: () => void): () => void;
-    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-    exitDuration?: number;
-    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-    exitDelay?: number;
-    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-    enterDuration?: number;
-    /** Delay in seconds before entering scene transition begins (defaults to 0). */
-    enterDelay?: number;
-    onActivate?(fn: () => void): () => void;
-    onDeactivate?(fn: () => void): () => void;
-    onUpdate?(fn: (progress: number) => void): () => void;
-    onClick?(handler: (event: MouseEvent) => void): this;
-    /** Recomputes layout or path coordinates on visual changes. */
-    update?(): void;
-    /** @internal Engine driver */
-    _dispatchUpdate?(progress?: number): void;
-    /** @internal Engine driver */
-    _mount?(parent: HTMLElement): void;
-    /** @internal Engine driver */
-    _unmount?(): void;
-    /** @internal Engine driver */
-    _activate?(): void;
-    /** @internal Engine driver */
-    _deactivate?(): void;
-}
-
-/**
- * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
- * @category Motion
- */
-export interface TransitionDescriptor<T = unknown> {
-    __isTransition: true;
-    target: T;
-    durationMs: number;
-    delayMs: number;
-    triggerTarget?: ReactiveElementBase | string;
-    triggerMilestone?: AnimationMilestone;
-    triggerProperty?: string;
-    curve: EaseCurve;
-    /** Sets animation duration in seconds. */
-    duration(seconds: number): this;
-    /** Adds a delay in seconds before animation begins. */
-    delay(seconds: number): this;
-    /**
-     * Synchronizes this transition to start when another element reaches an animation milestone.
-     * @param elementOrId Target element or element ID to listen to.
-     * @param milestone Progress milestone: `"start"`, `"halfway"`, `"end"` (default), or a fraction (0..1).
-     * @param property Optional specific property on the target element to track.
-     */
-    when(elementOrId: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
-    /**
-     * Chains this transition to start after another element completes its animation (alias for `.when(element, "end")`).
-     * @param elementOrId Target element or element ID to wait for.
-     * @param property Optional specific property on the target element to wait for.
-     */
-    after(elementOrId: ReactiveElementBase | string, property?: string): this;
-    /** Sets the easing curve (e.g. `"quartOut"`, `"cubicInOut"`, `"smooth"`). */
-    ease(curve: BuiltinEase | EaseCurve): this;
-}
+export function jsx(type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string): JSX.Element;
 
 ```
 
 ### Types
 
 ```ts
-/**
- * 9-position content alignment grid for text and children inside a container.
- * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
- * @category Layout
- */
-export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
-
-/**
- * Standard named position or anchor keyword.
- * @category Core
- */
-export type AnchorKeyword = Align;
-
-export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
-
-/**
- * Stage coordinate or dimension property.
- * Accepts a number, CSS/layout string, transition, or relative-delta updater.
- * @category Core
- */
-export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
-
-/**
- * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
- */
-/**
- * Custom easing function mapping progress t (0..1) to animated value.
- * @category Motion
- */
-export type EaseCurve = (t: number) => number;
-
-/**
- * Element or connector anchor: either a named keyword or an [x, y] percentage point.
- * @category Core
- */
-export type ElementAnchor = AnchorKeyword | Point;
+export type ComponentFunction = (props: JSXProps) => JSX.Element;
 
 export type JSXProps = Record<string, unknown>;
-
-/**
- * 2D coordinate point or vector as a fixed-length [x, y] tuple.
- * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
- * @category Core
- */
-export type Point = readonly [
-    x: number,
-    y: number
-];
-
-/**
- * 2D coordinate point or vector as an [x, y] tuple.
- * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
- * @category Core
- */
-export type Position = readonly [
-    x: number | string,
-    y: number | string
-] | readonly (number | string)[];
-
-/**
- * Represents a property that accepts a static value, a reactive transition descriptor,
- * or a numeric relative-delta updater.
- * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
- * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
- * @category Core
- */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -2837,9 +2571,9 @@ export const Fragment: typeof Fragment;
 
 export const JSX: any;
 
-export const jsxDEV: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export const jsxDEV: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => JSX.Element;
 
-export const jsxs: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export const jsxs: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => JSX.Element;
 
 ```
 
@@ -2850,256 +2584,18 @@ Development JSX factory providing element creation with debugging metadata and s
 ### Functions
 
 ```ts
-export function createElement(type: string | typeof Fragment | ComponentFunction, props?: JSXProps | null, ...children: unknown[]): HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export function createElement(type: string | typeof Fragment | ComponentFunction, props?: JSXProps | null, ...children: unknown[]): JSX.Element;
 
-export function jsx(type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string): HTMLElement | SVGElement | DocumentFragment | DOMElement;
-
-```
-
-### Classes
-
-```ts
-/**
- * Animated DOM element instance managed by the reactive Stage runtime.
- * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
- */
-export class DOMElement implements ReactiveElementBase {
-  constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
-  static reactiveKeys: ReadonlySet<string>;
-  reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   */
-  isCustomPositioned: boolean;
-  x: CoordProp;
-  y: CoordProp;
-  width: CoordProp | undefined;
-  height: CoordProp | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: CoordProp | undefined;
-  position: Position;
-  /**
-   * Animates multiple reactive properties on this element simultaneously.
-   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
-   */
-  to(props: ElementTransitionProps): ElementTransition;
-  isMounted: boolean;
-  isActive: boolean;
-  /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void;
-  /** Registers a callback triggered when this element is mounted into the DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback triggered when this element is unmounted from the DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes active and visible on stage. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback triggered whenever this element becomes inactive / hidden. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): DOMElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): DOMElement;
-}
-
-```
-
-### Interfaces
-
-```ts
-/**
- * Base interface for all reactive presentation elements on stage.
- * @category Core
- */
-export interface ReactiveElementBase {
-    readonly id: string;
-    readonly kind: string;
-    readonly domElement: HTMLElement;
-    anchor?: ReactiveProp<ElementAnchor>;
-    align?: ReactiveProp<Align>;
-    /**
-     * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-     * When true, Stage does not overwrite `node.style.transform`.
-     * @internal Engine driver
-     */
-    isCustomPositioned?: boolean;
-    /**
-     * Default pointer-events style when element is visible.
-     * @internal Engine driver
-     */
-    _defaultPointerEvents?: string;
-    opacity: ReactiveProp<number>;
-    x: CoordProp;
-    y: CoordProp;
-    position?: ReactiveProp<Position> | PositionUpdater;
-    size?: CoordProp;
-    scale: ReactiveProp<number>;
-    rotation: ReactiveProp<number>;
-    blur: ReactiveProp<number>;
-    brightness: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    readonly isMounted?: boolean;
-    readonly isActive?: boolean;
-    onMount?(fn: () => void): () => void;
-    onUnmount?(fn: () => void): () => void;
-    /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-    exitDuration?: number;
-    /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-    exitDelay?: number;
-    /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-    enterDuration?: number;
-    /** Delay in seconds before entering scene transition begins (defaults to 0). */
-    enterDelay?: number;
-    onActivate?(fn: () => void): () => void;
-    onDeactivate?(fn: () => void): () => void;
-    onUpdate?(fn: (progress: number) => void): () => void;
-    onClick?(handler: (event: MouseEvent) => void): this;
-    /** Recomputes layout or path coordinates on visual changes. */
-    update?(): void;
-    /** @internal Engine driver */
-    _dispatchUpdate?(progress?: number): void;
-    /** @internal Engine driver */
-    _mount?(parent: HTMLElement): void;
-    /** @internal Engine driver */
-    _unmount?(): void;
-    /** @internal Engine driver */
-    _activate?(): void;
-    /** @internal Engine driver */
-    _deactivate?(): void;
-}
-
-/**
- * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
- * @category Motion
- */
-export interface TransitionDescriptor<T = unknown> {
-    __isTransition: true;
-    target: T;
-    durationMs: number;
-    delayMs: number;
-    triggerTarget?: ReactiveElementBase | string;
-    triggerMilestone?: AnimationMilestone;
-    triggerProperty?: string;
-    curve: EaseCurve;
-    /** Sets animation duration in seconds. */
-    duration(seconds: number): this;
-    /** Adds a delay in seconds before animation begins. */
-    delay(seconds: number): this;
-    /**
-     * Synchronizes this transition to start when another element reaches an animation milestone.
-     * @param elementOrId Target element or element ID to listen to.
-     * @param milestone Progress milestone: `"start"`, `"halfway"`, `"end"` (default), or a fraction (0..1).
-     * @param property Optional specific property on the target element to track.
-     */
-    when(elementOrId: ReactiveElementBase | string, milestone?: AnimationMilestone, property?: string): this;
-    /**
-     * Chains this transition to start after another element completes its animation (alias for `.when(element, "end")`).
-     * @param elementOrId Target element or element ID to wait for.
-     * @param property Optional specific property on the target element to wait for.
-     */
-    after(elementOrId: ReactiveElementBase | string, property?: string): this;
-    /** Sets the easing curve (e.g. `"quartOut"`, `"cubicInOut"`, `"smooth"`). */
-    ease(curve: BuiltinEase | EaseCurve): this;
-}
+export function jsx(type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string): JSX.Element;
 
 ```
 
 ### Types
 
 ```ts
-/**
- * 9-position content alignment grid for text and children inside a container.
- * Single-axis shorthands are centered on the other axis: "top" means top-center, "left" means middle-left.
- * @category Layout
- */
-export type Align = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right";
-
-/**
- * Standard named position or anchor keyword.
- * @category Core
- */
-export type AnchorKeyword = Align;
-
-export type ComponentFunction = (props: JSXProps) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
-
-/**
- * Stage coordinate or dimension property.
- * Accepts a number, CSS/layout string, transition, or relative-delta updater.
- * @category Core
- */
-export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
-
-/**
- * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
- */
-/**
- * Custom easing function mapping progress t (0..1) to animated value.
- * @category Motion
- */
-export type EaseCurve = (t: number) => number;
-
-/**
- * Element or connector anchor: either a named keyword or an [x, y] percentage point.
- * @category Core
- */
-export type ElementAnchor = AnchorKeyword | Point;
+export type ComponentFunction = (props: JSXProps) => JSX.Element;
 
 export type JSXProps = Record<string, unknown>;
-
-/**
- * 2D coordinate point or vector as a fixed-length [x, y] tuple.
- * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
- * @category Core
- */
-export type Point = readonly [
-    x: number,
-    y: number
-];
-
-/**
- * 2D coordinate point or vector as an [x, y] tuple.
- * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
- * @category Core
- */
-export type Position = readonly [
-    x: number | string,
-    y: number | string
-] | readonly (number | string)[];
-
-/**
- * Represents a property that accepts a static value, a reactive transition descriptor,
- * or a numeric relative-delta updater.
- * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
- * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
- * @category Core
- */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
 
 ```
 
@@ -3110,9 +2606,9 @@ export const Fragment: typeof Fragment;
 
 export const JSX: any;
 
-export const jsxDEV: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export const jsxDEV: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => JSX.Element;
 
-export const jsxs: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export const jsxs: (type: string | typeof Fragment | ComponentFunction, props?: JSXProps, _key?: string) => JSX.Element;
 
 ```
 

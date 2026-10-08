@@ -23,8 +23,8 @@ const list = BulletList([
   ["Sub-item A", "Sub-item B"],
   "Item 2",
 ], {
-  x: "center",
-  y: "center",
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("BulletList").with(list);
@@ -58,7 +58,8 @@ const list = BulletList([
   con("More memory usage"),
   con("Steeper learning curve"),
 ], {
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("BulletList").with(list);

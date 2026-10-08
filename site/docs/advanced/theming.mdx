@@ -141,8 +141,8 @@ Every element accepts a `style` option typed via `csstype`:
 import { Title, Text } from "stageroutine";
 
 const title = Title("Architecture Overview", {
-  x: "center",
-  y: 40,
+  position: [80, 36],
+  origin: "top",
   color: "#38bdf8",
   style: {
     letterSpacing: "-0.04em",
@@ -152,7 +152,7 @@ const title = Title("Architecture Overview", {
 
 const body = Text("System design principles...", {
   style: {
-    width: "60cqw",
+    width: 96,
     textAlign: "center",
   },
 });

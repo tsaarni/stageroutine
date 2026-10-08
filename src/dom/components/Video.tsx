@@ -54,8 +54,8 @@ export interface VideoElement extends DOMElement {
  * @internal
  */
 class VideoElementImpl extends VideoSurface implements VideoElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "fit",
     "src",
     "playing",

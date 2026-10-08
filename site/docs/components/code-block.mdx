@@ -19,7 +19,8 @@ const stage = new Stage();
 import { CodeBlock } from "stageroutine";
 
 const code = CodeBlock('const x = 1;\nconsole.log(x);', {
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("CodeBlock").with(code);

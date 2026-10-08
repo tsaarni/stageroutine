@@ -3,7 +3,7 @@
  */
 
 import "./Connector.css";
-import { type Gauge, getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
+import { type Gauge, getActiveStage, tryGetActiveStage, unitsToPx } from "../../core/index";
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import {
@@ -95,25 +95,32 @@ export interface PulseSequenceController {
 export type LabelPlacement = "start" | "center" | "end" | number;
 
 /**
- * Responsive offset for adjusting label badge position.
- * Supports a 2D tuple `[x, y]` or a scalar vertical offset number/string ("cqw", "cqh", "rem", "px").
- * e.g. `[0, "-1.5cqh"]` or `["2cqw", -8]`.
+ * Offset for adjusting label badge position.
+ * A number is stage units. A string is a CSS length ("rem", "px").
+ * Accepts a 2D tuple `[x, y]` or a single vertical offset.
+ * e.g. `[0, -1.5]` or `["2rem", -8]`.
  * @category Components
  */
 export type LabelOffset = readonly [x: number | string, y: number | string] | number | string;
 
-function resolveOffset(val: number | string | undefined, baseDim: number): number {
+function resolveOffset(val: number | string | undefined, stageH: number): number {
   if (val === undefined) return 0;
-  if (typeof val === "number") return val;
+  if (typeof val === "number") return unitsToPx(val, stageH);
   const s = val.trim();
-  if (s.endsWith("cqw") || s.endsWith("cqh") || s.endsWith("%")) {
-    return (Number.parseFloat(s) / 100) * baseDim;
-  }
   if (s.endsWith("rem")) {
     return Number.parseFloat(s) * 16;
   }
   return Number.parseFloat(s) || 0;
 }
+
+/** Half-width of a sequence diagram activation bar in CSS pixels (14px total width). */
+const ACTIVATION_BAR_HALF_WIDTH = 7;
+
+/** Clearance gap between message connector endpoints and activation bars in CSS pixels. */
+const ACTIVATION_BAR_GAP = 0;
+
+/** Clearance gap between message connector endpoints and bare dashed lifelines in CSS pixels. */
+const LIFELINE_GAP = 3;
 
 /**
  * Head marker decoration types at the endpoints of a Connector line.
@@ -268,11 +275,11 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   label?: string;
   /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
   labelPlacement?: ReactiveProp<LabelPlacement>;
-  /** Responsive offset to nudge the label ([x, y] in px, cqw, cqh, or rem). Reactive. */
+  /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
   labelOffset?: ReactiveProp<LabelOffset>;
-  /** Horizontal offset for the label in virtual pixels or container units. Reactive. */
+  /** Horizontal offset for the label in stage units, or a CSS length. Reactive. */
   labelOffsetX?: ReactiveProp<number | string>;
-  /** Vertical offset for the label in virtual pixels or container units. Reactive. */
+  /** Vertical offset for the label in stage units, or a CSS length. Reactive. */
   labelOffsetY?: ReactiveProp<number | string>;
   /** Routing style: straight line, 90° orthogonal corners, smooth cubic Bézier, or single-curvature circular arc. */
   routing?: "straight" | "corner" | "bezier" | "arc";
@@ -342,9 +349,9 @@ export interface ConnectorElement extends DOMElement {
   toAnchor: AnchorMode | ElementAnchor;
   connectorColor: string;
   labelPlacement: ReactiveProp<LabelPlacement>;
-  labelOffset: ReactiveProp<LabelOffset>;
-  labelOffsetX: ReactiveProp<number | string>;
-  labelOffsetY: ReactiveProp<number | string>;
+  labelOffset?: ReactiveProp<LabelOffset>;
+  labelOffsetX?: ReactiveProp<number | string>;
+  labelOffsetY?: ReactiveProp<number | string>;
   flow: FlowEffect;
   start: ReactiveProp<number>;
   end: ReactiveProp<number>;
@@ -358,8 +365,8 @@ export interface ConnectorElement extends DOMElement {
  * @internal
  */
 class ConnectorElementImpl extends DOMElement implements ConnectorElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "start",
     "end",
     "flow",
@@ -391,7 +398,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       this._flowPingActive = false;
       this.stopPeriodicPulse();
     }
-    this.update();
+    this._update();
   }
 
   fromTarget: ConnectorTarget;
@@ -409,9 +416,9 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   radius: number;
   padding: number;
   labelPlacement: ReactiveProp<LabelPlacement> = "center";
-  labelOffset: ReactiveProp<LabelOffset> = 0;
-  labelOffsetX: ReactiveProp<number | string> = 0;
-  labelOffsetY: ReactiveProp<number | string> = 0;
+  labelOffset?: ReactiveProp<LabelOffset>;
+  labelOffsetX?: ReactiveProp<number | string>;
+  labelOffsetY?: ReactiveProp<number | string>;
 
   fromAnchor: AnchorMode | ElementAnchor = "auto";
   toAnchor: AnchorMode | ElementAnchor = "auto";
@@ -549,9 +556,6 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     this.startRetract = startMarker?.retract ?? 0;
     this.endRetract = endMarker?.retract ?? 0;
     this.labelPlacement = options.labelPlacement ?? "center";
-    this.labelOffset = options.labelOffset ?? 0;
-    this.labelOffsetX = options.labelOffsetX ?? 0;
-    this.labelOffsetY = options.labelOffsetY ?? 0;
     this.fromAnchor = options.fromAnchor ?? "auto";
     this.toAnchor = options.toAnchor ?? "auto";
     this.curvature = options.curvature ?? 0.2;
@@ -580,12 +584,12 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       }
     }
 
-    this.update();
+    this._update();
 
     this.onActivate(() => {
       this._resumePeriodicPulse();
       this._resumeFlowAnimation();
-      this.update();
+      this._update();
     });
 
     this.onDeactivate(() => {
@@ -599,27 +603,30 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     this.onUnmount(
       stage.on("evt:stage:resized", () => {
         if (this.isActive) {
-          this.update();
+          this._update();
         }
       }),
     );
 
     // Register diagnostics metrics for background loop monitoring
-    if (stage.metrics) {
+    const stageWithMetrics = stage as unknown as {
+      _metrics?: { gauge: (opts: unknown) => Gauge };
+    };
+    if (stageWithMetrics._metrics) {
       this.metricDisposables = [
-        stage.metrics.gauge({
+        stageWithMetrics._metrics.gauge({
           name: "connector_periodic_pulse_active",
           help: "Periodic pulse timer running (1 = active).",
           labels: { id: this.id },
           collect: () => (this.periodicIntervalTimer !== null ? 1 : 0),
         }),
-        stage.metrics.gauge({
+        stageWithMetrics._metrics.gauge({
           name: "connector_active_pulses",
           help: "Pulsing dots on path. Must be 0 when idle.",
           labels: { id: this.id },
           collect: () => this.activePulses.size,
         }),
-        stage.metrics.gauge({
+        stageWithMetrics._metrics.gauge({
           name: "connector_dom_packets",
           help: "Pulse packets in SVG. Must be 0 when idle.",
           labels: { id: this.id },
@@ -655,7 +662,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     };
   }
 
-  update(): void {
+  override _update(): void {
     if (this.isMounted && !this.isActive) {
       return;
     }
@@ -663,8 +670,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const { width: stageW, height: stageH } = this.getStageDimensions();
     this.domElement.setAttribute("viewBox", `0 0 ${stageW} ${stageH}`);
 
-    const fromResolved = resolveTargetBox(this.fromTarget, stageW, stageH);
-    const toResolved = resolveTargetBox(this.toTarget, stageW, stageH);
+    const fromResolved = resolveTargetBox(this.fromTarget, stageH);
+    const toResolved = resolveTargetBox(this.toTarget, stageH);
 
     let startPt = fromResolved.point;
     let endPt = toResolved.point;
@@ -699,10 +706,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       endNormal = res.normal;
     }
 
-    const resolvedY = resolveCoordToPx(
-      typeof this.y === "number" || typeof this.y === "string" ? this.y : 0,
-      stageH,
-    );
+    const resolvedY = unitsToPx(typeof this.y === "number" ? this.y : 0, stageH);
     if (resolvedY > 0) {
       const fixedY = resolvedY;
       let x1 = fromResolved.point[0];
@@ -712,9 +716,10 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       const vRect =
         this.domElement.parentElement?.getBoundingClientRect() ||
         this.domElement.getBoundingClientRect();
-      const scale = vRect.width > 0 ? vRect.width / stageW : 1;
-      const activationOffset = 7 / scale + 2;
-      const lifelineGap = 4 / scale;
+      // The viewport is scaled uniformly, so either axis gives the same factor
+      const scale = vRect.height > 0 ? vRect.height / stageH : 1;
+      const activationOffset = (ACTIVATION_BAR_HALF_WIDTH + ACTIVATION_BAR_GAP) / scale;
+      const lifelineGap = LIFELINE_GAP / scale;
 
       const fromLifeline = (
         this.fromTarget as {
@@ -727,13 +732,14 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         }
       )?.lifeline;
 
-      if (fromLifeline?.hasActivationAt?.(fixedY)) {
+      const msgY = typeof this.y === "number" ? this.y : fixedY;
+      if (fromLifeline?.hasActivationAt?.(msgY)) {
         x1 += dir * activationOffset;
       } else {
         x1 += dir * lifelineGap;
       }
 
-      if (toLifeline?.hasActivationAt?.(fixedY)) {
+      if (toLifeline?.hasActivationAt?.(msgY)) {
         x2 -= dir * activationOffset;
       } else {
         x2 -= dir * lifelineGap;
@@ -979,38 +985,39 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
           ratio = 0.75;
         }
 
-        let offX = resolveOffset(this.labelOffsetX as number | string | undefined, stageW);
+        let offX = resolveOffset(this.labelOffsetX as number | string | undefined, stageH);
         let offY = 0;
 
         if (this.labelOffsetY !== undefined) {
           offY = resolveOffset(this.labelOffsetY as number | string | undefined, stageH);
         } else if (this.labelOffset !== undefined) {
           if (Array.isArray(this.labelOffset)) {
-            offX += resolveOffset(this.labelOffset[0], stageW);
+            offX += resolveOffset(this.labelOffset[0], stageH);
             offY += resolveOffset(this.labelOffset[1], stageH);
           } else {
             offY = resolveOffset(this.labelOffset as number | string, stageH);
           }
-        } else {
-          // Default offset above the connector path
-          offY = -14;
         }
+
+        let ptX = 0;
+        let ptY = 0;
 
         try {
           const totalPathLength = this.pathNode.getTotalLength();
           if (totalPathLength > 0) {
             const pt = this.pathNode.getPointAtLength(totalPathLength * ratio);
-            this.labelGroup.setAttribute("transform", `translate(${pt.x + offX}, ${pt.y + offY})`);
+            ptX = pt.x;
+            ptY = pt.y;
           } else {
-            const mx = startPt[0] + (endPt[0] - startPt[0]) * ratio;
-            const my = startPt[1] + (endPt[1] - startPt[1]) * ratio;
-            this.labelGroup.setAttribute("transform", `translate(${mx + offX}, ${my + offY})`);
+            ptX = startPt[0] + (endPt[0] - startPt[0]) * ratio;
+            ptY = startPt[1] + (endPt[1] - startPt[1]) * ratio;
           }
         } catch {
-          const mx = startPt[0] + (endPt[0] - startPt[0]) * ratio;
-          const my = startPt[1] + (endPt[1] - startPt[1]) * ratio;
-          this.labelGroup.setAttribute("transform", `translate(${mx + offX}, ${my + offY})`);
+          ptX = startPt[0] + (endPt[0] - startPt[0]) * ratio;
+          ptY = startPt[1] + (endPt[1] - startPt[1]) * ratio;
         }
+
+        this.labelGroup.setAttribute("transform", `translate(${ptX + offX}, ${ptY + offY})`);
       }
     }
   }
@@ -1021,13 +1028,13 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
    */
   pulse(options: PulseOptions = {}): void {
     const stage = getActiveStage() as unknown as {
-      isMounted?: () => boolean;
-      recordAction?: (fn: () => void) => void;
+      isMounted?: boolean;
+      _recordAction?: (fn: () => void) => void;
     } | null;
 
-    if (stage && typeof stage.isMounted === "function" && !stage.isMounted()) {
-      if (typeof stage.recordAction === "function") {
-        stage.recordAction(() => this._executePulse(options));
+    if (stage && !stage.isMounted) {
+      if (typeof stage._recordAction === "function") {
+        stage._recordAction(() => this._executePulse(options));
       }
       return;
     }
@@ -1260,17 +1267,17 @@ export function pulseSequence(
     const startVal = typeof conn.start === "number" ? conn.start : 0;
     const endVal = typeof conn.end === "number" ? conn.end : 1;
 
-    // If connector is inactive or hidden, stop the sequence immediately
+    // If connector is inactive or hidden, halt the sequence immediately
     if (!conn.isActive || opacity <= 0.01) {
-      stop();
+      halt();
       return;
     }
 
     // Wait until the stage is mounted and the connector has finished drawing in
-    // (end >= 0.95), capped at 25 retries (~1.25s).
-    if (!stage.isMounted() || endVal < 0.95 || endVal - startVal < 0.8) {
-      if (retryCount >= 25) {
-        stop();
+    // (end >= 0.95), capped at 60 retries (~3.0s).
+    if (!stage.isMounted || endVal < 0.95 || endVal - startVal < 0.8) {
+      if (retryCount >= 60) {
+        halt();
         return;
       }
       timer = window.setTimeout(() => {
@@ -1315,6 +1322,20 @@ export function pulseSequence(
     const first = stepList[0]?.connector;
     if (first) {
       disposers.push(first.onActivate(start));
+      disposers.push(
+        first.onUpdate(() => {
+          if (!running && first.isActive) {
+            const endVal = typeof first.end === "number" ? first.end : 1;
+            const startVal = typeof first.start === "number" ? first.start : 0;
+            if (stage.isMounted && endVal >= 0.95 && endVal - startVal >= 0.8) {
+              start();
+            }
+          }
+        }),
+      );
+      if (first.isActive) {
+        start();
+      }
     }
   };
 

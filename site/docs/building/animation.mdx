@@ -11,8 +11,8 @@ StageRoutine makes animations declarative. You define target values with `to()` 
 To animate an element property, assign a `to(target)` descriptor:
 
 ```typescript
-// Move to x: 50 over 0.8 seconds with custom easing
-title.x = to(50).duration(0.8).ease("quartOut");
+// Move to x: 80 over 0.8 seconds with custom easing
+title.x = to(80).duration(0.8).ease("quartOut");
 title.opacity = to(1).duration(0.5);
 ```
 
@@ -136,6 +136,6 @@ In addition to built-in presets (like `"quartOut"` and `"cubicInOut"`), you can 
 
 ```typescript
 // Smooth cosine curve
-title.y = to(40).ease((t) => 0.5 * (1 - Math.cos(Math.PI * t)));
+title.y = to(36).ease((t) => 0.5 * (1 - Math.cos(Math.PI * t)));
 ```
 

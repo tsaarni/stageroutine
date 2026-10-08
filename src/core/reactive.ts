@@ -16,7 +16,7 @@ export const CORE_REACTIVE_KEYS: ReadonlySet<string> = new Set([
   "blur",
   "brightness",
   "color",
-  "anchor",
+  "origin",
   "align",
 ]);
 
@@ -25,9 +25,13 @@ export const CORE_REACTIVE_KEYS: ReadonlySet<string> = new Set([
  */
 export function getReactiveKeys(target: unknown): ReadonlySet<string> {
   if (!target || typeof target !== "object") return EMPTY_SET;
-  const fromInstance = (target as { reactiveKeys?: ReadonlySet<string> }).reactiveKeys;
+  const fromInstance =
+    (target as { _reactiveKeys?: ReadonlySet<string> })._reactiveKeys ??
+    (target as { reactiveKeys?: ReadonlySet<string> }).reactiveKeys;
   if (fromInstance) return fromInstance;
-  const fromCtor = (target.constructor as { reactiveKeys?: ReadonlySet<string> }).reactiveKeys;
+  const fromCtor =
+    (target.constructor as { _reactiveKeys?: ReadonlySet<string> })._reactiveKeys ??
+    (target.constructor as { reactiveKeys?: ReadonlySet<string> }).reactiveKeys;
   return fromCtor ?? CORE_REACTIVE_KEYS;
 }
 

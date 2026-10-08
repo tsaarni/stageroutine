@@ -55,8 +55,8 @@ export interface WebcamElement extends DOMElement {
  * @internal
  */
 class WebcamElementImpl extends MediaSurface implements WebcamElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "fit",
     "mirror",
     "deviceId",

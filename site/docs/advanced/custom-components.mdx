@@ -29,7 +29,7 @@ export function Badge(options: BadgeOptions): DOMElement {
   node.innerText = options.label;
 
   return new DOMElement("Badge", node, {
-    anchor: "center",
+    origin: "center",
     ...options,
   });
 }

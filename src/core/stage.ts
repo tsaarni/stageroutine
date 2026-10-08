@@ -6,7 +6,7 @@ import { builtinEasings } from "../motion/transitions";
 import { PresenterHost } from "../presenter/host";
 import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
-import { computeTransformAndOrigin, interpolateValue } from "./interpolators";
+import { computeTransform, interpolateValue, resolveAnchor } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
 import { createPerfProbe, type PerfProbe } from "./perf";
@@ -22,12 +22,14 @@ import type {
   OverlayPlugin,
   ReactiveElementBase,
   StageEventMap,
+  StageManagedElement,
   StageOptions,
   StepData,
   StepSnapshot,
   ThemeConfig,
   TransitionRecord,
 } from "./types";
+import { cssLength, STAGE_UNIT_VAR, STAGE_UNITS_TALL, stageUnitsWide } from "./units";
 
 declare const __STAGEROUTINE_CHANNEL__: string | false | undefined;
 declare const __STAGEROUTINE_WIDTH__: number | undefined;
@@ -151,8 +153,8 @@ class SceneBuilder {
       if ("id" in item && "domElement" in item) {
         const reactiveEl = item as ReactiveElementBase;
         elementId = reactiveEl.id;
-        if (!this.stage.hasElement(elementId)) {
-          this.stage.registerElement(reactiveEl);
+        if (!this.stage._hasElement(elementId)) {
+          this.stage._registerElement(reactiveEl);
         }
         flattened.push(reactiveEl);
         if (ownerId) {
@@ -234,18 +236,18 @@ export class Stage {
   private pendingMotionFlushes = new Set<() => void>();
   private isMountedState = false;
 
-  isMounted(): boolean {
+  get isMounted(): boolean {
     return this.isMountedState;
   }
 
-  registerPendingFlush(flush: () => void): () => void {
+  _registerPendingFlush(flush: () => void): () => void {
     this.pendingMotionFlushes.add(flush);
     return () => {
       this.pendingMotionFlushes.delete(flush);
     };
   }
 
-  recordAction(action: () => void): void {
+  _recordAction(action: () => void): void {
     this.currentStepActions.push(action);
   }
 
@@ -263,7 +265,7 @@ export class Stage {
   private mountedOverlays: OverlayPlugin[] = [];
 
   // Metrics & Performance Tracking
-  readonly metrics = new MetricRegistry();
+  readonly _metrics = new MetricRegistry();
   private lastFrameTime = 0;
   private lastFrameDurationMs = 0;
   private maxFrameDurationMs = 0;
@@ -428,6 +430,16 @@ export class Stage {
   /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number {
     return this.options.height || 1080;
+  }
+
+  /** Stage width in stage units (160 on a 16:9 stage). */
+  get unitsWide(): number {
+    return stageUnitsWide(this.width, this.height);
+  }
+
+  /** Stage height in stage units (always 90). */
+  get unitsTall(): number {
+    return STAGE_UNITS_TALL;
   }
 
   private _setPointerActive(active: boolean): void {
@@ -609,52 +621,52 @@ export class Stage {
 
   private _registerCoreMetrics(): void {
     // Stage Render Loop & Frame Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_is_animating",
       help: "Transition playing (1 = animating, 0 = at rest).",
       collect: () => (this.isAnimating ? 1 : 0),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_active_raf_count",
       help: "Stage rAF loops running. Must be 0 at rest.",
       collect: () => (this.animFrameId !== null ? 1 : 0),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_fps",
       help: "FPS of the last step transition. Frozen at rest; cross-check stage_is_animating.",
       unit: "fps",
       collect: () => Math.round(this.currentFps),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_last_frame_duration_ms",
       help: "Last transition frame duration (ms). Frozen at rest.",
       unit: "ms",
       collect: () => Number(this.lastFrameDurationMs.toFixed(2)),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_max_frame_duration_ms",
       help: "Peak transition frame duration (ms). Frozen at rest.",
       unit: "ms",
       collect: () => Number(this.maxFrameDurationMs.toFixed(2)),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_step_index",
       help: "Current step index (0-based).",
       collect: () => this.currentStepIndex,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_total_steps",
       help: "Total steps.",
       collect: () => this.steps.length,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_scene_info",
       help: "Current scene.",
       collect: () => {
@@ -667,7 +679,7 @@ export class Stage {
     });
 
     // Active Transitions Breakdown
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "stage_transitions",
       help: "Active property transitions (progress 0..1).",
       collect: () =>
@@ -681,37 +693,37 @@ export class Stage {
     });
 
     // DOM Footprint, Dormancy & Retention Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_total_registered",
       help: "Registered elements.",
       collect: () => this._getDomMetrics().totalRegistered,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_active_in_scene",
       help: "Elements in the active scene.",
       collect: () => this._getDomMetrics().activeInScene,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_visible_in_scene",
       help: "Visible elements (opacity > 0).",
       collect: () => this._getDomMetrics().visibleInScene,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_dormant_elements",
       help: "Inactive elements (display:none).",
       collect: () => this._getDomMetrics().dormantCount,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_detached_elements",
       help: "Elements missing from the DOM (retention leak). Must be 0.",
       collect: () => this._getDomMetrics().detachedCount,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_promoted",
       help: "Elements holding will-change (GPU layer leak). Must be 0 at rest. Labels name the element.",
       collect: () =>
@@ -731,20 +743,20 @@ export class Stage {
         }),
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "dom_stage_total_nodes",
       help: "DOM nodes in the stage viewport.",
       collect: () => this._getDomMetrics().stageTotalNodes,
     });
 
     // GPU & Canvas Footprint
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "gpu_canvas_count",
       help: "Canvas elements.",
       collect: () => document.querySelectorAll("canvas").length,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "gpu_canvas_pixels",
       help: "Canvas pixels (all surfaces).",
       collect: () => {
@@ -757,7 +769,7 @@ export class Stage {
     });
 
     // Memory Footprint Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "memory_heap_used_bytes",
       help: "JS heap used (bytes).",
       unit: "bytes",
@@ -770,7 +782,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "memory_heap_total_bytes",
       help: "JS heap total (bytes).",
       unit: "bytes",
@@ -784,33 +796,33 @@ export class Stage {
     });
 
     // Animation & Background Activity Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "animation_hidden_running",
       help: "Animations on hidden elements. Must be 0.",
       collect: () => this._getAnimationMetrics().hiddenRunningCount,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "animation_running",
       help: "Running animations. Must be 0 at rest.",
       collect: () => this._getAnimationMetrics().runningList,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "animation_connector_pulses",
       help: "Connector pulse packets. Must be 0 when idle.",
       collect: () => this._getAnimationMetrics().connectorPulses,
     });
 
     // Media Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "media_visible_videos",
       help: "Visible playing videos. Two or more lock Chrome to 30fps; hide one.",
       collect: () => this._visibleVideos(),
     });
 
     // Background Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_running",
       help: "Background render loop running. May be 1 at rest.",
       collect: () => {
@@ -819,7 +831,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_is_mounted",
       help: "Background mounted (1 = connected, 0 = detached).",
       collect: () => {
@@ -831,7 +843,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_opacity",
       help: "Background opacity (0..1).",
       collect: () => {
@@ -840,7 +852,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_canvas_width",
       help: "Background canvas width (px).",
       unit: "px",
@@ -850,7 +862,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_canvas_height",
       help: "Background canvas height (px).",
       unit: "px",
@@ -860,7 +872,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_pixel_ratio",
       help: "Background canvas DPR.",
       collect: () => {
@@ -869,7 +881,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_canvas_pixels",
       help: "Background canvas pixels.",
       collect: () => {
@@ -878,7 +890,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_star_count",
       help: "Starfield particle count.",
       collect: () => {
@@ -887,7 +899,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_speed",
       help: "Starfield speed.",
       collect: () => {
@@ -896,7 +908,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "background_info",
       help: "Background kind.",
       collect: () => {
@@ -910,7 +922,7 @@ export class Stage {
     });
 
     // Overlay Diagnostics
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_laser_active",
       help: "Laser overlay active.",
       collect: () => {
@@ -920,7 +932,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_laser_raf_active",
       help: "Laser animation loop running. Must be 0 when idle.",
       collect: () => {
@@ -930,7 +942,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_laser_points_count",
       help: "Laser trail points.",
       collect: () => {
@@ -940,7 +952,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_laser_has_canvas",
       help: "Laser canvas mounted (1 = yes).",
       collect: () => {
@@ -950,7 +962,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_active",
       help: "Annotation overlay active.",
       collect: () => {
@@ -960,7 +972,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_strokes_count",
       help: "Annotation stroke count on current slide.",
       collect: () => {
@@ -970,7 +982,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_can_undo",
       help: "Annotation can undo (1 = yes, 0 = no).",
       collect: () => {
@@ -980,7 +992,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_can_redo",
       help: "Annotation can redo (1 = yes, 0 = no).",
       collect: () => {
@@ -990,7 +1002,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_has_canvas",
       help: "Annotation canvas mounted (1 = yes).",
       collect: () => {
@@ -1000,7 +1012,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_points_count",
       help: "Total annotation points across recorded strokes.",
       collect: () => {
@@ -1010,7 +1022,7 @@ export class Stage {
       },
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "overlay_annotation_last_redraw_ms",
       help: "Duration of the last annotation repaint in milliseconds.",
       collect: () => {
@@ -1021,25 +1033,25 @@ export class Stage {
     });
 
     // Multi-Window / Tab Synchronization Metrics
-    this.metrics.counter({
+    this._metrics.counter({
       name: "sync_channel_messages_sent",
       help: "Messages sent over BroadcastChannel.",
       collect: () => this.presenterHost?.messagesSent ?? 0,
     });
 
-    this.metrics.counter({
+    this._metrics.counter({
       name: "sync_channel_messages_received",
       help: "Messages received over BroadcastChannel.",
       collect: () => this.presenterHost?.messagesReceived ?? 0,
     });
 
-    this.metrics.counter({
+    this._metrics.counter({
       name: "sync_state_broadcasts",
       help: "State broadcasts sent to presenter.",
       collect: () => this.syncStateBroadcasts,
     });
 
-    this.metrics.gauge({
+    this._metrics.gauge({
       name: "sync_last_msg_elapsed_ms",
       help: "Ms since last received sync message (-1 if none).",
       unit: "ms",
@@ -1051,7 +1063,7 @@ export class Stage {
   }
 
   // ElementHost Implementation
-  recordMutation(
+  _recordMutation(
     elementId: string,
     property: string,
     from: unknown,
@@ -1081,11 +1093,11 @@ export class Stage {
     });
   }
 
-  getCurrentPropertyValue(elementId: string, property: string): unknown {
+  _getCurrentPropertyValue(elementId: string, property: string): unknown {
     return this.propertyState.get(elementId)?.[property];
   }
 
-  setCurrentPropertyValue(elementId: string, property: string, value: unknown): void {
+  _setCurrentPropertyValue(elementId: string, property: string, value: unknown): void {
     let elProps = this.propertyState.get(elementId);
     if (!elProps) {
       elProps = {};
@@ -1115,8 +1127,8 @@ export class Stage {
     }
   }
 
-  /** Checks whether an element is already registered with the stage. */
-  hasElement(id: string): boolean {
+  /** @internal Checks whether an element is already registered with the stage. */
+  _hasElement(id: string): boolean {
     return this.elementRegistry.has(id);
   }
 
@@ -1125,7 +1137,8 @@ export class Stage {
     this.ownedByParent.add(elementId);
   }
 
-  registerElement<T extends ReactiveElementBase>(element: T): T {
+  /** @internal */
+  _registerElement<T extends ReactiveElementBase>(element: T): T {
     if (this.elementRegistry.has(element.id)) {
       return createReactiveProxy(this.elementRegistry.get(element.id) as T, this);
     }
@@ -1150,8 +1163,9 @@ export class Stage {
     this.propertyState.set(element.id, initialProps);
 
     if (this.viewport) {
-      if (typeof element._mount === "function") {
-        element._mount(this.viewport);
+      const managed = element as StageManagedElement;
+      if (typeof managed._mount === "function") {
+        managed._mount(this.viewport);
       } else if (!element.domElement.parentElement) {
         this.viewport.appendChild(element.domElement);
       }
@@ -1356,6 +1370,7 @@ export class Stage {
     this.viewport.style.minHeight = `${this.options.height}px`;
     this.viewport.style.flexShrink = "0";
     this.viewport.style.containerType = "size";
+    this.viewport.style.setProperty(STAGE_UNIT_VAR, `calc(100cqh / ${STAGE_UNITS_TALL})`);
     this.viewport.style.transformOrigin = "center center";
     this.viewport.style.zIndex = "1";
     this.viewport.style.userSelect = "none";
@@ -1375,8 +1390,9 @@ export class Stage {
     // Attach top-level registered element DOM nodes
     for (const element of this.elementRegistry.values()) {
       this._hideElement(element);
-      if (typeof element._mount === "function") {
-        element._mount(this.viewport);
+      const managed = element as StageManagedElement;
+      if (typeof managed._mount === "function") {
+        managed._mount(this.viewport);
       } else if (!element.domElement.parentElement) {
         this.viewport.appendChild(element.domElement);
       }
@@ -1483,7 +1499,7 @@ export class Stage {
       };
     };
     const devHook = {
-      getMetrics: (pattern?: RegExp) => this.metrics.getMetrics(pattern),
+      getMetrics: (pattern?: RegExp) => this._metrics.getMetrics(pattern),
       showMetrics: () => this._openMetricsWindow(),
       perf: createPerfProbe(this),
       outline: () => this._getOutline(),
@@ -1499,7 +1515,7 @@ export class Stage {
   }
 
   private _openMetricsWindow(): void {
-    const text = this.metrics.getMetrics();
+    const text = this._metrics.getMetrics();
     const w = window.open("", "stageroutine_metrics");
     if (!w?.document.body) return;
     w.document.title = "StageRoutine Metrics";
@@ -1527,7 +1543,7 @@ export class Stage {
 
     // Stops element timers, RAF loops, and media streams.
     for (const element of this.elementRegistry.values()) {
-      element._unmount?.();
+      (element as StageManagedElement)._unmount?.();
     }
 
     for (const plugin of this.mountedOverlays) {
@@ -1745,10 +1761,11 @@ export class Stage {
     // 4. Re-dispatch once every transform is in place, so derived geometry
     // (connectors, live tails) resolves against the restored target positions.
     for (const el of restored) {
-      if (typeof el._dispatchUpdate === "function") {
-        el._dispatchUpdate(1);
+      const managed = el as StageManagedElement;
+      if (typeof managed._dispatchUpdate === "function") {
+        managed._dispatchUpdate(1);
       } else {
-        el.update?.();
+        managed._update?.();
       }
     }
 
@@ -1816,8 +1833,8 @@ export class Stage {
           if (currentOpacity > 0) {
             const exitDurationSec = el.exitDuration ?? this.options.defaultDuration ?? 0.6;
             if (exitDurationSec <= 0) {
-              el._deactivate?.();
-              this.setCurrentPropertyValue(id, "opacity", 0);
+              (el as StageManagedElement)._deactivate?.();
+              this._setCurrentPropertyValue(id, "opacity", 0);
               this._applyStyles(el, { opacity: 0 });
               continue;
             }
@@ -1832,7 +1849,7 @@ export class Stage {
               curve: builtinEasings.quartOut,
             });
           } else {
-            el._deactivate?.();
+            (el as StageManagedElement)._deactivate?.();
           }
         }
       }
@@ -1854,7 +1871,7 @@ export class Stage {
             this.snapshots[stepIdx]?.properties.get(id) || this.propertyState.get(id) || {};
           const targetOpacity = (targetProps.opacity as number) ?? 1;
           if (targetOpacity > 0) {
-            this.setCurrentPropertyValue(id, "opacity", 0);
+            this._setCurrentPropertyValue(id, "opacity", 0);
             stepTransitions.push({
               elementId: id,
               property: "opacity",
@@ -1864,6 +1881,48 @@ export class Stage {
               delayMs: enterDelaySec * 1000,
               curve: builtinEasings.quartOut,
             });
+          }
+        }
+      }
+    }
+
+    // Auto-transition origin when an element is moving and its origin changes between steps
+    const targetSnap = this.snapshots[stepIdx];
+    if (prevSnap && targetSnap) {
+      for (const [id, targetProps] of targetSnap.properties.entries()) {
+        const prevProps = prevSnap.properties.get(id);
+        if (!prevProps) continue;
+        const el = this.elementRegistry.get(id);
+        const prevOrigin =
+          prevProps.origin ?? this.initialProperties.get(id)?.origin ?? el?.origin ?? "top-left";
+        const targetOrigin =
+          targetProps.origin ?? this.initialProperties.get(id)?.origin ?? el?.origin ?? "top-left";
+        if (!stepTransitions.some((t) => t.elementId === id && t.property === "origin")) {
+          const prevAnchor = resolveAnchor(prevOrigin as ElementAnchor);
+          const targetAnchor = resolveAnchor(targetOrigin as ElementAnchor);
+          if (prevAnchor[0] !== targetAnchor[0] || prevAnchor[1] !== targetAnchor[1]) {
+            const motionTransition = stepTransitions.find(
+              (t) =>
+                t.elementId === id &&
+                (t.property === "x" ||
+                  t.property === "y" ||
+                  t.property === "scale" ||
+                  t.property === "rotation"),
+            );
+            if (motionTransition) {
+              stepTransitions.push({
+                elementId: id,
+                property: "origin",
+                from: prevOrigin,
+                to: targetOrigin,
+                durationMs: motionTransition.durationMs,
+                delayMs: motionTransition.delayMs,
+                curve: motionTransition.curve,
+                triggerElementId: motionTransition.triggerElementId,
+                triggerMilestone: motionTransition.triggerMilestone,
+                triggerProperty: motionTransition.triggerProperty,
+              });
+            }
           }
         }
       }
@@ -1880,9 +1939,9 @@ export class Stage {
     }
 
     const scheduledTransitions: ScheduledTransition[] = stepTransitions.map((t) => {
-      const liveVal = this.getCurrentPropertyValue(t.elementId, t.property);
+      const liveVal = this._getCurrentPropertyValue(t.elementId, t.property);
       const startFrom = t.from !== undefined ? t.from : liveVal;
-      this.setCurrentPropertyValue(t.elementId, t.property, startFrom);
+      this._setCurrentPropertyValue(t.elementId, t.property, startFrom);
       return {
         ...t,
         startFrom,
@@ -1896,7 +1955,6 @@ export class Stage {
     // For any property that has an explicit new value in targetSnap but NO transition scheduled in this step,
     // apply it immediately at the start of the step so discrete changes (like text, flow, etc.) are not delayed.
     const transitioningKeys = new Set(stepTransitions.map((t) => `${t.elementId}:${t.property}`));
-    const targetSnap = this.snapshots[stepIdx];
     if (targetSnap) {
       for (const [id, targetProps] of targetSnap.properties.entries()) {
         const currentProps = this.propertyState.get(id);
@@ -2038,7 +2096,7 @@ export class Stage {
         }
 
         // Update local property state
-        this.setCurrentPropertyValue(t.elementId, t.property, currentVal);
+        this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
 
         // Render to DOM without dispatching intermediate updates per property
         const props = this.propertyState.get(t.elementId) || {};
@@ -2049,10 +2107,11 @@ export class Stage {
       for (const id of participatingIds) {
         const el = this.elementRegistry.get(id);
         const progress = elementProgress.get(id) ?? (step.activeElementIds.has(id) ? 1 : 0);
-        if (typeof el?._dispatchUpdate === "function") {
-          el._dispatchUpdate(progress);
+        const managed = el as StageManagedElement | undefined;
+        if (typeof managed?._dispatchUpdate === "function") {
+          managed._dispatchUpdate(progress);
         } else {
-          el?.update?.();
+          managed?._update?.();
         }
       }
 
@@ -2089,7 +2148,7 @@ export class Stage {
     node.style.willChange = "auto";
     node.style.pointerEvents = "none";
     this.promotedElements.delete(node);
-    element._deactivate?.();
+    (element as StageManagedElement)._deactivate?.();
   }
 
   private _applyStyles(
@@ -2101,24 +2160,25 @@ export class Stage {
     const node = element.domElement;
     if (!node) return;
 
-    const x = props.x as number | string | undefined;
-    const y = props.y as number | string | undefined;
+    const x = props.x as number | undefined;
+    const y = props.y as number | undefined;
     const scale = (props.scale as number) ?? 1;
     const rotation = (props.rotation as number) ?? 0;
-    const rawAnchor = props.anchor ?? element.anchor;
-    const anchor: ElementAnchor =
-      typeof rawAnchor === "string" || Array.isArray(rawAnchor)
-        ? (rawAnchor as ElementAnchor)
+    const rawOrigin = props.origin ?? element.origin;
+    const origin: ElementAnchor =
+      typeof rawOrigin === "string" || Array.isArray(rawOrigin)
+        ? (rawOrigin as ElementAnchor)
         : "top-left";
     const opacity = (props.opacity as number) ?? 1;
     const blur = (props.blur as number) ?? 0;
     const brightness = (props.brightness as number) ?? 1;
     const color = props.color as string | undefined;
 
-    const { transform, transformOrigin } = computeTransformAndOrigin(x, y, scale, rotation, anchor);
+    const { transform, transformOrigin } = computeTransform(x, y, scale, rotation, origin);
 
+    const managed = element as StageManagedElement;
     const isCustomPositioned =
-      Boolean(element.isCustomPositioned) ||
+      Boolean(managed._isCustomPositioned) ||
       node instanceof SVGElement ||
       node.tagName.toLowerCase() === "svg";
     if (!isCustomPositioned) {
@@ -2126,7 +2186,7 @@ export class Stage {
       node.style.transformOrigin = transformOrigin;
     }
     const defaultPointerEvents =
-      element._defaultPointerEvents ??
+      managed._defaultPointerEvents ??
       (node instanceof SVGElement || node.tagName.toLowerCase() === "svg" ? "none" : "auto");
     node.style.pointerEvents = opacity === 0 ? "none" : defaultPointerEvents;
     node.style.opacity = `${opacity}`;
@@ -2141,9 +2201,9 @@ export class Stage {
     }
     if (triggerLifecycle) {
       if (opacity > 0) {
-        element._activate?.();
+        managed._activate?.();
       } else {
-        element._deactivate?.();
+        managed._deactivate?.();
       }
     }
     if (blur > 0 || brightness !== 1) {
@@ -2156,16 +2216,14 @@ export class Stage {
       node.style.color = color;
     }
     if (props.width !== undefined) {
-      const formattedWidth =
-        typeof props.width === "number" ? `${props.width}px` : String(props.width);
-      if (node.style.width !== formattedWidth) {
+      const formattedWidth = cssLength(props.width as number | string);
+      if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
         node.style.width = formattedWidth;
       }
     }
     if (props.height !== undefined) {
-      const formattedHeight =
-        typeof props.height === "number" ? `${props.height}px` : String(props.height);
-      if (node.style.height !== formattedHeight) {
+      const formattedHeight = cssLength(props.height as number | string);
+      if (formattedHeight !== undefined && node.style.height !== formattedHeight) {
         node.style.height = formattedHeight;
       }
     }
@@ -2178,7 +2236,7 @@ export class Stage {
         key !== "height" &&
         key !== "scale" &&
         key !== "rotation" &&
-        key !== "anchor" &&
+        key !== "origin" &&
         key !== "opacity" &&
         key !== "blur" &&
         key !== "brightness" &&
@@ -2194,10 +2252,10 @@ export class Stage {
     }
 
     if (dispatchUpdate) {
-      if (typeof element._dispatchUpdate === "function") {
-        element._dispatchUpdate(1);
-      } else if (typeof element.update === "function") {
-        element.update();
+      if (typeof managed._dispatchUpdate === "function") {
+        managed._dispatchUpdate(1);
+      } else if (typeof managed._update === "function") {
+        managed._update();
       }
     }
   }

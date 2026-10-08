@@ -130,21 +130,21 @@ class TableElementImpl extends DOMElement implements TableElement {
     const stage = getActiveStage();
     for (const row of this.rows) {
       const currentOpacity = stage
-        ? (stage.getCurrentPropertyValue(row.id, "opacity") as number | undefined)
+        ? (stage._getCurrentPropertyValue(row.id, "opacity") as number | undefined)
         : (row.opacity as number | undefined);
       const currentX = stage
-        ? (stage.getCurrentPropertyValue(row.id, "x") as number | string | undefined)
+        ? (stage._getCurrentPropertyValue(row.id, "x") as number | string | undefined)
         : (row.x as number | string | undefined);
       if (currentOpacity === undefined || currentOpacity === 1) {
         if (stage) {
-          stage.setCurrentPropertyValue(row.id, "opacity", 0);
+          stage._setCurrentPropertyValue(row.id, "opacity", 0);
         } else {
           row.opacity = 0;
         }
       }
       if (currentX === undefined || currentX === 0) {
         if (stage) {
-          stage.setCurrentPropertyValue(row.id, "x", 2);
+          stage._setCurrentPropertyValue(row.id, "x", 2);
         } else {
           row.x = 2;
         }

@@ -1,8 +1,11 @@
 /**
- * Interpolators for smoothly blending numbers, colors, container units, and transform coordinates.
+ * Interpolators for numbers, colors, CSS lengths, and box points.
+ *
+ * Coordinates are plain numbers in stage units, so they interpolate as numbers.
  */
 
 import type { ElementAnchor, Point } from "./types";
+import { cssLength, stageUnitPx } from "./units";
 
 export interface RGBA {
   r: number;
@@ -82,103 +85,10 @@ export function parseUnitValue(val: string): { num: number; unit: string } | nul
   return null;
 }
 
-export interface CoordParts {
-  stageVal: number;
-  stageUnit: string;
-  selfPct: number;
-}
-
-export function parseCoordParts(
-  val: number | string | undefined,
-  defaultUnit = "cqw",
-): CoordParts | null {
-  if (val === undefined || val === null) return null;
-  if (typeof val === "number") {
-    return { stageVal: val, stageUnit: defaultUnit, selfPct: 0 };
-  }
-  const str = String(val).trim();
-  if (str === "center") {
-    return { stageVal: 50, stageUnit: defaultUnit, selfPct: 50 };
-  }
-  // Matches calc(50cqw - 50%) or calc(50% - 50%)
-  const calcMatch = str.match(/^calc\(\s*(-?[\d.]+)\s*([a-zA-Z%]*)\s*-\s*(-?[\d.]+)\s*%\s*\)$/);
-  if (calcMatch?.[1] && calcMatch[3]) {
-    return {
-      stageVal: Number.parseFloat(calcMatch[1]),
-      stageUnit: calcMatch[2] || defaultUnit,
-      selfPct: Number.parseFloat(calcMatch[3]),
-    };
-  }
-  // Pure number as string
-  if (/^-?[\d.]+$/.test(str)) {
-    return { stageVal: Number.parseFloat(str), stageUnit: defaultUnit, selfPct: 0 };
-  }
-  // Single unit e.g. "6cqw", "200px"
-  const unitMatch = str.match(/^(-?[\d.]+)\s*([a-zA-Z%]+)$/);
-  if (unitMatch?.[1]) {
-    return {
-      stageVal: Number.parseFloat(unitMatch[1]),
-      stageUnit: unitMatch[2] || defaultUnit,
-      selfPct: 0,
-    };
-  }
-  return null;
-}
-
 /**
- * Resolves a coordinate or dimension value to its numeric stage percentage or scalar.
- * Resolves keywords like `"center"` to 50 and strips CSS unit suffixes.
+ * Resolves a named box point or `[x, y]` pair to percentages of the box.
+ * Used by element `origin` and by connector anchors.
  */
-export function resolveCoordNumber(val: unknown, defaultVal = 0): number {
-  if (typeof val === "number") return val;
-  if (val === undefined || val === null) return defaultVal;
-  const parts = parseCoordParts(val as number | string | undefined);
-  return parts ? parts.stageVal : defaultVal;
-}
-
-/**
- * Applies a numeric updater function to a coordinate or scalar value,
- * preserving explicit units (e.g. "px", "rem") and centering offsets ("center", selfPct).
- */
-export function applyCoordUpdater(
-  from: unknown,
-  updater: (curr: number) => unknown,
-  defaultUnit = "cqw",
-): unknown {
-  const parts = parseCoordParts(from as number | string | undefined, defaultUnit);
-  let currentNum = 0;
-  if (parts) {
-    currentNum = parts.stageVal;
-  } else if (typeof from === "number") {
-    currentNum = from;
-  }
-  const nextVal = updater(currentNum);
-  if (typeof nextVal !== "number") return nextVal;
-  if (!parts) return nextVal;
-
-  if (parts.selfPct !== 0) {
-    return `calc(${nextVal}${parts.stageUnit} - ${parts.selfPct}%)`;
-  }
-  if (parts.stageUnit !== defaultUnit && parts.stageUnit !== "%") {
-    return `${nextVal}${parts.stageUnit}`;
-  }
-  return nextVal;
-}
-
-export function formatCoord(val: number | string | undefined, defaultUnit = "cqw"): string {
-  if (val === undefined || val === null) return "0px";
-  const parts = parseCoordParts(val, defaultUnit);
-  if (!parts) return String(val).trim();
-  if (parts.selfPct !== 0) {
-    return `calc(${parts.stageVal}${parts.stageUnit} - ${parts.selfPct}%)`;
-  }
-  return `${parts.stageVal}${parts.stageUnit}`;
-}
-
-export function px(val: number): string {
-  return `${val}px`;
-}
-
 export function resolveAnchor(anchor: ElementAnchor | string | undefined): Point {
   if (Array.isArray(anchor) && anchor.length >= 2) {
     return [
@@ -210,69 +120,44 @@ export function resolveAnchor(anchor: ElementAnchor | string | undefined): Point
   }
 }
 
-export function parseAnchor(anchor: ElementAnchor | string | undefined): Point {
-  return resolveAnchor(anchor);
+/** Converts a stage unit coordinate to canvas pixels. */
+export function unitsToPx(val: number | undefined, canvasHeight: number): number {
+  if (typeof val !== "number") return 0;
+  return val * stageUnitPx(canvasHeight);
 }
 
 /**
- * Resolves a coordinate value (number, percentage string, or cqw/cqh) to canvas pixels.
+ * Builds the element transform.
+ *
+ * `origin` picks which point of the element sits on the coordinate.
+ * `scale` and `rotation` pivot around that same point.
  */
-export function resolveCoordToPx(val: number | string | undefined, stageDimension: number): number {
-  if (typeof val === "number") {
-    return (val / 100) * stageDimension;
-  }
-  if (typeof val === "string") {
-    const s = val.trim();
-    if (s === "center") {
-      return stageDimension * 0.5;
-    }
-    if (s.endsWith("cqw") || s.endsWith("cqh") || s.endsWith("%")) {
-      return (Number.parseFloat(s) / 100) * stageDimension;
-    }
-    if (s.endsWith("rem")) {
-      return Number.parseFloat(s) * 16;
-    }
-    return Number.parseFloat(s) || 0;
-  }
-  return 0;
-}
-
-export function computeTransformAndOrigin(
-  xVal: number | string | undefined,
-  yVal: number | string | undefined,
+export function computeTransform(
+  xVal: number | undefined,
+  yVal: number | undefined,
   scaleVal: number | undefined,
   rotationVal: number | undefined,
-  _anchorVal?: ElementAnchor | string | undefined,
+  originVal?: ElementAnchor | undefined,
 ): { transform: string; transformOrigin: string } {
-  const xStr = formatCoord(xVal, "cqw");
-  const yStr = formatCoord(yVal, "cqh");
+  const x = cssLength(xVal ?? 0);
+  const y = cssLength(yVal ?? 0);
   const scale = scaleVal ?? 1;
   const rotation = rotationVal ?? 0;
+  const [ox, oy] = resolveAnchor(originVal);
 
   return {
-    transform: `translate3d(${xStr}, ${yStr}, 0) scale(${scale}) rotate(${rotation}deg)`,
-    transformOrigin: "0 0",
+    transform: `translate3d(${x}, ${y}, 0) translate(${-ox}%, ${-oy}%) scale(${scale}) rotate(${rotation}deg)`,
+    transformOrigin: `${ox}% ${oy}%`,
   };
 }
 
 export function interpolateValue(from: unknown, to: unknown, t: number): unknown {
+  // Stage coordinates, dimensions, and scalars are plain numbers
   if (typeof from === "number" && typeof to === "number") {
     return lerpNumber(from, to, t);
   }
 
-  // Coordinate expression with self-centering % support (e.g. "center" -> 6)
-  const pFrom = parseCoordParts(from as number | string | undefined, "cqw");
-  const pTo = parseCoordParts(to as number | string | undefined, "cqw");
-  if (pFrom && pTo && pFrom.stageUnit === pTo.stageUnit) {
-    const stageVal = lerpNumber(pFrom.stageVal, pTo.stageVal, t);
-    const selfPct = lerpNumber(pFrom.selfPct, pTo.selfPct, t);
-    if (selfPct !== 0) {
-      return `calc(${stageVal}${pTo.stageUnit} - ${selfPct}%)`;
-    }
-    return `${stageVal}${pTo.stageUnit}`;
-  }
-
-  // Anchor vector or keyword interpolation
+  // Origin / anchor points: named keywords and [x, y] percentage pairs
   const isAnchorKeyword = (v: unknown) =>
     typeof v === "string" &&
     (v === "center" ||
@@ -301,27 +186,12 @@ export function interpolateValue(from: unknown, to: unknown, t: number): unknown
       return lerpColor(from, to, t);
     }
 
+    // Authored CSS lengths (e.g. "40rem") interpolate when their units match
     const uFrom = parseUnitValue(from);
     const uTo = parseUnitValue(to);
     if (uFrom && uTo && uFrom.unit === uTo.unit) {
       const val = lerpNumber(uFrom.num, uTo.num, t);
       return `${val}${uTo.unit}`;
-    }
-  }
-
-  if (typeof from === "number" && typeof to === "string") {
-    const uTo = parseUnitValue(to);
-    if (uTo) {
-      const val = lerpNumber(from, uTo.num, t);
-      return `${val}${uTo.unit}`;
-    }
-  }
-
-  if (typeof from === "string" && typeof to === "number") {
-    const uFrom = parseUnitValue(from);
-    if (uFrom) {
-      const val = lerpNumber(uFrom.num, to, t);
-      return `${val}${uFrom.unit}`;
     }
   }
 

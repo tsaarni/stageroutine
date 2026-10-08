@@ -32,17 +32,27 @@ const scale = Math.min(
 this.viewport.style.transform = `scale(${scale})`;
 ```
 
-### Container Query Units
-Instead of fixed pixels, element coordinates are mapped to CSS container query units (`cqw`, `cqh`):
-- `1 cqw` = 1% of the viewport width (`19.2px`)
-- `1 cqh` = 1% of the viewport height (`10.8px`)
+### Stage Units
+The viewport declares one CSS custom property, and every coordinate is a multiple of it:
 
-When an element moves to `(50, 40)`, StageRoutine converts it into a GPU-accelerated CSS transform:
+```css
+--sr-u: calc(100cqh / 90);
+```
+
+The stage is 90 units tall, so one unit is `12px` on a 1080p canvas. Both axes use the same
+property, so a unit is the same distance horizontally and vertically.
+
+When an element moves to `(80, 40)`, StageRoutine converts it into a GPU-accelerated CSS transform:
 
 ```typescript
-node.style.transformOrigin = "50% 50%";
-node.style.transform = "translate(50cqw, 40cqh) scale(1) rotate(0deg)";
+node.style.transformOrigin = "0% 0%";
+node.style.transform =
+  "translate3d(calc(80 * var(--sr-u)), calc(40 * var(--sr-u)), 0) translate(0%, 0%) scale(1) rotate(0deg)";
 ```
+
+The second `translate` applies the element `origin`. With `origin: "center"` it becomes
+`translate(-50%, -50%)` and `transformOrigin` becomes `50% 50%`, so the element centers on its
+coordinate and pivots there when scaled or rotated.
 
 ## Reactive Proxies
 
@@ -132,7 +142,7 @@ On every frame tick:
 
 ```typescript
 // Frame render writes directly to DOM styles:
-node.style.transform = `translate(${currentX}cqw, ${currentY}cqh) scale(${currentScale})`;
+node.style.transform = `translate3d(calc(${currentX} * var(--sr-u)), calc(${currentY} * var(--sr-u)), 0) scale(${currentScale})`;
 node.style.opacity = `${currentOpacity}`;
 ```
 

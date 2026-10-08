@@ -36,7 +36,7 @@ stage.pause(); // Pauses playback until you press Next
 An **Element** is an animated instance of a component on screen (`Title`, `CodeBlock`, `Table`, etc.). Each element wraps a real DOM node with reactive properties (`x`, `y`, `scale`, `opacity`).
 
 ```typescript
-const title = Title("Hello StageRoutine", { x: "center", y: 40 });
+const title = Title("Hello StageRoutine", { position: [80, 36], origin: "top" });
 ```
 
 ## Comparison to Traditional Slides

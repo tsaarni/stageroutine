@@ -49,8 +49,8 @@ export interface FrameElement extends DOMElement {
  * @internal
  */
 class FrameElementImpl extends DOMElement implements FrameElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "path",
     "active",
     "borderColor",
@@ -65,7 +65,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     this._path = val;
     this.lastW = 0;
     this.lastH = 0;
-    this.update();
+    this._update();
   }
 
   readonly items: ReactiveElementBase[] = [];
@@ -85,7 +85,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   }
   set active(val: boolean) {
     this._active = !!val;
-    this.update();
+    this._update();
   }
 
   get borderColor(): ReactiveProp<string> | undefined {
@@ -93,7 +93,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   }
   set borderColor(val: ReactiveProp<string> | undefined) {
     this._borderColor = val;
-    this.update();
+    this._update();
   }
 
   constructor(path: PathFunction, childrenOrOptions?: unknown, options: FrameOptions = {}) {
@@ -142,7 +142,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
         ) {
           const childEl = child as DOMElement;
           childItems.push(childEl);
-          childEl.isCustomPositioned = true;
+          childEl._isCustomPositioned = true;
           childEl.domElement.style.position = "relative";
           childEl.domElement.style.left = "auto";
           childEl.domElement.style.top = "auto";
@@ -189,24 +189,24 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     if (opts.active !== undefined) this._active = !!opts.active;
 
     this.onMount(() => {
-      this.update();
+      this._update();
     });
 
     this.onActivate(() => {
       for (const item of this.items) {
-        item._activate?.();
+        (item as { _activate?: () => void })._activate?.();
       }
     });
 
     this.onDeactivate(() => {
       for (const item of this.items) {
-        item._deactivate?.();
+        (item as { _deactivate?: () => void })._deactivate?.();
       }
     });
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
-        this.update();
+        this._update();
       });
       ro.observe(this.domElement);
       this.onUnmount(() => {
@@ -214,10 +214,10 @@ class FrameElementImpl extends DOMElement implements FrameElement {
       });
     }
 
-    this.update();
+    this._update();
   }
 
-  override update(): void {
+  override _update(): void {
     if (!this.pathNode) return;
     this.updateVisualState();
     this.updateGeometry();
@@ -301,14 +301,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     padding: number,
   ): Point | null => {
     const stage = getActiveStage();
-    return resolveTailLocalPoint(
-      this,
-      target,
-      anchor,
-      padding,
-      stage?.width ?? 1920,
-      stage?.height ?? 1080,
-    );
+    return resolveTailLocalPoint(this, target, anchor, padding, stage?.height ?? 1080);
   };
 }
 

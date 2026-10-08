@@ -15,10 +15,10 @@ StageRoutine includes components for dynamic media playback and live presenter v
 import { Video } from "stageroutine";
 
 const video = Video("/assets/recording.mp4", {
-  x: "center",
-  y: "center",
-  width: 640,
-  height: 360,
+  position: [80, 45],
+  origin: "center",
+  width: 53.33,
+  height: 30,
   muted: true,
   loop: true,
   fit: "contain",
@@ -43,9 +43,9 @@ Clicking a video toggles playback interactively.
 import { Frame, paths, Webcam } from "stageroutine";
 
 const cam = Frame(paths.circle(), Webcam({ mirror: true }), {
-  x: 85,
-  y: 80,
-  size: 160,
+  x: 136,
+  y: 72,
+  size: 13.33,
   borderColor: "#38bdf8",
   strokeWidth: 2,
   active: true,

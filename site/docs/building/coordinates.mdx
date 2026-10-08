@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Coordinates
 
-StageRoutine uses a fixed virtual canvas with percentage coordinates. This ensures your presentation looks identical on all displays.
+StageRoutine uses a fixed virtual canvas with stage units. Your presentation looks identical on all displays.
 
 ## Virtual Viewport
 
@@ -16,31 +16,40 @@ When you call `stage.mount("#stage")`, StageRoutine creates a `1920×1080` virtu
 - **Automatic Scaling**: StageRoutine scales and centers the stage to fit any screen, projector, or window size.
 - **Letterboxing**: On displays with non-16:9 aspect ratios, black bars appear around the canvas. Content never stretches or crops.
 
-## Coordinate System
+## Stage Units
 
-Coordinates range from `(0, 0)` (top-left) to `(100, 100)` (bottom-right).
+The stage is **90 units tall**. Width follows the aspect ratio, so a 16:9 stage is **160 units wide**.
 
 ![StageRoutine Coordinate System](/img/coordinate-system.svg)
 
-- Raw numbers are always stage percentages (`0..100%`), mapped to CSS container query units (`cqw` and `cqh`).
-- Keyword `"center"` resolves to `50%`.
-- Explicit pixels require units: `"200px"` or `px(200)`.
+Coordinates range from `(0, 0)` at the top-left to `(160, 90)` at the bottom-right. The center is `(80, 45)`.
+
+One unit is the same distance on both axes. This means a radius is a true circle, a diagonal has a predictable angle, and a horizontal gap matches a vertical gap of the same value.
 
 ```typescript
-import { Title, px } from "stageroutine";
+import { Title } from "stageroutine";
 
-// Percentage positioning (recommended for responsive stage layouts)
 const headline = Title("System Overview", {
-  x: "center", // 50%
-  y: 20,       // 20%
-});
-
-// Explicit pixel positioning
-const badge = Title("v2.0", {
-  x: px(1600),
-  y: px(60),
+  x: 12,
+  y: 18,
 });
 ```
+
+Sizes use the same units:
+
+```typescript
+const card = Card("Service", { width: 30, height: 16 });
+```
+
+A size can also be a CSS length when you want font-relative sizing:
+
+```typescript
+const panel = Card("Notes", { width: "32rem" });
+```
+
+:::tip
+Stage units never need a suffix. If you write a string, it is passed through as CSS.
+:::
 
 ## Element Position vs. Geometric Points
 
@@ -49,12 +58,12 @@ StageRoutine separates element options from geometric points:
 1. **Element Options (`{ x?, y? }`):**
    Elements have separate `x` and `y` properties. This lets layout functions and animations modify one axis without changing the other:
    ```typescript
-   const card = Card("Service", { x: 20, y: 35 });
-   card.x = to(80); // Animates horizontal axis only
+   const card = Card("Service", { x: 32, y: 32 });
+   card.x = to(128); // Animates horizontal axis only
    ```
    You can also use the `position` tuple shorthand:
    ```typescript
-   const card = Card("Service", { position: [20, 35] });
+   const card = Card("Service", { position: [32, 32] });
    ```
 
 2. **Geometric Points (`Point = readonly [x, y]`):**
@@ -62,36 +71,53 @@ StageRoutine separates element options from geometric points:
    ```typescript
    import { Connector } from "stageroutine";
 
-   // Connects point [20, 35] to point [80, 50]
-   const line = Connector([20, 35], [80, 50]);
+   // Connects point [32, 32] to point [128, 45]
+   const line = Connector([32, 32], [128, 45]);
    ```
 
-## Anchors
+## Origin
 
-The `anchor` property defines which point on the element aligns with `(x, y)`. All elements default to `"top-left"` unless specified.
-Anchors accept named keywords or `[x, y]` percentage tuples:
+The `origin` property defines which point of the element sits on its coordinate. All elements default to `"top-left"`.
 
-![StageRoutine Element Anchors](/img/anchors.svg)
+`scale` and `rotation` pivot around the same point.
 
-| Anchor | Description | Typical Use |
+![StageRoutine Element Origin](/img/origin.svg)
+
+| Origin | Description | Typical Use |
 |---|---|---|
-| `"top-left"` | Alignment relative to top-left corner *(default)* | Body text, code blocks, tables |
-| `"center"` | Alignment relative to exact center | Centered titles, shapes, badges, icons |
+| `"top-left"` | Top-left corner *(default)* | Body text, code blocks, tables |
+| `"center"` | Exact center | Centered titles, shapes, badges, icons |
 | `"top"` | Top center | Stage headers |
 | `"bottom"` | Bottom center | Stage footers, bottom bars |
 | `[x, y]` | Custom percentage point on the element (e.g. `[100, 50]`) | Custom alignment |
 
+To center an element on the stage, place it at the stage center and set the origin:
+
 ```typescript
 const title = Title("Centered Title", {
-  x: "center",
-  y: "center",
-  anchor: "center",
+  position: [80, 45],
+  origin: "center",
 });
+```
+
+To center horizontally while keeping the top edge at a chosen height, use `"top"`:
+
+```typescript
+const heading = Title("Section Heading", {
+  position: [80, 20],
+  origin: "top",
+});
+```
+
+`origin` is reactive, so it can animate:
+
+```typescript
+badge.origin = to("center");
 ```
 
 ## Content Alignment
 
-While `anchor` positions the element on the stage, `align` positions text and child elements inside the element's box.
+While `origin` positions the element on the stage, `align` positions text and child elements inside the element's box.
 
 Containers (`Card`, `Shape`) default to `"center"`. Typography elements (`Title`, `Text`) default to `"left"`.
 
@@ -100,13 +126,12 @@ Containers (`Card`, `Shape`) default to `"center"`. Typography elements (`Title`
 Single-axis shorthands center along the opposite axis: `"top"` means top-center, and `"left"` means middle-left.
 
 ```typescript
-// Anchored at stage center, with contents aligned to the top-left inside
+// Centered on the stage, with contents aligned to the top-left inside
 const card = Card([Title("Metrics"), Text("All systems operational")], {
-  x: "center",
-  y: "center",
-  anchor: "center",
-  width: 360,
-  height: 200,
+  position: [80, 45],
+  origin: "center",
+  width: 30,
+  height: 17,
   align: "top-left",
 });
 ```

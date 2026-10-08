@@ -18,13 +18,13 @@ const stage = new Stage();
 // hide-end
 import { Card, Connector, layout } from "stageroutine";
 
-const a = Card("A", { width: 140, height: 90 });
-const b = Card("B", { width: 140, height: 90 });
+const a = Card("A", { width: 12, height: 7.5 });
+const b = Card("B", { width: 12, height: 7.5 });
 
 layout.hstack([a, b], {
   x: "center",
   y: "center",
-  gap: 24,
+  gap: 38,
 });
 
 const link = Connector(a, b);

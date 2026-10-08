@@ -86,8 +86,8 @@ export class ReplaceBuilder implements ReplaceTransition {
     }
 
     const stage = getActiveStage();
-    if (stage && typeof stage.registerPendingFlush === "function") {
-      this.unregisterFlush = stage.registerPendingFlush(() => {
+    if (stage && typeof stage._registerPendingFlush === "function") {
+      this.unregisterFlush = stage._registerPendingFlush(() => {
         this.apply();
       });
     }

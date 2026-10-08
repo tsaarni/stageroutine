@@ -5,6 +5,7 @@
 import "./BulletList.css";
 import type { Properties as CSSProperties } from "csstype";
 import { getActiveStage } from "../../core/index";
+import { cssLength } from "../../core/units";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import type { ThemeConfig } from "../../theme/tokens";
 import { DOMElement, type ElementOptions, mount } from "../element";
@@ -44,8 +45,8 @@ export type BulletItemInput = string | BulletItem | BulletItemInput[];
  * @inline
  */
 export interface BulletListOptions extends ElementOptions {
-  /** Vertical spacing between bullet items in pixels (default: 16). */
-  itemSpacing?: number;
+  /** Vertical spacing between bullet items in stage units, or a CSS length. */
+  itemSpacing?: number | string;
   /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
   marker?: string | string[];
   /** Default marker color for bullet points (overrides `color` for markers). A per-item `markerColor` overrides this. */
@@ -117,7 +118,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
     const container = document.createElement("div");
     container.className = ["sr-bullet-list", options.className].filter(Boolean).join(" ");
     if (options.itemSpacing !== undefined) {
-      container.style.gap = `${options.itemSpacing}px`;
+      container.style.gap = cssLength(options.itemSpacing) ?? "";
     }
 
     const isInteractive = options.interactive ?? true;
@@ -185,21 +186,21 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
     const stage = getActiveStage();
     for (const item of this.items) {
       const currentOpacity = stage
-        ? (stage.getCurrentPropertyValue(item.id, "opacity") as number | undefined)
+        ? (stage._getCurrentPropertyValue(item.id, "opacity") as number | undefined)
         : (item.opacity as number | undefined);
       const currentX = stage
-        ? (stage.getCurrentPropertyValue(item.id, "x") as number | string | undefined)
+        ? (stage._getCurrentPropertyValue(item.id, "x") as number | string | undefined)
         : (item.x as number | string | undefined);
       if (currentOpacity === undefined || currentOpacity === 1) {
         if (stage) {
-          stage.setCurrentPropertyValue(item.id, "opacity", 0);
+          stage._setCurrentPropertyValue(item.id, "opacity", 0);
         } else {
           item.opacity = 0;
         }
       }
       if (currentX === undefined || currentX === 0) {
         if (stage) {
-          stage.setCurrentPropertyValue(item.id, "x", 2);
+          stage._setCurrentPropertyValue(item.id, "x", 2);
         } else {
           item.x = 2;
         }

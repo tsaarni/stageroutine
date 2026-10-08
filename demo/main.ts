@@ -50,23 +50,27 @@ const stage = new Stage().background(AsciiFluid().decorate(vignette())).notesDoc
 // Scene: Introduction
 
 const sectionKicker = Kicker("00 / Core Runtime", {
-  position: ["center", 32],
+  position: [80, 28.8],
+  origin: "top",
 });
 
 const brandTitle = Title("StageRoutine", {
   variant: "hero",
-  position: ["center", 40],
+  position: [80, 36],
+  origin: "top",
 });
 
 const editorialLead = Title("Code-driven presentations built for the stage.", {
   variant: "serif",
-  position: ["center", 52],
+  position: [80, 46.8],
+  origin: "top",
 })
   .decorate(gradient())
   .decorate(glow());
 
 const heroBody = Text("An open-source presentation runtime for developers.", {
-  position: ["center", 64],
+  position: [80, 57.6],
+  origin: "top",
 });
 
 // Declare which elements are active in this scene.
@@ -89,7 +93,7 @@ const leftBody = Text(
 const codePanel = CodeBlock(
   [
     "// Direct mutation schedules smooth transition",
-    "node.x = 52;",
+    "node.x = 83.2;",
     "node.opacity = 1;",
     "",
     "// Pause defines presenter step boundary",
@@ -99,22 +103,27 @@ const codePanel = CodeBlock(
 ).decorate(rule());
 
 const [planeRule] = layout.hstack([[leftHeading, leftBody], codePanel], {
-  x: 6,
-  y: 23,
-  width: [42, 44],
+  x: 9.6,
+  y: 20.7,
+  width: [67.2, 70.4],
 });
 if (planeRule) planeRule.opacity = 0;
-codePanel.x = 110;
+codePanel.x = 176;
 
 // brandTitle glides to its new position instead of recreating.
 stage.scene("Continuous Plane").with(brandTitle, leftHeading, leftBody, codePanel, planeRule);
 
 // Reposition brandTitle to the top-left corner.
-brandTitle.position = to([6, 6]).ease("cubicInOut");
-brandTitle.scale = to(0.6).ease("cubicInOut");
+brandTitle
+  .to({
+    position: [9.6, 5.4],
+    origin: "top-left",
+    scale: 0.6,
+  })
+  .ease("cubicInOut");
 
 // Choreographed exit for intro lead
-editorialLead.to({ y: 62, opacity: 0 });
+editorialLead.to({ y: 55.8, opacity: 0 });
 
 // Milestone triggers chain animations to start after another element completes.
 leftHeading.opacity = to(1).after(brandTitle);
@@ -122,7 +131,7 @@ leftBody.opacity = to(1).when(leftHeading, "halfway");
 if (planeRule) planeRule.opacity = to(1).when(leftHeading, "halfway");
 
 // Slide code panel into the right column.
-codePanel.x = to(52).ease("quartOut");
+codePanel.x = to(83.2).ease("quartOut");
 codePanel.opacity = to(1).when(leftHeading, "halfway");
 stage.pause();
 
@@ -149,9 +158,9 @@ const featureChecklist = BulletList(
 );
 
 layout.vstack([rightHeading, rightBody, featureChecklist], {
-  x: 52,
-  y: 18,
-  gap: 4,
+  x: 83.2,
+  y: 16.2,
+  gap: 3.6,
 });
 
 stage
@@ -159,7 +168,7 @@ stage
   .with(brandTitle, codePanel, rightHeading, rightBody, featureChecklist);
 
 // Slide left column off-screen.
-group(leftHeading, leftBody).to({ opacity: 0, x: -50 });
+group(leftHeading, leftBody).to({ opacity: 0, x: -80 });
 if (planeRule) planeRule.opacity = to(0);
 
 // Move code panel from the right column over to the left column.
@@ -185,9 +194,9 @@ const terminalPanel = TerminalBlock({
     "⚡ BroadcastChannel channel: stageroutine-channel",
   ],
   x: brandTitle.x,
-  y: 120,
+  y: 108,
   opacity: 0,
-  width: "44cqw",
+  width: 70.4,
 });
 
 stage
@@ -195,8 +204,8 @@ stage
   .with(brandTitle, terminalPanel, rightHeading, rightBody, featureChecklist);
 
 // Slide code block upward off-screen and lift terminal up from below.
-codePanel.to({ y: -50, opacity: 0 }).ease("cubicInOut");
-terminalPanel.to({ y: 19, opacity: 1 }).when(codePanel, "halfway");
+codePanel.to({ y: -45, opacity: 0 }).ease("cubicInOut");
+terminalPanel.to({ y: 17.1, opacity: 1 }).when(codePanel, "halfway");
 stage.pause();
 
 // Scene: Component Showcase
@@ -210,9 +219,9 @@ const customPill = Shape(paths.pill(), "Reactive", {
 });
 
 layout.hstack([showcaseKicker, showcasePill, customPill], {
-  x: 6,
-  y: 18,
-  gap: 2,
+  x: 9.6,
+  y: 16.2,
+  gap: 3.2,
   align: "center",
   animate: true,
 });
@@ -246,7 +255,7 @@ layout.hstack(
     [showcaseTitle, showcaseText, showcaseCard, showcaseList],
     [showcaseCode, showcaseTerminal],
   ],
-  { x: 6, y: 25, width: [42, 44], animate: true },
+  { x: 9.6, y: 22.5, width: [67.2, 70.4], animate: true },
 );
 
 stage
@@ -265,7 +274,7 @@ stage
   );
 
 // Animate previous terminal panel off-screen
-terminalPanel.to({ y: 120, opacity: 0 }).ease("cubicInOut");
+terminalPanel.to({ y: 108, opacity: 0 }).ease("cubicInOut");
 stage.pause();
 
 // Scene: Element Decorators
@@ -316,7 +325,7 @@ layout.hstack(
     [decoratorKicker, decoratorHeading, decoratorGradientDemo, decoratorTypewriterDemo],
     decoratorCode,
   ],
-  { x: 6, y: 18, width: [42, 44], animate: true },
+  { x: 9.6, y: 16.2, width: [67.2, 70.4], animate: true },
 );
 
 stage
@@ -350,15 +359,15 @@ const serviceMetricsTable = Table({
   ],
   align: ["left", "right", "right", "center"],
   opacity: 0,
-  width: "42cqw",
+  width: 67.2,
 });
 
 layout.vstack([tableKicker, tableHeading, tableText], {
-  x: 6,
-  y: 18,
-  width: 42,
+  x: 9.6,
+  y: 16.2,
+  width: 67.2,
 });
-serviceMetricsTable.position = [6, 48];
+serviceMetricsTable.position = [9.6, 43.2];
 
 const tableCode = CodeBlock(
   [
@@ -378,9 +387,9 @@ const tableCode = CodeBlock(
     "metrics.reveal();",
   ],
   {
-    position: [52, 0],
+    position: [83.2, 0],
     opacity: 0,
-    width: "42cqw",
+    width: 67.2,
   },
 );
 
@@ -389,7 +398,7 @@ stage
   .with(brandTitle, tableKicker, tableHeading, tableText, serviceMetricsTable, tableCode);
 
 // Animate previous code panel off-screen
-decoratorCode.to({ opacity: 0, y: 80 });
+decoratorCode.to({ opacity: 0, y: 72 });
 
 // Reveal table elements with staggered spatial entrance
 tableKicker.opacity = to(1).when(brandTitle, "start");
@@ -397,30 +406,30 @@ tableHeading.opacity = to(1).when(tableKicker, "halfway");
 tableText.opacity = to(1).when(tableHeading, "halfway");
 
 // Glide Table container into place
-serviceMetricsTable.y = to(48).when(tableText, "start");
+serviceMetricsTable.y = to(43.2).when(tableText, "start");
 
 // Staggered cascade across table rows
 serviceMetricsTable.reveal().when(tableText, 0.5);
 
 // Glide code panel in from the right edge
-tableCode.to({ y: 18, opacity: 1 }).when(tableText, "halfway");
+tableCode.to({ y: 16.2, opacity: 1 }).when(tableText, "halfway");
 stage.pause();
 
 // Scene: Component Topology
 
 const topologyKicker = Kicker("06 / Architecture Topology");
 const topologyHeading = Title("Reactive Component Graphs", {
-  width: "42cqw",
+  width: 67.2,
 });
 
 layout.vstack([topologyKicker, topologyHeading], {
-  x: 6,
-  y: 18,
-  gap: 2,
+  x: 9.6,
+  y: 16.2,
+  gap: 1.8,
 });
 
 // Component Diagram Nodes
-const cardOpts = { width: 180, height: 100, align: "center" as const };
+const cardOpts = { width: 15, height: 8.33, align: "center" as const };
 const clientCard = Card("Client App", cardOpts);
 const apiGateway = Card("API Gateway", cardOpts);
 const authService = Card("Auth Service", cardOpts);
@@ -432,7 +441,7 @@ const topologyNote = Card(
   {
     variant: "ghost",
     align: "right",
-    width: "24cqw",
+    width: 38.4,
     opacity: 0,
     borderColor: "none",
   },
@@ -444,11 +453,11 @@ layout.grid(
     [clientCard, apiGateway, redisCache],
     [null, authService, databaseCard],
   ],
-  { x: 20, y: 35, gapX: 16, gapY: 10 },
+  { x: 32, y: 31.5, gapX: 25.6, gapY: 9 },
 );
 
 // Position architecture note lower and offset to the far left
-topologyNote.position = [6, 74];
+topologyNote.position = [9.6, 66.6];
 
 const connClientGateway = Connector(clientCard, apiGateway, {
   label: "HTTPS REST",
@@ -528,7 +537,7 @@ stage.pause();
 group(topologyNote, noteConnector).to({ opacity: 1 }).duration(0.35);
 stage.pause();
 
-clientCard.y = to(46).ease("cubicInOut");
+clientCard.y = to(41.4).ease("cubicInOut");
 stage.pause();
 connClientGateway.pulse();
 stage.pause();
@@ -537,11 +546,11 @@ stage.pause();
 
 const sequenceKicker = Kicker("07 / Protocol Choreography");
 const sequenceHeading = Title("Sequence Diagram & Protocols", {
-  position: [6, 25],
-  width: "32cqw",
+  position: [9.6, 22.5],
+  width: 51.2,
 });
 
-sequenceKicker.position = [6, 18];
+sequenceKicker.position = [9.6, 16.2];
 
 // Initialize sequence diagram helper with participants
 const seq = SequenceDiagram({
@@ -608,9 +617,9 @@ stage
 
 // Reposition participant cards into sequence columns
 layout.hstack([clientCard, apiGateway, authService], {
-  x: 44,
-  y: 22,
-  gap: 12.5,
+  x: 70.4,
+  y: 19.8,
+  gap: 20,
   animate: true,
 });
 
@@ -639,25 +648,25 @@ stage.pause();
 
 const stateKicker = Kicker("08 / State Machine Topologies");
 const stateHeading = Title("Interactive State Transitions", {
-  width: "36cqw",
+  width: 57.6,
 });
 
 layout.vstack([stateKicker, stateHeading], {
-  x: 6,
-  y: 18,
-  gap: 2,
+  x: 9.6,
+  y: 16.2,
+  gap: 1.8,
 });
 
 // UML initial and final pseudostates
 const stateInitial = Shape(paths.circle(), {
-  size: 34,
+  size: 2.83,
   variant: "ghost",
   className: "sr-state-node sr-state-initial",
   borderColor: "rgba(255, 255, 255, 0.35)",
 });
 
 const stateFinal = Shape(paths.circle(), {
-  size: 34,
+  size: 2.83,
   variant: "ghost",
   className: "sr-state-node sr-state-final",
   borderColor: "rgba(255, 255, 255, 0.55)",
@@ -665,22 +674,22 @@ const stateFinal = Shape(paths.circle(), {
 });
 
 // State nodes
-const stateOpts = { width: 170, height: 60, align: "center" as const };
+const stateOpts = { width: 14.17, height: 5, align: "center" as const };
 const stateIdle = Card("Idle", stateOpts);
-const stateAuthenticating = Card("Authenticating", { ...stateOpts, width: 190 });
+const stateAuthenticating = Card("Authenticating", { ...stateOpts, width: 15.83 });
 const stateActive = Card("Active", stateOpts);
 const stateRejected = Card("Rejected", stateOpts);
 
 // Arrange all nodes in a balanced circular topology
 layout.circle([stateInitial, stateIdle, stateAuthenticating, stateRejected, stateFinal], {
-  center: [64, 60],
-  radius: 20,
+  center: [102.4, 54],
+  radius: 32,
   startAngle: -160,
   flatten: 0.2,
 });
 
 // Active sits directly above Authenticating (left edges aligned)
-layout.above(stateActive, stateAuthenticating, { gap: 30 });
+layout.above(stateActive, stateAuthenticating, { gap: 27 });
 
 // Single-Curvature Arc Transitions
 const tStart = Connector(stateInitial, stateIdle, {
@@ -783,41 +792,41 @@ stage.pause();
 
 const geoKicker = Kicker("09 / Geometric Primitives");
 const geoHeading = Title("Reactive Sizing & Geometric Nodes", {
-  width: "36cqw",
+  width: 57.6,
 });
 const geoDescription = Text(
   "Shapes smoothly resize without scaling distortion. Width, height, and size animate as reactive properties while connectors track dynamic perimeters in real time.",
-  { width: "36cqw" },
+  { width: 57.6 },
 );
 
 layout.vstack([geoKicker, geoHeading, geoDescription], {
-  x: 6,
-  y: 18,
-  gap: 2,
+  x: 9.6,
+  y: 16.2,
+  gap: 1.8,
 });
 
 const morphBox = Card("Dynamic Layout Reflow", {
-  width: 220,
-  height: 110,
+  width: 18.33,
+  height: 9.17,
   borderColor: "#38bdf8",
 });
 
 const morphCircle = Shape(paths.circle(), "100%", {
-  size: 110,
+  size: 9.17,
   color: "#a855f7",
   borderColor: "#a855f7",
   end: 0,
 });
 
 const morphDiamond = Shape(paths.diamond(), "Verify", {
-  size: 115,
+  size: 9.58,
   color: "#f59e0b",
   borderColor: "#f59e0b",
 });
 
 const morphPill = Shape(paths.pill(), "Cluster Inactive", {
-  width: 170,
-  height: 54,
+  width: 14.17,
+  height: 4.5,
   color: "#ef4444",
   borderColor: "#ef4444",
 });
@@ -828,7 +837,7 @@ const starMedia = Image(
 );
 
 const starFrame = Frame(paths.star({ points: 5, innerRadius: 0.45 }), starMedia, {
-  size: 115,
+  size: 9.58,
   borderColor: "#f43f5e",
   strokeWidth: 2,
 });
@@ -839,14 +848,14 @@ layout.grid(
     [morphDiamond, starFrame],
   ],
   {
-    x: 52,
-    y: 18,
-    gapX: 8,
-    gapY: 10,
+    x: 83.2,
+    y: 16.2,
+    gapX: 12.8,
+    gapY: 9,
   },
 );
 
-morphPill.position = [60, 74];
+morphPill.position = [96, 66.6];
 
 const connBoxCircle = Connector(morphBox, morphCircle, {
   label: "auto-tracking",
@@ -903,11 +912,11 @@ morphDiamond.flow = "chase";
 stage.pause();
 
 // Step 2: Reactive Sizing & Live Text Reflow Animation
-morphBox.to({ width: 340, height: 68 }).ease("cubicInOut");
-morphCircle.size = to(150).ease("cubicInOut");
-morphDiamond.size = to(150).ease("cubicInOut");
-starFrame.to({ size: 150, rotation: 72 }).ease("cubicInOut");
-morphPill.to({ width: 280, color: "#10b981", borderColor: "#10b981" }).ease("cubicInOut");
+morphBox.to({ width: 28.33, height: 5.67 }).ease("cubicInOut");
+morphCircle.size = to(12.5).ease("cubicInOut");
+morphDiamond.size = to(12.5).ease("cubicInOut");
+starFrame.to({ size: 12.5, rotation: 72 }).ease("cubicInOut");
+morphPill.to({ width: 23.33, color: "#10b981", borderColor: "#10b981" }).ease("cubicInOut");
 morphPill.text = "Cluster Active";
 morphPill.flow = "ping";
 
@@ -917,27 +926,27 @@ stage.pause();
 // Scene: Edge AI Pipeline & Topology
 
 const aiKicker = Kicker("10 / Real-Time Intelligence");
-const aiHeading = Title("Edge AI & Vector Mesh", { width: "30cqw" });
+const aiHeading = Title("Edge AI & Vector Mesh", { width: 48 });
 const aiDescription = Text(
   "Plug icon libraries on-demand and connect them directly into reactive topology networks with real-time signal pulses.",
-  { width: "30cqw" },
+  { width: 48 },
 );
 
-const aiNodeOpts = { width: 145, height: 130, align: "center" as const };
+const aiNodeOpts = { width: 12.08, height: 10.83, align: "center" as const };
 const aiClientNode = Card(
-  [Globe({ size: 36, color: "#38bdf8" }), Kicker("Edge Client", { color: "#38bdf8" })],
+  [Globe({ size: 3, color: "#38bdf8" }), Kicker("Edge Client", { color: "#38bdf8" })],
   aiNodeOpts,
 );
 const aiGatewayNode = Card(
-  [Cpu({ size: 36, color: "#a855f7" }), Kicker("AI Gateway", { color: "#a855f7" })],
+  [Cpu({ size: 3, color: "#a855f7" }), Kicker("AI Gateway", { color: "#a855f7" })],
   aiNodeOpts,
 );
 const aiVectorNode = Card(
-  [Database({ size: 36, color: "#10b981" }), Kicker("Vector Memory", { color: "#10b981" })],
+  [Database({ size: 3, color: "#10b981" }), Kicker("Vector Memory", { color: "#10b981" })],
   aiNodeOpts,
 );
 const aiReasoningNode = Card(
-  [Sparkles({ size: 36, color: "#f59e0b" }), Kicker("LLM Reasoning", { color: "#f59e0b" })],
+  [Sparkles({ size: 3, color: "#f59e0b" }), Kicker("LLM Reasoning", { color: "#f59e0b" })],
   aiNodeOpts,
 );
 
@@ -947,9 +956,9 @@ const [aiRule] = layout.hstack(
     [aiClientNode, aiGatewayNode, aiReasoningNode, aiVectorNode],
   ],
   {
-    x: 6,
-    y: 18,
-    width: [29, 57],
+    x: 9.6,
+    y: 16.2,
+    width: [46.4, 91.2],
     rule: true,
   },
 );
@@ -960,10 +969,10 @@ layout.grid(
     [null, aiVectorNode, null],
   ],
   {
-    x: 40,
-    y: 26,
-    gapX: 14.5,
-    gapY: 9.5,
+    x: 64,
+    y: 23.4,
+    gapX: 23.2,
+    gapY: 8.55,
   },
 );
 
@@ -972,7 +981,7 @@ const connAiClientGateway = Connector(aiClientNode, aiGatewayNode, {
   routing: "bezier",
   fromAnchor: "right",
   toAnchor: "left",
-  labelOffsetY: -18,
+  labelOffsetY: -1.5,
   end: 0,
 });
 
@@ -982,7 +991,7 @@ const connAiGatewayVector = Connector(aiGatewayNode, aiVectorNode, {
   routing: "corner",
   fromAnchor: "bottom",
   toAnchor: "top",
-  labelOffsetX: 108,
+  labelOffsetX: 9,
   labelOffsetY: 0,
   end: 0,
 });
@@ -993,7 +1002,7 @@ const connAiGatewayLLM = Connector(aiGatewayNode, aiReasoningNode, {
   routing: "bezier",
   fromAnchor: "right",
   toAnchor: "left",
-  labelOffsetY: -18,
+  labelOffsetY: -1.5,
   end: 0,
 });
 
@@ -1026,11 +1035,11 @@ stage.pause();
 
 const motionKicker = Kicker("11 / Motion Orchestration");
 const motionHeading = Title("In-Place Crossfade Choreography", {
-  width: "42cqw",
+  width: 67.2,
 });
 const motionDescription = Text(
   "Coordinate multi-element replacements in place with synchronized opacity, spatial alignment, and depth scaling.",
-  { width: "42cqw" },
+  { width: 67.2 },
 );
 
 const legacyCard = Card(
@@ -1038,7 +1047,7 @@ const legacyCard = Card(
     Kicker("LEGACY PIPELINE"),
     Text("Manual animation loops with imperative timeouts and callback spaghetti."),
   ],
-  { width: "42cqw" },
+  { width: 67.2 },
 ).decorate(rule({ color: "#f43f5e" }));
 
 const reactiveCard = Card(
@@ -1046,18 +1055,18 @@ const reactiveCard = Card(
     Kicker("STAGE ROUTINE"),
     Text("Deterministic snapshot graph with fluent, zero-boilerplate choreography."),
   ],
-  { width: "42cqw", opacity: 0 },
+  { width: 67.2, opacity: 0 },
 ).decorate(rule({ color: "#38bdf8" }));
 
 const replaceCode = CodeBlock(
   ["// Synchronized in-place replacement", "replace(legacyCard, reactiveCard);"],
-  { width: "44cqw" },
+  { width: 70.4 },
 ).decorate(bracket({ color: "rgba(56, 189, 248, 0.4)" }));
 
 layout.hstack([[motionKicker, motionHeading, motionDescription, legacyCard], replaceCode], {
-  x: 6,
-  y: 18,
-  width: [42, 44],
+  x: 9.6,
+  y: 16.2,
+  width: [67.2, 70.4],
 });
 reactiveCard.position = legacyCard.position;
 
@@ -1124,10 +1133,10 @@ layout.hstack(
     [dreamCard1, dreamCard2, dreamCard3],
   ],
   {
-    x: 6,
-    y: 18,
-    width: [38, 50],
-    gap: 3,
+    x: 9.6,
+    y: 16.2,
+    width: [60.8, 80],
+    gap: 2.7,
   },
 );
 
@@ -1140,29 +1149,29 @@ stage.pause();
 
 const calloutKicker = Kicker("12 / Callout Geometries");
 const calloutHeading = Title("Dynamic Speech & Thought Tails", {
-  width: "34cqw",
+  width: 54.4,
 });
 const calloutDescription = Text(
   "Speech and thought bubbles connect their tails to live targets. The tail re-aims every frame as the target moves, and points land on the target outline.",
-  { width: "34cqw" },
+  { width: 54.4 },
 );
 
 const agentAlpha = Card(
-  [Sparkles({ size: 36, color: "#38bdf8" }), Kicker("Agent Alpha", { color: "#38bdf8" })],
-  { width: 170, height: 110, align: "center" },
+  [Sparkles({ size: 3, color: "#38bdf8" }), Kicker("Agent Alpha", { color: "#38bdf8" })],
+  { width: 14.17, height: 9.17, align: "center" },
 );
 
 const agentBeta = Card(
-  [Cpu({ size: 36, color: "#a855f7" }), Kicker("Agent Beta", { color: "#a855f7" })],
-  { width: 170, height: 110, align: "center" },
+  [Cpu({ size: 3, color: "#a855f7" }), Kicker("Agent Beta", { color: "#a855f7" })],
+  { width: 14.17, height: 9.17, align: "center" },
 );
 
 const speechBubble = Shape(
   paths.speechBubble({ tail: { to: agentAlpha, anchor: "top" }, radius: 14 }),
   "Directing query to Alpha",
   {
-    width: 250,
-    height: 120,
+    width: 20.83,
+    height: 10,
     borderColor: "#38bdf8",
     strokeWidth: 2,
   },
@@ -1172,17 +1181,17 @@ const thoughtBubble = Shape(
   paths.thoughtBubble({ tail: { to: agentBeta, anchor: "top" }, lobes: 9 }),
   "Evaluating Beta response...",
   {
-    width: 250,
-    height: 120,
+    width: 20.83,
+    height: 10,
     borderColor: "#a855f7",
     strokeWidth: 2,
   },
 );
 
 layout.vstack([calloutKicker, calloutHeading, calloutDescription], {
-  x: 6,
-  y: 18,
-  gap: 2,
+  x: 9.6,
+  y: 16.2,
+  gap: 1.8,
 });
 
 layout.grid(
@@ -1191,10 +1200,10 @@ layout.grid(
     [agentAlpha, agentBeta],
   ],
   {
-    x: 44,
-    y: 20,
-    gapX: 4,
-    gapY: 4,
+    x: 70.4,
+    y: 18,
+    gapX: 6.4,
+    gapY: 3.6,
   },
 );
 
@@ -1242,8 +1251,8 @@ const mediaDescription = Text(
 const sampleVideo = Video(
   "https://upload.wikimedia.org/wikipedia/commons/3/31/Earth-solar-array-timelapse.webm",
   {
-    width: "28cqw",
-    height: "26cqh",
+    width: 44.8,
+    height: 23.4,
     muted: true,
     loop: true,
     playing: true,
@@ -1261,8 +1270,8 @@ const spaceImage = Image(
 );
 
 const spaceFrame = Frame(paths.box({ radius: 10 }), spaceImage, {
-  width: "28cqw",
-  height: "26cqh",
+  width: 44.8,
+  height: 23.4,
   borderColor: "rgba(255, 255, 255, 0.2)",
   strokeWidth: 1.5,
 }).decorate(kenBurns({ scale: 1.5, focus: "top-right", duration: 15 }));
@@ -1273,23 +1282,23 @@ const presenterCam = Webcam({
 });
 
 const camBubble = Frame(paths.circle(), presenterCam, {
-  size: 160,
+  size: 13.33,
   borderColor: "#38bdf8",
   strokeWidth: 3,
   active: true,
 });
 
 layout.vstack([mediaKicker, mediaHeading, mediaDescription], {
-  x: 6,
-  y: 18,
-  width: 54,
-  gap: 1.5,
+  x: 9.6,
+  y: 16.2,
+  width: 86.4,
+  gap: 1.35,
 });
 
 layout.hstack([sampleVideo, spaceFrame, camBubble], {
-  x: 6,
-  y: 44,
-  gap: 3,
+  x: 9.6,
+  y: 39.6,
+  gap: 4.8,
   align: "center",
 });
 
@@ -1308,20 +1317,20 @@ stage.pause();
 
 // Step 1: Re-position video and image independently into a vertical column (one above another)
 sampleVideo
-  .to({ position: [12, 38] })
+  .to({ position: [19.2, 34.2] })
   .duration(0.65)
   .ease("cubicInOut");
-spaceFrame.to({ x: 12, y: 67 }).duration(0.75).delay(0.12).ease("quartOut");
-camBubble.to({ position: [68, 52], size: 320, borderColor: "#a855f7" }).ease("cubicInOut");
+spaceFrame.to({ x: 19.2, y: 60.3 }).duration(0.75).delay(0.12).ease("quartOut");
+camBubble.to({ position: [108.8, 46.8], size: 26.67, borderColor: "#a855f7" }).ease("cubicInOut");
 stage.pause();
 
 // Step 2: Swap layout - webcam moves to presenter PIP corner, media returns side by side
 sampleVideo
-  .to({ position: [6, 44] })
+  .to({ position: [9.6, 39.6] })
   .duration(0.65)
   .ease("cubicInOut");
-spaceFrame.to({ x: 37, y: 44 }).duration(0.75).delay(0.1).ease("cubicInOut");
-camBubble.to({ position: [82, 72], size: 144, borderColor: "#38bdf8" }).ease("cubicInOut");
+spaceFrame.to({ x: 59.2, y: 39.6 }).duration(0.75).delay(0.1).ease("cubicInOut");
+camBubble.to({ position: [131.2, 64.8], size: 12, borderColor: "#38bdf8" }).ease("cubicInOut");
 stage.pause();
 
 // Scene: Conclusion
@@ -1329,8 +1338,8 @@ stage.pause();
 stage.scene("Conclusion").with(brandTitle, editorialLead, heroBody);
 
 // Return title, lead, and body to hero center positions.
-brandTitle.to({ position: ["center", 38], scale: 1 }).ease("cubicInOut");
-editorialLead.to({ y: 52, opacity: 1 }).when(brandTitle, "halfway");
+brandTitle.to({ position: [80, 34.2], origin: "top", scale: 1 }).ease("cubicInOut");
+editorialLead.to({ y: 46.8, opacity: 1 }).when(brandTitle, "halfway");
 heroBody.opacity = to(1).when(editorialLead, "halfway");
 stage.pause();
 

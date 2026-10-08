@@ -3,7 +3,7 @@
  */
 
 import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
-import type { DOMElement, ElementOptions } from "./element";
+import type { ElementOptions } from "./element";
 
 export const Fragment = Symbol("StageRoutine.Fragment");
 
@@ -94,30 +94,28 @@ function appendChild(parent: Node, child: unknown): void {
     typeof child === "object" &&
     child !== null &&
     "domElement" in child &&
-    (child as DOMElement).domElement instanceof Node
+    (child as { domElement: unknown }).domElement instanceof Node
   ) {
-    parent.appendChild((child as DOMElement).domElement);
+    parent.appendChild((child as { domElement: Node }).domElement);
   } else {
     parent.appendChild(document.createTextNode(String(child)));
   }
 }
 
 export type JSXProps = Record<string, unknown>;
-export type ComponentFunction = (
-  props: JSXProps,
-) => HTMLElement | SVGElement | DocumentFragment | DOMElement;
+export type ComponentFunction = (props: JSXProps) => JSX.Element;
 
 export function jsx(
   type: string | typeof Fragment | ComponentFunction,
   props: JSXProps = {},
   _key?: string,
-): HTMLElement | SVGElement | DocumentFragment | DOMElement {
+): JSX.Element {
   if (type === Fragment) {
     const fragment = document.createDocumentFragment();
     if (props.children) {
       appendChild(fragment, props.children);
     }
-    return fragment;
+    return fragment as unknown as JSX.Element;
   }
 
   if (typeof type === "function") {
@@ -185,7 +183,7 @@ export function jsx(
     }
   }
 
-  return element;
+  return element as unknown as JSX.Element;
 }
 
 export const jsxs = jsx;
@@ -195,7 +193,7 @@ export function createElement(
   type: string | typeof Fragment | ComponentFunction,
   props: JSXProps | null = null,
   ...children: unknown[]
-): HTMLElement | SVGElement | DocumentFragment | DOMElement {
+): JSX.Element {
   const combinedProps: JSXProps = { ...(props || {}) };
   if (children.length === 1) {
     combinedProps.children = children[0];
@@ -207,24 +205,10 @@ export function createElement(
 
 // Global JSX namespace for TypeScript
 export namespace JSX {
-  export type Element = DOMElement & HTMLElement & { [key: string]: unknown };
+  export type Element = HTMLElement & { [key: string]: unknown };
   export type LibraryManagedAttributes<_C, P> = P & ElementOptions;
   export interface IntrinsicElements {
     // biome-ignore lint/suspicious/noExplicitAny: Required for universal JSX attribute support
     [elemName: string]: any;
   }
 }
-
-export type {
-  Align,
-  AnchorKeyword,
-  CoordProp,
-  EaseCurve,
-  ElementAnchor,
-  Point,
-  Position,
-  ReactiveElementBase,
-  ReactiveProp,
-  TransitionDescriptor,
-} from "../core/types";
-export type { DOMElement } from "./element";

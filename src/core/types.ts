@@ -402,19 +402,23 @@ export type UnwrapTransition<T> =
       : T;
 
 /**
- * 2D coordinate delta updater function.
- * Accepts either `(x, y)` coordinates or a `([x, y])` tuple and returns target coordinates.
+ * 2D coordinate updater function.
+ * Accepts `(x, y)` or a `([x, y])` tuple and returns the target coordinate in stage units.
  * @category Core
  */
 export type PositionUpdater =
-  | ((x: number, y: number) => [number | string, number | string])
-  | ((current: [number, number]) => [number | string, number | string]);
+  | ((x: number, y: number) => readonly [PositionCoord, PositionCoord])
+  | ((current: [number, number]) => readonly [PositionCoord, PositionCoord]);
+
+/**
+ * Coordinate value on a stage axis: a number in stage units, or `"center"`.
+ * @category Core
+ */
+export type PositionCoord = number | "center";
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
  * or a numeric relative-delta updater.
- * Coordinate strings (`"50cqw"`, `"center"`) and colors do not accept updaters.
- * Use {@link CoordProp} for `x`, `y`, `width`, `height`, and `size`.
  * @category Core
  */
 export type ReactiveProp<T> =
@@ -424,27 +428,32 @@ export type ReactiveProp<T> =
   | (T extends Position ? PositionUpdater : never);
 
 /**
- * Stage coordinate or dimension property.
- * Accepts a number, CSS/layout string, transition, or relative-delta updater.
+ * Stage coordinate in stage units (or `"center"` to center along that axis).
+ * Accepts a number, `"center"`, a transition, or a relative-delta updater.
  * @category Core
  */
-export type CoordProp = ReactiveProp<number | string> | ((current: number) => number | string);
+export type CoordProp = ReactiveProp<PositionCoord>;
 
 /**
- * 2D coordinate point or vector as a fixed-length [x, y] tuple.
- * Numbers represent stage percentages (0..100) or pixels in canvas geometry.
+ * Element size in stage units, or an authored CSS length such as `"40rem"`.
+ * @category Core
+ */
+export type SizeProp = ReactiveProp<number | string>;
+
+/**
+ * 2D point as a fixed-length [x, y] tuple.
  * @category Core
  */
 export type Point = readonly [x: number, y: number];
 
 /**
- * 2D coordinate point or vector as an [x, y] tuple.
- * Numbers represent stage percentages or pixels; strings represent layout coordinates (e.g. "center").
+ * Stage coordinate pair in stage units, or `"center"` to center on both axes.
  * @category Core
  */
 export type Position =
-  | readonly [x: number | string, y: number | string]
-  | readonly (number | string)[];
+  | readonly [x: PositionCoord, y: PositionCoord]
+  | readonly PositionCoord[]
+  | "center";
 
 /**
  * 9-position content alignment grid for text and children inside a container.
@@ -463,13 +472,14 @@ export type Align =
   | "bottom-right";
 
 /**
- * Standard named position or anchor keyword.
+ * Standard named box point keyword.
  * @category Core
  */
 export type AnchorKeyword = Align;
 
 /**
- * Element or connector anchor: either a named keyword or an [x, y] percentage point.
+ * A point on an element box: a named keyword or an [x, y] percentage pair.
+ * Used by element `origin` and by connector anchors.
  * @category Core
  */
 export type ElementAnchor = AnchorKeyword | Point;
@@ -490,24 +500,14 @@ export interface ReactiveElementBase {
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
-  anchor?: ReactiveProp<ElementAnchor>;
+  /** Which point of the element sits on its coordinate (default: `"top-left"`). */
+  origin?: ReactiveProp<ElementAnchor>;
   align?: ReactiveProp<Align>;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   * @internal Engine driver
-   */
-  isCustomPositioned?: boolean;
-  /**
-   * Default pointer-events style when element is visible.
-   * @internal Engine driver
-   */
-  _defaultPointerEvents?: string;
   opacity: ReactiveProp<number>;
   x: CoordProp;
   y: CoordProp;
   position?: ReactiveProp<Position> | PositionUpdater;
-  size?: CoordProp;
+  size?: SizeProp;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
   blur: ReactiveProp<number>;
@@ -529,16 +529,19 @@ export interface ReactiveElementBase {
   onDeactivate?(fn: () => void): () => void;
   onUpdate?(fn: (progress: number) => void): () => void;
   onClick?(handler: (event: MouseEvent) => void): this;
-  /** Recomputes layout or path coordinates on visual changes. */
-  update?(): void;
-  /** @internal Engine driver */
+}
+
+/**
+ * Internal driver interface used by the Stage lifecycle engine.
+ * @internal
+ */
+export interface StageManagedElement extends ReactiveElementBase {
+  _isCustomPositioned?: boolean;
+  _defaultPointerEvents?: string;
+  _update?(): void;
   _dispatchUpdate?(progress?: number): void;
-  /** @internal Engine driver */
   _mount?(parent: HTMLElement): void;
-  /** @internal Engine driver */
   _unmount?(): void;
-  /** @internal Engine driver */
   _activate?(): void;
-  /** @internal Engine driver */
   _deactivate?(): void;
 }

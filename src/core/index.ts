@@ -3,12 +3,13 @@
  */
 
 export {
+  computeTransform,
   interpolateValue,
   lerpColor,
   lerpNumber,
   parseUnitValue,
-  px,
-  resolveCoordToPx,
+  resolveAnchor,
+  unitsToPx,
 } from "./interpolators";
 export { type LogLevel, logger } from "./logger";
 export {
@@ -40,3 +41,11 @@ export {
   storage,
 } from "./storage";
 export * from "./types";
+export {
+  cssLength,
+  STAGE_UNIT_VAR,
+  STAGE_UNITS_TALL,
+  stageUnitPx,
+  stageUnitsWide,
+  units,
+} from "./units";

@@ -3,80 +3,78 @@
  */
 
 import "./SequenceDiagram.css";
-import { getActiveStage, resolveCoordToPx, tryGetActiveStage } from "../../core/index";
+import { STAGE_UNITS_TALL, stageUnitPx, tryGetActiveStage, units } from "../../core/index";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import { measureOffscreen } from "../layout";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";
 
-function getActorY(actor: DOMElement): unknown {
+/** Default actor top edge in stage units, used before the actor is measurable. */
+const DEFAULT_ACTOR_Y = 20;
+/** Default actor height in stage units. */
+const DEFAULT_ACTOR_HEIGHT = 8.3;
+/** Default lifeline length in stage units. */
+const DEFAULT_LIFELINE_LENGTH = 42;
+/** Default padding below the lowest message or activation, in stage units. */
+const DEFAULT_PADDING_BOTTOM = 4;
+
+function getActorY(actor: DOMElement): number {
   const stage = tryGetActiveStage();
-  const currentProp = stage?.getCurrentPropertyValue(actor.id, "y");
-  if (currentProp !== undefined && currentProp !== null) {
+  const currentProp = stage?._getCurrentPropertyValue(actor.id, "y");
+  if (typeof currentProp === "number") {
     return currentProp;
   }
-  return actor.y;
+  return typeof actor.y === "number" ? actor.y : DEFAULT_ACTOR_Y;
 }
 
-function getActorYPx(actor: DOMElement, stageH: number): number {
-  const yVal = getActorY(actor);
-  if (typeof yVal === "number") {
-    return yVal > 100 ? yVal : (yVal / 100) * stageH;
-  }
-  if (typeof yVal === "string") {
-    return resolveCoordToPx(yVal, stageH);
-  }
-  return (22 / 100) * stageH;
+/** Converts a CSS length to stage units. Returns undefined for lengths it cannot resolve. */
+function cssLengthToUnits(value: string, stageH: number): number | undefined {
+  const s = value.trim();
+  const num = Number.parseFloat(s) || 0;
+  if (s.endsWith("px")) return num / stageUnitPx(stageH);
+  if (s.endsWith("rem")) return (num * 16) / stageUnitPx(stageH);
+  return undefined;
 }
 
-function getActorHeightPx(actor: DOMElement, stageH: number): number {
+function getActorHeightUnits(actor: DOMElement, stageH: number): number {
   if (typeof actor.height === "number") {
     return actor.height;
   }
   if (typeof actor.height === "string") {
-    const s = actor.height.trim();
-    if (s.endsWith("px")) return Number.parseFloat(s) || 0;
-    if (s.endsWith("cqh") || s.endsWith("%")) {
-      return ((Number.parseFloat(s) || 0) / 100) * stageH;
-    }
-    if (s.endsWith("rem")) return (Number.parseFloat(s) || 0) * 16;
-    return Number.parseFloat(s) || 0;
+    const resolved = cssLengthToUnits(actor.height, stageH);
+    if (resolved !== undefined) return resolved;
   }
   const dom = actor.domElement;
   if (dom) {
     if (dom.offsetHeight > 0) {
-      return dom.offsetHeight;
+      return dom.offsetHeight / stageUnitPx(stageH);
     }
     if (dom.style.height) {
-      const s = dom.style.height.trim();
-      if (s.endsWith("px")) return Number.parseFloat(s) || 0;
-      if (s.endsWith("cqh") || s.endsWith("%")) {
-        return ((Number.parseFloat(s) || 0) / 100) * stageH;
-      }
-      return Number.parseFloat(s) || 0;
+      const resolved = cssLengthToUnits(dom.style.height, stageH);
+      if (resolved !== undefined) return resolved;
     }
     // Temporarily attach unmounted nodes offscreen to measure computed height.
     if (!dom.isConnected) {
       const { height } = measureOffscreen(dom);
-      if (height > 0) return height;
+      if (height > 0) return height / stageUnitPx(stageH);
     }
   }
-  return (9.25 / 100) * stageH;
+  return DEFAULT_ACTOR_HEIGHT;
 }
 
-function resolveAnchorYPct(val: unknown, stageH: number, fallbackPct: number): number {
-  if (val === undefined || val === null) return fallbackPct;
+function resolveAnchorYUnits(val: unknown, stageH: number, fallback: number): number {
+  if (val === undefined || val === null) return fallback;
   let raw: unknown = val;
   if (typeof val === "object" && val !== null && "y" in val) {
     raw = (val as { y: unknown }).y;
   }
   if (typeof raw === "number") {
-    return raw > 100 ? (raw / stageH) * 100 : raw;
+    return raw;
   }
   if (typeof raw === "string") {
-    const px = resolveCoordToPx(raw, stageH);
-    return (px / stageH) * 100;
+    const resolved = cssLengthToUnits(raw, stageH);
+    if (resolved !== undefined) return resolved;
   }
-  return fallbackPct;
+  return fallback;
 }
 
 /**
@@ -84,7 +82,7 @@ function resolveAnchorYPct(val: unknown, stageH: number, fallbackPct: number): n
  * @category Components
  */
 export interface LifelineOptions extends ElementOptions {
-  /** Vertical length of the dashed line in pixels (default: 500). Automatically extends when activations exceed length. */
+  /** Vertical length of the dashed line in stage units (default: 42). Automatically extends when activations exceed length. */
   length?: number;
   /** Stroke color of the dashed line (default: "rgba(148, 163, 184, 0.7)"). */
   color?: string;
@@ -95,13 +93,13 @@ export interface LifelineOptions extends ElementOptions {
  * @category Components
  */
 export interface ActivationOptions extends ElementOptions {
-  /** Starting message connector or Y coordinate anchor. */
+  /** Starting message connector, or a Y coordinate in stage units. */
   from?: ConnectorElement | number;
-  /** Ending message connector or Y coordinate anchor. */
+  /** Ending message connector, or a Y coordinate in stage units. */
   to?: ConnectorElement | number;
-  /** Explicit vertical offset along the lifeline in pixels or stage units. */
+  /** Explicit vertical offset along the lifeline in stage units. */
   y?: number;
-  /** Explicit bar height in pixels or stage units (default: 20). */
+  /** Explicit bar height in stage units (default: 18). */
   height?: number;
   /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
   color?: string;
@@ -115,17 +113,17 @@ export interface ActivationOptions extends ElementOptions {
 export interface SequenceDiagramOptions {
   /** Initial actor elements to register as diagram participants. */
   participants?: DOMElement[];
-  /** Vertical start position for the first message in stage height percentage (default: 36). */
+  /** Vertical start position for the first message in stage units (default: 32). */
   startY?: number;
-  /** Vertical spacing between message rows in stage height percentage (default: 9). */
+  /** Vertical spacing between message rows in stage units (default: 8). */
   gapY?: number;
-  /** Minimum length of participant lifelines in pixels (default: 500). Automatically extends to fit messages and activations. */
+  /** Minimum length of participant lifelines in stage units (default: 42). Automatically extends to fit messages and activations. */
   lifelineLength?: number;
   /** Stroke color of participant lifelines (default: "rgba(148, 163, 184, 0.7)"). */
   lifelineColor?: string;
   /** Initial opacity of participant lifelines (default: 1). Set to 0 if animating lifelines in. */
   lifelineOpacity?: number;
-  /** Padding in pixels below the lowest message or activation (default: 48). */
+  /** Padding in stage units below the lowest message or activation (default: 4). */
   paddingBottom?: number;
 }
 
@@ -169,8 +167,8 @@ export interface SequenceDiagramController {
  * @internal
  */
 class LifelineElementImpl extends DOMElement implements LifelineElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "length",
   ]);
 
@@ -180,8 +178,8 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
   color: string;
   activations: ActivationBarElementImpl[] = [];
 
-  override update(): void {
-    this.domElement.style.height = `${this.length}px`;
+  override _update(): void {
+    this.domElement.style.height = units(this.length);
   }
 
   constructor(actor: DOMElement, options: LifelineOptions = {}) {
@@ -203,13 +201,13 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
 
     this.actor = actor;
     (actor as unknown as { lifeline?: LifelineElementImpl }).lifeline = this;
-    this.length = options.length ?? 500;
+    this.length = options.length ?? DEFAULT_LIFELINE_LENGTH;
     this.color = options.color || "rgba(148, 163, 184, 0.7)";
     this.domElement.style.left = "calc(50% - 1px)";
     this.domElement.style.top = "100%";
     this.domElement.style.width = "0px";
     this.domElement.style.transform = "none";
-    this.domElement.style.height = `${this.length}px`;
+    this.domElement.style.height = units(this.length);
 
     // Ensure actor doesn't clip descending lifeline and activation blocks
     if (actor.domElement) {
@@ -219,31 +217,28 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
 
     actor.onUpdate(() => {
       for (const act of this.activations) {
-        act.update();
+        act._update();
       }
       this.diagram?.updateLifelineLengths();
     });
   }
 
-  /** Sets the visual length of the dashed lifeline in pixels. */
+  /** Sets the visual length of the dashed lifeline in stage units. */
   setLength(length: number): void {
-    const rounded = Math.round(length);
-    if (rounded > 0 && rounded !== this.length) {
-      this.length = rounded;
-      this.domElement.style.height = `${this.length}px`;
+    const next = Math.round(length * 100) / 100;
+    if (next > 0 && next !== this.length) {
+      this.length = next;
+      this.domElement.style.height = units(this.length);
     }
   }
 
   activate(options: ActivationOptions = {}): ActivationBarElementImpl {
-    const stage = getActiveStage();
     const el = new ActivationBarElementImpl(this, options);
     this.activations.push(el);
 
-    const yNum = typeof el.y === "number" ? el.y : Number.parseFloat(String(el.y)) || 0;
-    const hNum =
-      typeof el.height === "number" ? el.height : Number.parseFloat(String(el.height)) || 0;
-    const stageH = stage?.height ?? 1080;
-    const needed = (yNum + hNum) * (stageH / 100) + 48;
+    const yNum = typeof el.y === "number" ? el.y : 0;
+    const hNum = typeof el.height === "number" ? el.height : 0;
+    const needed = yNum + hNum + DEFAULT_PADDING_BOTTOM;
     if (needed > this.length) {
       this.setLength(needed);
     }
@@ -251,21 +246,18 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
     return mount(el);
   }
 
-  hasActivationAt(yPx: number): boolean {
+  hasActivationAt(y: number): boolean {
     const stageH = tryGetActiveStage()?.height ?? 1080;
-    const actorYPct = (getActorYPx(this.actor, stageH) / stageH) * 100;
-    const actorHeightPct = (getActorHeightPx(this.actor, stageH) / stageH) * 100;
-    const lifelineTopPct = actorYPct + actorHeightPct;
-    const yPct = (yPx / stageH) * 100;
+    const yUnits = y > STAGE_UNITS_TALL ? y / stageUnitPx(stageH) : y;
+    const lifelineTop = getActorY(this.actor) + getActorHeightUnits(this.actor, stageH);
 
     for (const act of this.activations) {
       act._recompute();
-      const actY = typeof act.y === "number" ? act.y : Number.parseFloat(String(act.y)) || 0;
-      const actH =
-        typeof act.height === "number" ? act.height : Number.parseFloat(String(act.height)) || 0;
-      const actTopPct = lifelineTopPct + actY;
-      const actBottomPct = actTopPct + actH;
-      if (actTopPct - 1 <= yPct && yPct <= actBottomPct + 1) {
+      const actY = typeof act.y === "number" ? act.y : 0;
+      const actH = typeof act.height === "number" ? act.height : 0;
+      const actTop = lifelineTop + actY;
+      const actBottom = actTop + actH;
+      if (actTop - 1 <= yUnits && yUnits <= actBottom + 1) {
         return true;
       }
     }
@@ -293,15 +285,14 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     this.isRecomputing = true;
     try {
       const stageH = tryGetActiveStage()?.height ?? 1080;
-      const fromYPct = resolveAnchorYPct(this._fromTarget, stageH, 36);
-      const toYPct = resolveAnchorYPct(this._toTarget, stageH, fromYPct + 20);
+      const fromY = resolveAnchorYUnits(this._fromTarget, stageH, 32);
+      const toY = resolveAnchorYUnits(this._toTarget, stageH, fromY + 18);
 
-      const actorYPct = (getActorYPx(this.lifeline.actor, stageH) / stageH) * 100;
-      const actorHeightPct = (getActorHeightPx(this.lifeline.actor, stageH) / stageH) * 100;
-      const actorBottomPct = actorYPct + actorHeightPct;
+      const actorY = getActorY(this.lifeline.actor);
+      const actorBottom = actorY + getActorHeightUnits(this.lifeline.actor, stageH);
 
-      const computedY = Math.max(0, fromYPct - actorBottomPct - 0.8);
-      const computedHeight = Math.max(2, toYPct - fromYPct + 1.6);
+      const computedY = Math.max(0, fromY - actorBottom - 0.7);
+      const computedHeight = Math.max(1.8, toY - fromY + 1.4);
 
       this.y = computedY;
       this.height = computedHeight;
@@ -310,13 +301,12 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     }
   }
 
-  override update(): void {
+  override _update(): void {
     this._recompute();
-    const yNum = typeof this.y === "number" ? this.y : Number.parseFloat(String(this.y)) || 0;
-    const hNum =
-      typeof this.height === "number" ? this.height : Number.parseFloat(String(this.height)) || 0;
-    this.domElement.style.top = `calc(100% + ${yNum}cqh)`;
-    this.domElement.style.height = `${hNum}cqh`;
+    const yNum = typeof this.y === "number" ? this.y : 0;
+    const hNum = typeof this.height === "number" ? this.height : 0;
+    this.domElement.style.top = `calc(100% + ${units(yNum)})`;
+    this.domElement.style.height = units(hNum);
   }
 
   constructor(lifeline: LifelineElementImpl, options: ActivationOptions = {}) {
@@ -337,8 +327,8 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
       ...options,
       opacity: options.opacity ?? 1,
       x: 0,
-      y: options.y ?? 4,
-      height: options.height ?? 20,
+      y: options.y ?? 3.6,
+      height: options.height ?? 18,
       customPositioned: true,
     });
 
@@ -348,7 +338,7 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     this.domElement.style.left = "calc(50% - 7px)";
     this.domElement.style.transform = "none";
     this._recompute();
-    this.update();
+    this._update();
 
     if (lifeline.actor.domElement) {
       lifeline.actor.domElement.appendChild(this.domElement);
@@ -376,10 +366,10 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
   }
 
   constructor(options: SequenceDiagramOptions = {}) {
-    this.startY = options.startY ?? 36;
-    this.gapY = options.gapY ?? 9;
-    this.defaultLifelineLength = options.lifelineLength ?? 500;
-    this.paddingBottom = options.paddingBottom ?? 48;
+    this.startY = options.startY ?? 32;
+    this.gapY = options.gapY ?? 8;
+    this.defaultLifelineLength = options.lifelineLength ?? DEFAULT_LIFELINE_LENGTH;
+    this.paddingBottom = options.paddingBottom ?? DEFAULT_PADDING_BOTTOM;
 
     if (options.participants) {
       for (const p of options.participants) {
@@ -398,18 +388,13 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
     let maxNeeded = this.defaultLifelineLength;
 
     for (const line of this.lifelines) {
-      const actorYPx = getActorYPx(line.actor, stageH);
-      const actorHeightPx = getActorHeightPx(line.actor, stageH);
-      const actorBottomPx = actorYPx + actorHeightPx;
+      const actorBottom = getActorY(line.actor) + getActorHeightUnits(line.actor, stageH);
 
       for (const msg of this.messages) {
-        const msgYPx = resolveCoordToPx(
-          typeof msg.y === "number" || typeof msg.y === "string" ? msg.y : 0,
-          stageH,
-        );
+        const msgY = typeof msg.y === "number" ? msg.y : 0;
 
-        if (msgYPx > 0) {
-          const needed = msgYPx - actorBottomPx + this.paddingBottom;
+        if (msgY > 0) {
+          const needed = msgY - actorBottom + this.paddingBottom;
           if (needed > maxNeeded) {
             maxNeeded = needed;
           }
@@ -417,12 +402,11 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
       }
 
       for (const act of this.activations) {
-        const actY = typeof act.y === "number" ? act.y : Number.parseFloat(String(act.y)) || 0;
-        const actH =
-          typeof act.height === "number" ? act.height : Number.parseFloat(String(act.height)) || 0;
-        const actBottomPx = (actY + actH) * (stageH / 100) + this.paddingBottom;
-        if (actBottomPx > maxNeeded) {
-          maxNeeded = actBottomPx;
+        const actY = typeof act.y === "number" ? act.y : 0;
+        const actH = typeof act.height === "number" ? act.height : 0;
+        const actBottom = actY + actH + this.paddingBottom;
+        if (actBottom > maxNeeded) {
+          maxNeeded = actBottom;
         }
       }
     }
@@ -467,15 +451,10 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
     const opts: ConnectorOptions =
       typeof options === "string" ? { label: options } : { ...options };
     const y = opts.y ?? computedY;
-    const labelOffsetY =
-      opts.labelOffsetY ??
-      (typeof opts.labelOffset === "number" || typeof opts.labelOffset === "string"
-        ? opts.labelOffset
-        : -30);
-
+    const labelOffsetY = opts.labelOffsetY ?? -2.2;
     const conn = Connector(fromActor, toActor, {
-      labelOffsetY,
       ...opts,
+      labelOffsetY,
       y,
     });
 

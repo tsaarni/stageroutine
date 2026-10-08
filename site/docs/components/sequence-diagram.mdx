@@ -18,20 +18,20 @@ const stage = new Stage();
 // hide-end
 import { Card, layout, SequenceDiagram } from "stageroutine";
 
-const a = Card("A", { width: 140, height: 60 });
-const b = Card("B", { width: 140, height: 60 });
+const a = Card("A", { width: 12, height: 5 });
+const b = Card("B", { width: 12, height: 5 });
 
 layout.hstack([a, b], {
   x: "center",
-  y: 15,
-  gap: 24,
+  y: 14,
+  gap: 38,
 });
 
 const diag = SequenceDiagram({
   participants: [a, b],
-  startY: 38,
-  gapY: 22,
-  lifelineLength: 150,
+  startY: 34,
+  gapY: 20,
+  lifelineLength: 12.5,
 });
 
 const msg1 = diag.message(a, b, "Message 1");
@@ -51,8 +51,8 @@ Pass participant elements to `SequenceDiagram({ participants })`. Each participa
 ```typescript
 const seq = SequenceDiagram({
   participants: [client, service],
-  startY: 36,
-  gapY: 10,
+  startY: 32,
+  gapY: 9,
 });
 ```
 

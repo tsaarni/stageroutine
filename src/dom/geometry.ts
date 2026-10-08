@@ -2,7 +2,7 @@
  * Geometric calculation utilities for connector routing, bounding boxes, and perimeter intersections.
  */
 
-import { resolveAnchor, resolveCoordToPx } from "../core/interpolators";
+import { resolveAnchor, unitsToPx } from "../core/interpolators";
 import type { AnchorMode, ElementAnchor, Point } from "../core/types";
 
 export type { AnchorMode, Point };
@@ -614,12 +614,12 @@ export interface ResolvedTarget {
 }
 
 /**
- * Resolves a connector or tail target to world (stage) coordinates.
- * Accepts a DOM element, an [x, y] point, or coordinate strings and percentages.
+ * Resolves a connector or tail target to canvas pixel coordinates.
+ * Accepts a DOM element or an [x, y] point in stage units.
  * Shared by Connector endpoints and live bubble tails.
  * @category Shape & Frame
  */
-export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080): ResolvedTarget {
+export function resolveTargetBox(target: unknown, stageH = 1080): ResolvedTarget {
   if (
     typeof target === "object" &&
     target !== null &&
@@ -630,8 +630,8 @@ export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080):
       domElement: HTMLElement;
       scale?: number | string;
       rotation?: number | string;
-      x?: number | string;
-      y?: number | string;
+      x?: number;
+      y?: number;
     };
     const dom = el.domElement;
     const viewport =
@@ -640,7 +640,8 @@ export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080):
     if (viewport && dom.isConnected) {
       const vRect = viewport.getBoundingClientRect();
       const dRect = dom.getBoundingClientRect();
-      const scale = vRect.width > 0 ? vRect.width / stageW : 1;
+      // The viewport is scaled uniformly, so either axis gives the same factor
+      const scale = vRect.height > 0 ? vRect.height / stageH : 1;
       const cx = (dRect.left - vRect.left + dRect.width / 2) / scale;
       const cy = (dRect.top - vRect.top + dRect.height / 2) / scale;
       let width = dom.offsetWidth;
@@ -663,14 +664,8 @@ export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080):
 
     const width = dom.offsetWidth || 120;
     const height = dom.offsetHeight || 60;
-    const rawX = resolveCoordToPx(
-      typeof el.x === "number" || typeof el.x === "string" ? el.x : 0,
-      stageW,
-    );
-    const rawY = resolveCoordToPx(
-      typeof el.y === "number" || typeof el.y === "string" ? el.y : 0,
-      stageH,
-    );
+    const rawX = unitsToPx(el.x, stageH);
+    const rawY = unitsToPx(el.y, stageH);
 
     return {
       point: [rawX + width / 2, rawY + height / 2],
@@ -680,10 +675,7 @@ export function resolveTargetBox(target: unknown, stageW = 1920, stageH = 1080):
 
   if (Array.isArray(target) && target.length >= 2) {
     return {
-      point: [
-        resolveCoordToPx(target[0] as number | string, stageW),
-        resolveCoordToPx(target[1] as number | string, stageH),
-      ],
+      point: [unitsToPx(target[0] as number, stageH), unitsToPx(target[1] as number, stageH)],
     };
   }
 
@@ -722,12 +714,11 @@ export function resolveTailLocalPoint(
   target: unknown,
   anchor: AnchorMode | ElementAnchor,
   padding: number,
-  stageW: number,
   stageH: number,
 ): Point | null {
-  const selfResolved = resolveTargetBox(self, stageW, stageH);
+  const selfResolved = resolveTargetBox(self, stageH);
   if (!selfResolved.box) return null;
-  const targetResolved = resolveTargetBox(target, stageW, stageH);
+  const targetResolved = resolveTargetBox(target, stageH);
   const tipWorld = targetResolved.box
     ? resolveTargetAnchor(target, targetResolved.box, selfResolved.point, anchor, padding).point
     : targetResolved.point;

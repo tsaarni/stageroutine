@@ -14,9 +14,9 @@ You declare a scene by giving it a name and listing which elements belong in it:
 
 ```typescript
 // 1. Define elements once
-const title = Title("StageRoutine", { x: "center", y: 45 });
-const kicker = Kicker("01 / ARCHITECTURE", { x: "center", y: 35 });
-const code = CodeBlock(["const app = new Stage();"], { x: "center", y: 40, opacity: 0 });
+const title = Title("StageRoutine", { position: [80, 40.5], origin: "top" });
+const kicker = Kicker("01 / ARCHITECTURE", { position: [80, 31.5], origin: "top" });
+const code = CodeBlock(["const app = new Stage();"], { position: [80, 36], origin: "top", opacity: 0 });
 
 // 2. Scene 1: Title and Kicker
 stage.scene("Intro").with(title, kicker);
@@ -24,8 +24,8 @@ stage.pause();
 
 // 3. Scene 2: Title stays, shrinks to the corner, and Code appears
 stage.scene("Code").with(title, code);
-title.x = to(10);
-title.y = to(10);
+title.x = to(16);
+title.y = to(9);
 title.scale = to(0.7);
 code.opacity = to(1).when(title, "halfway");
 stage.pause();

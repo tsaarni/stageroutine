@@ -130,7 +130,7 @@ class IconElementImpl extends DOMElement implements IconElement {
     this.updateSvg();
   }
 
-  override update(): void {
+  override _update(): void {
     this.updateSvg();
   }
 

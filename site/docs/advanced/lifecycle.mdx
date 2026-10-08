@@ -72,7 +72,7 @@ export function SecondsCounter(options: SecondsCounterOptions = {}): DOMElement 
 Use the component in your presentation:
 
 ```typescript
-const counter = SecondsCounter({ x: "center", y: 40 });
+const counter = SecondsCounter({ position: [80, 36], origin: "top" });
 
 stage.scene("Live Demo").with(counter);
 ```

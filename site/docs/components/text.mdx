@@ -23,7 +23,8 @@ const stage = new Stage();
 import { Title } from "stageroutine";
 
 const title = Title("Title", {
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("Title").with(title);
@@ -69,8 +70,8 @@ const stage = new Stage();
 import { Text } from "stageroutine";
 
 const text = Text("Body text", {
-  x: "center",
-  y: "center",
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("Text").with(text);
@@ -93,7 +94,8 @@ const stage = new Stage();
 import { Kicker } from "stageroutine";
 
 const kicker = Kicker("KICKER", {
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 });
 // hide-start
 stage.scene("Kicker").with(kicker);

@@ -51,9 +51,10 @@ const photo = Image(
 );
 
 const frame = Frame(paths.box({ radius: 12 }), photo, {
-  position: ["center", "center"],
-  width: 480,
-  height: 320,
+  position: [80, 45],
+  origin: "center",
+  width: 40,
+  height: 26.67,
 }).decorate(
   kenBurns({
     scale: 1.35,
@@ -88,7 +89,8 @@ import { Title, glow, gradient } from "stageroutine";
 
 const title = Title("StageRoutine", {
   variant: "hero",
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 })
   .decorate(
     gradient({
@@ -127,7 +129,8 @@ const code = CodeBlock(
     "stage.mount('#stage');",
   ],
   {
-    position: ["center", "center"],
+    position: [80, 45],
+    origin: "center",
   },
 ).decorate(
   bracket({
@@ -163,7 +166,8 @@ const stage = new Stage();
 import { Title, typewriter } from "stageroutine";
 
 const text = Title("", {
-  position: ["center", "center"],
+  position: [80, 45],
+  origin: "center",
 }).decorate(
   typewriter({
     delay: 0.2,

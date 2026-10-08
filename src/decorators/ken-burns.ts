@@ -192,7 +192,7 @@ export function kenBurns(options: KenBurnsOptions = {}): ElementDecorator {
         target.style.transformOrigin = "50% 50%";
         target.style.willChange = "transform";
 
-        const isRootStageTarget = target === element.domElement && !element.isCustomPositioned;
+        const isRootStageTarget = target === element.domElement && !element._isCustomPositioned;
         if (isRootStageTarget) {
           element.onUpdate(() => {
             target.style.transformOrigin = "50% 50%";

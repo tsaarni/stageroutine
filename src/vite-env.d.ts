@@ -10,14 +10,14 @@ declare module "*.module.css" {
 }
 
 declare module "~icons/*" {
-  import type { IconElement, IconOptions } from "./dom/components/Icon";
+  import type { IconElement, IconOptions } from "stageroutine";
 
   const iconFactory: (options?: IconOptions) => IconElement;
   export default iconFactory;
 }
 
 declare module "~iconify/*" {
-  import type { IconElement, IconOptions } from "./dom/components/Icon";
+  import type { IconElement, IconOptions } from "stageroutine";
 
   const iconFactory: (options?: IconOptions) => IconElement;
   export default iconFactory;

@@ -51,6 +51,9 @@ importers:
       '@iconify-json/lucide':
         specifier: ^1.2.127
         version: 1.2.127
+      '@iconify-json/selfhst':
+        specifier: ^1.2.22
+        version: 1.2.22
       '@iconify/utils':
         specifier: ^3.1.4
         version: 3.1.4
@@ -63,6 +66,19 @@ importers:
       csstype:
         specifier: ^3.2.3
         version: 3.2.3
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  examples/openbao:
+    dependencies:
+      stageroutine:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      '@iconify-json/selfhst':
+        specifier: ^1.2.22
+        version: 1.2.22
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -1554,6 +1570,9 @@ packages:
 
   '@iconify-json/lucide@1.2.127':
     resolution: {integrity: sha512-7KuCCpkly00kefna4wEnCr8l2HFRkbn4mD4zRib8wCSbrBmnR/l57ExpU6j5jv/Bo+qHpWuHpDtcqceQ0ptArw==}
+
+  '@iconify-json/selfhst@1.2.22':
+    resolution: {integrity: sha512-PMxyO8vnf6Iu0/itKbzdObUY9vcHAU0oDm+kCXZrY4s5oq8QKoQtv73jesat3Li+2HvOQtoCiSqBxdK3v5TrRA==}
 
   '@iconify/tools@5.0.14':
     resolution: {integrity: sha512-wJ4ZE3/HZh2iBqLwG+8FOMHe7CMJAJqwSXZSpPwMdj1gZM3Z4t2hbQMVw4Vm45oQ985qn0g89PUIcDEdKTheBA==}
@@ -8199,6 +8218,10 @@ snapshots:
       '@hapi/hoek': 9.3.0
 
   '@iconify-json/lucide@1.2.127':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/selfhst@1.2.22':
     dependencies:
       '@iconify/types': 2.0.0
 

@@ -14,6 +14,7 @@ import type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
+  SizeProp,
 } from "../core/types";
 import type { DOMElement } from "../dom/element";
 import { isTransitionDescriptor, to } from "./transitions";
@@ -26,16 +27,16 @@ export interface ElementTransitionProps {
   x?: CoordProp;
   y?: CoordProp;
   position?: ReactiveProp<Position> | PositionUpdater;
-  width?: CoordProp;
-  height?: CoordProp;
-  size?: CoordProp;
+  width?: SizeProp;
+  height?: SizeProp;
+  size?: SizeProp;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;
   blur?: ReactiveProp<number>;
   brightness?: ReactiveProp<number>;
   color?: ReactiveProp<string>;
-  anchor?: ReactiveProp<ElementAnchor>;
+  origin?: ReactiveProp<ElementAnchor>;
   align?: ReactiveProp<Align>;
   [key: string]: unknown;
 }
@@ -96,8 +97,8 @@ export class ElementTransitionBuilder implements ElementTransition {
     this.props = props;
 
     const stage = getActiveStage();
-    if (stage && typeof stage.registerPendingFlush === "function") {
-      this.unregisterFlush = stage.registerPendingFlush(() => {
+    if (stage && typeof stage._registerPendingFlush === "function") {
+      this.unregisterFlush = stage._registerPendingFlush(() => {
         this.apply();
       });
     }

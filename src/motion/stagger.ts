@@ -64,8 +64,8 @@ export class StaggerBuilder implements StaggerTransition {
     if (options.props !== undefined) this.targetProps = options.props;
 
     const stage = getActiveStage();
-    if (stage && typeof stage.registerPendingFlush === "function") {
-      this.unregisterFlush = stage.registerPendingFlush(() => {
+    if (stage && typeof stage._registerPendingFlush === "function") {
+      this.unregisterFlush = stage._registerPendingFlush(() => {
         this.apply();
       });
     }

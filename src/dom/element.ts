@@ -3,13 +3,10 @@
  */
 
 import type { Properties as CSSProperties } from "csstype";
-import {
-  applyCoordUpdater,
-  computeTransformAndOrigin,
-  resolveCoordNumber,
-} from "../core/interpolators";
+import { computeTransform } from "../core/interpolators";
+import { splitPosition } from "../core/position";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
-import { getActiveStage } from "../core/stage";
+import { getActiveStage, tryGetActiveStage } from "../core/stage";
 import type {
   Align,
   CoordProp,
@@ -18,7 +15,9 @@ import type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
+  SizeProp,
 } from "../core/types";
+import { cssLength, STAGE_UNITS_TALL, stageUnitsWide } from "../core/units";
 import {
   type ElementTransition,
   ElementTransitionBuilder,
@@ -28,6 +27,21 @@ import { isTransitionDescriptor } from "../motion/transitions";
 import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
 
 let nextId = 1;
+
+/** Resolves a coordinate assignment to a number. Supports "center" and transitions. */
+function resolveCoord(val: unknown, current: number, axis: "x" | "y"): number {
+  if (val === "center") {
+    if (axis === "x") {
+      const stage = tryGetActiveStage();
+      return stage ? stage.unitsWide / 2 : stageUnitsWide(1920, 1080) / 2;
+    }
+    return STAGE_UNITS_TALL / 2;
+  }
+  if (typeof val === "number") return val;
+  if (typeof val === "function") return (val as (curr: number) => number)(current);
+  if (isTransitionDescriptor(val)) return resolveCoord(val.target, current, axis);
+  return current;
+}
 
 /**
  * Callback function that applies visual effects or behavior to a stage element.
@@ -41,14 +55,15 @@ export type ElementDecorator = (element: DOMElement) => void;
  */
 export interface ElementOptions {
   id?: string;
-  anchor?: ElementAnchor;
+  /** Which point of the element sits on its coordinate (default: `"top-left"`). */
+  origin?: ElementAnchor;
   align?: Align;
   position?: Position;
   x?: CoordProp;
   y?: CoordProp;
-  width?: CoordProp;
-  height?: CoordProp;
-  size?: CoordProp;
+  width?: SizeProp;
+  height?: SizeProp;
+  size?: SizeProp;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;
@@ -80,52 +95,55 @@ export interface ElementOptions {
  * @category Core
  */
 export class DOMElement implements ReactiveElementBase {
-  static reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
+  static _reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
 
-  get reactiveKeys(): ReadonlySet<string> {
-    return (this.constructor as typeof DOMElement).reactiveKeys;
+  get _reactiveKeys(): ReadonlySet<string> {
+    return (this.constructor as typeof DOMElement)._reactiveKeys;
   }
 
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
-  anchor: ElementAnchor;
-  /**
-   * Whether this element manages its own CSS positioning/transform (e.g. custom SVG overlays or lifelines).
-   * When true, Stage does not overwrite `node.style.transform`.
-   * @internal Engine driver
-   */
-  isCustomPositioned = false;
+  private _origin: ElementAnchor = "top-left";
+
+  /** Which point of the element sits on its coordinate. */
+  get origin(): ElementAnchor {
+    return this._origin;
+  }
+  set origin(val: ReactiveProp<ElementAnchor> | undefined) {
+    if (isTransitionDescriptor(val)) {
+      this._origin = (val.target ?? "top-left") as ElementAnchor;
+    } else if (val) {
+      this._origin = val as ElementAnchor;
+    }
+  }
+  /** @internal */
+  _isCustomPositioned = false;
+
   /** @internal */
   _defaultPointerEvents = "auto";
 
-  private _x: CoordProp = 0;
-  private _y: CoordProp = 0;
+  private _x = 0;
+  private _y = 0;
 
-  get x(): CoordProp {
+  /** Horizontal coordinate in stage units. */
+  get x(): number {
     return this._x;
   }
   set x(val: CoordProp) {
-    if (typeof val === "function") {
-      this._x = applyCoordUpdater(this._x, val as (curr: number) => unknown, "cqw") as CoordProp;
-    } else {
-      this._x = val;
-    }
+    this._x = resolveCoord(val, this._x, "x");
   }
 
-  get y(): CoordProp {
+  /** Vertical coordinate in stage units. */
+  get y(): number {
     return this._y;
   }
   set y(val: CoordProp) {
-    if (typeof val === "function") {
-      this._y = applyCoordUpdater(this._y, val as (curr: number) => unknown, "cqh") as CoordProp;
-    } else {
-      this._y = val;
-    }
+    this._y = resolveCoord(val, this._y, "y");
   }
 
-  width?: CoordProp;
-  height?: CoordProp;
+  width?: SizeProp;
+  height?: SizeProp;
   scale: ReactiveProp<number> = 1;
   rotation: ReactiveProp<number> = 0;
   opacity: ReactiveProp<number> = 1;
@@ -135,9 +153,10 @@ export class DOMElement implements ReactiveElementBase {
   exitDuration?: number;
   exitDelay?: number;
   enterDuration?: number;
-  enterDelay?: number;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
 
-  private _align?: Align;
+  private _align: Align | undefined;
 
   get align(): Align | undefined {
     return this._align;
@@ -151,115 +170,64 @@ export class DOMElement implements ReactiveElementBase {
     }
   }
 
-  get size(): CoordProp | undefined {
+  get size(): SizeProp | undefined {
     return this.width ?? this.height;
   }
-  set size(val: CoordProp | undefined) {
+  set size(val: SizeProp | undefined) {
     this.width = val;
     this.height = val;
   }
 
+  /** Coordinate pair in stage units. */
   get position(): Position {
-    const currX = isTransitionDescriptor(this.x) ? this.x.target : this.x;
-    const currY = isTransitionDescriptor(this.y) ? this.y.target : this.y;
-    return [currX as number | string, currY as number | string];
+    return [this._x, this._y];
   }
   set position(val: ReactiveProp<Position> | PositionUpdater | undefined) {
-    if (val === undefined) return;
-    if (isTransitionDescriptor(val)) {
-      let targetCoord = val.target as unknown;
-      if (typeof targetCoord === "function") {
-        const [currX, currY] = this.position;
-        const numX = resolveCoordNumber(currX);
-        const numY = resolveCoordNumber(currY);
-        const fn = targetCoord as (...args: unknown[]) => unknown;
-        const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
-        if (Array.isArray(res) && res.length >= 2) {
-          targetCoord = [
-            applyCoordUpdater(currX, () => res[0], "cqw"),
-            applyCoordUpdater(currY, () => res[1], "cqh"),
-          ];
-        } else {
-          targetCoord = res;
-        }
-      }
-      let targetX: unknown;
-      let targetY: unknown;
-      if (Array.isArray(targetCoord)) {
-        targetX = targetCoord[0];
-        targetY = targetCoord[1];
-      } else if (typeof targetCoord === "object" && targetCoord !== null) {
-        targetX = (targetCoord as Record<string, unknown>).x;
-        targetY = (targetCoord as Record<string, unknown>).y;
-      }
-      if (targetX !== undefined) {
-        this.x = { ...val, target: targetX } as unknown as ReactiveProp<number | string>;
-      }
-      if (targetY !== undefined) {
-        this.y = { ...val, target: targetY } as unknown as ReactiveProp<number | string>;
-      }
-      return;
+    const { x, y } = splitPosition(val, () => [this._x, this._y]);
+    if (x !== undefined) {
+      this.x = x as CoordProp;
     }
-
-    let targetVal: unknown = val;
-    if (typeof targetVal === "function") {
-      const [currX, currY] = this.position;
-      const numX = resolveCoordNumber(currX);
-      const numY = resolveCoordNumber(currY);
-      const fn = targetVal as (...args: unknown[]) => unknown;
-      const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
-      if (Array.isArray(res) && res.length >= 2) {
-        targetVal = [
-          applyCoordUpdater(currX, () => res[0], "cqw"),
-          applyCoordUpdater(currY, () => res[1], "cqh"),
-        ];
-      } else {
-        targetVal = res;
-      }
-    }
-
-    if (Array.isArray(targetVal)) {
-      this.x = targetVal[0];
-      this.y = targetVal[1];
-    } else if (typeof targetVal === "object" && targetVal !== null) {
-      const p = targetVal as { x?: number | string; y?: number | string };
-      if (p.x !== undefined) this.x = p.x;
-      if (p.y !== undefined) this.y = p.y;
+    if (y !== undefined) {
+      this.y = y as CoordProp;
     }
   }
 
   /**
-   * Animates multiple reactive properties on this element simultaneously.
-   * e.g. `card.to({ y: -50, opacity: 0 }).duration(0.4).ease("cubicInOut")`
+   * Sets multiple properties on this element with a unified transition descriptor or immediate values.
    */
   to(props: ElementTransitionProps): ElementTransition {
     return new ElementTransitionBuilder(this, props);
   }
 
+  private mountListeners: Set<() => void> = new Set();
+  private unmountListeners: Set<() => void> = new Set();
+  private activateListeners: Set<() => void> = new Set();
+  private deactivateListeners: Set<() => void> = new Set();
+  private updateListeners: Set<(progress: number) => void> = new Set();
+
+  /** Whether this element is currently attached to the DOM tree. */
   isMounted = false;
+
+  /** Whether this element is visible and active in the current scene (opacity > 0). */
   isActive = false;
 
-  private mountListeners = new Set<() => void>();
-  private unmountListeners = new Set<() => void>();
-  private activateListeners = new Set<() => void>();
-  private deactivateListeners = new Set<() => void>();
-  private updateListeners = new Set<(progress: number) => void>();
-
   /**
-   * Component update hook invoked whenever reactive properties are mutated during transitions.
-   * Can be overridden by subclasses to redraw SVG, canvas, or complex layouts.
-   */
-  update(): void {}
-
-  /**
-   * @internal Dispatches update to the component and all registered onUpdate listeners.
+   * Internal hook invoked by Stage during transition ticks.
+   * Dispatches updates to registered `onUpdate` listeners and triggers layout recomputes.
+   * @internal
    */
   _dispatchUpdate(progress = 1): void {
-    this.update();
+    this._update();
     for (const listener of this.updateListeners) {
       listener(progress);
     }
   }
+
+  /**
+   * Virtual update hook overridden by derived elements (like Connector) to sync geometries.
+   * @internal
+   */
+  _update(): void {}
 
   constructor(
     kind: string,
@@ -268,33 +236,66 @@ export class DOMElement implements ReactiveElementBase {
   ) {
     this.id = options.id || `${kind}-${nextId++}`;
     this.kind = kind;
-    this.anchor = options.anchor || "top-left";
+
+    let rawPosX = options.x;
+    let rawPosY = options.y;
+    if (options.position === "center") {
+      rawPosX = "center";
+      rawPosY = "center";
+    } else if (Array.isArray(options.position)) {
+      rawPosX = options.position[0];
+      rawPosY = options.position[1];
+    }
+
+    const xCentered =
+      rawPosX === "center" ||
+      options.x === "center" ||
+      (isTransitionDescriptor(rawPosX) && rawPosX.target === "center") ||
+      (isTransitionDescriptor(options.x) && options.x.target === "center");
+    const yCentered =
+      rawPosY === "center" ||
+      options.y === "center" ||
+      (isTransitionDescriptor(rawPosY) && rawPosY.target === "center") ||
+      (isTransitionDescriptor(options.y) && options.y.target === "center");
+
+    let defaultOrigin: ElementAnchor = "top-left";
+    if (xCentered && yCentered) {
+      defaultOrigin = "center";
+    } else if (xCentered) {
+      defaultOrigin = "top";
+    } else if (yCentered) {
+      defaultOrigin = "left";
+    }
+
+    this.origin = options.origin || defaultOrigin;
 
     if (html instanceof DOMElement) {
       this.domElement = html.domElement;
       this.id = options.id || html.id;
-      this.anchor = options.anchor || html.anchor || "top-left";
+      this.origin = options.origin || html.origin || defaultOrigin;
       const initialAlign = options.align ?? html.align;
       if (initialAlign) {
         this.align = initialAlign;
       }
     } else if (typeof html === "string") {
-      this.domElement = document.createElement("div");
-      this.domElement.innerHTML = html;
+      const template = document.createElement("template");
+      template.innerHTML = html.trim();
+      this.domElement =
+        (template.content.firstElementChild as HTMLElement) || document.createElement("div");
     } else if (html instanceof DocumentFragment) {
-      this.domElement = document.createElement("div");
-      this.domElement.appendChild(html);
+      const wrapper = document.createElement("div");
+      wrapper.appendChild(html);
+      this.domElement = wrapper;
     } else {
       this.domElement = html as HTMLElement;
     }
-    this.domElement.dataset.srId = this.id;
 
     if (options.align) {
       this.align = options.align;
     }
 
-    this.x = options.x ?? (options.position ? options.position[0] : 0);
-    this.y = options.y ?? (options.position ? options.position[1] : 0);
+    this.x = options.x ?? (rawPosX as CoordProp) ?? 0;
+    this.y = options.y ?? (rawPosY as CoordProp) ?? 0;
     this.width = options.width ?? options.size;
     this.height = options.height ?? options.size;
     this.scale = options.scale ?? 1;
@@ -308,16 +309,16 @@ export class DOMElement implements ReactiveElementBase {
     this.enterDuration = options.enterDuration;
     this.enterDelay = options.enterDelay;
     if (options.customPositioned) {
-      this.isCustomPositioned = true;
+      this._isCustomPositioned = true;
     }
 
-    if (this.width !== undefined) {
-      this.domElement.style.width =
-        typeof this.width === "number" ? `${this.width}px` : String(this.width);
+    const initialWidth = cssLength(this.width as number | string | undefined);
+    if (initialWidth !== undefined) {
+      this.domElement.style.width = initialWidth;
     }
-    if (this.height !== undefined) {
-      this.domElement.style.height =
-        typeof this.height === "number" ? `${this.height}px` : String(this.height);
+    const initialHeight = cssLength(this.height as number | string | undefined);
+    if (initialHeight !== undefined) {
+      this.domElement.style.height = initialHeight;
     }
 
     if (!this.domElement.style.pointerEvents) {
@@ -326,18 +327,17 @@ export class DOMElement implements ReactiveElementBase {
     this._defaultPointerEvents = this.domElement.style.pointerEvents || "auto";
     this.domElement.style.zIndex = "1";
 
-    if (!this.isCustomPositioned) {
-      // Apply baseline stage positioning styles (Top-Left origin standard)
+    if (!this._isCustomPositioned) {
       this.domElement.style.position = "absolute";
       this.domElement.style.left = "0px";
       this.domElement.style.top = "0px";
 
-      const { transform, transformOrigin } = computeTransformAndOrigin(
-        this.x as number | string,
-        this.y as number | string,
+      const { transform, transformOrigin } = computeTransform(
+        this._x,
+        this._y,
         this.scale as number,
         this.rotation as number,
-        this.anchor,
+        this.origin,
       );
       this.domElement.style.transform = transform;
       this.domElement.style.transformOrigin = transformOrigin;
@@ -345,29 +345,33 @@ export class DOMElement implements ReactiveElementBase {
     this.domElement.style.opacity = `${this.opacity}`;
 
     if (options.className) {
-      const existing = this.domElement.className ? this.domElement.className.split(" ") : [];
-      const incoming = options.className.split(" ");
-      this.domElement.className = Array.from(new Set([...existing, ...incoming]))
-        .filter(Boolean)
-        .join(" ");
+      this.domElement.classList.add(...options.className.split(" ").filter(Boolean));
     }
-
+    if (options.style) {
+      Object.assign(this.domElement.style, options.style);
+    }
     if (options.theme) {
       applyThemeTokens(this.domElement, options.theme);
     }
-
-    if (options.style && typeof options.style === "object") {
-      Object.assign(this.domElement.style, options.style);
+    if (options.onMount) {
+      this.onMount(options.onMount);
+    }
+    if (options.onUnmount) {
+      this.onUnmount(options.onUnmount);
+    }
+    if (options.onActivate) {
+      this.onActivate(options.onActivate);
+    }
+    if (options.onDeactivate) {
+      this.onDeactivate(options.onDeactivate);
     }
 
-    if (options.onMount) this.onMount(options.onMount);
-    if (options.onUnmount) this.onUnmount(options.onUnmount);
-    if (options.onActivate) this.onActivate(options.onActivate);
-    if (options.onDeactivate) this.onDeactivate(options.onDeactivate);
+    this.domElement.dataset.elementId = this.id;
+    this.domElement.dataset.elementKind = this.kind;
   }
 
   /**
-   * Registers a callback triggered when this element is mounted into the DOM.
+   * Registers a callback invoked when the element is attached to the stage DOM.
    */
   onMount(fn: () => void): () => void {
     this.mountListeners.add(fn);
@@ -375,7 +379,7 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
-   * Registers a callback triggered when this element is unmounted from the DOM.
+   * Registers a callback invoked when the element is detached from the stage DOM.
    */
   onUnmount(fn: () => void): () => void {
     this.unmountListeners.add(fn);
@@ -383,7 +387,7 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
-   * Registers a callback triggered whenever this element becomes active and visible on stage.
+   * Registers a callback invoked when the element becomes visible in the active scene.
    */
   onActivate(fn: () => void): () => void {
     this.activateListeners.add(fn);
@@ -391,7 +395,7 @@ export class DOMElement implements ReactiveElementBase {
   }
 
   /**
-   * Registers a callback triggered whenever this element becomes inactive / hidden.
+   * Registers a callback invoked when the element transitions out of visibility.
    */
   onDeactivate(fn: () => void): () => void {
     this.deactivateListeners.add(fn);
@@ -407,9 +411,6 @@ export class DOMElement implements ReactiveElementBase {
     return () => this.updateListeners.delete(fn);
   }
 
-  /**
-   * Mounts the element's DOM node into the specified parent container.
-   */
   /**
    * @internal Mounts the element's DOM node into the specified parent container.
    */
@@ -495,5 +496,5 @@ export class DOMElement implements ReactiveElementBase {
  * @internal
  */
 export function mount<T extends ReactiveElementBase>(element: T): T {
-  return getActiveStage().registerElement(element);
+  return getActiveStage()._registerElement(element);
 }

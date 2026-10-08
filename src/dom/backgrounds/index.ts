@@ -27,7 +27,6 @@ export {
 export {
   AsciiFluid,
   type AsciiFluidOptions,
-  type BaseFluidOptions,
   type FluidBackgroundElement,
   GradientFluid,
   type GradientFluidOptions,

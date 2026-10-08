@@ -34,8 +34,9 @@ const stage = new Stage();
 import { paths, Shape } from "stageroutine";
 
 const circle = Shape(paths.circle(), "Circle", {
-  position: ["center", "center"],
-  size: 180,
+  position: [80, 45],
+  origin: "center",
+  size: 15,
 });
 // hide-start
 stage.scene("Circle").with(circle);
@@ -54,7 +55,7 @@ Shapes support three surface treatments via the `variant` option:
 
 ```typescript
 const outline = Shape(paths.circle(), "Ghost", {
-  size: 120,
+  size: 10,
   variant: "ghost",
 });
 ```
@@ -83,9 +84,9 @@ const gradient = `data:image/svg+xml;utf8,${encodeURIComponent(
 )}`;
 
 const heart = Frame(paths.heart(), Image(gradient, { fit: "cover" }), {
-  x: "center",
-  y: "center",
-  size: 220,
+  position: [80, 45],
+  origin: "center",
+  size: 18.33,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });
@@ -130,8 +131,8 @@ The `paths` object provides generators for the standard diagram shapes:
 The same geometry powers every primitive. Pass extra options to change the silhouette:
 
 ```typescript
-const rating = Shape(paths.star({ points: 6 }), "Featured", { size: 140 });
-const gateway = Shape(paths.hexagon({ orientation: "flat" }), "Gateway", { size: 130 });
+const rating = Shape(paths.star({ points: 6 }), "Featured", { size: 11.67 });
+const gateway = Shape(paths.hexagon({ orientation: "flat" }), "Gateway", { size: 10.83 });
 ```
 
 The bubble generators accept a tail length, a local anchor preset (`"bottom-left"`, `"top-right"`, etc.), or a live target:
@@ -146,20 +147,20 @@ const stage = new Stage();
 import { layout, paths, Shape } from "stageroutine";
 
 const question = Shape(paths.speechBubble({ tail: "bottom-left" }), "Hello, world!", {
-  width: 220,
-  height: 140,
+  width: 18.33,
+  height: 11.67,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });
 
 const idea = Shape(paths.thoughtBubble({ tail: "bottom-right" }), "Thinking...", {
-  width: 220,
-  height: 140,
+  width: 18.33,
+  height: 11.67,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });
 
-layout.hstack([question, idea], { x: "center", y: 25, align: "center", gap: 6 });
+layout.hstack([question, idea], { x: "center", y: 22, align: "center", gap: 10 });
 // hide-start
 stage.scene("Bubbles").with(question, idea);
 stage.pause();
@@ -170,15 +171,15 @@ stage.mount("#stage");
 Pass a `{ to, anchor }` object or an element directly to connect the tail to a live target. The tip re-aims every frame as the target moves and lands on the target outline:
 
 ```typescript
-const agent = Card("Agent Alpha", { width: 170, height: 110 });
+const agent = Card("Agent Alpha", { width: 14.17, height: 9.17 });
 
 const bubble = Shape(
   paths.speechBubble({ tail: { to: agent, anchor: "top" } }),
   "Following the agent",
-  { width: 250, height: 120 },
+  { width: 20.83, height: 10 },
 );
 
-agent.to({ x: 60 }).ease("cubicInOut"); // the tail follows live
+agent.to({ x: 96 }).ease("cubicInOut"); // the tail follows live
 ```
 
 Targets also accept an attachment mode (`"auto"` (default), `"closest"`, `"ray"`), a clearance `padding`, or a fixed stage point via `{ to: [x, y] }`.
@@ -190,8 +191,8 @@ Connectors automatically calculate intersection points against the outer boundar
 ```typescript
 import { Connector, Frame, paths, Shape } from "stageroutine";
 
-const source = Shape(paths.circle(), "Source", { size: 100 });
-const target = Frame(paths.squircle(), photo, { size: 120 });
+const source = Shape(paths.circle(), "Source", { size: 8.33 });
+const target = Frame(paths.squircle(), photo, { size: 10 });
 
 const arrow = Connector(source, target, { routing: "bezier" });
 ```

@@ -21,9 +21,10 @@ const stage = new Stage();
 import { Card } from "stageroutine";
 
 const card = Card("Card content", {
-  position: ["center", "center"],
-  width: 320,
-  height: 160,
+  position: [80, 45],
+  origin: "center",
+  width: 26.67,
+  height: 13.33,
 });
 // hide-start
 stage.scene("Card").with(card);
@@ -39,8 +40,8 @@ Use `align` to position content along the 9-point grid:
 
 ```typescript
 const card = Card("System Status", {
-  width: 320,
-  height: 180,
+  width: 26.67,
+  height: 15,
   align: "top-left",
 });
 ```

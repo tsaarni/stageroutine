@@ -1,83 +1,69 @@
 /**
- * Reactive property proxy that intercepts element assignments (like el.x = 200) and schedules animations.
+ * Reactive proxy wrapping stage elements to track property reads, mutations, and transitions.
  */
 
 import { isTransitionDescriptor } from "../motion/transitions";
-import { applyCoordUpdater, resolveCoordNumber } from "./interpolators";
+import { splitPosition } from "./position";
 import { isReactiveProperty } from "./reactive";
+import { tryGetActiveStage } from "./stage";
 import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
+import { STAGE_UNITS_TALL, stageUnitsWide } from "./units";
 
+/** Resolves "center" on an axis to its numeric stage unit coordinate. */
+function resolveCenterCoord(axis: "x" | "y"): number {
+  if (axis === "x") {
+    const stage = tryGetActiveStage();
+    return stage ? stage.unitsWide / 2 : stageUnitsWide(1920, 1080) / 2;
+  }
+  return STAGE_UNITS_TALL / 2;
+}
+
+/**
+ * Host interface that manages property states and transitions for proxied elements.
+ * @internal
+ */
 export interface ElementHost {
-  recordMutation(
+  _getCurrentPropertyValue(elementId: string, property: string): unknown;
+  _setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
+  _recordMutation(
     elementId: string,
     property: string,
     from: unknown,
     to: unknown,
-    durationMs: number,
-    delayMs: number,
-    curve: EaseCurve,
+    durationMs?: number,
+    delayMs?: number,
+    curve?: EaseCurve,
     triggerElementId?: string,
     triggerMilestone?: AnimationMilestone,
     triggerProperty?: string,
   ): void;
-  getCurrentPropertyValue(elementId: string, property: string): unknown;
-  setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
 }
 
+/**
+ * Creates a reactive proxy for an element that intercepts property sets
+ * and records transitions or mutations with the host.
+ * @internal
+ */
 export function createReactiveProxy<T extends ReactiveElementBase>(
   element: T,
   host: ElementHost,
 ): T {
   return new Proxy(element, {
-    has(target, prop) {
-      if (
-        typeof prop === "string" &&
-        isReactiveProperty(target, prop) &&
-        host.getCurrentPropertyValue(target.id, prop) !== undefined
-      ) {
-        return true;
-      }
-      return Reflect.has(target, prop);
-    },
-
     get(target, prop, receiver) {
       if (typeof prop === "symbol") {
         return Reflect.get(target, prop, receiver);
       }
 
-      const propName = prop as string;
-
-      // Non-reactive properties (lifecycle flags, DOM nodes, methods) bypass the stage engine
-      if (!isReactiveProperty(target, propName)) {
-        return Reflect.get(target, prop, receiver);
-      }
-
-      if (propName === "size") {
-        const w =
-          host.getCurrentPropertyValue(target.id, "width") ??
-          (target as Record<string, unknown>).width;
-        const h =
-          host.getCurrentPropertyValue(target.id, "height") ??
-          (target as Record<string, unknown>).height;
-        return w ?? h;
-      }
+      const propName = String(prop);
 
       if (propName === "position") {
-        const x =
-          host.getCurrentPropertyValue(target.id, "x") ??
-          (target as Record<string, unknown>).x ??
-          0;
-        const y =
-          host.getCurrentPropertyValue(target.id, "y") ??
-          (target as Record<string, unknown>).y ??
-          0;
-        return [x, y];
+        return [readCoord(target, host, "x"), readCoord(target, host, "y")];
       }
 
       // Check current staged property value first
-      const val = host.getCurrentPropertyValue(target.id, propName);
-      if (val !== undefined) {
-        return val;
+      const stagedValue = host._getCurrentPropertyValue(target.id, propName);
+      if (stagedValue !== undefined) {
+        return stagedValue;
       }
 
       return Reflect.get(target, prop, receiver);
@@ -88,101 +74,13 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return Reflect.set(target, prop, value, receiver);
       }
 
-      const propName = prop as string;
-
-      // Non-reactive properties (lifecycle flags, DOM nodes, methods) bypass the stage engine
-      if (!isReactiveProperty(target, propName)) {
-        return Reflect.set(target, prop, value, receiver);
-      }
-
-      if (propName === "size") {
-        (receiver as Record<string, unknown>).width = value;
-        (receiver as Record<string, unknown>).height = value;
-        return true;
-      }
+      const propName = String(prop);
 
       if (propName === "position") {
-        if (isTransitionDescriptor(value)) {
-          let targetCoord = value.target as unknown;
-          if (typeof targetCoord === "function") {
-            const currX =
-              host.getCurrentPropertyValue(target.id, "x") ??
-              (target as Record<string, unknown>).x ??
-              0;
-            const currY =
-              host.getCurrentPropertyValue(target.id, "y") ??
-              (target as Record<string, unknown>).y ??
-              0;
-            const numX = resolveCoordNumber(currX);
-            const numY = resolveCoordNumber(currY);
-            const fn = targetCoord as (...args: unknown[]) => unknown;
-            const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
-            if (Array.isArray(res) && res.length >= 2) {
-              targetCoord = [
-                applyCoordUpdater(currX, () => res[0], "cqw"),
-                applyCoordUpdater(currY, () => res[1], "cqh"),
-              ];
-            } else {
-              targetCoord = res;
-            }
-          }
-          let targetX: unknown;
-          let targetY: unknown;
-          if (Array.isArray(targetCoord)) {
-            targetX = targetCoord[0];
-            targetY = targetCoord[1];
-          } else if (typeof targetCoord === "object" && targetCoord !== null) {
-            targetX = (targetCoord as Record<string, unknown>).x;
-            targetY = (targetCoord as Record<string, unknown>).y;
-          }
-          if (targetX !== undefined) {
-            (receiver as Record<string, unknown>).x = {
-              ...value,
-              target: targetX,
-            };
-          }
-          if (targetY !== undefined) {
-            (receiver as Record<string, unknown>).y = {
-              ...value,
-              target: targetY,
-            };
-          }
-          return true;
-        }
-
-        let targetVal = value;
-        if (typeof targetVal === "function") {
-          const currX =
-            host.getCurrentPropertyValue(target.id, "x") ??
-            (target as Record<string, unknown>).x ??
-            0;
-          const currY =
-            host.getCurrentPropertyValue(target.id, "y") ??
-            (target as Record<string, unknown>).y ??
-            0;
-          const numX = resolveCoordNumber(currX);
-          const numY = resolveCoordNumber(currY);
-          const fn = targetVal as (...args: unknown[]) => unknown;
-          const res = fn.length === 2 ? fn(numX, numY) : fn([numX, numY]);
-          if (Array.isArray(res) && res.length >= 2) {
-            targetVal = [
-              applyCoordUpdater(currX, () => res[0], "cqw"),
-              applyCoordUpdater(currY, () => res[1], "cqh"),
-            ];
-          } else {
-            targetVal = res;
-          }
-        }
-
-        let x: unknown;
-        let y: unknown;
-        if (Array.isArray(targetVal)) {
-          x = targetVal[0];
-          y = targetVal[1];
-        } else if (typeof targetVal === "object" && targetVal !== null) {
-          x = (targetVal as Record<string, unknown>).x;
-          y = (targetVal as Record<string, unknown>).y;
-        }
+        const { x, y } = splitPosition(value, () => [
+          readCoord(target, host, "x"),
+          readCoord(target, host, "y"),
+        ]);
         if (x !== undefined) {
           (receiver as Record<string, unknown>).x = x;
         }
@@ -192,9 +90,14 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return true;
       }
 
+      // Only track declared reactive properties
+      if (!isReactiveProperty(target, propName)) {
+        return Reflect.set(target, prop, value, receiver);
+      }
+
       if (isTransitionDescriptor(value)) {
         let from: unknown =
-          host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
+          host._getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
 
         if (
           from === undefined &&
@@ -211,8 +114,12 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
 
         let targetVal = value.target;
         if (typeof targetVal === "function") {
-          const defaultUnit = propName === "y" || propName === "height" ? "cqh" : "cqw";
-          targetVal = applyCoordUpdater(from, targetVal as (curr: number) => unknown, defaultUnit);
+          const current = typeof from === "number" ? from : 0;
+          targetVal = (targetVal as (curr: number) => unknown)(current);
+        }
+
+        if (targetVal === "center" && (propName === "x" || propName === "y")) {
+          targetVal = resolveCenterCoord(propName);
         }
 
         let triggerElementId: string | undefined;
@@ -235,8 +142,8 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
           }
         }
 
-        host.setCurrentPropertyValue(target.id, propName, targetVal);
-        host.recordMutation(
+        host._setCurrentPropertyValue(target.id, propName, targetVal);
+        host._recordMutation(
           target.id,
           propName,
           from,
@@ -256,26 +163,38 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       let targetVal = value;
       if (typeof targetVal === "function") {
         const from: unknown =
-          host.getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
-        const defaultUnit = propName === "y" || propName === "height" ? "cqh" : "cqw";
-        targetVal = applyCoordUpdater(from, targetVal as (curr: number) => unknown, defaultUnit);
+          host._getCurrentPropertyValue(target.id, propName) ?? Reflect.get(target, prop, receiver);
+        targetVal = targetVal(typeof from === "number" ? from : 0);
       }
 
-      host.setCurrentPropertyValue(target.id, propName, targetVal);
+      if (targetVal === "center" && (propName === "x" || propName === "y")) {
+        targetVal = resolveCenterCoord(propName);
+      }
+
+      host._setCurrentPropertyValue(target.id, propName, targetVal);
       try {
         Reflect.set(target, prop, targetVal, receiver);
       } catch {
         // ignore read-only
       }
-      if (
-        typeof (target as { _dispatchUpdate?: (progress?: number) => void })._dispatchUpdate ===
-        "function"
-      ) {
-        (target as { _dispatchUpdate: (progress?: number) => void })._dispatchUpdate(1);
+      const managed = target as {
+        _dispatchUpdate?: (progress?: number) => void;
+        _update?: () => void;
+      };
+      if (typeof managed._dispatchUpdate === "function") {
+        managed._dispatchUpdate(1);
       } else {
-        (target as { update?: () => void }).update?.();
+        managed._update?.();
       }
       return true;
     },
   });
+}
+
+/** Reads the live coordinate of one axis, falling back to the element's own value. */
+function readCoord(target: ReactiveElementBase, host: ElementHost, axis: "x" | "y"): number {
+  const staged = host._getCurrentPropertyValue(target.id, axis);
+  if (typeof staged === "number") return staged;
+  const own = (target as unknown as Record<string, unknown>)[axis];
+  return typeof own === "number" ? own : 0;
 }

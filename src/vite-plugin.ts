@@ -444,11 +444,12 @@ export default function(options = {}) {
       iconifyRewriter,
       Icons({
         compiler: {
-          compiler: (svg) => {
+          compiler: async (svg) => {
+            const processed = await processLocalSvg(svg);
             return `
 import { Icon } from "stageroutine";
 export default function(options = {}) {
-  return Icon(${JSON.stringify(svg)}, options);
+  return Icon(${JSON.stringify(processed)}, options);
 }
 `;
           },

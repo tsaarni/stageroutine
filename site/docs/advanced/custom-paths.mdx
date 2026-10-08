@@ -51,9 +51,10 @@ const note: PathFunction = (w, h, ctx) => {
 };
 
 const callout = Shape(note, "Custom path", {
-  position: ["center", "center"],
-  width: 220,
-  height: 150,
+  position: [80, 45],
+  origin: "center",
+  width: 18.33,
+  height: 12.5,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });
@@ -78,8 +79,8 @@ Callout shapes such as `paths.speechBubble()` and `paths.thoughtBubble()` ship a
 import { Frame, Image } from "stageroutine";
 
 const photo = Frame(note, Image("./hero.png", { fit: "cover" }), {
-  width: 260,
-  height: 180,
+  width: 21.67,
+  height: 15,
   borderColor: "#38bdf8",
   strokeWidth: 2,
 });

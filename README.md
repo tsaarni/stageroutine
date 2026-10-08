@@ -20,10 +20,12 @@ import { Card, Stage, Title, to } from "stageroutine";
 const stage = new Stage();
 const title = Title("Hello, World!", {
   variant: "hero",
-  position: ["center", 44],
+  position: [80, 40],
+  origin: "top",
 });
 const card = Card("Press Space to begin", {
-  position: ["center", 56],
+  position: [80, 50],
+  origin: "top",
   opacity: 0,
 });
 
@@ -33,7 +35,7 @@ stage.pause();
 
 // Scene 2: Title glides up, card appears
 stage.scene("Overview").with(title, card);
-title.y = to(12);
+title.y = to(11);
 card.opacity = to(1).when(title, "halfway");
 stage.pause();
 ```

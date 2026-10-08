@@ -80,8 +80,8 @@ export interface ShapeElement extends DOMElement {
  * @internal
  */
 class ShapeElementImpl extends DOMElement implements ShapeElement {
-  static override reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement.reactiveKeys,
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
     "path",
     "start",
     "end",
@@ -102,7 +102,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     this._path = val;
     this.lastW = 0;
     this.lastH = 0;
-    this.update();
+    this._update();
   }
 
   readonly variant: ShapeVariant;
@@ -122,7 +122,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
   set flow(val: ReactiveProp<FlowEffect>) {
     this._flow = val ?? "none";
-    this.update();
+    this._update();
   }
 
   private _text?: string;
@@ -153,7 +153,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
   set borderColor(val: ReactiveProp<string> | undefined) {
     this._borderColor = val;
-    this.update();
+    this._update();
   }
 
   get background(): string | undefined {
@@ -161,7 +161,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
   set background(val: string | undefined) {
     this._background = val;
-    this.update();
+    this._update();
   }
 
   private readonly frostDiv: HTMLDivElement;
@@ -180,7 +180,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
   set active(val: boolean) {
     this._active = !!val;
-    this.update();
+    this._update();
   }
 
   get doubleBorder(): boolean {
@@ -188,7 +188,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
   set doubleBorder(val: boolean) {
     this._doubleBorder = !!val;
-    this.update();
+    this._update();
   }
 
   constructor(path: PathFunction, childrenOrOptions?: unknown, options: ShapeOptions = {}) {
@@ -269,7 +269,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       ) {
         const childEl = children as unknown as ReactiveElementBase;
         childItems.push(childEl);
-        childEl.isCustomPositioned = true;
+        (childEl as { _isCustomPositioned?: boolean })._isCustomPositioned = true;
         childEl.domElement.style.position = "relative";
         childEl.domElement.style.left = "auto";
         childEl.domElement.style.top = "auto";
@@ -285,7 +285,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
           ) {
             const childEl = child as unknown as ReactiveElementBase;
             childItems.push(childEl);
-            childEl.isCustomPositioned = true;
+            (childEl as { _isCustomPositioned?: boolean })._isCustomPositioned = true;
             childEl.domElement.style.position = "relative";
             childEl.domElement.style.left = "auto";
             childEl.domElement.style.top = "auto";
@@ -339,7 +339,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     if (opts.doubleBorder !== undefined) this._doubleBorder = !!opts.doubleBorder;
 
     this.onMount(() => {
-      this.update();
+      this._update();
     });
 
     this.onActivate(() => {
@@ -349,9 +349,9 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
         this._startPeriodicPing();
       }
       for (const item of this.items) {
-        item._activate?.();
+        (item as { _activate?: () => void })._activate?.();
       }
-      this.update();
+      this._update();
     });
 
     this.onDeactivate(() => {
@@ -359,13 +359,13 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       this.innerPathNode.style.animationPlayState = "paused";
       this._stopPeriodicPing();
       for (const item of this.items) {
-        item._deactivate?.();
+        (item as { _deactivate?: () => void })._deactivate?.();
       }
     });
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
-        this.update();
+        this._update();
       });
       ro.observe(this.domElement);
       this.onUnmount(() => {
@@ -377,10 +377,10 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       this._stopPeriodicPing();
     });
 
-    this.update();
+    this._update();
   }
 
-  override update(): void {
+  override _update(): void {
     if (!this.pathNode) return;
     this.updateVisualState();
     this.updateGeometry();
@@ -688,14 +688,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     padding: number,
   ): Point | null => {
     const stage = getActiveStage();
-    return resolveTailLocalPoint(
-      this,
-      target,
-      anchor,
-      padding,
-      stage?.width ?? 1920,
-      stage?.height ?? 1080,
-    );
+    return resolveTailLocalPoint(this, target, anchor, padding, stage?.height ?? 1080);
   };
 }
 

@@ -6,24 +6,18 @@ import * as THREE from "three";
 import type { Background } from "../../core/types";
 import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./base";
 
-/**
- * @internal
- */
-export interface BaseFluidOptions extends BackgroundOptions {
-  /** Background color behind the fluid (default: "#09090b") */
-  backgroundColor?: string;
-  /** Overall opacity / brightness factor (default: 0.28) */
-  opacity?: number;
-  /** Speed of wave rolling across screen (default: 0.5) */
-  waveSpeed?: number;
-}
+type BaseFluidOptions = AsciiFluidOptions | GradientFluidOptions;
 
 /**
  * Configuration options for procedural ASCII fluid simulation background.
  * @category Backgrounds
  * @inline
  */
-export interface AsciiFluidOptions extends BaseFluidOptions {
+export interface AsciiFluidOptions extends BackgroundOptions {
+  /** Background color behind the fluid (default: "#09090b") */
+  backgroundColor?: string;
+  /** Speed of wave rolling across screen (default: 0.5) */
+  waveSpeed?: number;
   /** ASCII character ramp ordered from darkest to brightest */
   characters?: string;
   /** Size of each ASCII character cell in pixels (default: 18) */
@@ -37,7 +31,11 @@ export interface AsciiFluidOptions extends BaseFluidOptions {
  * @category Backgrounds
  * @inline
  */
-export interface GradientFluidOptions extends BaseFluidOptions {
+export interface GradientFluidOptions extends BackgroundOptions {
+  /** Background color behind the fluid (default: "#09090b") */
+  backgroundColor?: string;
+  /** Speed of wave rolling across screen (default: 0.5) */
+  waveSpeed?: number;
   /**
    * Color palette from dark depth to luminous crest highlights.
    * Default: ["#09090b", "#0284c7", "#38bdf8", "#e0f2fe"]

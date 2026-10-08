@@ -29,9 +29,9 @@ import { Icon } from "stageroutine";
 const icon = Icon(
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
   {
-    x: "center",
-    y: "center",
-    size: 80,
+    position: [80, 45],
+    origin: "center",
+    size: 6.67,
   },
 );
 // hide-start
@@ -68,7 +68,7 @@ import Database from "~iconify/lucide/database";
 import Cpu from "~iconify/lucide/cpu";
 
 // Standalone icon element
-const dbIcon = Database({ x: 10, y: 20, size: 48, color: "#38bdf8" });
+const dbIcon = Database({ x: 16, y: 18, size: 4, color: "#38bdf8" });
 
 // Passed inside a Card
 const card = Card({
@@ -116,9 +116,9 @@ import { Image } from "stageroutine";
 import heroImg from "./assets/architecture.png";
 
 const diagram = Image(heroImg, {
-  x: "center",
-  y: "center",
-  width: 720,
+  position: [80, 45],
+  origin: "center",
+  width: 60,
   fit: "contain",
 });
 ```
@@ -137,8 +137,8 @@ Because StageRoutine uses Vite, importing any image file returns an optimized as
 
 ```typescript
 const avatar = Image("./photo.jpg", {
-  width: 200,
-  height: 200,
+  width: 16.67,
+  height: 16.67,
   fit: "cover",
 });
 ```

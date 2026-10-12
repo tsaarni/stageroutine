@@ -62,6 +62,7 @@ if (document.fonts) {
 // Core runtime
 export { logger, Stage } from "./core/index";
 export type { LogLevel } from "./core/logger";
+export type { TerminalStatus } from "./core/terminal-protocol";
 export type {
   Align,
   AnchorKeyword,
@@ -163,6 +164,8 @@ export type {
   LabelPlacement,
   LifelineElement,
   LifelineOptions,
+  LiveTerminalElement,
+  LiveTerminalOptions,
   PeriodicPulseOptions,
   PulseOptions,
   PulseSequenceController,
@@ -196,6 +199,7 @@ export {
   Icon,
   Image,
   Kicker,
+  LiveTerminal,
   pulseSequence,
   SequenceDiagram,
   Shape,

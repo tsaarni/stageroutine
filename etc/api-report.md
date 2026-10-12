@@ -15,10 +15,10 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 190 symbols |
+| `stageroutine` | 194 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
-| `stageroutine/vite` | 2 symbols |
+| `stageroutine/vite` | 3 symbols |
 
 ## `stageroutine`
 
@@ -162,6 +162,27 @@ export function Kicker(label: string, options?: KickerOptions): DOMElement;
  * ```
  */
 export function LaserPointer(options?: LaserPointerOptions): OverlayPlugin & LaserPointerController;
+
+/**
+ * Creates a LiveTerminal element on stage.
+ *
+ * The terminal runs its command through the terminal server started by
+ * `stageRoutine({ terminal: true })` or `stageroutine dev --terminal`. Live
+ * sessions are never part of a production build: without a reachable server the
+ * element renders `lines` instead.
+ * @example ```tsx
+ * const deploy = LiveTerminal({
+ *   x: "center",
+ *   y: "center",
+ *   command: "kubectl -n demo rollout status deploy/api",
+ *   lines: ["$ kubectl -n demo rollout status deploy/api", "deployment \"api\" successfully rolled out"],
+ * });
+ *
+ * // Step 3 of the talk: run it again for the audience.
+ * deploy.restart();
+ * ```
+ */
+export function LiveTerminal(options?: LiveTerminalOptions): LiveTerminalElement;
 
 /**
  * Creates a navigation overlay plugin with prev scene, prev step, next step, next scene,
@@ -322,6 +343,7 @@ export class DOMElement implements ReactiveElementBase {
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color: ReactiveProp<string> | undefined;
+  zIndex: ReactiveProp<string | number> | undefined;
   /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
   exitDuration: number | undefined;
   /** Delay in seconds before exiting scene transition begins (defaults to 0). */
@@ -353,8 +375,12 @@ export class DOMElement implements ReactiveElementBase {
    * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
    */
   onUpdate(fn: (progress: number) => void): () => void;
-  /** Registers a click interaction handler on this element. */
-  onClick(handler: (event: MouseEvent) => void): DOMElement;
+  /**
+   * Registers a click interaction handler on this element.
+   * If the handler returns a function, that function is invoked as a reset cleanup
+   * when clicking outside this element or pressing Escape.
+   */
+  onClick(handler: (event: MouseEvent) => (() => void) | unknown): DOMElement;
   /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
   decorate(decorator: ElementDecorator): DOMElement;
 }
@@ -1246,6 +1272,66 @@ export interface LifelineOptions extends ElementOptions {
     color?: string;
 }
 
+/** Public controls for a live terminal. @category Components */
+export interface LiveTerminalElement extends DOMElement {
+    /** Command sent to the terminal server. */
+    command: string;
+    /** Header label. */
+    title: string;
+    /** Session state: `"idle"`, `"running"`, `"exited"`, or `"offline"`. */
+    readonly status: TerminalStatus;
+    /**
+     * Types text into the process, as if it came from the keyboard. Text sent while
+     * the session is still connecting is delivered as soon as it attaches.
+     */
+    send(data: string): void;
+    /**
+     * Stops the process and starts a fresh session with an empty screen, running the
+     * command again and typing `initialInput` when the session attaches.
+     */
+    restart(): void;
+    /** Gives the terminal keyboard focus so typing reaches the process. */
+    focus(): void;
+}
+
+/**
+ * Configuration options for the LiveTerminal component.
+ * @category Components
+ * @inline
+ */
+export interface LiveTerminalOptions extends ElementOptions {
+    /** Shell command to run when the terminal first enters a scene. Default: an interactive shell. */
+    command?: string;
+    /** Working directory for the command, relative to the project root. Default: project root. */
+    cwd?: string;
+    /** Header label. Default: the command, or `"shell"`. */
+    title?: string;
+    /**
+     * Frame height in terminal rows. The card then hugs exactly this many lines
+     * instead of stretching to `height`, so a short command leaves no empty rows.
+     * Default: the card is as tall as `height`.
+     */
+    rows?: number;
+    /**
+     * Static transcript shown in place of the live session when no terminal server
+     * is reachable: static builds, single-file exports, or a stopped dev server.
+     */
+    lines?: string[];
+    /** Whether keystrokes typed into the terminal reach the process. Default: `true`. */
+    interactive?: boolean;
+    /** Whether the terminal takes keyboard focus on scene entry. Default: `false`. */
+    autoFocus?: boolean;
+    /** Whether entering a scene runs the command again. Default: `false` (sessions persist). */
+    restartOnActivate?: boolean;
+    /**
+     * Text typed into the process whenever a session starts, including after a
+     * restart. Default: nothing is typed.
+     */
+    initialInput?: string;
+    /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
+    restartButton?: boolean;
+}
+
 /**
  * Command event payload to jump directly to a scene index.
  * @category Core
@@ -1498,6 +1584,7 @@ export interface ReactiveElementBase {
     blur: ReactiveProp<number>;
     brightness: ReactiveProp<number>;
     color?: ReactiveProp<string>;
+    zIndex?: ReactiveProp<number | string>;
     readonly isMounted?: boolean;
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
@@ -1513,7 +1600,7 @@ export interface ReactiveElementBase {
     onActivate?(fn: () => void): () => void;
     onDeactivate?(fn: () => void): () => void;
     onUpdate?(fn: (progress: number) => void): () => void;
-    onClick?(handler: (event: MouseEvent) => void): this;
+    onClick?(handler: (event: MouseEvent) => (() => void) | unknown): this;
 }
 
 /**
@@ -2468,6 +2555,9 @@ export type SizeProp = ReactiveProp<number | string>;
  */
 export type StackSlot = LayoutElement | LayoutElement[];
 
+/** Lifecycle of a live terminal as seen by the presentation. */
+export type TerminalStatus = "idle" | "running" | "exited" | "offline";
+
 /**
  * Configuration options for the Text component.
  * @category Components
@@ -2665,10 +2755,39 @@ export interface StageRoutinePluginOptions {
      * Defaults to false.
      */
     singleFile?: boolean;
+    /**
+     * Serve live terminal sessions so `LiveTerminal` elements can run real commands.
+     * Pass `true` for defaults, or options to tune the server. Defaults to disabled.
+     * Ignored when `singleFile` is enabled, because a single file has no server.
+     */
+    terminal?: boolean | TerminalServerOptions;
     /** Enable automatic on-demand icon resolution (defaults to true). */
     icons?: boolean;
     /** Additional custom options forwarded to unplugin-icons. */
     iconsOptions?: Record<string, unknown>;
+}
+
+/** Options for the live terminal server. */
+export interface TerminalServerOptions {
+    /** WebSocket endpoint that serves sessions. Default: `"/__stageroutine/terminal"`. */
+    path?: string;
+    /** Directory that sessions may start in, relative to the project root. Default: project root. */
+    cwd?: string;
+    /** Extra environment variables for every session. */
+    env?: Record<string, string>;
+    /** Shell that runs commands and interactive sessions. Default: `$SHELL`, then `/bin/bash`. */
+    shell?: string;
+    /** Maximum concurrent sessions. Default: `4`. */
+    maxSessions?: number;
+    /** Milliseconds without an attached client before a session is killed. Default: `120000`. */
+    idleTimeout?: number;
+    /** Characters of output kept for replay when a client attaches. Default: `20000`. */
+    scrollback?: number;
+    /**
+     * Fixed token that clients must present. Default: 24 random bytes minted per
+     * server run, published on `${path}/token`.
+     */
+    token?: string;
 }
 
 ```

@@ -150,6 +150,7 @@ export class DOMElement implements ReactiveElementBase {
   blur: ReactiveProp<number> = 0;
   brightness: ReactiveProp<number> = 1;
   color?: ReactiveProp<string>;
+  zIndex?: ReactiveProp<number | string>;
   exitDuration?: number;
   exitDelay?: number;
   enterDuration?: number;
@@ -474,10 +475,54 @@ export class DOMElement implements ReactiveElementBase {
 
   /**
    * Registers a click interaction handler on this element.
+   * If the handler returns a function, that function is invoked as a reset cleanup
+   * when clicking outside this element or pressing Escape.
    */
-  onClick(handler: (event: MouseEvent) => void): this {
+  onClick(handler: (event: MouseEvent) => (() => void) | unknown): this {
     this.domElement.style.cursor = "pointer";
-    this.domElement.addEventListener("click", handler);
+    let activeCleanup: (() => void) | null = null;
+
+    const runCleanup = () => {
+      if (activeCleanup) {
+        const cleanup = activeCleanup;
+        activeCleanup = null;
+        window.removeEventListener("pointerdown", onOutside, true);
+        window.removeEventListener("keydown", onKeyDown, true);
+        cleanup();
+      }
+    };
+
+    const onOutside = (e: PointerEvent) => {
+      if (!this.domElement.contains(e.target as Node)) {
+        runCleanup();
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        runCleanup();
+      }
+    };
+
+    this.domElement.addEventListener("click", (event) => {
+      if (activeCleanup) {
+        return;
+      }
+      const cleanup = handler(event);
+      if (typeof cleanup === "function") {
+        activeCleanup = cleanup as () => void;
+        setTimeout(() => {
+          if (activeCleanup) {
+            window.addEventListener("pointerdown", onOutside, true);
+            window.addEventListener("keydown", onKeyDown, true);
+          }
+        }, 0);
+      }
+    });
+
+    this.onUnmount(() => runCleanup());
+    this.onDeactivate(() => runCleanup());
+
     return this;
   }
 

@@ -263,6 +263,22 @@ export class Stage {
   private mountCleanups: (() => void)[] = [];
   /** Overlays that have received a mount context, in mount order. */
   private mountedOverlays: OverlayPlugin[] = [];
+  private pendingLiveTransitions: TransitionRecord[] = [];
+  private activeLiveTransitions = new Map<
+    string,
+    {
+      elementId: string;
+      property: string;
+      to: unknown;
+      startFrom: unknown;
+      startTime: number;
+      durationMs: number;
+      delayMs: number;
+      curve: EaseCurve;
+    }
+  >();
+  private liveAnimFrameId: number | null = null;
+  private liveBatchQueued = false;
 
   // Metrics & Performance Tracking
   readonly _metrics = new MetricRegistry();
@@ -1079,6 +1095,22 @@ export class Stage {
       return;
     }
 
+    if (this.isMountedState) {
+      this._scheduleLiveTransition({
+        elementId,
+        property,
+        from,
+        to,
+        durationMs,
+        delayMs,
+        triggerElementId,
+        triggerMilestone,
+        triggerProperty,
+        curve,
+      });
+      return;
+    }
+
     this.currentStepTransitions.push({
       elementId,
       property,
@@ -1091,6 +1123,92 @@ export class Stage {
       triggerProperty,
       curve,
     });
+  }
+
+  private _scheduleLiveTransition(record: TransitionRecord): void {
+    this.pendingLiveTransitions.push(record);
+    if (!this.liveBatchQueued) {
+      this.liveBatchQueued = true;
+      queueMicrotask(() => this._flushLiveTransitions());
+    }
+  }
+
+  private _flushLiveTransitions(): void {
+    this.liveBatchQueued = false;
+    if (this.pendingLiveTransitions.length === 0) return;
+
+    const transitions = this.pendingLiveTransitions.splice(0);
+    const now = performance.now();
+
+    for (const t of transitions) {
+      const key = `${t.elementId}:${t.property}`;
+      const liveVal = this._getCurrentPropertyValue(t.elementId, t.property);
+      const startFrom = liveVal !== undefined ? liveVal : t.from;
+      const durationMs = t.durationMs !== undefined && t.durationMs > 0 ? t.durationMs : 400;
+      const curve = t.curve || builtinEasings.gentle;
+
+      this.activeLiveTransitions.set(key, {
+        elementId: t.elementId,
+        property: t.property,
+        to: t.to,
+        startFrom,
+        startTime: now,
+        durationMs,
+        delayMs: t.delayMs || 0,
+        curve,
+      });
+    }
+
+    if (!this.liveAnimFrameId) {
+      this.isAnimating = true;
+      const frame = (frameTime: number) => {
+        const toDelete: string[] = [];
+        const affectedElements = new Set<string>();
+
+        for (const [key, t] of this.activeLiveTransitions) {
+          const elapsed = frameTime - t.startTime;
+          affectedElements.add(t.elementId);
+
+          if (elapsed <= t.delayMs) {
+            this._setCurrentPropertyValue(t.elementId, t.property, t.startFrom);
+          } else if (elapsed >= t.delayMs + t.durationMs) {
+            this._setCurrentPropertyValue(t.elementId, t.property, t.to);
+            toDelete.push(key);
+          } else {
+            const progressT = (elapsed - t.delayMs) / t.durationMs;
+            const easedProgress = t.curve(Math.max(0, Math.min(1, progressT)));
+            const currentVal = interpolateValue(t.startFrom, t.to, easedProgress);
+            this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
+          }
+        }
+
+        for (const key of toDelete) {
+          this.activeLiveTransitions.delete(key);
+        }
+
+        for (const elId of affectedElements) {
+          const el = this.elementRegistry.get(elId);
+          if (el) {
+            const props = this.propertyState.get(elId) || {};
+            this._applyStyles(el, props, true, false);
+          }
+        }
+
+        if (this.activeLiveTransitions.size > 0) {
+          this.liveAnimFrameId = requestAnimationFrame(frame);
+        } else {
+          this.liveAnimFrameId = null;
+          this.isAnimating = false;
+          for (const elId of affectedElements) {
+            const el = this.elementRegistry.get(elId);
+            const managed = el as StageManagedElement | undefined;
+            managed?._update?.();
+          }
+        }
+      };
+
+      this.liveAnimFrameId = requestAnimationFrame(frame);
+    }
   }
 
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
@@ -1121,7 +1239,7 @@ export class Stage {
       } catch {
         // ignore read-only
       }
-      if (!this.isAnimating) {
+      if (!this.isAnimating && (!this.isMountedState || el.isActive !== false)) {
         this._applyStyles(el, elProps, false);
       }
     }
@@ -1540,6 +1658,12 @@ export class Stage {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
+    if (this.liveAnimFrameId !== null) {
+      cancelAnimationFrame(this.liveAnimFrameId);
+      this.liveAnimFrameId = null;
+    }
+    this.activeLiveTransitions.clear();
+    this.pendingLiveTransitions.length = 0;
 
     // Stops element timers, RAF loops, and media streams.
     for (const element of this.elementRegistry.values()) {
@@ -1716,6 +1840,12 @@ export class Stage {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
+    if (this.liveAnimFrameId) {
+      cancelAnimationFrame(this.liveAnimFrameId);
+      this.liveAnimFrameId = null;
+    }
+    this.activeLiveTransitions.clear();
+    this.pendingLiveTransitions.length = 0;
     this.isAnimating = false;
     this._clearPromotedElements();
 
@@ -1799,6 +1929,12 @@ export class Stage {
       cancelAnimationFrame(this.animFrameId);
       this._clearPromotedElements();
     }
+    if (this.liveAnimFrameId) {
+      cancelAnimationFrame(this.liveAnimFrameId);
+      this.liveAnimFrameId = null;
+    }
+    this.activeLiveTransitions.clear();
+    this.pendingLiveTransitions.length = 0;
 
     this.isAnimating = true;
     const startTime = performance.now();
@@ -2215,6 +2351,10 @@ export class Stage {
     if (color && color !== "inherit") {
       node.style.color = color;
     }
+    if (props.zIndex !== undefined) {
+      const zNum = Number(props.zIndex);
+      node.style.zIndex = Number.isFinite(zNum) ? String(Math.round(zNum)) : String(props.zIndex);
+    }
     if (props.width !== undefined) {
       const formattedWidth = cssLength(props.width as number | string);
       if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
@@ -2241,6 +2381,7 @@ export class Stage {
         key !== "blur" &&
         key !== "brightness" &&
         key !== "color" &&
+        key !== "zIndex" &&
         key in element
       ) {
         try {

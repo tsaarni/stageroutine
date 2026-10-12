@@ -8,3 +8,4 @@ allowBuilds:
   '@biomejs/biome': true
   core-js: true
   esbuild: true
+  node-pty: true

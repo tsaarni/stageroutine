@@ -758,9 +758,14 @@ export const layout = {
 
     if (flatNonNull.length === 0) return [];
 
-    const measurements = flatNonNull.map((el) =>
-      measureElement(el, Array.isArray(options.width) ? options.width[0] : options.width),
-    );
+    const measurements = flatNonNull.map((el) => {
+      const size = measureElement(
+        el,
+        Array.isArray(options.width) ? options.width[0] : options.width,
+      );
+      const scale = "scale" in el && typeof el.scale === "number" ? Math.abs(el.scale) : 1;
+      return { width: size.width * scale, height: size.height * scale };
+    });
     const maxColWidth = Math.max(...measurements.map((m) => m.width));
     const maxRowHeight = Math.max(...measurements.map((m) => m.height));
 

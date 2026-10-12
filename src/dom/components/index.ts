@@ -43,6 +43,11 @@ export {
 } from "./Icon";
 export { Image, type ImageElement, type ImageFit, type ImageOptions } from "./Image";
 export { Kicker, type KickerOptions } from "./Kicker";
+export {
+  LiveTerminal,
+  type LiveTerminalElement,
+  type LiveTerminalOptions,
+} from "./LiveTerminal";
 /**
  * The sequence diagram system is used through its coordinator: `SequenceDiagram()` returns
  * the `seq` controller with `.message()`, `.activate()`, `.addParticipant()`, `.lifelines`,

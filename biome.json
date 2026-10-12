@@ -73,7 +73,8 @@
         "!src/vite-plugin.ts",
         "!src/vite-plugin.js",
         "!src/cli.ts",
-        "!src/cli.js"
+        "!src/cli.js",
+        "!src/server/**"
       ],
       "linter": {
         "rules": {

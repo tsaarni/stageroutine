@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
         "components/bullet-list",
         "components/code-block",
         "components/terminal-block",
+        "components/live-terminal",
         "components/table",
         "components/connector",
         "components/icons-and-images",

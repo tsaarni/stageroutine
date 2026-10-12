@@ -8,6 +8,10 @@ import { fileURLToPath } from "node:url";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import { TERMINAL_ENDPOINT } from "./core/terminal-protocol.ts";
+import { type TerminalServerOptions, terminalServer } from "./server/terminal.ts";
+
+export type { TerminalServerOptions };
 
 /**
  * Options for configuring the StageRoutine Vite plugin.
@@ -40,6 +44,12 @@ export interface StageRoutinePluginOptions {
    * Defaults to false.
    */
   singleFile?: boolean;
+  /**
+   * Serve live terminal sessions so `LiveTerminal` elements can run real commands.
+   * Pass `true` for defaults, or options to tune the server. Defaults to disabled.
+   * Ignored when `singleFile` is enabled, because a single file has no server.
+   */
+  terminal?: boolean | TerminalServerOptions;
   /** Enable automatic on-demand icon resolution (defaults to true). */
   icons?: boolean;
   /** Additional custom options forwarded to unplugin-icons. */
@@ -62,6 +72,15 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
   const presenterTsxPath = resolve(presenterDir, "presenter.tsx");
   const isPresenterEnabled = options.presenter !== false && !options.singleFile;
   const isSingleFile = options.singleFile === true;
+  const terminalOptions = typeof options.terminal === "object" ? options.terminal : undefined;
+  const terminalEndpoint =
+    options.terminal && !isSingleFile ? (terminalOptions?.path ?? TERMINAL_ENDPOINT) : undefined;
+
+  if (options.terminal && isSingleFile) {
+    console.warn(
+      "[stageroutine] singleFile builds have no server, so the live terminal is disabled. Terminal elements fall back to their static transcript.",
+    );
+  }
 
   const resolveMainEntry = (): string => {
     if (options.entry) return resolve(rootDir, options.entry);
@@ -83,6 +102,7 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
         base: userConfig.base ?? defaultBase,
         define: {
           __STAGEROUTINE_CHANNEL__: JSON.stringify(options.channel ?? "stageroutine-channel"),
+          __STAGEROUTINE_TERMINAL__: JSON.stringify(terminalEndpoint ?? false),
           ...(width ? { __STAGEROUTINE_WIDTH__: JSON.stringify(width) } : {}),
           ...(height ? { __STAGEROUTINE_HEIGHT__: JSON.stringify(height) } : {}),
           ...userConfig.define,
@@ -169,6 +189,11 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
       };
     },
     configureServer(server) {
+      // A presentation usually sits outside this package, so edits to StageRoutine
+      // itself are outside the Vite root and never reach the browser. Watch the
+      // library source too, otherwise fixing the framework looks like a no-op.
+      server.watcher.add(resolve(__dirname));
+
       server.middlewares.use(async (req, res, next) => {
         if (!req.url) return next();
         const [rawPath] = req.url.split("?");
@@ -367,6 +392,10 @@ export function stageRoutine(options: StageRoutinePluginOptions = {}): PluginOpt
   };
 
   const plugins: PluginOption[] = [corePlugin];
+
+  if (terminalEndpoint) {
+    plugins.push(terminalServer({ ...terminalOptions, path: terminalEndpoint }));
+  }
 
   if (isSingleFile) {
     plugins.push(viteSingleFile());

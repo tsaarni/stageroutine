@@ -513,6 +513,7 @@ export interface ReactiveElementBase {
   blur: ReactiveProp<number>;
   brightness: ReactiveProp<number>;
   color?: ReactiveProp<string>;
+  zIndex?: ReactiveProp<number | string>;
   readonly isMounted?: boolean;
   readonly isActive?: boolean;
   onMount?(fn: () => void): () => void;
@@ -528,7 +529,7 @@ export interface ReactiveElementBase {
   onActivate?(fn: () => void): () => void;
   onDeactivate?(fn: () => void): () => void;
   onUpdate?(fn: (progress: number) => void): () => void;
-  onClick?(handler: (event: MouseEvent) => void): this;
+  onClick?(handler: (event: MouseEvent) => (() => void) | unknown): this;
 }
 
 /**

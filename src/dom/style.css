@@ -11,6 +11,7 @@
 @import "./components/Media.css";
 @import "./components/Shape.css";
 @import "./components/Frame.css";
+@import "./components/LiveTerminal.css";
 @import "./components/TerminalBlock.css";
 @import "./components/CodeBlock.css";
 @import "./components/Table.css";

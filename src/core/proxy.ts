@@ -23,6 +23,7 @@ function resolveCenterCoord(axis: "x" | "y"): number {
  * @internal
  */
 export interface ElementHost {
+  readonly isMounted?: boolean;
   _getCurrentPropertyValue(elementId: string, property: string): unknown;
   _setCurrentPropertyValue(elementId: string, property: string, value: unknown): void;
   _recordMutation(
@@ -142,7 +143,13 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
           }
         }
 
-        host._setCurrentPropertyValue(target.id, propName, targetVal);
+        if ((propName === "x" || propName === "y") && typeof from !== "number") {
+          from = readCoord(target, host, propName);
+        }
+
+        if (!host.isMounted) {
+          host._setCurrentPropertyValue(target.id, propName, targetVal);
+        }
         host._recordMutation(
           target.id,
           propName,

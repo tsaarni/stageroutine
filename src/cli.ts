@@ -22,6 +22,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       presenter: { type: "boolean" },
       "no-presenter": { type: "boolean" },
       "single-file": { type: "boolean" },
+      terminal: { type: "boolean" },
       version: { type: "boolean", short: "v" },
       help: { type: "boolean" },
     },
@@ -55,6 +56,7 @@ Options:
       --channel <name>    BroadcastChannel name for presenter sync
       --no-presenter      Disable presenter console build and routes
       --single-file       Emit a single self-contained HTML file
+      --terminal          Serve live terminal sessions (loopback only)
   -v, --version           Show version number
       --help              Show help
 `);
@@ -82,6 +84,7 @@ Options:
       : {}),
     ...(isPresenterEnabled !== undefined ? { presenter: isPresenterEnabled } : {}),
     ...(values["single-file"] ? { singleFile: true } : {}),
+    ...(values.terminal ? { terminal: true } : {}),
   };
 
   const serverOptions = {

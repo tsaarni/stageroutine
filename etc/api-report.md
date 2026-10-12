@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 197 symbols |
+| `stageroutine` | 198 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -785,6 +785,7 @@ export interface ConnectorElement extends DOMElement {
     labelOffset?: ReactiveProp<LabelOffset>;
     labelOffsetX?: ReactiveProp<number | string>;
     labelOffsetY?: ReactiveProp<number | string>;
+    labelScale: ReactiveProp<number>;
     flow: FlowEffect;
     start: ReactiveProp<number>;
     end: ReactiveProp<number>;
@@ -802,6 +803,8 @@ export interface ConnectorElement extends DOMElement {
 export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     /** Optional text label rendered at the connector's midpoint or specified placement. */
     label?: string;
+    /** Scale factor for the label badge and text (default: 1). Reactive. */
+    labelScale?: ReactiveProp<number>;
     /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
     labelPlacement?: ReactiveProp<LabelPlacement>;
     /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
@@ -1090,6 +1093,23 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
 }
 
 /**
+ * Options for rigid-body group transform (uniform scale + translate).
+ * @category Layout
+ */
+export interface GroupLayoutOptions {
+    /** Target center position as [x, y] in stage units. Default: current bounding center. */
+    position?: Point;
+    /** Uniform scale factor applied around the origin. Default: 1. */
+    scale?: number;
+    /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
+    origin?: Point;
+    /** Animate the transform. `true` uses default duration; a callback customizes each transition. */
+    animate?: LayoutAnimation;
+    /** Duration in seconds when `animate: true`. Default: 0.6s. */
+    duration?: number;
+}
+
+/**
  * Options for the hexagon path generator.
  * @category Shape & Frame
  */
@@ -1287,6 +1307,17 @@ export interface LiveTerminalElement extends DOMElement {
     restart(): void;
     /** Gives the terminal keyboard focus so typing reaches the process. */
     focus(): void;
+    /** Types text character by character with a typewriter effect. */
+    type(text: string, options?: {
+        speed?: number;
+        jitter?: number;
+    }): Promise<void>;
+    /** Sends Enter to the terminal. */
+    enter(): void;
+    /** Sends Ctrl+C to the terminal. */
+    interrupt(): void;
+    /** Sends Ctrl+L (clear screen) to the terminal. */
+    clear(): void;
 }
 
 /**
@@ -1295,22 +1326,26 @@ export interface LiveTerminalElement extends DOMElement {
  * @inline
  */
 export interface LiveTerminalOptions extends ElementOptions {
-    /** Setup command run before the interactive shell opens. Default: none. */
-    command?: string;
     /** Working directory for the shell, relative to the project root. Default: project root. */
     cwd?: string;
+    /** Environment variables passed to the shell process (e.g. `{ PS1: "$ " }`). */
+    env?: Record<string, string>;
+    /** Shell command and arguments. Default: the user's login shell. Example: `["bash", "--norc", "--noprofile"]`. */
+    shell?: string[];
     /** Header label. Default: `"shell"`. */
     title?: string;
     /** Terminal rows. Default: fit to `height` (44 stage units by default). */
     rows?: number;
-    /** Transcript shown without a terminal server. Default: no lines. */
-    lines?: string[];
+    /** Fallback transcript shown when the terminal server is unavailable. Default: none. */
+    transcript?: string[];
     /** Whether keystrokes typed into the terminal reach the process. Default: `true`. */
     interactive?: boolean;
     /** Whether the terminal takes keyboard focus on scene entry. Default: `false`. */
     autoFocus?: boolean;
     /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
     restartButton?: boolean;
+    /** Font size in screen pixels (visual size after stage scaling). Default: inherited from the theme (`--sr-font-size-code`). */
+    fontSize?: number;
 }
 
 /**
@@ -1499,6 +1534,8 @@ export interface PulseOptions {
     duration?: number;
     /** Diameter of the particle in virtual canvas pixels (default: 8px). */
     size?: number;
+    /** Traverse the connector backward (from the destination to the origin) (default: false). */
+    reverse?: boolean;
     /** Callback invoked when the pulse completes its traversal. */
     onComplete?: () => void;
 }
@@ -1540,6 +1577,8 @@ export interface PulseSequenceStep {
     color?: string;
     /** Particle diameter in pixels (default: 8px). */
     size?: number;
+    /** Traverse this connector backward (from destination to origin) (default: false). */
+    reverse?: boolean;
     /** Optional pause delay in seconds before the next connector pulses (default: 0s). */
     delayAfter?: number;
 }
@@ -1950,7 +1989,7 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
     /** Column header labels displayed in the table header row. */
     headers?: string[];
     /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
-    rows: (string | number | HTMLElement)[][];
+    rows: (string | number | HTMLElement | DOMElement)[][];
     /** Text alignment per column (default: "left"). */
     align?: Align[];
     /** Additional CSS class name. */
@@ -2597,7 +2636,7 @@ export const defaultLight: ThemeConfig;
 export const dracula: ThemeConfig;
 
 /** Layout helper providing procedural positioning engines (hstack, vstack, grid, circle, relational). */
-export const layout: { hstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; };
+export const layout: { hstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; group(elements: LayoutElement[], options?: GroupLayoutOptions): void; };
 
 /** Logger control object for configuring logging behavior. */
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };

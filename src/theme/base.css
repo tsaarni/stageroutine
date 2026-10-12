@@ -45,39 +45,45 @@
       180deg,
       color-mix(
           in srgb,
-          var(--sr-text) 8%,
-          color-mix(in srgb, var(--sr-background) 88%, transparent)
+          var(--sr-text) 12%,
+          color-mix(in srgb, var(--sr-background) 75%, transparent)
         )
         0%,
       color-mix(
           in srgb,
-          var(--sr-text) 3%,
-          color-mix(in srgb, var(--sr-background) 82%, transparent)
+          var(--sr-text) 5%,
+          color-mix(in srgb, var(--sr-background) 68%, transparent)
         )
         100%
     );
     --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 15%, transparent);
     --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 25%, transparent);
     --sr-surface-shadow:
-      0 1.5rem 4rem -1rem rgba(0, 0, 0, 0.6),
+      0 calc(1.25rem * var(--sr-scale, 1)) calc(4rem * var(--sr-scale, 1))
+      calc(-1rem * var(--sr-scale, 1)) rgba(0, 0, 0, 0.6),
       inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 18%, transparent);
     --sr-surface-backdrop: blur(16px);
 
+    /* Content Scale Factor (default: 1) */
+    --sr-scale: 1;
+
     /* Spatial Scale & Radius */
-    --sr-radius: 0.5rem;
-    --sr-space-xs: 0.75rem;
-    --sr-space-sm: 1.5rem;
-    --sr-space-md: 2.25rem;
-    --sr-space-lg: 3.5rem;
-    --sr-space-xl: 5rem;
+    --sr-radius: calc(0.5rem * var(--sr-scale, 1));
+    --sr-space-3xs: calc(0.35rem * var(--sr-scale, 1));
+    --sr-space-2xs: calc(0.5rem * var(--sr-scale, 1));
+    --sr-space-xs: calc(0.75rem * var(--sr-scale, 1));
+    --sr-space-sm: calc(1.25rem * var(--sr-scale, 1));
+    --sr-space-md: calc(1.75rem * var(--sr-scale, 1));
+    --sr-space-lg: calc(2.5rem * var(--sr-scale, 1));
+    --sr-space-xl: calc(4rem * var(--sr-scale, 1));
 
     /* Typographic Scale (1080p Scale) */
-    --sr-font-size-hero: 6.5rem;
-    --sr-font-size-title: 3.85rem;
-    --sr-font-size-lead: 2.45rem;
-    --sr-font-size-body: 1.85rem;
-    --sr-font-size-code: 1.45rem;
-    --sr-font-size-kicker: 1.2rem;
+    --sr-font-size-hero: calc(5.5rem * var(--sr-scale, 1));
+    --sr-font-size-title: calc(3.25rem * var(--sr-scale, 1));
+    --sr-font-size-lead: calc(2.1rem * var(--sr-scale, 1));
+    --sr-font-size-body: calc(1.55rem * var(--sr-scale, 1));
+    --sr-font-size-code: calc(1.25rem * var(--sr-scale, 1));
+    --sr-font-size-kicker: calc(1rem * var(--sr-scale, 1));
 
     /* Font Families */
     --sr-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

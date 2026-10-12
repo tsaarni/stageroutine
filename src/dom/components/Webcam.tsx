@@ -5,7 +5,7 @@
 import { logger } from "../../core/index";
 import { storage } from "../../core/storage";
 import { DOMElement, type ElementOptions, mount } from "../element";
-import { type ImageFit, MediaSurface } from "./media";
+import { type ImageFit, MediaSurface } from "./Media";
 
 /**
  * Camera device info descriptor.

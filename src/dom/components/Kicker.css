@@ -6,7 +6,7 @@
     text-transform: uppercase;
     letter-spacing: 0.18em;
     color: var(--sr-text-dim);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--sr-space-2xs);
     display: block;
   }
 }

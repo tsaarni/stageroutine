@@ -21,20 +21,21 @@
   /* Navigation Overlay */
   .sr-nav-overlay {
     position: fixed;
-    bottom: 0.75rem;
+    bottom: var(--sr-space-xs);
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
     display: flex;
-    gap: 0.25rem;
-    padding: 0.35rem;
+    gap: var(--sr-space-3xs);
+    padding: var(--sr-space-3xs);
     background: color-mix(in srgb, var(--sr-text) 2%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid color-mix(in srgb, var(--sr-text) 6%, transparent);
     border-top-color: color-mix(in srgb, var(--sr-text) 10%, transparent);
     border-radius: var(--sr-radius);
-    box-shadow: 0 0.5rem 2rem -0.5rem rgba(0, 0, 0, 0.3);
+    box-shadow: 0 var(--sr-space-2xs) var(--sr-space-lg) calc(-1 * var(--sr-space-2xs))
+      rgba(0, 0, 0, 0.3);
     transition:
       opacity 0.3s ease,
       visibility 0.3s ease;
@@ -57,11 +58,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: var(--sr-space-lg);
+    height: var(--sr-space-lg);
     border-radius: var(--sr-radius);
     color: var(--sr-text-dim, #52525b);
-    font-size: 1.5rem;
+    font-size: var(--sr-space-md);
     line-height: 1;
     font-family: var(--sr-font-sans);
     cursor: pointer;
@@ -81,7 +82,7 @@
     }
 
     &.sr-nav-btn-pointer {
-      margin-left: 0.35rem;
+      margin-left: var(--sr-space-3xs);
     }
 
     &.sr-nav-btn-active {

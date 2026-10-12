@@ -3,7 +3,7 @@
     background-color: transparent;
     border: none;
     border-radius: 0;
-    padding: 0.5rem 0 0.5rem 1.25rem;
+    padding: var(--sr-space-2xs) 0 var(--sr-space-2xs) var(--sr-space-sm);
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-code);
     line-height: 1.5;
@@ -29,8 +29,8 @@
     display: block;
     min-height: 1.5em;
     line-height: 1.5;
-    padding: 0 0.6rem;
-    margin: 0 -0.6rem;
+    padding: 0 var(--sr-space-2xs);
+    margin: 0 calc(-1 * var(--sr-space-2xs));
     border-radius: 0;
     transition:
       background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),

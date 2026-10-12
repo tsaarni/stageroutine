@@ -15,6 +15,8 @@ export interface PingPacketOptions {
   start?: number;
   /** End trim offset from 0.0 to 1.0 (default: 1). */
   end?: number;
+  /** Traverse the path backward (from `end` to `start`) instead of forward (default: false). */
+  reverse?: boolean;
   /** Callback invoked when traversal completes. */
   onComplete?: () => void;
 }
@@ -41,7 +43,7 @@ export function spawnPingPacket(
   const easing = options.easing ?? "cubic-bezier(0.4, 0, 0.2, 1)";
   const startVal = options.start ?? 0;
   const endVal = options.end ?? 1;
-  const dist = endVal - startVal;
+  const reverse = options.reverse ?? false;
 
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.classList.add("sr-pulse-packet");
@@ -64,12 +66,19 @@ export function spawnPingPacket(
   g.appendChild(core);
   svgContainer.appendChild(g);
 
+  // Direction of travel. Forward runs startVal -> endVal; reverse runs
+  // endVal -> startVal. The opacity envelope (fade in near the launch end,
+  // fade out near the arrival end) follows the travel direction.
+  const fromOffset = reverse ? endVal : startVal;
+  const toOffset = reverse ? startVal : endVal;
+  const span = toOffset - fromOffset;
+
   const anim = g.animate(
     [
-      { offsetDistance: `${startVal * 100}%`, opacity: 0 },
-      { offsetDistance: `${(startVal + dist * 0.1) * 100}%`, opacity: 1, offset: 0.1 },
-      { offsetDistance: `${(startVal + dist * 0.82) * 100}%`, opacity: 1, offset: 0.82 },
-      { offsetDistance: `${endVal * 100}%`, opacity: 0, offset: 1.0 },
+      { offsetDistance: `${fromOffset * 100}%`, opacity: 0 },
+      { offsetDistance: `${(fromOffset + span * 0.1) * 100}%`, opacity: 1, offset: 0.1 },
+      { offsetDistance: `${(fromOffset + span * 0.82) * 100}%`, opacity: 1, offset: 0.82 },
+      { offsetDistance: `${toOffset * 100}%`, opacity: 0, offset: 1.0 },
     ],
     {
       duration,

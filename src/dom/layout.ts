@@ -135,6 +135,23 @@ export interface CircleLayoutOptions {
 }
 
 /**
+ * Options for rigid-body group transform (uniform scale + translate).
+ * @category Layout
+ */
+export interface GroupLayoutOptions {
+  /** Target center position as [x, y] in stage units. Default: current bounding center. */
+  position?: Point;
+  /** Uniform scale factor applied around the origin. Default: 1. */
+  scale?: number;
+  /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
+  origin?: Point;
+  /** Animate the transform. `true` uses default duration; a callback customizes each transition. */
+  animate?: LayoutAnimation;
+  /** Duration in seconds when `animate: true`. Default: 0.6s. */
+  duration?: number;
+}
+
+/**
  * Temporarily attaches an unmounted DOM element offscreen to measure its computed layout dimensions.
  * @internal
  */
@@ -955,5 +972,93 @@ export const layout = {
 
       applyPosition(el, targetX, targetY, options);
     });
+  },
+
+  /**
+   * Transforms a group of elements as a rigid body: uniform scale and/or
+   * translate while preserving relative arrangement. Connectors in the group
+   * have their `labelScale` adjusted instead of `scale`.
+   *
+   * @param elements Elements (cards, connectors, etc.) to transform.
+   * @param options  Target position, scale, origin pin, and animation settings.
+   */
+  group(elements: LayoutElement[], options: GroupLayoutOptions = {}): void {
+    if (elements.length === 0) return;
+
+    const scale = options.scale ?? 1;
+
+    // Determine the transform origin: explicit point, or bounding-box center
+    // of positioned elements (connectors have no x/y so they are skipped).
+    let ox: number;
+    let oy: number;
+    if (options.origin) {
+      [ox, oy] = options.origin;
+    } else {
+      let minX = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      let minY = Number.POSITIVE_INFINITY;
+      let maxY = Number.NEGATIVE_INFINITY;
+      for (const el of elements) {
+        const ex = typeof el.x === "number" ? el.x : undefined;
+        const ey = typeof el.y === "number" ? el.y : undefined;
+        if (ex !== undefined) {
+          minX = Math.min(minX, ex);
+          maxX = Math.max(maxX, ex);
+        }
+        if (ey !== undefined) {
+          minY = Math.min(minY, ey);
+          maxY = Math.max(maxY, ey);
+        }
+      }
+      ox = Number.isFinite(minX) ? (minX + maxX) / 2 : 0;
+      oy = Number.isFinite(minY) ? (minY + maxY) / 2 : 0;
+    }
+
+    // Target center: explicit position, or keep the current origin.
+    const tx = options.position ? options.position[0] : ox;
+    const ty = options.position ? options.position[1] : oy;
+
+    for (const el of elements) {
+      const rec = el as Record<string, unknown>;
+      const isConnector = "kind" in el && (el as { kind: string }).kind === "Connector";
+
+      // Connectors don't have their own x/y; only scale their label.
+      if (isConnector) {
+        if (options.animate) {
+          if (typeof options.animate === "function") {
+            rec.labelScale = options.animate(scale, el, 0);
+          } else {
+            rec.labelScale = to(scale).duration(options.duration ?? 0.6);
+          }
+        } else {
+          rec.labelScale = scale;
+        }
+        // Also reset label offsets so they don't look misaligned at the new scale.
+        continue;
+      }
+
+      // Positioned elements: compute new coordinates.
+      const ex = typeof el.x === "number" ? el.x : ox;
+      const ey = typeof el.y === "number" ? el.y : oy;
+      const newX = tx + (ex - ox) * scale;
+      const newY = ty + (ey - oy) * scale;
+
+      if (options.animate) {
+        if (typeof options.animate === "function") {
+          rec.x = options.animate(newX, el, 0);
+          rec.y = options.animate(newY, el, 0);
+          rec.scale = options.animate(scale, el, 0);
+        } else {
+          const dur = options.duration ?? 0.6;
+          rec.x = to(newX).duration(dur);
+          rec.y = to(newY).duration(dur);
+          rec.scale = to(scale).duration(dur);
+        }
+      } else {
+        rec.x = newX;
+        rec.y = newY;
+        rec.scale = scale;
+      }
+    }
   },
 };

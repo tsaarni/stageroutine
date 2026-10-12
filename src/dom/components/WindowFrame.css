@@ -1,0 +1,103 @@
+@layer sr-components {
+  .sr-window-frame {
+    background: var(--sr-surface);
+    backdrop-filter: var(--sr-surface-backdrop);
+    -webkit-backdrop-filter: var(--sr-surface-backdrop);
+    border: var(--sr-surface-border);
+    border-top-color: var(--sr-surface-highlight);
+    border-radius: var(--sr-radius);
+    overflow: hidden;
+    box-shadow: var(--sr-surface-shadow);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .sr-window-header {
+    background: color-mix(in srgb, var(--sr-text) 3%, transparent);
+    padding: var(--sr-space-xs) var(--sr-space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--sr-space-xs);
+    border-bottom: var(--sr-surface-border);
+  }
+
+  .sr-window-dot {
+    width: var(--sr-space-xs);
+    height: var(--sr-space-xs);
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--sr-surface-highlight);
+  }
+
+  .sr-window-title {
+    margin-left: var(--sr-space-2xs);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--sr-font-mono);
+    font-size: var(--sr-font-size-kicker);
+    color: var(--sr-text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .sr-window-status {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--sr-space-2xs);
+    font-family: var(--sr-font-mono);
+    font-size: var(--sr-font-size-kicker);
+    letter-spacing: 0.05em;
+    color: var(--sr-text-dim);
+
+    &::before {
+      content: "";
+      width: var(--sr-space-2xs);
+      height: var(--sr-space-2xs);
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    &.is-live {
+      color: var(--sr-primary);
+    }
+
+    &.is-error {
+      color: #f87171;
+    }
+  }
+
+  .sr-window-action {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--sr-space-3xs);
+    padding: var(--sr-space-3xs);
+    border: 0;
+    border-radius: var(--sr-space-3xs);
+    background: transparent;
+    color: var(--sr-text-dim);
+    line-height: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    & svg {
+      width: var(--sr-space-sm);
+      height: var(--sr-space-sm);
+    }
+
+    &:hover {
+      color: var(--sr-text);
+      background: color-mix(in srgb, var(--sr-text) 10%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--sr-primary);
+      outline-offset: 2px;
+    }
+  }
+}

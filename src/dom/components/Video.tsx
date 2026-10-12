@@ -3,7 +3,7 @@
  */
 
 import { DOMElement, type ElementOptions, mount } from "../element";
-import { type ImageFit, VideoSurface } from "./media";
+import { type ImageFit, VideoSurface } from "./Media";
 
 /**
  * Configuration options for the Video component.

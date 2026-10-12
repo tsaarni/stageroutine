@@ -221,6 +221,7 @@ export { group } from "./dom/group";
 export type {
   CircleLayoutOptions,
   GridSlot,
+  GroupLayoutOptions,
   LayoutAnimation,
   LayoutElement,
   LayoutOptions,

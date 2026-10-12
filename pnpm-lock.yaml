@@ -57,6 +57,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.5.13
         version: 2.5.13
+      '@iconify-json/energy-icons':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@iconify-json/lucide':
         specifier: ^1.2.127
         version: 1.2.127
@@ -86,30 +89,14 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
 
-  examples/browser:
+  examples/gravelpit:
     dependencies:
       stageroutine:
         specifier: workspace:*
         version: link:../..
-
-  examples/openbao:
-    dependencies:
-      stageroutine:
-        specifier: workspace:*
-        version: link:../..
-    devDependencies:
-      '@iconify-json/selfhst':
-        specifier: ^1.2.22
-        version: 1.2.22
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-
-  examples/terminal:
-    dependencies:
-      stageroutine:
-        specifier: workspace:*
-        version: link:../..
+      three:
+        specifier: ^0.185.1
+        version: 0.185.1
     devDependencies:
       typescript:
         specifier: ^5.7.3
@@ -1599,6 +1586,9 @@ packages:
 
   '@hapi/topo@5.1.0':
     resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
+
+  '@iconify-json/energy-icons@1.2.0':
+    resolution: {integrity: sha512-OuJgO5TrBU0q5o50Lhnd/j9wMv8pE/qzvI8JcztvVNhsbYvIo8jpa+lBnEvmO20ihmdkE+8BDxe6pJUgwLLyEQ==}
 
   '@iconify-json/lucide@1.2.127':
     resolution: {integrity: sha512-7KuCCpkly00kefna4wEnCr8l2HFRkbn4mD4zRib8wCSbrBmnR/l57ExpU6j5jv/Bo+qHpWuHpDtcqceQ0ptArw==}
@@ -8272,6 +8262,10 @@ snapshots:
   '@hapi/topo@5.1.0':
     dependencies:
       '@hapi/hoek': 9.3.0
+
+  '@iconify-json/energy-icons@1.2.0':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/lucide@1.2.127':
     dependencies:

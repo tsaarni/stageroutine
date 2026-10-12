@@ -52,7 +52,7 @@ const demo = LiveTerminal({
   cwd: ".",
   command: "export DEMO_MODE=1",
   restartButton: true,
-  lines: ["$ export DEMO_MODE=1", "$ pnpm test", "Tests: 42 passed"],
+  transcript: ["$ export DEMO_MODE=1", "$ pnpm test", "Tests: 42 passed"],
   // hide-start
   theme: { fontSizeCode: "1rem", fontSizeKicker: "0.85rem" },
   // hide-end
@@ -78,8 +78,8 @@ Sessions persist across scene changes and page reloads. Setup runs only for a ne
 
 Sessions stop with the dev server, or after 2 minutes without a connected page by default.
 
-## Fallback text
+## Fallback transcript
 
-`lines` is text you provide for when a live session cannot start: the terminal server is disabled or cannot be reached. Default: `[]`.
+`transcript` is text shown when a live session cannot start: the terminal server is disabled or cannot be reached. Default: `[]`.
 
 See the [LiveTerminal API reference](../api/functions/LiveTerminal.md) for all options and controls.

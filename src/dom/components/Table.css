@@ -29,13 +29,13 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--sr-text-dim);
-      padding: 0.85rem 1.35rem;
+      padding: var(--sr-space-xs) var(--sr-space-sm);
       border-bottom: var(--sr-surface-border);
       background: color-mix(in srgb, var(--sr-text) 2%, transparent);
     }
 
     & td {
-      padding: 0.85rem 1.35rem;
+      padding: var(--sr-space-xs) var(--sr-space-sm);
       border-bottom: 1px solid color-mix(in srgb, var(--sr-text) 4%, transparent);
     }
 

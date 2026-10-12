@@ -2,7 +2,7 @@
   .sr-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.35rem 1.1rem;
+    padding: var(--sr-space-3xs) var(--sr-space-sm);
     border-radius: 9999px;
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
@@ -27,7 +27,7 @@
     align-items: center;
     justify-content: center;
     gap: var(--sr-space-xs);
-    padding: 0.8rem 1.4rem;
+    padding: var(--sr-space-xs) var(--sr-space-sm);
     color: var(--sr-text);
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-code);
@@ -113,11 +113,11 @@
 
   /* Drop shadow on vector stroke overlay */
   .sr-shape-surface .sr-shape-stroke-svg {
-    filter: drop-shadow(0 1.25rem 2.5rem rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 var(--sr-space-sm) var(--sr-space-lg) rgba(0, 0, 0, 0.6));
   }
 
   .sr-shape-solid .sr-shape-stroke-svg {
-    filter: drop-shadow(0 1rem 3rem rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 var(--sr-space-xs) var(--sr-space-lg) rgba(0, 0, 0, 0.5));
   }
 
   /* Highlighted / active shape glow */

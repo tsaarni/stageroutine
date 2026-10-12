@@ -15,7 +15,7 @@ import {
   resolveTargetAnchor,
   resolveTargetBox,
 } from "../geometry";
-import { type PingHandle, spawnPingPacket } from "./ping";
+import { type PingHandle, spawnPingPacket } from "./Ping";
 
 /**
  * Options for triggering glowing packet animations along a connector.
@@ -28,6 +28,8 @@ export interface PulseOptions {
   duration?: number;
   /** Diameter of the particle in virtual canvas pixels (default: 8px). */
   size?: number;
+  /** Traverse the connector backward (from the destination to the origin) (default: false). */
+  reverse?: boolean;
   /** Callback invoked when the pulse completes its traversal. */
   onComplete?: () => void;
 }
@@ -56,6 +58,8 @@ export interface PulseSequenceStep {
   color?: string;
   /** Particle diameter in pixels (default: 8px). */
   size?: number;
+  /** Traverse this connector backward (from destination to origin) (default: false). */
+  reverse?: boolean;
   /** Optional pause delay in seconds before the next connector pulses (default: 0s). */
   delayAfter?: number;
 }
@@ -273,6 +277,8 @@ function createHeadMarker(
 export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   /** Optional text label rendered at the connector's midpoint or specified placement. */
   label?: string;
+  /** Scale factor for the label badge and text (default: 1). Reactive. */
+  labelScale?: ReactiveProp<number>;
   /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
   labelPlacement?: ReactiveProp<LabelPlacement>;
   /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
@@ -352,6 +358,7 @@ export interface ConnectorElement extends DOMElement {
   labelOffset?: ReactiveProp<LabelOffset>;
   labelOffsetX?: ReactiveProp<number | string>;
   labelOffsetY?: ReactiveProp<number | string>;
+  labelScale: ReactiveProp<number>;
   flow: FlowEffect;
   start: ReactiveProp<number>;
   end: ReactiveProp<number>;
@@ -371,6 +378,9 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     "end",
     "flow",
     "labelPlacement",
+    "labelScale",
+    "labelOffsetX",
+    "labelOffsetY",
   ]);
 
   private _flow: FlowEffect = "none";
@@ -435,6 +445,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
   start: ReactiveProp<number> = 0;
   end: ReactiveProp<number> = 1;
+  labelScale: ReactiveProp<number> = 1;
   private periodicIntervalTimer: number | null = null;
   private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
@@ -574,6 +585,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     if (options.start !== undefined) this.start = options.start;
     if (options.end !== undefined) this.end = options.end;
     if (options.flow !== undefined) this.flow = options.flow;
+    if (options.labelScale !== undefined) this.labelScale = options.labelScale;
 
     const periodic = options.pulseInterval;
     if (periodic) {
@@ -1017,7 +1029,14 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
           ptY = startPt[1] + (endPt[1] - startPt[1]) * ratio;
         }
 
-        this.labelGroup.setAttribute("transform", `translate(${ptX + offX}, ${ptY + offY})`);
+        const ls = typeof this.labelScale === "number" ? this.labelScale : 1;
+        if (ls <= 0.01) {
+          this.labelGroup.style.opacity = "0";
+        }
+        this.labelGroup.setAttribute(
+          "transform",
+          `translate(${ptX + offX}, ${ptY + offY}) scale(${ls})`,
+        );
       }
     }
   }
@@ -1064,6 +1083,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       size: options.size ?? 12,
       start: startVal,
       end: endVal,
+      reverse: options.reverse ?? false,
       onComplete: () => {
         if (ping) this.activePulses.delete(ping);
         options.onComplete?.();
@@ -1291,6 +1311,7 @@ export function pulseSequence(
       duration: current.duration ?? 0.45,
       color: current.color,
       size: current.size,
+      reverse: current.reverse ?? false,
       onComplete: () => {
         if (!running) return;
         const delay = (current.delayAfter ?? 0) * 1000;

@@ -8,8 +8,8 @@ import { logger } from "../../core/index";
 import type { TerminalStatus } from "../../core/terminal-protocol";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection, type RangeSelectionController } from "../interaction";
-import { createTerminalFrame, createTerminalLines, type TerminalFrame } from "./terminal-chrome";
-import { type TerminalFailure, TerminalSession, terminalEndpoint } from "./terminal-session";
+import { type TerminalFailure, TerminalSession, terminalEndpoint } from "./TerminalSession";
+import { createWindowFrame, createWindowLines, type WindowFrame } from "./WindowFrame";
 
 /** Internal lifecycle of a live terminal, mapped onto `TerminalStatus`. */
 type TerminalPhase = "idle" | "connecting" | "running" | "exited" | "offline" | "failed";
@@ -20,22 +20,26 @@ type TerminalPhase = "idle" | "connecting" | "running" | "exited" | "offline" | 
  * @inline
  */
 export interface LiveTerminalOptions extends ElementOptions {
-  /** Setup command run before the interactive shell opens. Default: none. */
-  command?: string;
   /** Working directory for the shell, relative to the project root. Default: project root. */
   cwd?: string;
+  /** Environment variables passed to the shell process (e.g. `{ PS1: "$ " }`). */
+  env?: Record<string, string>;
+  /** Shell command and arguments. Default: the user's login shell. Example: `["bash", "--norc", "--noprofile"]`. */
+  shell?: string[];
   /** Header label. Default: `"shell"`. */
   title?: string;
   /** Terminal rows. Default: fit to `height` (44 stage units by default). */
   rows?: number;
-  /** Transcript shown without a terminal server. Default: no lines. */
-  lines?: string[];
+  /** Fallback transcript shown when the terminal server is unavailable. Default: none. */
+  transcript?: string[];
   /** Whether keystrokes typed into the terminal reach the process. Default: `true`. */
   interactive?: boolean;
   /** Whether the terminal takes keyboard focus on scene entry. Default: `false`. */
   autoFocus?: boolean;
   /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
   restartButton?: boolean;
+  /** Font size in screen pixels (visual size after stage scaling). Default: inherited from the theme (`--sr-font-size-code`). */
+  fontSize?: number;
 }
 
 /** Public controls for a live terminal. @category Components */
@@ -48,6 +52,14 @@ export interface LiveTerminalElement extends DOMElement {
   restart(): void;
   /** Gives the terminal keyboard focus so typing reaches the process. */
   focus(): void;
+  /** Types text character by character with a typewriter effect. */
+  type(text: string, options?: { speed?: number; jitter?: number }): Promise<void>;
+  /** Sends Enter to the terminal. */
+  enter(): void;
+  /** Sends Ctrl+C to the terminal. */
+  interrupt(): void;
+  /** Sends Ctrl+L (clear screen) to the terminal. */
+  clear(): void;
 }
 
 /** Reads a design token, rejecting values that are not concrete colors. */
@@ -69,17 +81,89 @@ function resolveColor(host: HTMLElement, expression: string, fallback: string): 
 }
 
 /**
+ * Returns the CSS transform scale factor applied by the stage viewport.
+ * Compares getBoundingClientRect (screen pixels) with offsetWidth (layout pixels).
+ */
+function getAncestorScale(el: HTMLElement): number {
+  const viewport = el.closest("[style*='container-type']") as HTMLElement | null;
+  if (!viewport) return 1;
+  const layout = viewport.offsetWidth;
+  if (layout <= 0) return 1;
+  return viewport.getBoundingClientRect().width / layout;
+}
+
+/**
+ * Patches the xterm.js internal MouseService so that `getCoords` and
+ * `getMouseReportCoords` account for a CSS `transform: scale()` ancestor.
+ *
+ * The problem: xterm measures cell dimensions via OffscreenCanvas (unaffected
+ * by transforms) but maps mouse events via getBoundingClientRect (affected by
+ * transforms).  The cell widths are in layout pixels while the mouse offsets
+ * are in screen pixels — dividing one by the other gives wrong cell indices.
+ *
+ * The fix: wrap both methods to multiply cell dimensions by the scale factor
+ * so that everything is in screen pixels.
+ */
+function patchMouseService(terminal: XTerm, scaleGetter: () => number): void {
+  // biome-ignore lint/suspicious/noExplicitAny: xterm internal API
+  const core = (terminal as any)._core;
+  const mouseService = core?._mouseService;
+  if (!mouseService) return;
+
+  const origGetCoords = mouseService.getCoords.bind(mouseService);
+  mouseService.getCoords = (
+    event: { clientX: number; clientY: number },
+    element: HTMLElement,
+    colCount: number,
+    rowCount: number,
+    isSelection?: boolean,
+  ): [number, number] | undefined => {
+    const scale = scaleGetter();
+    if (scale === 1 || scale <= 0) {
+      return origGetCoords(event, element, colCount, rowCount, isSelection);
+    }
+    // Scale the event coordinates from screen pixels to layout pixels
+    // so they match the cell dimensions xterm computed.
+    const rect = element.getBoundingClientRect();
+    const layoutEvent = {
+      clientX: rect.left + (event.clientX - rect.left) / scale,
+      clientY: rect.top + (event.clientY - rect.top) / scale,
+    };
+    return origGetCoords(layoutEvent, element, colCount, rowCount, isSelection);
+  };
+
+  const origGetMouseReportCoords = mouseService.getMouseReportCoords.bind(mouseService);
+  mouseService.getMouseReportCoords = (
+    event: MouseEvent,
+    element: HTMLElement,
+  ): { col: number; row: number; x: number; y: number } | undefined => {
+    const scale = scaleGetter();
+    if (scale === 1 || scale <= 0) {
+      return origGetMouseReportCoords(event, element);
+    }
+    const rect = element.getBoundingClientRect();
+    const synth = new MouseEvent(event.type, {
+      clientX: rect.left + (event.clientX - rect.left) / scale,
+      clientY: rect.top + (event.clientY - rect.top) / scale,
+    });
+    return origGetMouseReportCoords(synth, element);
+  };
+}
+
+/**
  * Reactive terminal element running a pseudo-terminal on the development machine.
  * @internal
  */
 class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement {
-  private readonly frame: TerminalFrame;
+  private readonly frame: WindowFrame;
   private readonly cwd: string | undefined;
-  private readonly command: string | undefined;
-  private readonly lines: readonly string[];
+  private readonly env: Record<string, string> | undefined;
+  private readonly shell: string[] | undefined;
+  private readonly transcript: readonly string[];
   private readonly interactive: boolean;
   private readonly autoFocus: boolean;
   private readonly rowCount: number | undefined;
+  private readonly overrideFontSize: number | undefined;
   private session: TerminalSession | null = null;
   private terminal: XTerm | null = null;
   private fitAddon: FitAddon | null = null;
@@ -90,34 +174,31 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
   private built = false;
   private offline = false;
   private titleText: string;
+  private typed = false;
+  private static readonly sessionToken = Date.now().toString(36);
 
   constructor(options: LiveTerminalOptions = {}) {
     const rows = options.rows === undefined ? undefined : Math.max(1, Math.trunc(options.rows));
     const settings: LiveTerminalOptions = {
       ...options,
       width: options.width ?? 100,
-      // A row sized frame takes its height from the grid, so it sets none.
       ...(rows === undefined ? { height: options.height ?? 44 } : { height: options.height }),
     };
     const title = settings.title ?? "shell";
-    const frame = createTerminalFrame({ title, className: "sr-terminal-live" });
-    if (rows !== undefined && options.height === undefined) {
-      frame.body.className = "sr-terminal-screen";
-      frame.body.style.flex = "none";
-      frame.body.style.height = `calc(${rows * 1.25}lh + 2 * var(--sr-space-xs))`;
-      frame.body.style.boxSizing = "border-box";
-    }
+    const frame = createWindowFrame({ title, className: "sr-terminal-live" });
 
     super("LiveTerminal", frame.root, settings);
 
     this.frame = frame;
     this.titleText = title;
     this.cwd = settings.cwd;
-    this.command = settings.command;
-    this.lines = settings.lines ?? [];
+    this.env = settings.env;
+    this.shell = settings.shell;
+    this.transcript = settings.transcript ?? [];
     this.interactive = settings.interactive ?? true;
     this.autoFocus = settings.autoFocus ?? false;
     this.rowCount = rows;
+    this.overrideFontSize = settings.fontSize;
 
     if (settings.restartButton) {
       this.frame.setRestart(() => this.restartSession());
@@ -157,11 +238,53 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
   private restartSession(): void {
     const terminal = this.terminal;
     if (!terminal) return;
+    this.typed = false;
     this.session?.restart(terminal.cols, terminal.rows);
   }
 
   focus(): void {
     this.terminal?.focus();
+  }
+
+  type(text: string, options?: { speed?: number; jitter?: number }): Promise<void> {
+    if (this.typed) return Promise.resolve();
+    this.typed = true;
+    const speed = options?.speed ?? 0.045;
+    const jitter = options?.jitter ?? 0.35;
+    return new Promise<void>((resolve) => {
+      let i = 0;
+      const next = () => {
+        if (i >= text.length) {
+          resolve();
+          return;
+        }
+        this.session?.input(text[i]);
+        i++;
+        const delay = speed * 1000 * (1 + (Math.random() * 2 - 1) * jitter);
+        setTimeout(next, delay);
+      };
+      // Wait until the session is running before typing.
+      const waitAndStart = () => {
+        if (this.phase === "running") {
+          next();
+        } else {
+          setTimeout(waitAndStart, 50);
+        }
+      };
+      waitAndStart();
+    });
+  }
+
+  enter(): void {
+    this.session?.input("\r");
+  }
+
+  interrupt(): void {
+    this.session?.input("\x03");
+  }
+
+  clear(): void {
+    this.session?.input("\x0c");
   }
 
   private activate(): void {
@@ -175,7 +298,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     if (!terminal) return;
 
     this.fit();
-    // Also reconnects after the server went away and came back.
     this.session?.open(terminal.cols, terminal.rows);
     if (this.autoFocus) terminal.focus();
   }
@@ -195,15 +317,17 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
     const styles = window.getComputedStyle(body);
     const background = readToken(styles, "--sr-background", "#0c0d12");
+    const themeFontSize = Number.parseFloat(styles.fontSize);
+    const fontSize = this.overrideFontSize ?? themeFontSize;
 
     const terminal = new XTerm({
       fontFamily: styles.fontFamily,
-      fontSize: Number.parseFloat(styles.fontSize) || 16,
+      fontSize,
       lineHeight: 1.25,
       letterSpacing: 0,
-      cursorBlink: false,
-      cursorStyle: "bar",
-      cursorInactiveStyle: "bar",
+      cursorBlink: true,
+      cursorStyle: "block",
+      cursorInactiveStyle: "none",
       scrollback: 2000,
       disableStdin: !this.interactive,
       theme: {
@@ -223,6 +347,10 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     terminal.loadAddon(fitAddon);
     terminal.open(body);
 
+    // Patch xterm's internal mouse coordinate mapping to account for the
+    // ancestor CSS transform: scale() applied by the stage viewport.
+    patchMouseService(terminal, () => getAncestorScale(body));
+
     this.terminal = terminal;
     this.fitAddon = fitAddon;
 
@@ -235,9 +363,10 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     this.resizeObserver.observe(body);
 
     this.session = new TerminalSession({
-      id: this.id,
-      command: this.command,
+      id: `${this.id}:${LiveTerminalElementImpl.sessionToken}`,
       cwd: this.cwd,
+      env: this.env,
+      shell: this.shell,
       handlers: {
         ready: (info) => this.handleReady(info),
         data: (chunk) => {
@@ -267,8 +396,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     const terminal = this.terminal;
     if (!terminal) return;
 
-    // Drop the previous view before writing the replay, so a reattached session
-    // never shows stale output above the fresh one.
     terminal.reset();
     terminal.clear();
     if (info.replay !== "") terminal.write(info.replay);
@@ -284,7 +411,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     this.exitCode = code;
     this.phase = "exited";
     this.syncStatus();
-    // No trailing newline: the note sits on the last row of a row sized frame.
     this.terminal?.write(`\r\n\x1b[90m[exited with code ${code}]\x1b[0m`);
   }
 
@@ -307,7 +433,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     this.offline = true;
     this.release();
 
-    // A transcript has nothing to restart.
     this.frame.setRestart(null);
 
     const body = this.frame.body;
@@ -322,7 +447,7 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
         : "Live terminal server not reachable.";
     body.appendChild(note);
 
-    const lineElements = createTerminalLines(body, this.lines);
+    const lineElements = createWindowLines(body, this.transcript);
     if (this.interactive && lineElements.length > 0) {
       this.selection = attachRangeSelection({
         container: body,

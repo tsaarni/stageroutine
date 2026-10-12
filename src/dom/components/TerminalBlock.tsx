@@ -5,6 +5,7 @@
 import "./TerminalBlock.css";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
+import { createWindowFrame, createWindowLines } from "./WindowFrame";
 
 /**
  * Options for configuring the TerminalBlock component.
@@ -30,47 +31,24 @@ export interface TerminalBlockElement extends DOMElement {}
  */
 class TerminalBlockElementImpl extends DOMElement implements TerminalBlockElement {
   constructor(options: TerminalBlockOptions = {}) {
-    const lines = options.lines || [
-      "$ pnpm create stageroutine@latest my-talk",
-      "✔ Initialized reactive stage runtime",
-      "⚡ Stage live on http://localhost:5173",
-    ];
-    const classes = ["sr-terminal-block", options.className].filter(Boolean).join(" ");
+    const lines = options.lines || [];
     const isInteractive = options.interactive ?? true;
 
-    const container = document.createElement("div");
-    container.className = classes;
+    const frame = createWindowFrame({
+      title: options.title || "bash - 80x24",
+      className: ["sr-terminal-block", options.className].filter(Boolean).join(" "),
+    });
+    frame.body.className = "sr-terminal-body";
 
-    const header = document.createElement("div");
-    header.className = "sr-terminal-header";
-    header.innerHTML = `
-      <div class="sr-terminal-dot red"></div>
-      <div class="sr-terminal-dot yellow"></div>
-      <div class="sr-terminal-dot green"></div>
-      <span class="sr-terminal-title">${options.title || "bash - 80x24"}</span>
-    `;
-    container.appendChild(header);
-
-    const body = document.createElement("div");
-    body.className = "sr-terminal-body";
-    container.appendChild(body);
-
-    const rawLineElements: HTMLElement[] = [];
-    for (const lineText of lines) {
-      const lineEl = document.createElement("div");
-      lineEl.className = "sr-terminal-line";
-      lineEl.textContent = lineText;
-      body.appendChild(lineEl);
-      rawLineElements.push(lineEl);
-    }
+    const lineElements = createWindowLines(frame.body, lines);
 
     const controller = attachRangeSelection({
-      container: body,
-      getItems: () => rawLineElements,
+      container: frame.body,
+      getItems: () => lineElements,
       interactive: isInteractive,
     });
 
-    super("TerminalBlock", container, options);
+    super("TerminalBlock", frame.root, options);
 
     this.onUnmount(() => controller.destroy());
   }

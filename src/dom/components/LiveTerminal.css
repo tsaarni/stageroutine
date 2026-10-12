@@ -1,77 +1,14 @@
 @layer sr-components {
-  /* A live terminal is sized by its width option, so it drops the content cap
-     TerminalBlock needs. Both classes keep this rule ahead of import order. */
-  .sr-terminal-block.sr-terminal-live {
+  .sr-terminal-live {
     max-width: none;
-  }
 
-  .sr-terminal-status {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-kicker);
-    letter-spacing: 0.05em;
-    color: var(--sr-text-dim);
-  }
-
-  .sr-terminal-status::before {
-    content: "";
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background-color: currentColor;
-  }
-
-  .sr-terminal-status.is-live {
-    color: var(--sr-primary);
-  }
-
-  .sr-terminal-status.is-error {
-    color: #f87171;
-  }
-
-  .sr-terminal-action {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 0.4rem;
-    padding: 0.3rem;
-    border: 0;
-    border-radius: 0.3rem;
-    background: transparent;
-    color: var(--sr-text-dim);
-    line-height: 0;
-    cursor: pointer;
-    transition: color 0.2s ease;
-
-    & svg {
-      width: 1.15rem;
-      height: 1.15rem;
-    }
-
-    &:hover {
-      color: var(--sr-text);
-      background: color-mix(in srgb, var(--sr-text) 10%, transparent);
-    }
-
-    &:focus-visible {
-      outline: 1px solid var(--sr-primary);
-      outline-offset: 2px;
+    /* Denser xterm body needs a tighter header. */
+    & .sr-window-header {
+      padding: var(--sr-space-2xs) var(--sr-space-sm);
     }
   }
 
-  /* Screen area holding the xterm.js viewport. */
-  .sr-terminal-screen {
-    flex: 1 1 auto;
-    min-height: 0;
-    background: var(--sr-background);
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-code);
-  }
-
-  .sr-terminal-block.sr-terminal-live > .sr-terminal-body {
+  .sr-terminal-live > .sr-terminal-body {
     min-height: 0;
     line-height: normal;
     overflow: auto;
@@ -81,46 +18,50 @@
     }
   }
 
-  /* Screen inset. xterm measures its parent box and subtracts this padding, which is
-     why the padding lives on the viewport. */
-  .sr-terminal-screen > .xterm {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    padding: var(--sr-space-xs);
+  .sr-terminal-screen {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--sr-background);
+    font-family: var(--sr-font-mono);
+    font-size: var(--sr-font-size-code);
+
+    & > .xterm {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      padding: var(--sr-space-xs);
+    }
   }
 
-  /* Caption shown when no terminal server is available. */
   .sr-terminal-note {
     white-space: pre;
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
     color: var(--sr-text-dim);
-    margin-bottom: 0.9rem;
-  }
-
-  .sr-terminal-block.sr-terminal-live {
-    & .sr-terminal-title {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    & .sr-terminal-dot,
-    & .sr-terminal-status,
-    & .sr-terminal-action {
-      flex-shrink: 0;
-    }
+    margin-bottom: var(--sr-space-xs);
   }
 }
 
 /*
- * xterm.css paints its scroll viewport black, while the themed background only
- * reaches the scrollable element inside it. The padding would then read as a
- * darker frame around the screen. This rule stays outside the layer to win over
- * the third party stylesheet, which is unlayered as well.
+ * xterm.css paints its scroll viewport black; this override stays outside the
+ * layer to win over the unlayered third-party stylesheet.
  */
 .sr-terminal-screen > .xterm .xterm-viewport {
   background-color: transparent;
+  scrollbar-width: none;
+}
+
+.sr-terminal-screen > .xterm .xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* Slim down xterm's custom scrollbar (VS Code ScrollableElement). */
+.sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical {
+  width: 8px !important;
+}
+
+.sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+  width: 8px !important;
+  border-radius: 4px;
 }

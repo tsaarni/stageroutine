@@ -388,6 +388,13 @@ export interface StageOptions {
    * Default: `"stageroutine-channel"`.
    */
   channel?: string | false;
+  /**
+   * Global content scale factor for typography, spacing, and padding.
+   * Values below 1 shrink UI chrome; values above 1 enlarge it.
+   * Element positions and explicit dimensions (stage units) are not affected.
+   * Default: `1`.
+   */
+  scale?: number;
 }
 
 /**

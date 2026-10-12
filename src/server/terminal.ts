@@ -12,7 +12,8 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { chmodSync, statSync } from "node:fs";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createRequire } from "node:module";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import type { Duplex } from "node:stream";
 import type { PluginOption, PreviewServer, ViteDevServer } from "vite";
 import { type WebSocket, WebSocketServer } from "ws";
@@ -97,6 +98,8 @@ export interface TerminalServerOptions {
 interface Session {
   readonly id: string;
   readonly command: string | undefined;
+  readonly env: Record<string, string> | undefined;
+  readonly shell: string[] | undefined;
   readonly cwd: string;
   cols: number;
   rows: number;
@@ -284,14 +287,12 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     return true;
   }
 
-  /** Resolves a session working directory, refusing paths outside the project root. */
+  /** Resolves a session working directory. */
   const resolveCwd = (requested: string | undefined): string => {
     const base = resolve(root, options.cwd ?? ".");
-    const target = resolve(base, requested ?? ".");
-    const inside = relative(root, target);
-    if (inside.startsWith("..") || isAbsolute(inside)) {
-      throw new Error(`Working directory "${target}" is outside the project root`);
-    }
+    const raw = requested ?? ".";
+    const expanded = raw.startsWith("~") ? raw.replace("~", homedir()) : raw;
+    const target = resolve(base, expanded);
     if (!statSync(target, { throwIfNoEntry: false })?.isDirectory()) {
       throw new Error(`Working directory "${target}" does not exist`);
     }
@@ -328,9 +329,14 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     const height = gridSize(rows, MIN_ROWS, MAX_ROWS, 24);
 
     try {
-      // Setup may change directory or export variables for the interactive shell.
-      const args = session.command ? ["-c", `${session.command}\nexec "$0"`, shell] : [];
-      const child = pty.spawn(shell, args, {
+      // When session.shell is provided, use it as [program, ...args].
+      // Otherwise fall back to the detected login shell with optional setup command.
+      const [program, ...programArgs] = session.shell ?? [shell];
+      const args =
+        session.command && !session.shell
+          ? ["-c", `${session.command}\nexec "$0"`, program]
+          : programArgs;
+      const child = pty.spawn(program, args, {
         name: "xterm-256color",
         cols: width,
         rows: height,
@@ -338,6 +344,7 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
         env: {
           ...process.env,
           ...options.env,
+          ...session.env,
           TERM: "xterm-256color",
           COLORTERM: "truecolor",
         } as Record<string, string>,
@@ -377,10 +384,18 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     session.process?.resize(width, height);
   }
 
-  function create(id: string, command: string | undefined, cwd: string): Session {
+  function create(
+    id: string,
+    command: string | undefined,
+    env: Record<string, string> | undefined,
+    shell: string[] | undefined,
+    cwd: string,
+  ): Session {
     const session: Session = {
       id,
       command,
+      env,
+      shell,
       cwd,
       cols: 80,
       rows: 24,
@@ -406,7 +421,7 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
       send(client, { type: "error", message: `Too many live terminals (limit ${maxSessions})` });
       return null;
     }
-    return create(message.id, message.command, message.cwd ?? ".");
+    return create(message.id, message.command, message.env, message.shell, message.cwd ?? ".");
   }
 
   /** Attaches a client, starting the process when the session is new or restarted. */

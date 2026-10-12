@@ -56,8 +56,9 @@ export class TerminalSession {
   constructor(
     private readonly config: {
       id: string;
-      command?: string;
       cwd?: string;
+      env?: Record<string, string>;
+      shell?: string[];
       handlers: TerminalSessionHandlers;
     },
   ) {}
@@ -107,8 +108,9 @@ export class TerminalSession {
       this.post({
         type: "open",
         id: this.config.id,
-        command: this.config.command,
         cwd: this.config.cwd,
+        env: this.config.env,
+        shell: this.config.shell,
         cols,
         rows,
       });

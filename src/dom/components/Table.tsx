@@ -24,7 +24,7 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
   /** Column header labels displayed in the table header row. */
   headers?: string[];
   /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
-  rows: (string | number | HTMLElement)[][];
+  rows: (string | number | HTMLElement | DOMElement)[][];
   /** Text alignment per column (default: "left"). */
   align?: Align[];
   /** Additional CSS class name. */
@@ -87,8 +87,10 @@ class TableElementImpl extends DOMElement implements TableElement {
 
       rowData.forEach((cellData, colIdx) => {
         const td = document.createElement("td");
-        if (typeof cellData === "object" && cellData instanceof HTMLElement) {
+        if (cellData instanceof HTMLElement) {
           td.appendChild(cellData);
+        } else if (cellData instanceof DOMElement) {
+          td.appendChild(cellData.domElement);
         } else {
           td.textContent = String(cellData);
         }

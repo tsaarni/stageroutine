@@ -1,7 +1,6 @@
-import "./TerminalBlock.css";
 import "./BrowserWindow.css";
 import { DOMElement, type ElementOptions, mount } from "../element";
-import { createTerminalFrame, type TerminalFrame } from "./terminal-chrome";
+import { createWindowFrame, type WindowFrame } from "./WindowFrame";
 
 /** Browser window options. Default size: 120 × 65 stage units. @category Components @inline */
 export interface BrowserWindowOptions extends ElementOptions {
@@ -58,7 +57,7 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     "title",
   ]);
 
-  private readonly frame: TerminalFrame;
+  private readonly frame: WindowFrame;
   private readonly address: HTMLAnchorElement;
   private readonly backButton: HTMLButtonElement;
   private readonly forwardButton: HTMLButtonElement;
@@ -73,7 +72,7 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
   constructor(options: BrowserWindowOptions) {
     const url = resolvePageURL(options.url);
     const label = options.title ?? "Browser";
-    const frame = createTerminalFrame({ title: label, className: "sr-browser-window" });
+    const frame = createWindowFrame({ title: label, className: "sr-browser-window" });
     const toolbar = document.createElement("div");
     toolbar.className = "sr-browser-toolbar";
     const back = navigationButton("Back", "←");

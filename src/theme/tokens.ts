@@ -35,6 +35,10 @@ export interface ThemeConfig {
 
   /** Base border radius (e.g. "12px"). */
   radius?: string;
+  /** Triple-extra-small spacing token. */
+  space3xs?: string;
+  /** Double-extra-small spacing token. */
+  space2xs?: string;
   /** Extra-small spacing token. */
   spaceXs?: string;
   /** Small spacing token. */
@@ -82,6 +86,8 @@ export const TOKEN_MAP: Record<keyof ThemeConfig, string> = {
   surfaceShadow: "--sr-surface-shadow",
   surfaceBackdrop: "--sr-surface-backdrop",
   radius: "--sr-radius",
+  space3xs: "--sr-space-3xs",
+  space2xs: "--sr-space-2xs",
   spaceXs: "--sr-space-xs",
   spaceSm: "--sr-space-sm",
   spaceMd: "--sr-space-md",

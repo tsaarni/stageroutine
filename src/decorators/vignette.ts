@@ -13,14 +13,14 @@ import type { DOMElement } from "../dom/element";
 export interface VignetteOptions {
   /** Vignette color (default: "#09090b"). */
   color?: string;
-  /** Center darkness opacity from 0 to 1 (default: 0.9). */
+  /** Center darkness opacity from 0 to 1 (default: 1). */
   opacity?: number;
   /** Custom radial gradient falloff shape (default: "ellipse 55% 55% at 50% 50%"). */
   shape?: string;
 }
 
 function createVignetteElement(options: VignetteOptions): HTMLDivElement {
-  const { color = "#09090b", opacity = 0.9, shape = "ellipse 55% 55% at 50% 50%" } = options;
+  const { color = "#09090b", opacity = 1, shape = "ellipse 55% 55% at 50% 50%" } = options;
 
   const overlay = document.createElement("div");
   overlay.className = "sr-vignette";
@@ -28,7 +28,7 @@ function createVignetteElement(options: VignetteOptions): HTMLDivElement {
   overlay.style.inset = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
-  overlay.style.background = `radial-gradient(${shape}, ${color} 0%, rgba(9, 9, 11, 0.85) 45%, rgba(9, 9, 11, 0) 80%)`;
+  overlay.style.background = `radial-gradient(${shape}, ${color} 0%, rgba(9, 9, 11, 0.95) 18%, rgba(9, 9, 11, 0.75) 38%, rgba(9, 9, 11, 0.5) 58%, rgba(9, 9, 11, 0.25) 78%, rgba(9, 9, 11, 0) 100%)`;
   overlay.style.opacity = `${opacity}`;
   overlay.style.pointerEvents = "none";
   overlay.style.borderRadius = "inherit";

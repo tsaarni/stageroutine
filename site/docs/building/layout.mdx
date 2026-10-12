@@ -9,6 +9,36 @@ For details on stage units and screen coordinates, see [Coordinates](./coordinat
 
 ![StageRoutine Layout Modes](/img/layout-modes.svg)
 
+## Immediate vs Animated
+
+By default, layouts set positions immediately.
+To animate elements into place, pass `animate` in the options.
+
+Pass `true` for default timing:
+
+```typescript
+layout.vstack([card1, card2, card3], {
+  y: 18,
+  animate: true,
+});
+```
+
+Pass a callback for custom easing, duration, or staggered delays:
+
+```typescript
+layout.vstack([card1, card2, card3], {
+  animate: (coord, el, index) =>
+    to(coord).duration(0.8).ease("quartOut").delay(index * 0.1),
+});
+```
+
+Callback parameters:
+- `coord`: Target coordinate (`x` or `y`) calculated by the layout.
+- `el`: Element being positioned.
+- `index`: Element index in the layout, useful for staggered delays.
+
+The `animate` option works with every layout method.
+
 ## Vertical Stacks
 
 Use `layout.vstack` to arrange elements in a column from top to bottom.
@@ -137,6 +167,38 @@ layout.circle([node1, node2, node3, node4], {
 });
 ```
 
+## Group Transform
+
+Use `layout.group` to scale and reposition a set of elements as a rigid body.
+Relative arrangement is preserved — elements move and shrink together.
+
+```typescript
+layout.group([card1, card2, connector], {
+  scale: 0.6,                // Uniform scale factor (default: 1)
+  position: [120, 20],       // Target center [x, y] in stage units
+});
+```
+
+Connectors in the group have their `labelScale` adjusted instead of `scale`,
+so label text stays readable.
+
+Options:
+- `scale`: Uniform scale factor applied around the origin (default: `1`).
+- `position`: Target center `[x, y]` in stage units. Default: current bounding center.
+- `origin`: Transform origin `[x, y]` in stage units. Default: bounding-box center of the elements.
+- `animate`: Position transition builder callback or `true`.
+- `duration`: Duration in seconds when `animate: true` (default: `0.6`).
+
+```typescript
+// Animate the group to a corner and shrink it
+layout.group([diagram, label, conn], {
+  scale: 0.5,
+  position: [130, 15],
+  animate: true,
+  duration: 0.8,
+});
+```
+
 ## Divider Lines
 
 Add `rule: true` to draw divider lines in gutters between elements:
@@ -153,26 +215,3 @@ layout.hstack([col1, col2], {
   rule: { borderStyle: "dashed", bracket: true },
 });
 ```
-
-## Animating Layouts
-
-By default, layouts update positions immediately.
-To animate elements into their new positions, pass a callback to `animate`.
-
-The layout calculates the target `x` and `y` coordinates, then calls your callback for each axis to build the transition.
-
-```typescript
-layout.vstack([card1, card2, card3], {
-  animate: (coord, el, index) =>
-    to(coord).duration(0.8).ease("quartOut").delay(index * 0.1),
-});
-
-stage.scene("Details").with(card1, card2, card3);
-```
-
-Callback parameters:
-- `coord`: Target coordinate (`x` or `y`) calculated by the layout.
-- `el`: Element being positioned.
-- `index`: Element index in the layout, useful for staggered delays.
-
-To use default timing without custom easing or delay, pass `animate: true`.

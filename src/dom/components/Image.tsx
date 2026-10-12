@@ -3,7 +3,7 @@
  */
 
 import { type DOMElement, type ElementOptions, mount } from "../element";
-import { type ImageFit, MediaSurface } from "./media";
+import { type ImageFit, MediaSurface } from "./Media";
 
 export type { ImageFit };
 

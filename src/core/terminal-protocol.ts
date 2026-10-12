@@ -32,6 +32,10 @@ export interface TerminalOpenMessage {
   command?: string;
   /** Working directory, relative to the server root (default: server root). */
   cwd?: string;
+  /** Environment variables passed to the shell process. */
+  env?: Record<string, string>;
+  /** Shell command and arguments. Default: the user's login shell. */
+  shell?: string[];
   /** Grid width in character cells. */
   cols: number;
   /** Grid height in character cells. */

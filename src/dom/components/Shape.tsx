@@ -21,7 +21,7 @@ import {
   resolveTailLocalPoint,
 } from "../geometry";
 import { isDynamicPath, type PathFunction, type PathRuntimeContext, paths } from "../paths";
-import { type PingHandle, spawnPingPacket } from "./ping";
+import { type PingHandle, spawnPingPacket } from "./Ping";
 
 export type { PathFunction };
 

@@ -1479,6 +1479,9 @@ export class Stage {
     this.viewport.style.flexShrink = "0";
     this.viewport.style.containerType = "size";
     this.viewport.style.setProperty(STAGE_UNIT_VAR, `calc(100cqh / ${STAGE_UNITS_TALL})`);
+    if (this.options.scale !== undefined && this.options.scale !== 1) {
+      this.viewport.style.setProperty("--sr-scale", String(this.options.scale));
+    }
     this.viewport.style.transformOrigin = "center center";
     this.viewport.style.zIndex = "1";
     this.viewport.style.userSelect = "none";

@@ -3,57 +3,60 @@ title: BrowserWindow
 sidebar_position: 8
 ---
 
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
 # BrowserWindow
 
-Show a webpage inside a browser window. The page accepts clicks, scrolling, and keyboard input.
+An interactive webpage inside a browser frame.
 
-```typescript
+The page runs in an iframe with its own document and JavaScript context.
+
+<DemoFrame src="/stageroutine/previews/browser-window.html" />
+
+```typescript preview="browser-window.html"
+// hide-start
+import { Stage } from "stageroutine";
+const stage = new Stage();
+// hide-end
 import { BrowserWindow } from "stageroutine";
 
 const browser = BrowserWindow({
-  url: "http://localhost:3000",
+  url: "../browser-demo/index.html",
   title: "Application demo",
-  position: [80, 45],
+  position: "center",
+  width: 240,
+  height: 86,
+  // hide-start
+  theme: { fontSizeKicker: "0.85rem" },
+  // hide-end
   origin: "center",
 });
 
+// hide-start
 stage.scene("Demo").with(browser);
 stage.pause();
+stage.mount("#stage");
+// hide-end
 ```
 
-The default size is 120 × 65 stage units. Set `width` and `height` to change it.
-The default title is `"Browser"`. Set `interactive: false` to disable page input (default: `true`).
+Default size: 120 × 65 stage units. `interactive: false` disables page input (default: `true`).
 
-## Window controls
-
-Click the reload button to load the configured URL again. Click the address to open that URL in a new tab.
-The address shows the configured URL, even after following links inside the page.
-
-## Stepping backward
-
-Forward steps keep an unchanged page running while it remains visible.
-Stepping backward reloads the URL recorded for the restored step, including when the URL has not changed.
-Hiding the window unloads the page. Showing it again starts a fresh load.
+Assign a new `url` to load another page:
 
 ```typescript
 browser.url = "http://localhost:3000/settings";
-stage.pause();
 ```
 
-Going back restores the earlier URL. Reloading resets the page document, but keeps cookies, saved website data, and server changes.
+## Navigation
 
-## Loading and embedding
+Back and Forward use the browser’s Navigation API. Address updates read the iframe’s current URL. These controls work when the page shares the presentation’s protocol, host, and port. For other sites, the address shows the configured URL and history buttons stay disabled.
 
-A loading message covers the page until its iframe emits `load`. The website may continue loading data afterward.
-Reload speed depends on the website and network.
+Reload opens the configured URL again. The address links to the displayed URL in a new tab.
 
-Some websites block iframe embedding through `X-Frame-Options` or CSP `frame-ancestors`.
-Use a page that allows embedding, or open it through the address link.
-The browser cannot reliably detect blocked embeds. See the [iframe documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
+Click outside the window to return keyboard control to the presentation.
 
-Keyboard focus stays inside the webpage while interacting with it. Click outside the window to use stage navigation keys.
-Embedded pages can run their own animations and timers while the stage rests. The window adds no animation loop.
+## Embedding limits
 
-## API reference
+The page must allow iframe embedding. Sites can block it with `X-Frame-Options` or CSP `frame-ancestors`. Blocked pages may remain on the loading screen. See [iframe embedding limits](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
 
-See [`BrowserWindow`](../api/functions/BrowserWindow.md) for configuration options.
+See the [BrowserWindow API reference](../api/functions/BrowserWindow.md) for all options.

@@ -166,25 +166,7 @@ export function Kicker(label: string, options?: KickerOptions): DOMElement;
  */
 export function LaserPointer(options?: LaserPointerOptions): OverlayPlugin & LaserPointerController;
 
-/**
- * Creates a LiveTerminal element on stage.
- *
- * The terminal runs its command through the terminal server started by
- * `stageRoutine({ terminal: true })` or `stageroutine dev --terminal`. Live
- * sessions are never part of a production build: without a reachable server the
- * element renders `lines` instead.
- * @example ```tsx
- * const deploy = LiveTerminal({
- *   x: "center",
- *   y: "center",
- *   command: "kubectl -n demo rollout status deploy/api",
- *   lines: ["$ kubectl -n demo rollout status deploy/api", "deployment \"api\" successfully rolled out"],
- * });
- *
- * // Step 3 of the talk: run it again for the audience.
- * deploy.restart();
- * ```
- */
+/** Creates an interactive shell for live demos. */
 export function LiveTerminal(options?: LiveTerminalOptions): LiveTerminalElement;
 
 /**
@@ -1297,21 +1279,11 @@ export interface LifelineOptions extends ElementOptions {
 
 /** Public controls for a live terminal. @category Components */
 export interface LiveTerminalElement extends DOMElement {
-    /** Command used on the next restart. Default: an interactive shell. */
-    command: string;
     /** Header label. */
     title: string;
     /** Session state: `"idle"`, `"running"`, `"exited"`, or `"offline"`. */
     readonly status: TerminalStatus;
-    /**
-     * Types text into the process, as if it came from the keyboard. Text sent while
-     * the session is still connecting is delivered as soon as it attaches.
-     */
-    send(data: string): void;
-    /**
-     * Stops the process and starts a fresh session with an empty screen, running the
-     * command again and typing `initialInput` when the session attaches.
-     */
+    /** Stops the shell, clears the screen, and runs setup again in a fresh shell. */
     restart(): void;
     /** Gives the terminal keyboard focus so typing reaches the process. */
     focus(): void;
@@ -1323,34 +1295,20 @@ export interface LiveTerminalElement extends DOMElement {
  * @inline
  */
 export interface LiveTerminalOptions extends ElementOptions {
-    /** Shell command to run when the terminal first enters a scene. Default: an interactive shell. */
+    /** Setup command run before the interactive shell opens. Default: none. */
     command?: string;
-    /** Working directory for the command, relative to the project root. Default: project root. */
+    /** Working directory for the shell, relative to the project root. Default: project root. */
     cwd?: string;
-    /** Header label. Default: the command, or `"shell"`. */
+    /** Header label. Default: `"shell"`. */
     title?: string;
-    /**
-     * Frame height in terminal rows. The card then hugs exactly this many lines
-     * instead of stretching to `height`, so a short command leaves no empty rows.
-     * Default: the card is as tall as `height`.
-     */
+    /** Terminal rows. Default: fit to `height` (44 stage units by default). */
     rows?: number;
-    /**
-     * Static transcript shown in place of the live session when no terminal server
-     * is reachable: static builds, single-file exports, or a stopped dev server.
-     */
+    /** Transcript shown without a terminal server. Default: no lines. */
     lines?: string[];
     /** Whether keystrokes typed into the terminal reach the process. Default: `true`. */
     interactive?: boolean;
     /** Whether the terminal takes keyboard focus on scene entry. Default: `false`. */
     autoFocus?: boolean;
-    /** Whether entering a scene runs the command again. Default: `false` (sessions persist). */
-    restartOnActivate?: boolean;
-    /**
-     * Text typed into the process whenever a session starts, including after a
-     * restart. Default: nothing is typed.
-     */
-    initialInput?: string;
     /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
     restartButton?: boolean;
 }
@@ -2779,7 +2737,7 @@ export interface StageRoutinePluginOptions {
      */
     singleFile?: boolean;
     /**
-     * Serve live terminal sessions so `LiveTerminal` elements can run real commands.
+     * Serve interactive shells for presenter-led `LiveTerminal` demos.
      * Pass `true` for defaults, or options to tune the server. Defaults to disabled.
      * Ignored when `singleFile` is enabled, because a single file has no server.
      */
@@ -2798,7 +2756,7 @@ export interface TerminalServerOptions {
     cwd?: string;
     /** Extra environment variables for every session. */
     env?: Record<string, string>;
-    /** Shell that runs commands and interactive sessions. Default: `$SHELL`, then `/bin/bash`. */
+    /** Interactive shell. Default: `$SHELL`, then `/bin/bash`. */
     shell?: string;
     /** Maximum concurrent sessions. Default: `8`. */
     maxSessions?: number;

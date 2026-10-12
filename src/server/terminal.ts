@@ -79,7 +79,7 @@ export interface TerminalServerOptions {
   cwd?: string;
   /** Extra environment variables for every session. */
   env?: Record<string, string>;
-  /** Shell that runs commands and interactive sessions. Default: `$SHELL`, then `/bin/bash`. */
+  /** Interactive shell. Default: `$SHELL`, then `/bin/bash`. */
   shell?: string;
   /** Maximum concurrent sessions. Default: `8`. */
   maxSessions?: number;
@@ -96,7 +96,7 @@ export interface TerminalServerOptions {
 
 interface Session {
   readonly id: string;
-  command?: string;
+  readonly command: string | undefined;
   readonly cwd: string;
   cols: number;
   rows: number;
@@ -328,7 +328,9 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     const height = gridSize(rows, MIN_ROWS, MAX_ROWS, 24);
 
     try {
-      const child = pty.spawn(shell, session.command ? ["-l", "-c", session.command] : [], {
+      // Setup may change directory or export variables for the interactive shell.
+      const args = session.command ? ["-c", `${session.command}\nexec "$0"`, shell] : [];
+      const child = pty.spawn(shell, args, {
         name: "xterm-256color",
         cols: width,
         rows: height,
@@ -440,13 +442,7 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     }
   }
 
-  async function handleRestart(
-    session: Session,
-    cols: number,
-    rows: number,
-    command: string,
-  ): Promise<void> {
-    session.command = command;
+  async function handleRestart(session: Session, cols: number, rows: number): Promise<void> {
     clearReap(session);
     session.process?.kill();
     session.process = null;
@@ -504,7 +500,7 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
           if (current) resize(current, message.cols, message.rows);
           break;
         case "restart":
-          if (current) void handleRestart(current, message.cols, message.rows, message.command);
+          if (current) void handleRestart(current, message.cols, message.rows);
           break;
       }
     });

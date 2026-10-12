@@ -1,8 +1,4 @@
-/**
- * LiveTerminal element. Runs a real command on the development machine and
- * streams its output onto the stage, with an optional interactive prompt.
- * Falls back to a static transcript when no terminal server is reachable.
- */
+/** Interactive shell for presenter-led live demos. */
 
 import "@xterm/xterm/css/xterm.css";
 import "./LiveTerminal.css";
@@ -15,12 +11,6 @@ import { attachRangeSelection, type RangeSelectionController } from "../interact
 import { createTerminalFrame, createTerminalLines, type TerminalFrame } from "./terminal-chrome";
 import { type TerminalFailure, TerminalSession, terminalEndpoint } from "./terminal-session";
 
-/** Quiet period after the last output before `initialInput` is typed. */
-const SEED_QUIET_MS = 150;
-
-/** Longest wait for a quiet session before typing `initialInput` anyway. */
-const SEED_DEADLINE_MS = 1200;
-
 /** Internal lifecycle of a live terminal, mapped onto `TerminalStatus`. */
 type TerminalPhase = "idle" | "connecting" | "running" | "exited" | "offline" | "failed";
 
@@ -30,55 +20,31 @@ type TerminalPhase = "idle" | "connecting" | "running" | "exited" | "offline" | 
  * @inline
  */
 export interface LiveTerminalOptions extends ElementOptions {
-  /** Shell command to run when the terminal first enters a scene. Default: an interactive shell. */
+  /** Setup command run before the interactive shell opens. Default: none. */
   command?: string;
-  /** Working directory for the command, relative to the project root. Default: project root. */
+  /** Working directory for the shell, relative to the project root. Default: project root. */
   cwd?: string;
-  /** Header label. Default: the command, or `"shell"`. */
+  /** Header label. Default: `"shell"`. */
   title?: string;
-  /**
-   * Frame height in terminal rows. The card then hugs exactly this many lines
-   * instead of stretching to `height`, so a short command leaves no empty rows.
-   * Default: the card is as tall as `height`.
-   */
+  /** Terminal rows. Default: fit to `height` (44 stage units by default). */
   rows?: number;
-  /**
-   * Static transcript shown in place of the live session when no terminal server
-   * is reachable: static builds, single-file exports, or a stopped dev server.
-   */
+  /** Transcript shown without a terminal server. Default: no lines. */
   lines?: string[];
   /** Whether keystrokes typed into the terminal reach the process. Default: `true`. */
   interactive?: boolean;
   /** Whether the terminal takes keyboard focus on scene entry. Default: `false`. */
   autoFocus?: boolean;
-  /** Whether entering a scene runs the command again. Default: `false` (sessions persist). */
-  restartOnActivate?: boolean;
-  /**
-   * Text typed into the process whenever a session starts, including after a
-   * restart. Default: nothing is typed.
-   */
-  initialInput?: string;
   /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
   restartButton?: boolean;
 }
 
 /** Public controls for a live terminal. @category Components */
 export interface LiveTerminalElement extends DOMElement {
-  /** Command used on the next restart. Default: an interactive shell. */
-  command: string;
   /** Header label. */
   title: string;
   /** Session state: `"idle"`, `"running"`, `"exited"`, or `"offline"`. */
   readonly status: TerminalStatus;
-  /**
-   * Types text into the process, as if it came from the keyboard. Text sent while
-   * the session is still connecting is delivered as soon as it attaches.
-   */
-  send(data: string): void;
-  /**
-   * Stops the process and starts a fresh session with an empty screen, running the
-   * command again and typing `initialInput` when the session attaches.
-   */
+  /** Stops the shell, clears the screen, and runs setup again in a fresh shell. */
   restart(): void;
   /** Gives the terminal keyboard focus so typing reaches the process. */
   focus(): void;
@@ -109,17 +75,11 @@ function resolveColor(host: HTMLElement, expression: string, fallback: string): 
 class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement {
   private readonly frame: TerminalFrame;
   private readonly cwd: string | undefined;
+  private readonly command: string | undefined;
   private readonly lines: readonly string[];
   private readonly interactive: boolean;
   private readonly autoFocus: boolean;
-  private readonly restartOnActivate: boolean;
   private readonly rowCount: number | undefined;
-  private readonly initialInput: string | undefined;
-  /** Set while a fresh session owes `initialInput`. */
-  private seedPending = true;
-  private seedTimer: ReturnType<typeof setTimeout> | null = null;
-  private seedDeadline: ReturnType<typeof setTimeout> | null = null;
-
   private session: TerminalSession | null = null;
   private terminal: XTerm | null = null;
   private fitAddon: FitAddon | null = null;
@@ -129,9 +89,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
   private exitCode = 0;
   private built = false;
   private offline = false;
-  /** Text sent before the session attached, flushed once it is ready. */
-  private queuedInput: string[] = [];
-  private commandText: string;
   private titleText: string;
 
   constructor(options: LiveTerminalOptions = {}) {
@@ -142,8 +99,7 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
       // A row sized frame takes its height from the grid, so it sets none.
       ...(rows === undefined ? { height: options.height ?? 44 } : { height: options.height }),
     };
-    const command = settings.command ?? "";
-    const title = settings.title ?? (command === "" ? "shell" : command);
+    const title = settings.title ?? "shell";
     const frame = createTerminalFrame({ title, className: "sr-terminal-live" });
     if (rows !== undefined && options.height === undefined) {
       frame.body.className = "sr-terminal-screen";
@@ -155,15 +111,13 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     super("LiveTerminal", frame.root, settings);
 
     this.frame = frame;
-    this.commandText = command;
     this.titleText = title;
     this.cwd = settings.cwd;
+    this.command = settings.command;
     this.lines = settings.lines ?? [];
     this.interactive = settings.interactive ?? true;
     this.autoFocus = settings.autoFocus ?? false;
-    this.restartOnActivate = settings.restartOnActivate ?? false;
     this.rowCount = rows;
-    this.initialInput = settings.initialInput;
 
     if (settings.restartButton) {
       this.frame.setRestart(() => this.restartSession());
@@ -171,14 +125,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
     this.onActivate(() => this.activate());
     this.onUnmount(() => this.dispose());
-  }
-
-  get command(): string {
-    return this.commandText;
-  }
-
-  set command(value: string) {
-    this.commandText = value;
   }
 
   get title(): string {
@@ -204,63 +150,14 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     }
   }
 
-  send(data: string): void {
-    const session = this.session;
-    if (!session) return;
-    if (session.isAttached) {
-      session.input(data);
-      return;
-    }
-    if (this.phase === "connecting") {
-      this.queuedInput.push(data);
-    }
-  }
-
   restart(): void {
     this.restartSession();
   }
 
-  /** Starts a fresh session, which will be seeded with `initialInput` again. */
   private restartSession(): void {
     const terminal = this.terminal;
     if (!terminal) return;
-    this.clearSeedTimers();
-    this.seedPending = true;
-    this.session?.restart(terminal.cols, terminal.rows, this.commandText);
-  }
-
-  /**
-   * Types `initialInput` once the session stops printing. Typing into a process
-   * that is still starting up echoes the text before its prompt appears.
-   */
-  private scheduleSeed(): void {
-    if (this.initialInput === undefined) return;
-    if (this.seedTimer) {
-      clearTimeout(this.seedTimer);
-      this.seedTimer = null;
-    }
-    this.seedTimer = setTimeout(() => this.sendSeed(), SEED_QUIET_MS);
-    this.seedDeadline ??= setTimeout(() => this.sendSeed(), SEED_DEADLINE_MS);
-  }
-
-  private sendSeed(): void {
-    if (!this.seedPending) return;
-    this.seedPending = false;
-    this.clearSeedTimers();
-    if (this.initialInput !== undefined) {
-      this.session?.input(this.initialInput);
-    }
-  }
-
-  private clearSeedTimers(): void {
-    if (this.seedTimer) {
-      clearTimeout(this.seedTimer);
-      this.seedTimer = null;
-    }
-    if (this.seedDeadline) {
-      clearTimeout(this.seedDeadline);
-      this.seedDeadline = null;
-    }
+    this.session?.restart(terminal.cols, terminal.rows);
   }
 
   focus(): void {
@@ -280,9 +177,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     this.fit();
     // Also reconnects after the server went away and came back.
     this.session?.open(terminal.cols, terminal.rows);
-    if (this.restartOnActivate && this.session?.isAttached) {
-      this.restartSession();
-    }
     if (this.autoFocus) terminal.focus();
   }
 
@@ -342,13 +236,12 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
     this.session = new TerminalSession({
       id: this.id,
-      command: this.commandText,
+      command: this.command,
       cwd: this.cwd,
       handlers: {
         ready: (info) => this.handleReady(info),
         data: (chunk) => {
           this.terminal?.write(chunk);
-          if (this.seedPending) this.scheduleSeed();
         },
         exit: (code) => this.handleExit(code),
         fail: (message) => this.handleFailure(message),
@@ -385,13 +278,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
     this.phase = info.running ? "running" : "exited";
     this.syncStatus();
-
-    const queued = this.queuedInput.splice(0);
-    for (const chunk of queued) {
-      this.session?.input(chunk);
-    }
-
-    if (this.seedPending) this.scheduleSeed();
   }
 
   private handleExit(code: number): void {
@@ -499,7 +385,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
   /** Drops the viewport and its session. */
   private release(): void {
-    this.clearSeedTimers();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
@@ -518,28 +403,7 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
   }
 }
 
-/**
- * Creates a LiveTerminal element on stage.
- *
- * The terminal runs its command through the terminal server started by
- * `stageRoutine({ terminal: true })` or `stageroutine dev --terminal`. Live
- * sessions are never part of a production build: without a reachable server the
- * element renders `lines` instead.
- *
- * @category Components
- * @example
- * ```tsx
- * const deploy = LiveTerminal({
- *   x: "center",
- *   y: "center",
- *   command: "kubectl -n demo rollout status deploy/api",
- *   lines: ["$ kubectl -n demo rollout status deploy/api", "deployment \"api\" successfully rolled out"],
- * });
- *
- * // Step 3 of the talk: run it again for the audience.
- * deploy.restart();
- * ```
- */
+/** Creates an interactive shell for live demos. @category Components */
 export function LiveTerminal(options: LiveTerminalOptions = {}): LiveTerminalElement {
   return mount(new LiveTerminalElementImpl(options));
 }

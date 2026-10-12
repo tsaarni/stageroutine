@@ -45,7 +45,7 @@ export interface StageRoutinePluginOptions {
    */
   singleFile?: boolean;
   /**
-   * Serve live terminal sessions so `LiveTerminal` elements can run real commands.
+   * Serve interactive shells for presenter-led `LiveTerminal` demos.
    * Pass `true` for defaults, or options to tune the server. Defaults to disabled.
    * Ignored when `singleFile` is enabled, because a single file has no server.
    */

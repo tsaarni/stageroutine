@@ -74,7 +74,11 @@
   .sr-terminal-block.sr-terminal-live > .sr-terminal-body {
     min-height: 0;
     line-height: normal;
-    overflow-y: auto;
+    overflow: auto;
+
+    & .sr-terminal-line {
+      white-space: pre;
+    }
   }
 
   /* Screen inset. xterm measures its parent box and subtracts this padding, which is
@@ -88,10 +92,26 @@
 
   /* Caption shown when no terminal server is available. */
   .sr-terminal-note {
+    white-space: pre;
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
     color: var(--sr-text-dim);
     margin-bottom: 0.9rem;
+  }
+
+  .sr-terminal-block.sr-terminal-live {
+    & .sr-terminal-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    & .sr-terminal-dot,
+    & .sr-terminal-status,
+    & .sr-terminal-action {
+      flex-shrink: 0;
+    }
   }
 }
 

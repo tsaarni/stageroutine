@@ -7,11 +7,35 @@ import { DemoFrame } from "@site/src/components/DemoFrame";
 
 # LiveTerminal
 
-`LiveTerminal` runs a real command on your machine and streams its output onto the stage. Use it to demo a CLI, narrate a build or test run, or hand the prompt to the audience.
+An interactive shell for live demos, with optional setup commands.
 
-The preview below shows the fallback transcript. A live session needs a running dev server.
+The dev server runs a local pseudo-terminal (PTY) through `node-pty`. `xterm.js` renders the terminal. A WebSocket carries input, output, and resize events.
+
+The preview shows fallback text.
 
 <DemoFrame src="/stageroutine/previews/live-terminal.html" />
+
+## Enable the terminal server
+
+:::warning Command execution
+
+Commands run on the server’s machine with the permissions of the user running StageRoutine.
+
+:::
+
+Add `--terminal` to the `dev` command in `package.json` to start the terminal server with your presentation:
+
+```json
+{
+  "scripts": {
+    "dev": "stageroutine dev --terminal"
+  }
+}
+```
+
+The server accepts local connections only.
+
+## Add a terminal
 
 ```typescript preview="live-terminal.html"
 // hide-start
@@ -20,135 +44,42 @@ const stage = new Stage();
 // hide-end
 import { LiveTerminal } from "stageroutine";
 
-const deploy = LiveTerminal({
+const demo = LiveTerminal({
   position: "center",
-  width: 150,
-  height: 74,
-  title: "kubectl -n demo rollout status",
-  command: "kubectl -n demo rollout status deploy/api",
-  lines: [
-    "$ kubectl -n demo rollout status deploy/api",
-    "Waiting for deployment \"api\" rollout to finish...",
-    "deployment \"api\" successfully rolled out",
-  ],
+  width: 210,
+  rows: 6,
+  title: "Live demo",
+  cwd: ".",
+  command: "export DEMO_MODE=1",
+  restartButton: true,
+  lines: ["$ export DEMO_MODE=1", "$ pnpm test", "Tests: 42 passed"],
+  // hide-start
+  theme: { fontSizeCode: "1rem", fontSizeKicker: "0.85rem" },
+  // hide-end
 });
 // hide-start
-stage.scene("Live").with(deploy);
+stage.scene("Live demo").with(demo);
 stage.pause();
 stage.mount("#stage");
 // hide-end
 ```
 
-A worked deck lives in `examples/terminal` of the repository. Run it with `pnpm --filter terminal-presentation dev`.
+`cwd` selects a folder inside the project (default: project root). `command` runs before a new shell opens (default: none). Folder changes and exported variables carry into the shell.
 
-## Turning it on
+`rows` sets the height in text rows. If omitted, the terminal fits `height` (default: 44 stage units).
 
-Live sessions are opt in, because they run commands with your user account:
+## Session behavior
 
-```bash
-stageroutine dev --terminal
-```
+Sessions persist across scene changes and page reloads. Setup runs only for a new session or an explicit restart.
 
-```ts
-// vite.config.ts
-stageRoutine({ terminal: true });
-```
+`restartButton: true` adds a header button (default: `false`). It stops the shell, clears the screen, and runs setup again. `demo.restart()` does the same.
 
-The server accepts connections from the loopback interface only, and every session starts inside your project root. It is never part of a production build.
+`autoFocus: true` focuses the terminal on scene entry (default: `false`). `interactive: false` disables typing (default: `true`). Click outside the terminal to return keyboard control to the presentation.
 
-Each server run also mints a random token. The page fetches it over HTTP and offers it as a WebSocket subprotocol, so a socket from anything else is refused before a process starts. Pass `terminal: { token: "..." }` to pin your own.
+Sessions stop with the dev server, or after 2 minutes without a connected page by default.
 
-## When no server is available
+## Fallback text
 
-Static builds and `--single-file` exports have no server, and a live session is impossible. Then the element renders `lines` with the same window chrome as [TerminalBlock](./terminal-block), so a deck keeps a readable transcript instead of an empty box. The same happens if the dev server stops.
+`lines` is text you provide for when a live session cannot start: the terminal server is disabled or cannot be reached. Default: `[]`.
 
-```ts
-LiveTerminal({
-  command: "pnpm test",
-  lines: ["$ pnpm test", "✓ 42 tests passed in 1.2s"],
-});
-```
-
-Rows in `lines` are selectable like `TerminalBlock` rows when `interactive` is left at its default.
-
-## Controlling the session
-
-The element exposes the running session:
-
-```ts
-const demo = LiveTerminal({ command: "vmstat 1" });
-
-demo.status;        // "idle" | "running" | "exited" | "offline"
-demo.send("q");     // type into the process
-demo.restart();     // stop it and start a fresh session
-demo.focus();       // send keystrokes to the process
-```
-
-Set `command` before calling `restart()` to run a different command:
-
-```ts
-demo.command = "pnpm build";
-demo.restart();
-```
-
-The cursor stays steady, including while the terminal has focus.
-
-`restartButton: true` puts the same `restart()` in the window header, where the presenter can
-reach it without the console:
-
-```ts
-const deploy = LiveTerminal({ rows: 8, restartButton: true, command: "pnpm deploy" });
-```
-
-The button stays out of the way elsewhere: it is hidden when the element is showing a transcript
-instead of a session, it does not steal keyboard focus, and its click never advances the deck.
-Restarting throws the session away, so give `initialInput` when a fresh session should start with
-something in it.
-
-A session survives navigation. Walking back to a scene shows the same scrollback, and reloading the page reattaches to the process that is still running. Sessions stop after two minutes without a connected client, and when the dev server stops.
-
-Pass `restartOnActivate: true` for a deck that must replay the same command from a clean screen every time the scene is entered.
-
-## Frames and rows
-
-Size a terminal in rows, the way every other terminal is sized, and the card hugs the grid:
-
-```ts
-LiveTerminal({ rows: 13, command: "pnpm release" });
-```
-
-Thirteen rows are thirteen rows: the card is as tall as the grid plus its window chrome. Give
-`height` in stage units instead and the card keeps that size, so a command that prints two
-lines leaves the rest of the frame empty.
-
-A command that is still running fills its rows as it prints. A session that has printed nothing
-yet shows an empty frame, so let the deck type into it. `initialInput` runs on every new session,
-including one started by the header button:
-
-```ts
-const shell = LiveTerminal({
-  rows: 11,
-  initialInput: "ls -l\n",   // typed once the session attaches
-  restartButton: true,
-});
-```
-
-## Typing during a talk
-
-The terminal only takes over the keyboard after a click, so normal navigation keys keep working. While the prompt has focus, keys go to the process and the deck stays put. Set `autoFocus: true` to focus on scene entry, and `interactive: false` for a display-only terminal.
-
-## Requirements
-
-The server runs commands through [node-pty](https://github.com/microsoft/node-pty), which is an optional dependency. Install it in the project that runs the dev server:
-
-```bash
-pnpm add -D node-pty
-```
-
-Without it the server reports the missing package, and the element keeps showing its fallback transcript.
-
-The element renders the session with [xterm.js](https://xtermjs.org), which is bundled only in presentations that use it.
-
-## API Reference
-
-For configuration options, see the [`LiveTerminal`](../api/functions/LiveTerminal.md) reference.
+See the [LiveTerminal API reference](../api/functions/LiveTerminal.md) for all options and controls.

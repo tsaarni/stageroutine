@@ -33,6 +33,11 @@
     color: var(--sr-text);
     font-size: 1.4rem;
     cursor: pointer;
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
   }
 
   .sr-browser-address {

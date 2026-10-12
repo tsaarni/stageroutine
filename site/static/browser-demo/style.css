@@ -1,0 +1,33 @@
+:root {
+  font:
+    14px / 1.5 system-ui,
+    sans-serif;
+  color: #e4e4e7;
+  background: #111827;
+}
+body {
+  margin: 0;
+  padding: 20px 28px;
+}
+main {
+  max-width: 560px;
+  margin: auto;
+}
+span {
+  color: #6ee7b7;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+h1 {
+  margin: 6px 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+p {
+  margin: 0 0 12px;
+  color: #a1a1aa;
+}
+a {
+  color: #6ee7b7;
+  text-underline-offset: 3px;
+}

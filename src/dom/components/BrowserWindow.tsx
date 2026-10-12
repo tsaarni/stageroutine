@@ -31,6 +31,25 @@ function resolvePageURL(value: string): string {
   return url.href;
 }
 
+/** Navigation API surface used by the window toolbar. */
+interface PageNavigation extends EventTarget {
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
+  back(): { committed: Promise<unknown>; finished: Promise<unknown> };
+  forward(): { committed: Promise<unknown>; finished: Promise<unknown> };
+}
+
+function navigationButton(label: string, glyph: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "sr-browser-action";
+  button.textContent = glyph;
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.disabled = true;
+  return button;
+}
+
 /** @internal */
 class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
@@ -41,6 +60,9 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
 
   private readonly frame: TerminalFrame;
   private readonly address: HTMLAnchorElement;
+  private readonly backButton: HTMLButtonElement;
+  private readonly forwardButton: HTMLButtonElement;
+  private removeNavigationListeners: (() => void) | null = null;
   private readonly placeholder: HTMLDivElement;
   private readonly interactive: boolean;
   private iframe: HTMLIFrameElement | null = null;
@@ -54,6 +76,8 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     const frame = createTerminalFrame({ title: label, className: "sr-browser-window" });
     const toolbar = document.createElement("div");
     toolbar.className = "sr-browser-toolbar";
+    const back = navigationButton("Back", "←");
+    const forward = navigationButton("Forward", "→");
     const reload = document.createElement("button");
     reload.type = "button";
     reload.className = "sr-browser-action";
@@ -66,9 +90,9 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     address.href = url;
     address.target = "_blank";
     address.rel = "noopener noreferrer";
-    address.title = "Open configured page in a new tab";
+    address.title = "Open page in a new tab";
     address.setAttribute("aria-label", `Open ${options.url} in a new tab`);
-    toolbar.append(reload, address);
+    toolbar.append(back, forward, reload, address);
     frame.root.insertBefore(toolbar, frame.body);
     frame.body.className = "sr-browser-body";
     const placeholder = document.createElement("div");
@@ -84,11 +108,21 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     });
     this.frame = frame;
     this.address = address;
+    this.backButton = back;
+    this.forwardButton = forward;
     this.placeholder = placeholder;
     this.source = options.url;
     this.label = label;
     this.interactive = options.interactive ?? true;
 
+    back.addEventListener("click", () => {
+      back.blur();
+      this.navigate("back");
+    });
+    forward.addEventListener("click", () => {
+      forward.blur();
+      this.navigate("forward");
+    });
     reload.addEventListener("click", () => {
       reload.blur();
       this.reload();
@@ -108,9 +142,7 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
   set url(value: string) {
     const url = resolvePageURL(value);
     this.source = value;
-    this.address.textContent = value;
-    this.address.href = url;
-    this.address.setAttribute("aria-label", `Open ${value} in a new tab`);
+    this.setAddress(value, url);
   }
 
   get title(): string {
@@ -150,6 +182,7 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     }
     iframe.addEventListener("load", () => {
       if (this.iframe !== iframe) return;
+      this.attachNavigation();
       iframe.style.visibility = "visible";
       this.placeholder.hidden = true;
       this.frame.body.setAttribute("aria-busy", "false");
@@ -161,10 +194,78 @@ class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElemen
     this.frame.body.appendChild(iframe);
   }
 
+  private pageNavigation(): PageNavigation | null {
+    try {
+      return (
+        (this.iframe?.contentWindow as (Window & { navigation?: PageNavigation }) | null)
+          ?.navigation ?? null
+      );
+    } catch {
+      // Cross-origin frames do not expose their navigation API.
+      return null;
+    }
+  }
+
+  private setAddress(value: string, url: string): void {
+    this.address.textContent = value;
+    this.address.href = url;
+    this.address.setAttribute("aria-label", `Open ${value} in a new tab`);
+  }
+
+  private syncAddress(): void {
+    let value = this.source;
+    try {
+      const current = this.iframe?.contentWindow?.location.href;
+      if (current && /^https?:/.test(current)) value = current;
+    } catch {
+      // Cross-origin frames do not expose their current URL.
+    }
+    this.setAddress(value, resolvePageURL(value));
+  }
+
+  private syncNavigation(): void {
+    this.syncAddress();
+    const navigation = this.pageNavigation();
+    this.backButton.disabled = !navigation?.canGoBack;
+    this.forwardButton.disabled = !navigation?.canGoForward;
+  }
+
+  private attachNavigation(): void {
+    this.removeNavigationListeners?.();
+    this.removeNavigationListeners = null;
+    const navigation = this.pageNavigation();
+    if (navigation) {
+      const sync = () => this.syncNavigation();
+      navigation.addEventListener("currententrychange", sync);
+      navigation.addEventListener("navigatesuccess", sync);
+      this.removeNavigationListeners = () => {
+        navigation.removeEventListener("currententrychange", sync);
+        navigation.removeEventListener("navigatesuccess", sync);
+      };
+    }
+    this.syncNavigation();
+  }
+
+  private navigate(direction: "back" | "forward"): void {
+    const navigation = this.pageNavigation();
+    if (!navigation || !(direction === "back" ? navigation.canGoBack : navigation.canGoForward)) {
+      return;
+    }
+    try {
+      const result = navigation[direction]();
+      void Promise.all([result.committed, result.finished]).catch(() => this.syncNavigation());
+    } catch {
+      this.syncNavigation();
+    }
+  }
+
   private releasePage(): void {
+    this.removeNavigationListeners?.();
+    this.removeNavigationListeners = null;
     this.iframe?.remove();
     this.iframe = null;
     this.loadedURL = null;
+    this.syncNavigation();
     this.placeholder.hidden = false;
     this.frame.body.setAttribute("aria-busy", "false");
   }

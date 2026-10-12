@@ -28,7 +28,7 @@ export interface TerminalOpenMessage {
   type: "open";
   /** Stable session key. Reopening a live id reattaches and replays its scrollback. */
   id: string;
-  /** Command to run. Omit for an interactive shell. */
+  /** Setup command run before the interactive shell opens. Default: none. */
   command?: string;
   /** Working directory, relative to the server root (default: server root). */
   cwd?: string;
@@ -51,10 +51,9 @@ export interface TerminalResizeMessage {
   rows: number;
 }
 
-/** Stops the process and runs the command again from a clean grid. */
+/** Stops the current shell and opens a fresh shell with a clean grid. */
 export interface TerminalRestartMessage {
   type: "restart";
-  command: string;
   cols: number;
   rows: number;
 }

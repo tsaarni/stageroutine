@@ -62,11 +62,6 @@ export class TerminalSession {
     },
   ) {}
 
-  /** True once the server confirmed the session. */
-  get isAttached(): boolean {
-    return this.attached;
-  }
-
   /** Connects, or does nothing while a socket is open or being opened. */
   open(cols: number, rows: number): void {
     if (this.socket || this.connecting || this.disposed) return;
@@ -145,9 +140,9 @@ export class TerminalSession {
     if (this.attached) this.post({ type: "resize", cols, rows });
   }
 
-  /** Stops the process and runs the command again. */
-  restart(cols: number, rows: number, command: string): void {
-    if (this.attached) this.post({ type: "restart", cols, rows, command });
+  /** Stops the current shell and opens a fresh shell. */
+  restart(cols: number, rows: number): void {
+    if (this.attached) this.post({ type: "restart", cols, rows });
   }
 
   /** Closes the socket. The server reaps the session after its idle timeout. */

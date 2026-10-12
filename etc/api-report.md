@@ -1274,7 +1274,7 @@ export interface LifelineOptions extends ElementOptions {
 
 /** Public controls for a live terminal. @category Components */
 export interface LiveTerminalElement extends DOMElement {
-    /** Command sent to the terminal server. */
+    /** Command used on the next restart. Default: an interactive shell. */
     command: string;
     /** Header label. */
     title: string;
@@ -2777,7 +2777,7 @@ export interface TerminalServerOptions {
     env?: Record<string, string>;
     /** Shell that runs commands and interactive sessions. Default: `$SHELL`, then `/bin/bash`. */
     shell?: string;
-    /** Maximum concurrent sessions. Default: `4`. */
+    /** Maximum concurrent sessions. Default: `8`. */
     maxSessions?: number;
     /** Milliseconds without an attached client before a session is killed. Default: `120000`. */
     idleTimeout?: number;

@@ -96,7 +96,7 @@ export interface TerminalServerOptions {
 
 interface Session {
   readonly id: string;
-  readonly command?: string;
+  command?: string;
   readonly cwd: string;
   cols: number;
   rows: number;
@@ -440,7 +440,13 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
     }
   }
 
-  async function handleRestart(session: Session, cols: number, rows: number): Promise<void> {
+  async function handleRestart(
+    session: Session,
+    cols: number,
+    rows: number,
+    command: string,
+  ): Promise<void> {
+    session.command = command;
     clearReap(session);
     session.process?.kill();
     session.process = null;
@@ -498,7 +504,7 @@ export function terminalServer(options: TerminalServerOptions = {}): PluginOptio
           if (current) resize(current, message.cols, message.rows);
           break;
         case "restart":
-          if (current) void handleRestart(current, message.cols, message.rows);
+          if (current) void handleRestart(current, message.cols, message.rows, message.command);
           break;
       }
     });

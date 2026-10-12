@@ -54,6 +54,7 @@ export interface TerminalResizeMessage {
 /** Stops the process and runs the command again from a clean grid. */
 export interface TerminalRestartMessage {
   type: "restart";
+  command: string;
   cols: number;
   rows: number;
 }

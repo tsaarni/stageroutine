@@ -146,8 +146,8 @@ export class TerminalSession {
   }
 
   /** Stops the process and runs the command again. */
-  restart(cols: number, rows: number): void {
-    if (this.attached) this.post({ type: "restart", cols, rows });
+  restart(cols: number, rows: number, command: string): void {
+    if (this.attached) this.post({ type: "restart", cols, rows, command });
   }
 
   /** Closes the socket. The server reaps the session after its idle timeout. */

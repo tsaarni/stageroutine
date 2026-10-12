@@ -84,6 +84,15 @@ demo.restart();     // stop it and start a fresh session
 demo.focus();       // send keystrokes to the process
 ```
 
+Set `command` before calling `restart()` to run a different command:
+
+```ts
+demo.command = "pnpm build";
+demo.restart();
+```
+
+The cursor stays steady, including while the terminal has focus.
+
 `restartButton: true` puts the same `restart()` in the window header, where the presenter can
 reach it without the console:
 

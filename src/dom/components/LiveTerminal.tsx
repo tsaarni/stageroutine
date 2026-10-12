@@ -64,7 +64,7 @@ export interface LiveTerminalOptions extends ElementOptions {
 
 /** Public controls for a live terminal. @category Components */
 export interface LiveTerminalElement extends DOMElement {
-  /** Command sent to the terminal server. */
+  /** Command used on the next restart. Default: an interactive shell. */
   command: string;
   /** Header label. */
   title: string;
@@ -125,7 +125,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
   private fitAddon: FitAddon | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private selection: RangeSelectionController | null = null;
-  private onFocusChange: (() => void) | null = null;
   private phase: TerminalPhase = "idle";
   private exitCode = 0;
   private built = false;
@@ -171,7 +170,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     }
 
     this.onActivate(() => this.activate());
-    this.onDeactivate(() => this.syncCursor());
     this.onUnmount(() => this.dispose());
   }
 
@@ -228,7 +226,7 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     if (!terminal) return;
     this.clearSeedTimers();
     this.seedPending = true;
-    this.session?.restart(terminal.cols, terminal.rows);
+    this.session?.restart(terminal.cols, terminal.rows, this.commandText);
   }
 
   /**
@@ -286,7 +284,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
       this.restartSession();
     }
     if (this.autoFocus) terminal.focus();
-    this.syncCursor();
   }
 
   /** Creates the xterm.js viewport and connects the session. */
@@ -340,11 +337,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     }
     terminal.onResize(({ cols, rows }) => this.session?.resize(cols, rows));
 
-    const onFocusChange = () => this.syncCursor();
-    body.addEventListener("focusin", onFocusChange);
-    body.addEventListener("focusout", onFocusChange);
-    this.onFocusChange = onFocusChange;
-
     this.resizeObserver = new ResizeObserver(() => this.fit());
     this.resizeObserver.observe(body);
 
@@ -393,7 +385,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
 
     this.phase = info.running ? "running" : "exited";
     this.syncStatus();
-    this.syncCursor();
 
     const queued = this.queuedInput.splice(0);
     for (const chunk of queued) {
@@ -481,14 +472,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     fitAddon.fit();
   }
 
-  /** Blinks the cursor only while the terminal is focused in the active scene. */
-  private syncCursor(): void {
-    const terminal = this.terminal;
-    if (!terminal) return;
-    const focused = this.frame.body.contains(document.activeElement);
-    terminal.options.cursorBlink = this.isActive && focused;
-  }
-
   private syncStatus(): void {
     switch (this.phase) {
       case "connecting":
@@ -520,11 +503,6 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
-    }
-    if (this.onFocusChange) {
-      this.frame.body.removeEventListener("focusin", this.onFocusChange);
-      this.frame.body.removeEventListener("focusout", this.onFocusChange);
-      this.onFocusChange = null;
     }
     this.session?.dispose();
     this.session = null;

@@ -6,13 +6,18 @@ import { builtinEasings } from "../motion/transitions";
 import { PresenterHost } from "../presenter/host";
 import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
-import { computeTransform, interpolateValue, resolveAnchor } from "./interpolators";
+import { computeTransform, resolveAnchor } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
 import { createPerfProbe, type PerfProbe } from "./perf";
 import { createReactiveProxy } from "./proxy";
 import { getReactiveKeys } from "./reactive";
 import { storage } from "./storage";
+import {
+  type ScheduledTransition,
+  sampleTransition,
+  scheduleTransitions,
+} from "./transition-scheduler";
 import type {
   AnimationMilestone,
   Background,
@@ -264,20 +269,10 @@ export class Stage {
   /** Overlays that have received a mount context, in mount order. */
   private mountedOverlays: OverlayPlugin[] = [];
   private pendingLiveTransitions: TransitionRecord[] = [];
-  private activeLiveTransitions = new Map<
-    string,
-    {
-      elementId: string;
-      property: string;
-      to: unknown;
-      startFrom: unknown;
-      startTime: number;
-      durationMs: number;
-      delayMs: number;
-      curve: EaseCurve;
-    }
-  >();
-  private liveAnimFrameId: number | null = null;
+  private activeLiveTransitions = new Map<string, ScheduledTransition & { startTime: number }>();
+  private animationEpoch = 0;
+  private sceneTransitionRunning = false;
+  private restoringState = false;
   private liveBatchQueued = false;
 
   // Metrics & Performance Tracking
@@ -1096,6 +1091,12 @@ export class Stage {
     }
 
     if (this.isMountedState) {
+      if (
+        this.restoringState ||
+        this.sceneTransitionRunning ||
+        this.elementRegistry.get(elementId)?.isActive === false
+      )
+        return;
       this._scheduleLiveTransition({
         elementId,
         property,
@@ -1135,80 +1136,66 @@ export class Stage {
 
   private _flushLiveTransitions(): void {
     this.liveBatchQueued = false;
-    if (this.pendingLiveTransitions.length === 0) return;
-
-    const transitions = this.pendingLiveTransitions.splice(0);
+    if (!this.isMountedState || this.restoringState || this.sceneTransitionRunning) {
+      this.pendingLiveTransitions.length = 0;
+      return;
+    }
+    const records = this.pendingLiveTransitions
+      .splice(0)
+      .filter((t) => this.elementRegistry.get(t.elementId)?.isActive !== false);
+    if (records.length === 0) return;
     const now = performance.now();
-
-    for (const t of transitions) {
-      const key = `${t.elementId}:${t.property}`;
-      const liveVal = this._getCurrentPropertyValue(t.elementId, t.property);
-      const startFrom = liveVal !== undefined ? liveVal : t.from;
-      const durationMs = t.durationMs !== undefined && t.durationMs > 0 ? t.durationMs : 400;
-      const curve = t.curve || builtinEasings.gentle;
-
-      this.activeLiveTransitions.set(key, {
-        elementId: t.elementId,
-        property: t.property,
-        to: t.to,
-        startFrom,
-        startTime: now,
-        durationMs,
-        delayMs: t.delayMs || 0,
-        curve,
-      });
+    const scheduled = scheduleTransitions(
+      records,
+      (t) => this._getCurrentPropertyValue(t.elementId, t.property) ?? t.from,
+    );
+    for (const t of scheduled) {
+      this.activeLiveTransitions.set(`${t.elementId}:${t.property}`, { ...t, startTime: now });
     }
+    if (this.animFrameId !== null) return;
+    this.isAnimating = true;
+    const epoch = this.animationEpoch;
+    const frame = (frameTime: number) => {
+      if (epoch !== this.animationEpoch) return;
+      const progress = new Map<string, number>();
+      for (const [key, t] of this.activeLiveTransitions) {
+        const elapsed = frameTime - t.startTime;
+        const sample = sampleTransition(t, elapsed);
+        this._setCurrentPropertyValue(t.elementId, t.property, sample.value);
+        progress.set(t.elementId, sample.progress);
+        if (elapsed >= t.endOffsetMs) this.activeLiveTransitions.delete(key);
+      }
+      for (const id of progress.keys()) {
+        const el = this.elementRegistry.get(id);
+        if (el) this._applyStyles(el, this.propertyState.get(id) ?? {}, true, false);
+        if (epoch !== this.animationEpoch) return;
+      }
+      for (const [id, el] of this.elementRegistry) {
+        if (progress.has(id) || el.isActive) this._dispatchElementUpdate(id, progress.get(id) ?? 1);
+        if (epoch !== this.animationEpoch) return;
+      }
+      // Navigation from an update callback owns the new frame and state.
+      if (
+        epoch !== this.animationEpoch ||
+        this.sceneTransitionRunning ||
+        this.restoringState ||
+        !this.isMountedState
+      )
+        return;
+      if (this.activeLiveTransitions.size > 0) {
+        this.animFrameId = requestAnimationFrame(frame);
+      } else {
+        this.animFrameId = null;
+        this.isAnimating = false;
+      }
+    };
+    this.animFrameId = requestAnimationFrame(frame);
+  }
 
-    if (!this.liveAnimFrameId) {
-      this.isAnimating = true;
-      const frame = (frameTime: number) => {
-        const toDelete: string[] = [];
-        const affectedElements = new Set<string>();
-
-        for (const [key, t] of this.activeLiveTransitions) {
-          const elapsed = frameTime - t.startTime;
-          affectedElements.add(t.elementId);
-
-          if (elapsed <= t.delayMs) {
-            this._setCurrentPropertyValue(t.elementId, t.property, t.startFrom);
-          } else if (elapsed >= t.delayMs + t.durationMs) {
-            this._setCurrentPropertyValue(t.elementId, t.property, t.to);
-            toDelete.push(key);
-          } else {
-            const progressT = (elapsed - t.delayMs) / t.durationMs;
-            const easedProgress = t.curve(Math.max(0, Math.min(1, progressT)));
-            const currentVal = interpolateValue(t.startFrom, t.to, easedProgress);
-            this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
-          }
-        }
-
-        for (const key of toDelete) {
-          this.activeLiveTransitions.delete(key);
-        }
-
-        for (const elId of affectedElements) {
-          const el = this.elementRegistry.get(elId);
-          if (el) {
-            const props = this.propertyState.get(elId) || {};
-            this._applyStyles(el, props, true, false);
-          }
-        }
-
-        if (this.activeLiveTransitions.size > 0) {
-          this.liveAnimFrameId = requestAnimationFrame(frame);
-        } else {
-          this.liveAnimFrameId = null;
-          this.isAnimating = false;
-          for (const elId of affectedElements) {
-            const el = this.elementRegistry.get(elId);
-            const managed = el as StageManagedElement | undefined;
-            managed?._update?.();
-          }
-        }
-      };
-
-      this.liveAnimFrameId = requestAnimationFrame(frame);
-    }
+  private _dispatchElementUpdate(id: string, progress: number): void {
+    const managed = this.elementRegistry.get(id) as StageManagedElement | undefined;
+    if (typeof managed?._dispatchUpdate === "function") managed._dispatchUpdate(progress);
+    else managed?._update?.();
   }
 
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
@@ -1268,7 +1255,10 @@ export class Stage {
 
     for (const key of reactiveKeys) {
       try {
-        const val = (element as Record<string, unknown>)[key];
+        let val = (element as Record<string, unknown>)[key];
+        if (key === "zIndex" && val === undefined) {
+          val = element.domElement?.style.zIndex || "auto";
+        }
         if (val !== undefined && typeof val !== "function") {
           initialProps[key] = val;
         }
@@ -1654,14 +1644,14 @@ export class Stage {
    * Disposal is final. A disposed stage cannot be mounted again.
    */
   dispose(): void {
+    this.restoringState = true;
+    this.sceneTransitionRunning = false;
+    this.isAnimating = false;
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
-    if (this.liveAnimFrameId !== null) {
-      cancelAnimationFrame(this.liveAnimFrameId);
-      this.liveAnimFrameId = null;
-    }
+    this.animationEpoch++;
     this.activeLiveTransitions.clear();
     this.pendingLiveTransitions.length = 0;
 
@@ -1819,6 +1809,16 @@ export class Stage {
   }
 
   private _applySnapshot(stepIdx: number): void {
+    const previous = this.restoringState;
+    this.restoringState = true;
+    try {
+      this._restoreSnapshot(stepIdx);
+    } finally {
+      this.restoringState = previous;
+    }
+  }
+
+  private _restoreSnapshot(stepIdx: number): void {
     const snap = this.snapshots[stepIdx];
     if (!snap) return;
 
@@ -1840,13 +1840,11 @@ export class Stage {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
-    if (this.liveAnimFrameId) {
-      cancelAnimationFrame(this.liveAnimFrameId);
-      this.liveAnimFrameId = null;
-    }
+    this.animationEpoch++;
     this.activeLiveTransitions.clear();
     this.pendingLiveTransitions.length = 0;
     this.isAnimating = false;
+    this.sceneTransitionRunning = false;
     this._clearPromotedElements();
 
     // 1. Restore propertyState map from immutable snapshot
@@ -1910,6 +1908,16 @@ export class Stage {
   }
 
   private _playStepTransition(stepIdx: number): void {
+    const previous = this.restoringState;
+    this.restoringState = true;
+    try {
+      this._startStepTransition(stepIdx);
+    } finally {
+      this.restoringState = previous;
+    }
+  }
+
+  private _startStepTransition(stepIdx: number): void {
     const step = this.steps[stepIdx];
     if (!step) return;
 
@@ -1929,13 +1937,11 @@ export class Stage {
       cancelAnimationFrame(this.animFrameId);
       this._clearPromotedElements();
     }
-    if (this.liveAnimFrameId) {
-      cancelAnimationFrame(this.liveAnimFrameId);
-      this.liveAnimFrameId = null;
-    }
+    this.animationEpoch++;
     this.activeLiveTransitions.clear();
     this.pendingLiveTransitions.length = 0;
 
+    this.sceneTransitionRunning = true;
     this.isAnimating = true;
     const startTime = performance.now();
     this._beginTransitionMark(step.sceneName, stepIdx);
@@ -2068,22 +2074,11 @@ export class Stage {
     const transitioningIds = new Set(stepTransitions.map((t) => t.elementId));
 
     // Resolve start/end offsets with lifecycle milestone triggers (.when()) and delays (.delay())
-    interface ScheduledTransition extends TransitionRecord {
-      startFrom: unknown;
-      startOffsetMs: number;
-      endOffsetMs: number;
-    }
-
-    const scheduledTransitions: ScheduledTransition[] = stepTransitions.map((t) => {
-      const liveVal = this._getCurrentPropertyValue(t.elementId, t.property);
-      const startFrom = t.from !== undefined ? t.from : liveVal;
+    const scheduledTransitions = scheduleTransitions(stepTransitions, (t) => {
+      const startFrom =
+        t.from !== undefined ? t.from : this._getCurrentPropertyValue(t.elementId, t.property);
       this._setCurrentPropertyValue(t.elementId, t.property, startFrom);
-      return {
-        ...t,
-        startFrom,
-        startOffsetMs: t.delayMs || 0,
-        endOffsetMs: (t.delayMs || 0) + t.durationMs,
-      };
+      return startFrom;
     });
 
     const participatingIds = new Set([...step.activeElementIds, ...transitioningIds]);
@@ -2139,39 +2134,6 @@ export class Stage {
       }
     }
 
-    for (let pass = 0; pass < 6; pass++) {
-      for (const t of scheduledTransitions) {
-        let baseStart = t.delayMs || 0;
-        if (t.triggerElementId) {
-          const matching = scheduledTransitions.filter((other) => {
-            if (other === t || other.elementId !== t.triggerElementId) return false;
-            if (t.triggerProperty && other.property !== t.triggerProperty) return false;
-            return true;
-          });
-
-          if (matching.length > 0) {
-            const milestone = t.triggerMilestone ?? "end";
-            if (milestone === "start" || milestone === 0) {
-              baseStart = Math.min(...matching.map((m) => m.startOffsetMs)) + (t.delayMs || 0);
-            } else if (milestone === "halfway" || milestone === 0.5) {
-              baseStart =
-                Math.max(...matching.map((m) => m.startOffsetMs + m.durationMs * 0.5)) +
-                (t.delayMs || 0);
-            } else if (typeof milestone === "number") {
-              baseStart =
-                Math.max(...matching.map((m) => m.startOffsetMs + m.durationMs * milestone)) +
-                (t.delayMs || 0);
-            } else {
-              // "end" or "complete"
-              baseStart = Math.max(...matching.map((m) => m.endOffsetMs)) + (t.delayMs || 0);
-            }
-          }
-        }
-        t.startOffsetMs = baseStart;
-        t.endOffsetMs = baseStart + t.durationMs;
-      }
-    }
-
     const maxDuration = Math.max(
       ...scheduledTransitions.map((t) => t.endOffsetMs),
       (this.options.defaultDuration || 0.6) * 1000,
@@ -2180,7 +2142,9 @@ export class Stage {
     this.lastFrameTime = performance.now();
     this.maxFrameDurationMs = 0;
 
+    const epoch = this.animationEpoch;
     const frame = (now: number) => {
+      if (epoch !== this.animationEpoch) return;
       const elapsed = now - startTime;
       const frameDelta = now - this.lastFrameTime;
       this.lastFrameTime = now;
@@ -2197,7 +2161,7 @@ export class Stage {
       // Update active transitions snapshot for on-demand metric queries
       this.activeTransitionsSnapshot = scheduledTransitions.map((t) => {
         let progress = 0;
-        if (elapsed <= t.startOffsetMs) progress = 0;
+        if (elapsed < t.startOffsetMs) progress = 0;
         else if (elapsed >= t.endOffsetMs) progress = 1;
         else progress = (elapsed - t.startOffsetMs) / t.durationMs;
 
@@ -2220,16 +2184,7 @@ export class Stage {
         const el = this.elementRegistry.get(t.elementId);
         if (!el) continue;
 
-        let currentVal = t.startFrom;
-        if (elapsed <= t.startOffsetMs) {
-          currentVal = t.startFrom;
-        } else if (elapsed >= t.endOffsetMs) {
-          currentVal = t.to;
-        } else {
-          const progressT = (elapsed - t.startOffsetMs) / t.durationMs;
-          const easedProgress = t.curve(Math.max(0, Math.min(1, progressT)));
-          currentVal = interpolateValue(t.startFrom, t.to, easedProgress);
-        }
+        const currentVal = sampleTransition(t, elapsed).value;
 
         // Update local property state
         this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
@@ -2237,18 +2192,14 @@ export class Stage {
         // Render to DOM without dispatching intermediate updates per property
         const props = this.propertyState.get(t.elementId) || {};
         this._applyStyles(el, props, step.activeElementIds.has(t.elementId), false);
+        if (epoch !== this.animationEpoch) return;
       }
 
       // Update participating elements once per frame after all properties have resolved
       for (const id of participatingIds) {
-        const el = this.elementRegistry.get(id);
         const progress = elementProgress.get(id) ?? (step.activeElementIds.has(id) ? 1 : 0);
-        const managed = el as StageManagedElement | undefined;
-        if (typeof managed?._dispatchUpdate === "function") {
-          managed._dispatchUpdate(progress);
-        } else {
-          managed?._update?.();
-        }
+        this._dispatchElementUpdate(id, progress);
+        if (epoch !== this.animationEpoch) return;
       }
 
       if (elapsed < maxDuration) {

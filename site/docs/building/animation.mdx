@@ -139,3 +139,23 @@ In addition to built-in presets (like `"quartOut"` and `"cubicInOut"`), you can 
 title.y = to(36).ease((t) => 0.5 * (1 - Math.cos(Math.PI * t)));
 ```
 
+
+## Animate on interaction
+
+Use the same `to()` assignments in a click handler. The default duration is 0.6 seconds.
+
+```typescript
+card.onClick(() => {
+  card.scale = to(1.2).duration(0.4);
+  return () => {
+    card.scale = to(1).duration(0.4);
+  };
+});
+```
+
+Click outside the element or press Escape to run the returned cleanup.
+Navigation cancels interactive animations and restores the destination step.
+Animated assignments during scene transitions are ignored.
+Assignments made together share delays and milestone dependencies.
+Use `.duration(0)` to apply a target without interpolation.
+Animation work stops when the targets are reached.

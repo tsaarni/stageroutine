@@ -541,6 +541,7 @@ export interface StageManagedElement extends ReactiveElementBase {
   _defaultPointerEvents?: string;
   _update?(): void;
   _dispatchUpdate?(progress?: number): void;
+  _resetOnBackwardNavigation?(): void;
   _mount?(parent: HTMLElement): void;
   _unmount?(): void;
   _activate?(): void;

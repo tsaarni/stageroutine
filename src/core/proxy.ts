@@ -178,12 +178,9 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         targetVal = resolveCenterCoord(propName);
       }
 
+      // Let setters reject invalid values before recording them in stage state.
+      if (!Reflect.set(target, prop, targetVal, receiver)) return false;
       host._setCurrentPropertyValue(target.id, propName, targetVal);
-      try {
-        Reflect.set(target, prop, targetVal, receiver);
-      } catch {
-        // ignore read-only
-      }
       const managed = target as {
         _dispatchUpdate?: (progress?: number) => void;
         _update?: () => void;

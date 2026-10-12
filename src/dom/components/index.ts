@@ -7,6 +7,11 @@
  */
 
 export {
+  BrowserWindow,
+  type BrowserWindowElement,
+  type BrowserWindowOptions,
+} from "./BrowserWindow";
+export {
   type BulletItem,
   type BulletItemInput,
   BulletList,

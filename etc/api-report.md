@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 194 symbols |
+| `stageroutine` | 197 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -47,6 +47,9 @@ export function AsciiFluid(options?: AsciiFluidOptions): Background;
 
 /** Decorates an element with a grouping bracket (curly brace, square bracket, or corner frame). */
 export function bracket(options?: BracketOptions): ElementDecorator;
+
+/** Creates an interactive webpage in a browser window. */
+export function BrowserWindow(options: BrowserWindowOptions): BrowserWindowElement;
 
 /** Bullet list component with individual bullet point animation and interactive click-and-drag focus. */
 export function BulletList(items: BulletItemInput[], options?: BulletListOptions): BulletListElement;
@@ -649,6 +652,26 @@ export interface BracketOptions {
     glow?: boolean | string;
     /** Additional CSS class name. */
     className?: string;
+}
+
+/** Public browser window controls. @category Components */
+export interface BrowserWindowElement extends DOMElement {
+    /** Configured page URL; restored when stepping backward. */
+    url: string;
+    /** Window label. Default: "Browser". */
+    title: string;
+    /** Loads the configured URL again without clearing stored website data. */
+    reload(): void;
+}
+
+/** Browser window options. Default size: 120 × 65 stage units. @category Components @inline */
+export interface BrowserWindowOptions extends ElementOptions {
+    /** Page URL. Relative URLs resolve against the presentation URL. */
+    url: string;
+    /** Window label. Default: "Browser". */
+    title?: string;
+    /** Whether the page accepts pointer and keyboard input. Default: true. */
+    interactive?: boolean;
 }
 
 /**

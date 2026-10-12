@@ -1,0 +1,59 @@
+---
+title: BrowserWindow
+sidebar_position: 8
+---
+
+# BrowserWindow
+
+Show a webpage inside a browser window. The page accepts clicks, scrolling, and keyboard input.
+
+```typescript
+import { BrowserWindow } from "stageroutine";
+
+const browser = BrowserWindow({
+  url: "http://localhost:3000",
+  title: "Application demo",
+  position: [80, 45],
+  origin: "center",
+});
+
+stage.scene("Demo").with(browser);
+stage.pause();
+```
+
+The default size is 120 × 65 stage units. Set `width` and `height` to change it.
+The default title is `"Browser"`. Set `interactive: false` to disable page input (default: `true`).
+
+## Window controls
+
+Click the reload button to load the configured URL again. Click the address to open that URL in a new tab.
+The address shows the configured URL, even after following links inside the page.
+
+## Stepping backward
+
+Forward steps keep an unchanged page running while it remains visible.
+Stepping backward reloads the URL recorded for the restored step, including when the URL has not changed.
+Hiding the window unloads the page. Showing it again starts a fresh load.
+
+```typescript
+browser.url = "http://localhost:3000/settings";
+stage.pause();
+```
+
+Going back restores the earlier URL. Reloading resets the page document, but keeps cookies, saved website data, and server changes.
+
+## Loading and embedding
+
+A loading message covers the page until its iframe emits `load`. The website may continue loading data afterward.
+Reload speed depends on the website and network.
+
+Some websites block iframe embedding through `X-Frame-Options` or CSP `frame-ancestors`.
+Use a page that allows embedding, or open it through the address link.
+The browser cannot reliably detect blocked embeds. See the [iframe documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
+
+Keyboard focus stays inside the webpage while interacting with it. Click outside the window to use stage navigation keys.
+Embedded pages can run their own animations and timers while the stage rests. The window adds no animation loop.
+
+## API reference
+
+See [`BrowserWindow`](../api/functions/BrowserWindow.md) for configuration options.

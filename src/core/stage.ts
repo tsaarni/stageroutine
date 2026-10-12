@@ -1588,8 +1588,7 @@ export class Stage {
     const onHashChange = () => {
       const idx = this._resolveHashTarget();
       if (idx !== this.currentStepIndex) {
-        this.currentStepIndex = idx;
-        this._applySnapshot(idx);
+        this._applySnapshot(idx, idx < this.currentStepIndex);
       }
     };
     window.addEventListener("hashchange", onHashChange);
@@ -1695,8 +1694,7 @@ export class Stage {
 
   private _prev(): void {
     if (this.currentStepIndex > 0) {
-      this.currentStepIndex--;
-      this._applySnapshot(this.currentStepIndex);
+      this._applySnapshot(this.currentStepIndex - 1, true);
     }
   }
 
@@ -1770,8 +1768,7 @@ export class Stage {
     const scenes = this._getScenes();
     const target = scenes[sceneIndex];
     if (target) {
-      this.currentStepIndex = target.startStepIndex;
-      this._applySnapshot(target.startStepIndex);
+      this._applySnapshot(target.startStepIndex, target.startStepIndex < this.currentStepIndex);
     }
   }
 
@@ -1780,8 +1777,7 @@ export class Stage {
    */
   private _gotoStep(stepIndex: number): void {
     if (stepIndex >= 0 && stepIndex < this.steps.length && stepIndex !== this.currentStepIndex) {
-      this.currentStepIndex = stepIndex;
-      this._applySnapshot(stepIndex);
+      this._applySnapshot(stepIndex, stepIndex < this.currentStepIndex);
     }
   }
 
@@ -1808,17 +1804,17 @@ export class Stage {
     }
   }
 
-  private _applySnapshot(stepIdx: number): void {
+  private _applySnapshot(stepIdx: number, backward = false): void {
     const previous = this.restoringState;
     this.restoringState = true;
     try {
-      this._restoreSnapshot(stepIdx);
+      this._restoreSnapshot(stepIdx, backward);
     } finally {
       this.restoringState = previous;
     }
   }
 
-  private _restoreSnapshot(stepIdx: number): void {
+  private _restoreSnapshot(stepIdx: number, backward: boolean): void {
     const snap = this.snapshots[stepIdx];
     if (!snap) return;
 
@@ -1881,6 +1877,9 @@ export class Stage {
         } catch {
           // ignore read-only
         }
+      }
+      if (backward) {
+        (el as StageManagedElement)._resetOnBackwardNavigation?.();
       }
       this._applyStyles(el, props, true, false);
       restored.push(el);

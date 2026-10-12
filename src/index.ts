@@ -140,6 +140,8 @@ export { AsciiFluid, CSSBackground, GradientFluid, Starfield } from "./dom/backg
 export type {
   ActivationBarElement,
   ActivationOptions,
+  BrowserWindowElement,
+  BrowserWindowOptions,
   BulletItem,
   BulletItemInput,
   BulletListElement,
@@ -190,6 +192,7 @@ export type {
 } from "./dom/components/index";
 // Components
 export {
+  BrowserWindow,
   BulletList,
   Card,
   CodeBlock,

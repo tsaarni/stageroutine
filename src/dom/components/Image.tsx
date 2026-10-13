@@ -33,6 +33,12 @@ export interface ImageElement extends DOMElement {
  * @internal
  */
 class ImageElementImpl extends MediaSurface implements ImageElement {
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...MediaSurface._reactiveKeys,
+    "src",
+    "alt",
+    "fit",
+  ]);
   readonly imgElement: HTMLImageElement;
 
   protected override get mediaNode(): HTMLElement {

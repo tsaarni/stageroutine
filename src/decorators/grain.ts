@@ -57,7 +57,7 @@ function createGrainContainer(
   options: GrainOptions,
   frames: string[],
 ): { element: HTMLDivElement; cleanup: () => void } {
-  const { opacity = 0.12, animated = true } = options;
+  const { opacity = 0.12 } = options;
 
   const grainEl = document.createElement("div");
   grainEl.className = "sr-grain";
@@ -72,23 +72,9 @@ function createGrainContainer(
   grainEl.style.borderRadius = "inherit";
   grainEl.style.zIndex = "0";
 
-  let animTimer: ReturnType<typeof setInterval> | null = null;
-  if (animated) {
-    let frameIdx = 0;
-    animTimer = setInterval(() => {
-      if (!grainEl) return;
-      frameIdx = (frameIdx + 1) % frames.length;
-      grainEl.style.backgroundImage = `url("${frames[frameIdx]}")`;
-    }, 100);
-  }
-
   return {
     element: grainEl,
     cleanup() {
-      if (animTimer) {
-        clearInterval(animTimer);
-        animTimer = null;
-      }
       grainEl.remove();
     },
   };
@@ -111,8 +97,28 @@ export function grain(options: GrainOptions = {}) {
 
     const el =
       "domElement" in target && target.domElement ? target.domElement : (target as HTMLElement);
-    const { element } = createGrainContainer(options, frames);
+    const { element, cleanup } = createGrainContainer(options, frames);
+    let detach = () => {};
+    if (
+      "onUpdate" in target &&
+      typeof target.onUpdate === "function" &&
+      options.animated !== false
+    ) {
+      let lastFrame = -1;
+      detach = target.onUpdate(() => {
+        const frame = Math.floor(performance.now() / 100);
+        if (frame === lastFrame) return;
+        lastFrame = frame;
+        element.style.backgroundImage = `url("${frames[frame % frames.length]}")`;
+      });
+    }
+    const dispose = () => {
+      detach();
+      cleanup();
+    };
+    if ("onUnmount" in target && typeof target.onUnmount === "function") target.onUnmount(dispose);
     el.style.position = el.style.position || "relative";
     el.appendChild(element);
+    return { dispose };
   };
 }

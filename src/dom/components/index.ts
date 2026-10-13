@@ -82,6 +82,7 @@ export {
   type TerminalBlockOptions,
 } from "./TerminalBlock";
 export { Text, type TextOptions } from "./Text";
+export type { TextElement } from "./TextContent";
 export { Title, type TitleOptions, type TitleVariant } from "./Title";
 export { Video, type VideoElement, type VideoOptions } from "./Video";
 export { type CameraDevice, Webcam, type WebcamElement, type WebcamOptions } from "./Webcam";

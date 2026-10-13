@@ -24,8 +24,14 @@ export interface ThemeConfig {
 
   /** Component surface background color. */
   surface?: string;
-  /** Component surface border stroke. */
-  surfaceBorder?: string;
+  /** Surface border color (default: text at 15% opacity). */
+  surfaceBorderColor?: string;
+  /** Surface border width as a CSS length (default: "1px"). */
+  surfaceBorderWidth?: string;
+  /** Opaque surface background (default: "#18181b"). */
+  surfaceSolid?: string;
+  /** Subtle media backdrop (default: "#1e293b"). */
+  surfaceSubtle?: string;
   /** Subtle surface highlight color. */
   surfaceHighlight?: string;
   /** Box shadow applied to raised surfaces. */
@@ -81,7 +87,10 @@ export const TOKEN_MAP: Record<keyof ThemeConfig, string> = {
   textMuted: "--sr-text-muted",
   textDim: "--sr-text-dim",
   surface: "--sr-surface",
-  surfaceBorder: "--sr-surface-border",
+  surfaceBorderColor: "--sr-surface-border-color",
+  surfaceBorderWidth: "--sr-surface-border-width",
+  surfaceSolid: "--sr-surface-solid",
+  surfaceSubtle: "--sr-surface-subtle",
   surfaceHighlight: "--sr-surface-highlight",
   surfaceShadow: "--sr-surface-shadow",
   surfaceBackdrop: "--sr-surface-backdrop",

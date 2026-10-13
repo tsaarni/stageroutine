@@ -56,7 +56,11 @@
         )
         100%
     );
-    --sr-surface-border: 1px solid color-mix(in srgb, var(--sr-text) 15%, transparent);
+    --sr-surface-border-color: color-mix(in srgb, var(--sr-text) 15%, transparent);
+    --sr-surface-border-width: 1px;
+    --sr-surface-solid: #18181b;
+    --sr-surface-subtle: #1e293b;
+    --sr-surface-border: var(--sr-surface-border-width) solid var(--sr-surface-border-color);
     --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 25%, transparent);
     --sr-surface-shadow:
       0 calc(1.25rem * var(--sr-scale, 1)) calc(4rem * var(--sr-scale, 1))

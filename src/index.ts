@@ -131,6 +131,7 @@ export {
 export type {
   AsciiFluidOptions,
   BackgroundOptions,
+  CSSBackgroundElement,
   CSSBackgroundOptions,
   GradientFluidOptions,
   StarfieldOptions,
@@ -182,6 +183,7 @@ export type {
   TableOptions,
   TerminalBlockElement,
   TerminalBlockOptions,
+  TextElement,
   TextOptions,
   TitleOptions,
   TitleVariant,
@@ -214,8 +216,8 @@ export {
   Webcam,
 } from "./dom/components/index";
 export type { ElementDecorator, ElementOptions } from "./dom/element";
-// Base class & option types for custom components
-export { DOMElement } from "./dom/element";
+// DOM wrapping factory and public element type
+export { type DOMElement, Element, type ElementChild } from "./dom/element";
 export type { GroupElement } from "./dom/group";
 export { group } from "./dom/group";
 export type {

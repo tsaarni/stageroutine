@@ -1,9 +1,10 @@
+import type { ReactiveProp } from "../../core/types";
 /**
  * Sequence diagram primitives: Lifeline, Activation execution blocks, and SequenceDiagram builder.
  */
 
 import "./SequenceDiagram.css";
-import { STAGE_UNITS_TALL, stageUnitPx, tryGetActiveStage, units } from "../../core/index";
+import { stageUnitPx, tryGetActiveStage, units } from "../../core/index";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import { measureOffscreen } from "../layout";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";
@@ -64,8 +65,8 @@ function getActorHeightUnits(actor: DOMElement, stageH: number): number {
 function resolveAnchorYUnits(val: unknown, stageH: number, fallback: number): number {
   if (val === undefined || val === null) return fallback;
   let raw: unknown = val;
-  if (typeof val === "object" && val !== null && "y" in val) {
-    raw = (val as { y: unknown }).y;
+  if (typeof val === "object" && val !== null && "rowY" in val) {
+    raw = (val as { rowY: unknown }).rowY;
   }
   if (typeof raw === "number") {
     return raw;
@@ -77,13 +78,29 @@ function resolveAnchorYUnits(val: unknown, stageH: number, fallback: number): nu
   return fallback;
 }
 
+function actorAttachment(actor: DOMElement, element: HTMLElement): [number, number] {
+  const parent = element.parentElement;
+  if (parent && actor.domElement.isConnected) {
+    const bounds = parent.getBoundingClientRect();
+    const box = actor.domElement.getBoundingClientRect();
+    const stageH = tryGetActiveStage()?.height ?? 1080;
+    const scale = bounds.height / stageH || 1;
+    return [(box.left + box.width / 2 - bounds.left) / scale, (box.bottom - bounds.top) / scale];
+  }
+  const stageH = tryGetActiveStage()?.height ?? 1080;
+  return [
+    (typeof actor.x === "number" ? actor.x : 0) * stageUnitPx(stageH),
+    (getActorY(actor) + getActorHeightUnits(actor, stageH)) * stageUnitPx(stageH),
+  ];
+}
+
 /**
  * Configuration options for vertical dashed lifeline timelines.
  * @category Components
  */
 export interface LifelineOptions extends ElementOptions {
   /** Vertical length of the dashed line in stage units (default: 42). Automatically extends when activations exceed length. */
-  length?: number;
+  height?: number;
   /** Stroke color of the dashed line (default: "rgba(148, 163, 184, 0.7)"). */
   color?: string;
 }
@@ -130,12 +147,11 @@ export interface SequenceDiagramOptions {
 /** Public controls for a sequence diagram lifeline. @category Components */
 export interface LifelineElement extends DOMElement {
   readonly actor: DOMElement;
-  length: number;
+  height: number;
   color: string;
-  readonly activations: ActivationBarElement[];
-  setLength(length: number): void;
+  readonly activations: readonly ActivationBarElement[];
   activate(options?: ActivationOptions): ActivationBarElement;
-  hasActivationAt(yPx: number): boolean;
+  hasActivationAt(y: number): boolean;
 }
 
 /** Public state for a sequence diagram activation. @category Components */
@@ -145,11 +161,11 @@ export interface ActivationBarElement extends DOMElement {
 
 /** Public coordinator for a sequence diagram. @category Components */
 export interface SequenceDiagramController {
-  readonly participants: DOMElement[];
-  readonly lifelines: LifelineElement[];
-  readonly messages: ConnectorElement[];
-  readonly activations: ActivationBarElement[];
-  readonly elements: DOMElement[];
+  readonly participants: readonly DOMElement[];
+  readonly lifelines: readonly LifelineElement[];
+  readonly messages: readonly ConnectorElement[];
+  readonly activations: readonly ActivationBarElement[];
+  readonly elements: readonly DOMElement[];
   startY: number;
   gapY: number;
   addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
@@ -167,19 +183,30 @@ export interface SequenceDiagramController {
  * @internal
  */
 class LifelineElementImpl extends DOMElement implements LifelineElement {
-  static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
-    "length",
-  ]);
+  static override _reactiveKeys: ReadonlySet<string> = new Set([...DOMElement._reactiveKeys]);
 
   actor: DOMElement;
   diagram?: SequenceDiagramControllerImpl;
-  length: number;
-  color: string;
+  override get height(): number {
+    return typeof super.height === "number" ? super.height : DEFAULT_LIFELINE_LENGTH;
+  }
+  override set height(value: number) {
+    super.height = value;
+  }
+  override get color(): string {
+    return super.color ?? "rgba(148, 163, 184, 0.7)";
+  }
+  override set color(value: ReactiveProp<string> | undefined) {
+    super.color = value;
+  }
   activations: ActivationBarElementImpl[] = [];
 
   override _update(): void {
-    this.domElement.style.height = units(this.length);
+    this.domElement.style.height = units(this.height);
+    this.domElement.style.borderLeftColor = this.color;
+    const [x, y] = actorAttachment(this.actor, this.domElement);
+    this.domElement.style.left = `${x - 1}px`;
+    this.domElement.style.top = `${y}px`;
   }
 
   constructor(actor: DOMElement, options: LifelineOptions = {}) {
@@ -201,35 +228,30 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
 
     this.actor = actor;
     (actor as unknown as { lifeline?: LifelineElementImpl }).lifeline = this;
-    this.length = options.length ?? DEFAULT_LIFELINE_LENGTH;
+    this.height = options.height ?? DEFAULT_LIFELINE_LENGTH;
     this.color = options.color || "rgba(148, 163, 184, 0.7)";
     this.domElement.style.left = "calc(50% - 1px)";
     this.domElement.style.top = "100%";
     this.domElement.style.width = "0px";
     this.domElement.style.transform = "none";
-    this.domElement.style.height = units(this.length);
+    this.domElement.style.height = units(this.height);
+    this.domElement.style.borderLeftColor = this.color;
 
     // Ensure actor doesn't clip descending lifeline and activation blocks
     if (actor.domElement) {
       actor.domElement.style.overflow = "visible";
-      actor.domElement.appendChild(this.domElement);
     }
 
-    actor.onUpdate(() => {
-      for (const act of this.activations) {
-        act._update();
-      }
-      this.diagram?.updateLifelineLengths();
-    });
-  }
-
-  /** Sets the visual length of the dashed lifeline in stage units. */
-  setLength(length: number): void {
-    const next = Math.round(length * 100) / 100;
-    if (next > 0 && next !== this.length) {
-      this.length = next;
-      this.domElement.style.height = units(this.length);
-    }
+    this.onMount(() => this._update());
+    this.onUnmount(
+      actor.onUpdate(() => {
+        this._update();
+        for (const act of this.activations) {
+          act._update();
+        }
+        this.diagram?.updateLifelineLengths();
+      }),
+    );
   }
 
   activate(options: ActivationOptions = {}): ActivationBarElementImpl {
@@ -239,8 +261,8 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
     const yNum = typeof el.y === "number" ? el.y : 0;
     const hNum = typeof el.height === "number" ? el.height : 0;
     const needed = yNum + hNum + DEFAULT_PADDING_BOTTOM;
-    if (needed > this.length) {
-      this.setLength(needed);
+    if (needed > this.height) {
+      this.height = Math.round(needed * 100) / 100;
     }
 
     return mount(el);
@@ -248,8 +270,8 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
 
   hasActivationAt(y: number): boolean {
     const stageH = tryGetActiveStage()?.height ?? 1080;
-    const yUnits = y > STAGE_UNITS_TALL ? y / stageUnitPx(stageH) : y;
-    const lifelineTop = getActorY(this.actor) + getActorHeightUnits(this.actor, stageH);
+    const yUnits = y;
+    const lifelineTop = actorAttachment(this.actor, this.domElement)[1] / stageUnitPx(stageH);
 
     for (const act of this.activations) {
       act._recompute();
@@ -288,8 +310,8 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
       const fromY = resolveAnchorYUnits(this._fromTarget, stageH, 32);
       const toY = resolveAnchorYUnits(this._toTarget, stageH, fromY + 18);
 
-      const actorY = getActorY(this.lifeline.actor);
-      const actorBottom = actorY + getActorHeightUnits(this.lifeline.actor, stageH);
+      const actorBottom =
+        actorAttachment(this.lifeline.actor, this.domElement)[1] / stageUnitPx(stageH);
 
       const computedY = Math.max(0, fromY - actorBottom - 0.7);
       const computedHeight = Math.max(1.8, toY - fromY + 1.4);
@@ -305,8 +327,14 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     this._recompute();
     const yNum = typeof this.y === "number" ? this.y : 0;
     const hNum = typeof this.height === "number" ? this.height : 0;
-    this.domElement.style.top = `calc(100% + ${units(yNum)})`;
+    const [x, y] = actorAttachment(this.lifeline.actor, this.domElement);
+    const stageH = tryGetActiveStage()?.height ?? 1080;
+    this.domElement.style.left = `${x - 7}px`;
+    this.domElement.style.top = `${y + yNum * stageUnitPx(stageH)}px`;
     this.domElement.style.height = units(hNum);
+    const color = typeof this.color === "string" ? this.color : "#38bdf8";
+    this.domElement.style.background = color;
+    this.domElement.style.boxShadow = `0 0 12px color-mix(in srgb, ${color} 40%, transparent)`;
   }
 
   constructor(lifeline: LifelineElementImpl, options: ActivationOptions = {}) {
@@ -318,7 +346,7 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     bar.style.boxSizing = "border-box";
     bar.style.background = color;
     bar.style.borderRadius = "3px";
-    bar.style.boxShadow = `0 0 12px ${color}66`;
+    bar.style.boxShadow = `0 0 12px color-mix(in srgb, ${color} 40%, transparent)`;
     bar.style.border = "none";
     bar.style.zIndex = "2";
     bar.style.pointerEvents = "none";
@@ -340,9 +368,7 @@ class ActivationBarElementImpl extends DOMElement implements ActivationBarElemen
     this._recompute();
     this._update();
 
-    if (lifeline.actor.domElement) {
-      lifeline.actor.domElement.appendChild(this.domElement);
-    }
+    this.onMount(() => this._update());
   }
 }
 
@@ -374,7 +400,7 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
     if (options.participants) {
       for (const p of options.participants) {
         this.addParticipant(p, {
-          length: this.defaultLifelineLength,
+          height: this.defaultLifelineLength,
           color: options.lifelineColor,
           opacity: options.lifelineOpacity,
         });
@@ -385,13 +411,16 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
   /** @internal */
   updateLifelineLengths(): void {
     const stageH = tryGetActiveStage()?.height ?? 1080;
-    let maxNeeded = this.defaultLifelineLength;
+    let maxNeeded = Math.max(
+      this.defaultLifelineLength,
+      ...this.lifelines.map((line) => line.height),
+    );
 
     for (const line of this.lifelines) {
-      const actorBottom = getActorY(line.actor) + getActorHeightUnits(line.actor, stageH);
+      const actorBottom = actorAttachment(line.actor, line.domElement)[1] / stageUnitPx(stageH);
 
       for (const msg of this.messages) {
-        const msgY = typeof msg.y === "number" ? msg.y : 0;
+        const msgY = msg.rowY ?? 0;
 
         if (msgY > 0) {
           const needed = msgY - actorBottom + this.paddingBottom;
@@ -412,7 +441,7 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
     }
 
     for (const line of this.lifelines) {
-      line.setLength(maxNeeded);
+      line.height = Math.round(maxNeeded * 100) / 100;
     }
   }
 
@@ -450,12 +479,12 @@ class SequenceDiagramControllerImpl implements SequenceDiagramController {
 
     const opts: ConnectorOptions =
       typeof options === "string" ? { label: options } : { ...options };
-    const y = opts.y ?? computedY;
+    const rowY = opts.rowY ?? computedY;
     const labelOffsetY = opts.labelOffsetY ?? -2.2;
     const conn = Connector(fromActor, toActor, {
       ...opts,
       labelOffsetY,
-      y,
+      rowY,
     });
 
     this.messages.push(conn);

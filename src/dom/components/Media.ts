@@ -47,6 +47,7 @@ export abstract class MediaSurface extends DOMElement {
  */
 export abstract class VideoSurface extends MediaSurface {
   private _playing = false;
+  private playbackRequest?: Promise<void>;
 
   /** The video node controlled by this surface. @internal */
   protected abstract get videoNode(): HTMLVideoElement;
@@ -69,13 +70,8 @@ export abstract class VideoSurface extends MediaSurface {
   }
 
   async play(): Promise<void> {
-    this._playing = true;
-    try {
-      await this.videoNode.play();
-    } catch (err) {
-      logger.warn("[StageRoutine] Video playback failed:", err);
-      throw err;
-    }
+    this.playing = true;
+    await this.playbackRequest;
   }
 
   pause(): void {
@@ -90,7 +86,8 @@ export abstract class VideoSurface extends MediaSurface {
 
   private resumePlayback(): void {
     if (!this._playing || !this.isActive || !this.videoNode.paused) return;
-    this.videoNode.play().catch((err) => {
+    this.playbackRequest = this.videoNode.play();
+    this.playbackRequest.catch((err) => {
       logger.warn("[StageRoutine] Video playback failed:", err);
     });
   }

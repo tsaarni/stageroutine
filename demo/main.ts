@@ -357,8 +357,8 @@ const serviceMetricsTable = Table({
     ["Vector Search", "24ms", "0.00%", "99.95%"],
     ["Edge Cache", "3ms", "0.00%", "100.00%"],
   ],
-  align: ["left", "right", "right", "center"],
-  opacity: 0,
+  columnAlign: ["left", "right", "right", "center"],
+  rowsHidden: true,
   width: 67.2,
 });
 
@@ -380,7 +380,7 @@ const tableCode = CodeBlock(
     "    ['Vector Search', '24ms', '0.00%', '99.95%'],",
     "    ['Edge Cache', '3ms', '0.00%', '100.00%'],",
     "  ],",
-    "  align: ['left', 'right', 'right', 'center'],",
+    "  columnAlign: ['left', 'right', 'right', 'center'],",
     "});",
     "",
     "// Staggered row reveal",
@@ -486,7 +486,7 @@ const connGatewayRedis = Connector(apiGateway, redisCache, {
 });
 
 const noteConnector = Connector(topologyNote, authService, {
-  dotted: true,
+  strokePattern: "dotted",
   flow: "traveling",
   endHead: "none",
   color: "rgba(255, 255, 255, 0.25)",
@@ -573,7 +573,7 @@ const msg2 = seq.message(apiGateway, authService, {
 const msg3 = seq.message(authService, apiGateway, {
   label: "3. User Roles & Identity",
   color: "#a855f7",
-  dashed: true,
+  strokePattern: "dashed",
   endHead: "open",
   end: 0,
 });
@@ -581,7 +581,7 @@ const msg3 = seq.message(authService, apiGateway, {
 const msg4 = seq.message(authService, apiGateway, {
   label: "4. Issue Signed JWT Token",
   color: "#10b981",
-  dashed: true,
+  strokePattern: "dashed",
   endHead: "open",
   end: 0,
 });
@@ -589,7 +589,7 @@ const msg4 = seq.message(authService, apiGateway, {
 const msg5 = seq.message(apiGateway, clientCard, {
   label: "5. 200 OK (Bearer Session)",
   color: "#10b981",
-  dashed: true,
+  strokePattern: "dashed",
   endHead: "open",
   end: 0,
 });
@@ -733,7 +733,7 @@ const tRetry = Connector(stateRejected, stateAuthenticating, {
   fromAnchor: "top",
   toAnchor: "left",
   curvature: 0.25,
-  dashed: true,
+  strokePattern: "dashed",
   end: 0,
 });
 
@@ -743,7 +743,7 @@ const tLogout = Connector(stateActive, stateIdle, {
   routing: "arc",
   fromAnchor: "left",
   curvature: -0.25,
-  dashed: true,
+  strokePattern: "dashed",
   end: 0,
 });
 
@@ -1285,7 +1285,7 @@ const camBubble = Frame(paths.circle(), presenterCam, {
   size: 13.33,
   borderColor: "#38bdf8",
   strokeWidth: 3,
-  active: true,
+  highlighted: true,
 });
 
 layout.vstack([mediaKicker, mediaHeading, mediaDescription], {

@@ -25,16 +25,7 @@ export type { RuleOptions };
  * Any stage element that layout helpers can measure and position.
  * @category Layout
  */
-export type LayoutElement =
-  | DOMElement
-  | ReactiveElementBase
-  | {
-      x?: unknown;
-      y?: unknown;
-      width?: unknown;
-      height?: unknown;
-      domElement?: HTMLElement;
-    };
+export type LayoutElement = ReactiveElementBase;
 
 /**
  * A cell in a grid layout. Empty cells are `null` or `undefined`.
@@ -196,7 +187,7 @@ function measureElement(
   dom.style.setProperty(STAGE_UNIT_VAR, `${unitPx}px`);
 
   // Measure against the constrained width when one is given
-  const widthSource = explicitWidth ?? (el as Record<string, unknown>).width;
+  const widthSource = explicitWidth ?? (el as unknown as Record<string, unknown>).width;
   if (widthSource !== undefined) {
     dom.style.width =
       typeof widthSource === "number" ? `${widthSource * unitPx}px` : String(widthSource);
@@ -238,7 +229,7 @@ function applyPosition(
     }
   }
 
-  const target = el as Record<string, unknown>;
+  const target = el as unknown as Record<string, unknown>;
   const optWidth = Array.isArray(options.width) ? options.width[0] : options.width;
   const optHeight = Array.isArray(options.height) ? options.height[0] : options.height;
   if (optWidth !== undefined) {
@@ -457,9 +448,9 @@ export const layout = {
         }
 
         for (const el of colElements) {
-          if ((el as Record<string, unknown>).width === undefined) {
+          if ((el as unknown as Record<string, unknown>).width === undefined) {
             const formatted = cssLength(colWidthVal) ?? "";
-            (el as Record<string, unknown>).width = colWidthVal;
+            (el as unknown as Record<string, unknown>).width = colWidthVal;
             const dom = (el as { domElement?: HTMLElement }).domElement;
             if (dom && !dom.style.width) {
               dom.style.width = formatted;
@@ -483,7 +474,7 @@ export const layout = {
         });
       } else {
         const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-        const elWidth = (slot as Record<string, unknown>).width;
+        const elWidth = (slot as unknown as Record<string, unknown>).width;
         const isEqual = options.width === "equal";
         let m = measureElement(slot);
         if (explicitW !== undefined && explicitW !== "equal") {
@@ -531,7 +522,10 @@ export const layout = {
       if (sm.isColumn) {
         let colY = slotY;
         for (const { el, height } of sm.items) {
-          const elWidth = (el as Record<string, unknown>).width as number | string | undefined;
+          const elWidth = (el as unknown as Record<string, unknown>).width as
+            | number
+            | string
+            | undefined;
           const appliedOptions = {
             ...options,
             width:
@@ -623,8 +617,8 @@ export const layout = {
         const autoItemWidth = Math.max(16, (widthVal - totalGapsX) / rowElements.length);
 
         for (const el of rowElements) {
-          if ((el as Record<string, unknown>).width === undefined) {
-            (el as Record<string, unknown>).width = autoItemWidth;
+          if ((el as unknown as Record<string, unknown>).width === undefined) {
+            (el as unknown as Record<string, unknown>).width = autoItemWidth;
           }
         }
 
@@ -647,7 +641,7 @@ export const layout = {
         });
       } else {
         const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-        const elWidth = (slot as Record<string, unknown>).width;
+        const elWidth = (slot as unknown as Record<string, unknown>).width;
         let m = measureElement(slot);
         if (explicitW !== undefined) {
           m = measureElement(slot, explicitW);
@@ -706,7 +700,10 @@ export const layout = {
         const item = sm.items[0];
         if (item) {
           const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-          const elWidth = (item.el as Record<string, unknown>).width as number | string | undefined;
+          const elWidth = (item.el as unknown as Record<string, unknown>).width as
+            | number
+            | string
+            | undefined;
           const appliedOptions = {
             ...options,
             width:
@@ -1019,7 +1016,7 @@ export const layout = {
     const ty = options.position ? options.position[1] : oy;
 
     for (const el of elements) {
-      const rec = el as Record<string, unknown>;
+      const rec = el as unknown as Record<string, unknown>;
       const isConnector = "kind" in el && (el as { kind: string }).kind === "Connector";
 
       // Connectors don't have their own x/y; only scale their label.

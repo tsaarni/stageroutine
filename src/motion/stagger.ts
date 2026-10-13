@@ -2,6 +2,7 @@
  * Staggered animation coordinator for sequential reveals across element collections.
  */
 
+import { isReactiveProperty } from "../core/reactive";
 import { getActiveStage } from "../core/stage";
 import type {
   AnimationMilestone,
@@ -10,6 +11,7 @@ import type {
   ReactiveElementBase,
 } from "../core/types";
 import type { DOMElement } from "../dom/element";
+import type { ElementTransitionProps } from "./element-transition";
 import { to } from "./transitions";
 
 /**
@@ -25,7 +27,7 @@ export interface StaggerOptions {
   /** Easing curve for each element transition (default: "quartOut"). */
   ease?: BuiltinEase | EaseCurve;
   /** Animated target properties for each element (default: `{ opacity: 1 }`). */
-  props?: Record<string, unknown>;
+  props?: ElementTransitionProps;
 }
 
 /**
@@ -36,7 +38,7 @@ export interface StaggerTransition {
   duration(seconds: number): this;
   overlap(milestone: AnimationMilestone): this;
   ease(curve: BuiltinEase | EaseCurve): this;
-  props(properties: Record<string, unknown>): this;
+  props(properties: ElementTransitionProps): this;
   when(target: ReactiveElementBase | string, milestone?: AnimationMilestone): this;
   after(target: ReactiveElementBase | string): this;
   apply(): void;
@@ -46,17 +48,20 @@ export interface StaggerTransition {
  * @internal
  */
 export class StaggerBuilder implements StaggerTransition {
-  private elements: (DOMElement | ReactiveElementBase)[];
+  private elements: readonly (DOMElement | ReactiveElementBase)[];
   private durationSec = 0.4;
   private overlapMilestone: AnimationMilestone = 0.5;
   private easeCurve: BuiltinEase | EaseCurve = "quartOut";
-  private targetProps: Record<string, unknown> = { opacity: 1 };
+  private targetProps: ElementTransitionProps = { opacity: 1 };
   private triggerTarget?: ReactiveElementBase | string;
   private triggerMilestone: AnimationMilestone = "end";
   private applied = false;
   private unregisterFlush?: () => void;
 
-  constructor(elements: (DOMElement | ReactiveElementBase)[], options: StaggerOptions = {}) {
+  constructor(
+    elements: readonly (DOMElement | ReactiveElementBase)[],
+    options: StaggerOptions = {},
+  ) {
     this.elements = elements;
     if (options.duration !== undefined) this.durationSec = options.duration;
     if (options.overlap !== undefined) this.overlapMilestone = options.overlap;
@@ -90,7 +95,7 @@ export class StaggerBuilder implements StaggerTransition {
   }
 
   /** Customizes the animated target properties (defaults to `{ opacity: 1 }`). */
-  props(properties: Record<string, unknown>): this {
+  props(properties: ElementTransitionProps): this {
     this.targetProps = properties;
     return this;
   }
@@ -122,6 +127,8 @@ export class StaggerBuilder implements StaggerTransition {
       const isFirst = index === 0;
 
       for (const [prop, targetVal] of Object.entries(this.targetProps)) {
+        if (!isReactiveProperty(item, prop))
+          throw new Error(`Unsupported transition property: ${prop}`);
         const transition = to(targetVal).duration(this.durationSec).ease(this.easeCurve);
 
         if (isFirst) {
@@ -143,7 +150,7 @@ export class StaggerBuilder implements StaggerTransition {
  * @category Motion
  */
 export function stagger(
-  elements: (DOMElement | ReactiveElementBase)[],
+  elements: readonly (DOMElement | ReactiveElementBase)[],
   options?: StaggerOptions,
 ): StaggerTransition {
   return new StaggerBuilder(elements, options);

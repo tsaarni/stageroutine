@@ -4,7 +4,7 @@
 
 import { isTransitionDescriptor } from "../motion/transitions";
 import { splitPosition } from "./position";
-import { isReactiveProperty } from "./reactive";
+import { copyPropertyValue, isReactiveProperty } from "./reactive";
 import { tryGetActiveStage } from "./stage";
 import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
 import { STAGE_UNITS_TALL, stageUnitsWide } from "./units";
@@ -64,7 +64,7 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       // Check current staged property value first
       const stagedValue = host._getCurrentPropertyValue(target.id, propName);
       if (stagedValue !== undefined) {
-        return stagedValue;
+        return copyPropertyValue(stagedValue);
       }
 
       return Reflect.get(target, prop, receiver);
@@ -91,6 +91,24 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return true;
       }
 
+      if (propName === "size") {
+        (receiver as Record<string, unknown>).width = value;
+        (receiver as Record<string, unknown>).height = value;
+        return true;
+      }
+      if (propName === "labelOffset") {
+        const expand = (offset: unknown, axis: number) => {
+          if (Array.isArray(offset)) return offset[axis];
+          return axis === 0 ? 0 : offset;
+        };
+        for (const [axis, key] of ["labelOffsetX", "labelOffsetY"].entries()) {
+          (receiver as Record<string, unknown>)[key] = isTransitionDescriptor(value)
+            ? { ...value, target: expand(value.target, axis) }
+            : expand(value, axis);
+        }
+        return true;
+      }
+      value = copyPropertyValue(value);
       // Only track declared reactive properties
       if (!isReactiveProperty(target, propName)) {
         return Reflect.set(target, prop, value, receiver);

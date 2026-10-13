@@ -1,3 +1,4 @@
+import { getActiveStage } from "../core/stage";
 /**
  * Animates text letter-by-letter with realistic typing, backspaces, pauses, and a blinking cursor.
  */
@@ -108,6 +109,7 @@ export function typewriter(
     const textSpan = document.createElement("span");
     el.appendChild(textSpan);
 
+    let cursorAnimation: Animation | undefined;
     let cursorSpan: HTMLSpanElement | undefined;
     if (cursor) {
       cursorSpan = document.createElement("span");
@@ -115,11 +117,12 @@ export function typewriter(
       cursorSpan.style.display = "inline-block";
       cursorSpan.style.marginLeft = "2px";
       cursorSpan.style.opacity = "1";
-      cursorSpan.animate([{ opacity: 1 }, { opacity: 0 }], {
+      cursorAnimation = cursorSpan.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: 530,
         iterations: Number.POSITIVE_INFINITY,
         direction: "alternate",
       });
+      cursorAnimation.pause();
       el.appendChild(cursorSpan);
     }
 
@@ -129,6 +132,13 @@ export function typewriter(
     let charIndex = 0;
     let activeTimer: ReturnType<typeof setTimeout> | null = null;
     let _isPlaying = false;
+    const activityMetric = getActiveStage()._metrics.gauge({
+      name: "typewriter_timer_active",
+      help: "Typewriter timer scheduled while the element is visible.",
+      labels: { id: element.id },
+      collect: () => (activeTimer === null ? 0 : 1),
+    });
+    element.onUnmount(() => activityMetric.dispose());
 
     function getNextCharDelay(char: string, baseSpeedSec: number): number {
       const randomJitter = (Math.random() * 2 - 1) * jitter * baseSpeedSec;
@@ -141,6 +151,7 @@ export function typewriter(
     }
 
     function executeStep() {
+      activeTimer = null;
       if (stepIndex >= steps.length) {
         if (loop) {
           textSpan.textContent = "";
@@ -227,11 +238,13 @@ export function typewriter(
     }
 
     element.onActivate(() => {
+      cursorAnimation?.play();
       startTyping();
     });
 
     element.onDeactivate(() => {
       stopTyping();
+      cursorAnimation?.pause();
       textSpan.textContent = "";
     });
 
@@ -259,6 +272,12 @@ export function typewriter(
       }
 
       wasVisible = currentlyVisible;
+    });
+
+    element.onUnmount(() => {
+      stopTyping();
+      observer.disconnect();
+      cursorAnimation?.cancel();
     });
 
     observer.observe(el, { attributes: true, attributeFilter: ["style"] });

@@ -3,30 +3,25 @@
  */
 
 import "./Table.css";
-import { type Align, getActiveStage } from "../../core/index";
+import { getActiveStage } from "../../core/index";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import { DOMElement, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
-
-function resolveColumnTextAlign(align?: Align): "left" | "center" | "right" | undefined {
-  if (!align) return undefined;
-  if (align.includes("right")) return "right";
-  if (align.includes("left")) return "left";
-  return "center";
-}
 
 /**
  * Configuration options for the Table component.
  * @category Components
  * @inline
  */
-export interface TableOptions extends Omit<ElementOptions, "align"> {
+export interface TableOptions extends ElementOptions {
+  /** Hide body rows initially for reveal (default: false). */
+  rowsHidden?: boolean;
   /** Column header labels displayed in the table header row. */
   headers?: string[];
   /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
   rows: (string | number | HTMLElement | DOMElement)[][];
   /** Text alignment per column (default: "left"). */
-  align?: Align[];
+  columnAlign?: ("left" | "center" | "right")[];
   /** Additional CSS class name. */
   className?: string;
   /** Whether clicking or dragging rows focuses them interactively (default: true). */
@@ -35,7 +30,7 @@ export interface TableOptions extends Omit<ElementOptions, "align"> {
 
 /** Public controls for a table. @category Components */
 export interface TableElement extends DOMElement {
-  readonly rows: DOMElement[];
+  readonly rows: readonly DOMElement[];
   reveal(options?: StaggerOptions): StaggerTransition;
 }
 
@@ -43,12 +38,12 @@ export interface TableElement extends DOMElement {
  * @internal
  */
 class TableElementImpl extends DOMElement implements TableElement {
-  readonly rows: DOMElement[];
+  readonly rows: readonly DOMElement[];
 
   constructor(options: TableOptions) {
-    const { align: tableAlign, ...elementOpts } = options;
-    const isHiddenInitially = elementOpts.opacity === 0;
-    const containerOptions = isHiddenInitially ? { ...elementOpts, opacity: 1 } : elementOpts;
+    const { columnAlign: tableAlign, ...elementOpts } = options;
+    const isHiddenInitially = options.rowsHidden ?? false;
+    const containerOptions = elementOpts;
     const container = document.createElement("div");
     container.className = ["sr-table-container", options.className].filter(Boolean).join(" ");
 
@@ -56,7 +51,7 @@ class TableElementImpl extends DOMElement implements TableElement {
     table.className = "sr-table";
     container.appendChild(table);
 
-    const align = options.align || [];
+    const align = options.columnAlign || [];
 
     if (options.headers && options.headers.length > 0) {
       const thead = document.createElement("thead");
@@ -64,7 +59,7 @@ class TableElementImpl extends DOMElement implements TableElement {
       options.headers.forEach((h, colIdx) => {
         const th = document.createElement("th");
         th.textContent = h;
-        const colAlign = resolveColumnTextAlign(align[colIdx]);
+        const colAlign = align[colIdx];
         if (colAlign) {
           th.style.textAlign = colAlign;
         }
@@ -94,7 +89,7 @@ class TableElementImpl extends DOMElement implements TableElement {
         } else {
           td.textContent = String(cellData);
         }
-        const colAlign = resolveColumnTextAlign(align[colIdx]);
+        const colAlign = align[colIdx];
         if (colAlign) {
           td.style.textAlign = colAlign;
         }

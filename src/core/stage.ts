@@ -1,3 +1,4 @@
+import { copyPropertyRecord, copyPropertyValue } from "./reactive";
 /**
  * The main presentation director managing scenes, step transitions, snapshots, and the virtual viewport.
  */
@@ -220,11 +221,6 @@ class SceneBuilder {
     this.stage.theme(config);
     return this;
   }
-
-  background(bg: Background | ReactiveElementBase | string): this {
-    this.stage.background(bg);
-    return this;
-  }
 }
 
 /**
@@ -273,7 +269,20 @@ export class Stage {
 
   // Playback State
   private currentStepIndex = 0;
-  private isAnimating = false;
+  private animationActive = false;
+  private get isAnimating(): boolean {
+    return this.animationActive;
+  }
+  private set isAnimating(active: boolean) {
+    if (active === this.animationActive) return;
+    this.animationActive = active;
+    this.emit("evt:stage:activityChanged", { active });
+  }
+
+  /** Whether the stage is currently animating. Default: false. */
+  get isMoving(): boolean {
+    return this.animationActive;
+  }
   private animFrameId: number | null = null;
   private presenterHost: PresenterHost | null = null;
   private activeSceneName = "";
@@ -655,8 +664,14 @@ export class Stage {
 
     this._metrics.gauge({
       name: "stage_active_raf_count",
-      help: "Stage rAF loops running. Must be 0 at rest.",
-      collect: () => (this.animFrameId !== null ? 1 : 0),
+      help: "Stage, background, and overlay rAF loops running. Must be 0 when idle.",
+      collect: () => {
+        let count = this.animFrameId !== null ? 1 : 0;
+        count += Number(this._getBackgroundMetrics()?.is_running ?? 0);
+        for (const overlay of this.overlays)
+          count += Number(overlay.getMetrics?.().raf_loop_active ?? 0);
+        return count;
+      },
     });
 
     this._metrics.gauge({
@@ -850,7 +865,7 @@ export class Stage {
     // Background Diagnostics
     this._metrics.gauge({
       name: "background_running",
-      help: "Background render loop running. May be 1 at rest.",
+      help: "Visible background render loop running; independent of step transitions.",
       collect: () => {
         const m = this._getBackgroundMetrics();
         return m ? Number(m.is_running) || 0 : null;
@@ -1101,6 +1116,8 @@ export class Stage {
     triggerMilestone?: AnimationMilestone,
     triggerProperty?: string,
   ): void {
+    from = copyPropertyValue(from);
+    to = copyPropertyValue(to);
     if (from === to) {
       return;
     }
@@ -1175,7 +1192,11 @@ export class Stage {
       const progress = new Map<string, number>();
       for (const [key, t] of this.activeLiveTransitions) {
         const elapsed = frameTime - t.startTime;
-        const sample = sampleTransition(t, elapsed);
+        const sample = sampleTransition(
+          t,
+          elapsed,
+          this.elementRegistry.get(t.elementId)?.domElement,
+        );
         this._setCurrentPropertyValue(t.elementId, t.property, sample.value);
         progress.set(t.elementId, sample.progress);
         if (elapsed >= t.endOffsetMs) this.activeLiveTransitions.delete(key);
@@ -1214,7 +1235,8 @@ export class Stage {
   }
 
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
-    return this.propertyState.get(elementId)?.[property];
+    const props = this.propertyState.get(elementId);
+    return props && Object.hasOwn(props, property) ? props[property] : undefined;
   }
 
   _setCurrentPropertyValue(elementId: string, property: string, value: unknown): void {
@@ -1223,6 +1245,7 @@ export class Stage {
       elProps = {};
       this.propertyState.set(elementId, elProps);
     }
+    value = copyPropertyValue(value);
     elProps[property] = value;
 
     // Update baseline properties if this element has not yet been snapshotted in any step
@@ -1275,14 +1298,14 @@ export class Stage {
           val = element.domElement?.style.zIndex || "auto";
         }
         if (typeof val !== "function") {
-          initialProps[key] = val;
+          initialProps[key] = copyPropertyValue(val);
         }
       } catch {
         // ignore getters that fail
       }
     }
 
-    this.initialProperties.set(element.id, { ...initialProps });
+    this.initialProperties.set(element.id, copyPropertyRecord(initialProps));
     this.propertyState.set(element.id, initialProps);
 
     if (this.viewport) {
@@ -1311,7 +1334,7 @@ export class Stage {
    * stage.theme({
    *   background: "#0f172a",
    *   surface: "#1e293b",
-   *   surfaceBorder: "1px solid #334155",
+   *   surfaceBorderColor: "#334155",
    *   text: "#f8fafc",
    * });
    * ```
@@ -1330,7 +1353,7 @@ export class Stage {
    * @example
    * ```ts
    * stage.background("#0f172a");
-   * stage.background(new Starfield());
+   * stage.background(Starfield());
    * ```
    */
   background(bg: string | Background | ReactiveElementBase): this {
@@ -1366,8 +1389,8 @@ export class Stage {
 
   private _applyTheme(theme: ThemeConfig): void {
     if (!this.container) return;
-    if (theme.background) {
-      this.container.style.backgroundColor = theme.background;
+    if (theme.background && typeof this.backgroundSource !== "string") {
+      this.container.style.background = theme.background;
     }
     if (theme.text) {
       this.container.style.color = theme.text;
@@ -1428,13 +1451,24 @@ export class Stage {
     // Save immutable snapshot for backward navigation
     const snapProps = new Map<string, Record<string, unknown>>();
     for (const [id, props] of this.propertyState.entries()) {
-      snapProps.set(id, { ...props });
+      snapProps.set(id, copyPropertyRecord(props));
     }
 
     this.snapshots.push({
       sceneName: this.currentSceneName,
       stepIndex: stepIdx,
       properties: snapProps,
+      backgroundProperties:
+        this.backgroundSource && typeof this.backgroundSource !== "string"
+          ? Object.fromEntries(
+              [...getReactiveKeys(this.backgroundSource)].map((key) => [
+                key,
+                copyPropertyValue(
+                  (this.backgroundSource as unknown as Record<string, unknown>)[key],
+                ),
+              ]),
+            )
+          : undefined,
       activeElementIds: new Set(this.activeElementIds),
       theme: { ...this.currentTheme },
     });
@@ -1861,10 +1895,20 @@ export class Stage {
     this.sceneTransitionRunning = false;
     this._clearPromotedElements();
 
+    if (
+      snap.backgroundProperties &&
+      this.backgroundSource &&
+      typeof this.backgroundSource !== "string"
+    ) {
+      for (const [key, value] of Object.entries(snap.backgroundProperties)) {
+        (this.backgroundSource as unknown as Record<string, unknown>)[key] =
+          copyPropertyValue(value);
+      }
+    }
     // 1. Restore propertyState map from immutable snapshot
     this.propertyState.clear();
     for (const [id, props] of snap.properties.entries()) {
-      this.propertyState.set(id, { ...props });
+      this.propertyState.set(id, copyPropertyRecord(props));
     }
 
     // 2. Hide elements that are not in the target step snapshot
@@ -2198,7 +2242,11 @@ export class Stage {
         const el = this.elementRegistry.get(t.elementId);
         if (!el) continue;
 
-        const currentVal = sampleTransition(t, elapsed).value;
+        const currentVal = sampleTransition(
+          t,
+          elapsed,
+          this.elementRegistry.get(t.elementId)?.domElement,
+        ).value;
 
         // Update local property state
         this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
@@ -2321,6 +2369,7 @@ export class Stage {
     } else if ("color" in props && node.style.color) {
       node.style.removeProperty("color");
     }
+    node.style.zIndex = "";
     if (props.zIndex !== undefined) {
       const zNum = Number(props.zIndex);
       node.style.zIndex = Number.isFinite(zNum) ? String(Math.round(zNum)) : String(props.zIndex);

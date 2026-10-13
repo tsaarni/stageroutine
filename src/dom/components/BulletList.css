@@ -1,7 +1,7 @@
 @layer sr-components {
   .sr-bullet-marker {
     display: inline-block;
-    color: var(--sr-bullet-marker-color, var(--sr-text-dim));
+    color: var(--sr-bullet-marker-color, currentColor);
     flex-shrink: 0;
     user-select: none;
     line-height: inherit;
@@ -16,7 +16,7 @@
     gap: var(--sr-space-sm);
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-body);
-    color: var(--sr-text-muted);
+    color: inherit;
     line-height: 1.55;
     letter-spacing: -0.01em;
     border-radius: var(--sr-radius);
@@ -29,13 +29,13 @@
     }
 
     &.is-focused {
-      color: var(--sr-text);
+      color: inherit;
       opacity: 1 !important;
       transform: translateX(8px) !important;
 
       & .sr-bullet-marker {
-        color: var(--sr-bullet-marker-color, var(--sr-primary)) !important;
-        text-shadow: 0 0 10px var(--sr-bullet-marker-color, var(--sr-primary));
+        color: var(--sr-bullet-marker-color, currentColor) !important;
+        text-shadow: 0 0 10px var(--sr-bullet-marker-color, currentColor);
       }
     }
 
@@ -45,6 +45,7 @@
   }
 
   .sr-bullet-list {
+    color: var(--sr-text-muted);
     display: flex;
     flex-direction: column;
     gap: var(--sr-space-md);

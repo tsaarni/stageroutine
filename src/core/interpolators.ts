@@ -14,27 +14,28 @@ export interface RGBA {
   a: number;
 }
 
-export function parseColor(color: string): RGBA | null {
+export function parseColor(color: string, context?: HTMLElement): RGBA | null {
+  color = color.trim();
   if (color.startsWith("#")) {
     let hex = color.slice(1);
-    if (hex.length === 3) {
+    if (hex.length === 3 || hex.length === 4) {
       hex = hex
         .split("")
         .map((c) => c + c)
         .join("");
     }
-    if (hex.length === 6) {
-      const num = Number.parseInt(hex, 16);
+    if (/^[0-9a-f]+$/i.test(hex) && (hex.length === 6 || hex.length === 8)) {
+      const num = Number.parseInt(hex.slice(0, 6), 16);
       return {
         r: (num >> 16) & 255,
         g: (num >> 8) & 255,
         b: num & 255,
-        a: 1,
+        a: hex.length === 8 ? Number.parseInt(hex.slice(6), 16) / 255 : 1,
       };
     }
   }
 
-  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  const rgbMatch = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
   if (rgbMatch) {
     return {
       r: Number.parseInt(rgbMatch[1] ?? "0", 10),
@@ -49,21 +50,44 @@ export function parseColor(color: string): RGBA | null {
     white: { r: 255, g: 255, b: 255, a: 1 },
     black: { r: 0, g: 0, b: 0, a: 1 },
     transparent: { r: 0, g: 0, b: 0, a: 0 },
-    red: { r: 239, g: 68, b: 68, a: 1 },
-    blue: { r: 59, g: 130, b: 246, a: 1 },
-    green: { r: 34, g: 197, b: 94, a: 1 },
+    red: { r: 255, g: 0, b: 0, a: 1 },
+    blue: { r: 0, g: 0, b: 255, a: 1 },
+    green: { r: 0, g: 128, b: 0, a: 1 },
   };
 
-  return named[color.toLowerCase()] ?? null;
+  const known = named[color.toLowerCase()];
+  if (known) return known;
+  const parent = context ?? document.body;
+  if (!parent) return null;
+  const probe = document.createElement("span");
+  probe.style.color = color;
+  if (!probe.style.color) return null;
+  probe.style.display = "none";
+  parent.appendChild(probe);
+  const resolved = getComputedStyle(probe).color;
+  probe.remove();
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 1;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.fillStyle = resolved;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r = 0, g = 0, b = 0, a = 255] = ctx.getImageData(0, 0, 1, 1).data;
+  return { r, g, b, a: a / 255 };
 }
 
 export function lerpNumber(from: number, to: number, t: number): number {
   return from + (to - from) * t;
 }
 
-export function lerpColor(fromStr: string, toStr: string, t: number): string {
-  const from = parseColor(fromStr);
-  const to = parseColor(toStr);
+export function lerpColor(
+  fromStr: string,
+  toStr: string,
+  t: number,
+  context?: HTMLElement,
+): string {
+  const from = parseColor(fromStr, context);
+  const to = parseColor(toStr, context);
   if (!from || !to) return t >= 1 ? toStr : fromStr;
 
   const r = Math.round(lerpNumber(from.r, to.r, t));
@@ -151,7 +175,56 @@ export function computeTransform(
   };
 }
 
-export function interpolateValue(from: unknown, to: unknown, t: number): unknown {
+export function interpolateValue(
+  from: unknown,
+  to: unknown,
+  t: number,
+  property?: string,
+  context?: HTMLElement,
+): unknown {
+  if (property === "labelPlacement") {
+    const fraction = (value: unknown) => {
+      if (value === "start") return 0.25;
+      if (value === "center") return 0.5;
+      if (value === "end") return 0.75;
+      return value;
+    };
+    from = fraction(from);
+    to = fraction(to);
+  }
+  const anchors = property === "origin" || property === "fromAnchor" || property === "toAnchor";
+  const colors = property === "color" || property === "borderColor" || property === "background";
+  const lengths =
+    property === "width" ||
+    property === "height" ||
+    property === "labelOffsetX" ||
+    property === "labelOffsetY";
+  const numeric = [
+    "x",
+    "y",
+    "scale",
+    "rotation",
+    "opacity",
+    "blur",
+    "brightness",
+    "zIndex",
+    "start",
+    "end",
+    "labelScale",
+    "labelPlacement",
+    "rowY",
+    "curvature",
+    "padding",
+    "fromPadding",
+    "toPadding",
+    "strokeWidth",
+    "length",
+    "volume",
+    "playbackRate",
+    "currentTime",
+  ].includes(property ?? "");
+  if (property !== undefined && !anchors && !colors && !lengths && !numeric)
+    return t >= 1 ? to : from;
   // Stage coordinates, dimensions, and scalars are plain numbers
   if (typeof from === "number" && typeof to === "number") {
     return lerpNumber(from, to, t);
@@ -173,23 +246,31 @@ export function interpolateValue(from: unknown, to: unknown, t: number): unknown
   const isAnchorTuple = (v: unknown): v is Point =>
     Array.isArray(v) && v.length >= 2 && typeof v[0] === "number" && typeof v[1] === "number";
 
-  if (isAnchorTuple(from) || isAnchorTuple(to) || isAnchorKeyword(from) || isAnchorKeyword(to)) {
+  if (
+    anchors &&
+    (isAnchorTuple(from) || isAnchorTuple(to) || isAnchorKeyword(from) || isAnchorKeyword(to))
+  ) {
+    if (
+      !(isAnchorTuple(from) || isAnchorKeyword(from)) ||
+      !(isAnchorTuple(to) || isAnchorKeyword(to))
+    )
+      return t >= 1 ? to : from;
     const aFrom = resolveAnchor(from as ElementAnchor);
     const aTo = resolveAnchor(to as ElementAnchor);
     return [lerpNumber(aFrom[0], aTo[0], t), lerpNumber(aFrom[1], aTo[1], t)] as Point;
   }
 
   if (typeof from === "string" && typeof to === "string") {
-    const isColorFrom = from.startsWith("#") || from.startsWith("rgb") || parseColor(from);
-    const isColorTo = to.startsWith("#") || to.startsWith("rgb") || parseColor(to);
-    if (isColorFrom && isColorTo) {
-      return lerpColor(from, to, t);
+    const isColorFrom = colors ? parseColor(from, context) : null;
+    const isColorTo = colors ? parseColor(to, context) : null;
+    if (colors && isColorFrom && isColorTo) {
+      return lerpColor(from, to, t, context);
     }
 
     // Authored CSS lengths (e.g. "40rem") interpolate when their units match
     const uFrom = parseUnitValue(from);
     const uTo = parseUnitValue(to);
-    if (uFrom && uTo && uFrom.unit === uTo.unit) {
+    if (lengths && uFrom && uTo && uFrom.unit === uTo.unit) {
       const val = lerpNumber(uFrom.num, uTo.num, t);
       return `${val}${uTo.unit}`;
     }

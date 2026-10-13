@@ -47,6 +47,7 @@ export function scheduleTransitions(
 export function sampleTransition(
   t: ScheduledTransition,
   elapsed: number,
+  context?: HTMLElement,
 ): {
   value: unknown;
   progress: number;
@@ -54,5 +55,8 @@ export function sampleTransition(
   if (elapsed < t.startOffsetMs) return { value: t.startFrom, progress: 0 };
   if (elapsed >= t.endOffsetMs) return { value: t.to, progress: 1 };
   const progress = (elapsed - t.startOffsetMs) / t.durationMs;
-  return { progress, value: interpolateValue(t.startFrom, t.to, t.curve(progress)) };
+  return {
+    progress,
+    value: interpolateValue(t.startFrom, t.to, t.curve(progress), t.property, context),
+  };
 }

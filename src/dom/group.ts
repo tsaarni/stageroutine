@@ -2,12 +2,14 @@
  * Logical group proxy for coordinating multi-element transitions and property broadcasting without DOM wrappers.
  */
 
+import { isReactiveProperty } from "../core/reactive";
 import type {
   CoordProp,
   Position,
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
+  SizeProp,
 } from "../core/types";
 import {
   type ElementTransition,
@@ -21,8 +23,9 @@ import type { DOMElement, ElementDecorator } from "./element";
  * Public fluent contract for a logical group of elements.
  * @category Core
  */
-export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase> {
-  readonly elements: readonly (DOMElement | ReactiveElementBase)[];
+export interface GroupElement<T extends ReactiveElementBase = ReactiveElementBase>
+  extends Iterable<T> {
+  readonly elements: readonly T[];
   opacity: ReactiveProp<number>;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;
@@ -32,10 +35,9 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
   x: CoordProp;
   y: CoordProp;
   position: ReactiveProp<Position> | PositionUpdater;
-  size: CoordProp;
-  [key: string]: unknown;
+  size: SizeProp;
 
-  to(props: ElementTransitionProps): ElementTransition;
+  to(props: ElementTransitionProps<T>): ElementTransition;
   decorate(...decorators: ElementDecorator[]): this;
 }
 
@@ -43,9 +45,9 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
  * @internal
  */
 class GroupElementImpl implements Iterable<DOMElement | ReactiveElementBase> {
-  readonly elements: (DOMElement | ReactiveElementBase)[];
+  readonly elements: readonly (DOMElement | ReactiveElementBase)[];
 
-  constructor(elements: (DOMElement | ReactiveElementBase)[]) {
+  constructor(elements: readonly (DOMElement | ReactiveElementBase)[]) {
     this.elements = elements;
   }
 
@@ -76,24 +78,29 @@ class GroupElementImpl implements Iterable<DOMElement | ReactiveElementBase> {
  *
  * @category Core
  */
-export function group(
-  ...items: (
-    | DOMElement
+export function group<
+  const T extends readonly (
     | ReactiveElementBase
-    | (DOMElement | ReactiveElementBase)[]
+    | readonly ReactiveElementBase[]
     | GroupElement
     | null
     | undefined
     | false
-  )[]
-): GroupElement {
+  )[],
+>(
+  ...items: T
+): GroupElement<
+  | Extract<T[number], ReactiveElementBase>
+  | Extract<T[number], readonly ReactiveElementBase[]>[number]
+  | Extract<T[number], GroupElement>["elements"][number]
+> {
   const flattened: (DOMElement | ReactiveElementBase)[] = [];
 
   const add = (
     item:
       | DOMElement
       | ReactiveElementBase
-      | (DOMElement | ReactiveElementBase)[]
+      | readonly (DOMElement | ReactiveElementBase)[]
       | GroupElement
       | null
       | undefined
@@ -136,6 +143,8 @@ export function group(
         return Reflect.set(target, prop, value, receiver);
       }
       const propName = String(prop);
+      if (target.elements.some((el) => !isReactiveProperty(el, propName)))
+        throw new Error(`Unsupported group property: ${propName}`);
       for (const el of target.elements) {
         if (!el) continue;
         if (isTransitionDescriptor(value)) {
@@ -147,5 +156,9 @@ export function group(
       }
       return true;
     },
-  }) as unknown as GroupElement;
+  }) as unknown as GroupElement<
+    | Extract<T[number], ReactiveElementBase>
+    | Extract<T[number], readonly ReactiveElementBase[]>[number]
+    | Extract<T[number], GroupElement>["elements"][number]
+  >;
 }

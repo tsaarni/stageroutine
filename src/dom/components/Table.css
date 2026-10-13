@@ -9,7 +9,7 @@
 
     &.is-focused {
       background-color: color-mix(in srgb, var(--sr-text) 8%, transparent);
-      color: var(--sr-text);
+      color: inherit;
       opacity: 1 !important;
     }
   }
@@ -20,7 +20,7 @@
     text-align: left;
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-body);
-    color: var(--sr-text-muted);
+    color: inherit;
 
     & th {
       font-family: var(--sr-font-mono);
@@ -28,7 +28,7 @@
       font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--sr-text-dim);
+      color: inherit;
       padding: var(--sr-space-xs) var(--sr-space-sm);
       border-bottom: var(--sr-surface-border);
       background: color-mix(in srgb, var(--sr-text) 2%, transparent);
@@ -45,6 +45,7 @@
   }
 
   .sr-table-container {
+    color: var(--sr-text-muted);
     background: var(--sr-surface);
     backdrop-filter: var(--sr-surface-backdrop);
     -webkit-backdrop-filter: var(--sr-surface-backdrop);

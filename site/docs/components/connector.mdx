@@ -82,3 +82,9 @@ Choose from several endpoint marker styles via `startHead` and `endHead`:
 
 - [`Connector`](../api/functions/Connector.md)
 - [`pulseSequence`](../api/functions/pulseSequence.md)
+
+Use `routing` for path geometry and `strokePattern` (`"solid"`, `"dashed"`, or `"dotted"`) for the stroke. `style` contains CSS only. Head types and sizes are fixed at creation.
+
+`labelOffset` writes X/Y offsets. Explicit initial axes override the aggregate. Numeric offsets use stage units; CSS lengths resolve against the stage viewport. Label placement maps `"start"` to 0.25, `"center"` to 0.5, and `"end"` to 0.75.
+
+Line, heads, and default pulses share `color`. Explicit pulse colors override it. Endpoint clearance uses `fromPadding ?? padding` and `toPadding ?? padding`; zero is valid.

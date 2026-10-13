@@ -14,10 +14,10 @@ To learn how to manage active resources like timers, video playback, and GPU per
 
 ## Writing a Component Function
 
-Components instantiate and return a `DOMElement`:
+Wrap a DOM node with `Element()`:
 
 ```typescript
-import { DOMElement, type ElementOptions } from "stageroutine";
+import { Element, type DOMElement, type ElementOptions } from "stageroutine";
 
 export interface BadgeOptions extends ElementOptions {
   label: string;
@@ -28,7 +28,7 @@ export function Badge(options: BadgeOptions): DOMElement {
   node.className = "my-badge";
   node.innerText = options.label;
 
-  return new DOMElement("Badge", node, {
+  return Element(node, {
     origin: "center",
     ...options,
   });
@@ -41,7 +41,7 @@ StageRoutine includes a lightweight JSX runtime for declaring markup without Rea
 
 ```tsx
 /** @jsxImportSource stageroutine */
-import { DOMElement } from "stageroutine";
+import { Element } from "stageroutine";
 
 export function Card({ title, content, ...options }) {
   const vdom = (
@@ -51,7 +51,7 @@ export function Card({ title, content, ...options }) {
     </div>
   );
 
-  return new DOMElement("Card", vdom, options);
+  return Element(vdom, options);
 }
 ```
 
@@ -71,7 +71,7 @@ src/components/
 ```typescript
 // Badge.tsx
 import "./Badge.css";
-import { DOMElement, type ElementOptions } from "stageroutine";
+import { Element, type DOMElement, type ElementOptions } from "stageroutine";
 ```
 
 ### Wrap Styles in `@layer sr-components`

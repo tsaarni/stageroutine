@@ -155,6 +155,10 @@ function patchMouseService(terminal: XTerm, scaleGetter: () => number): void {
  * @internal
  */
 class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement {
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
+    "title",
+  ]);
   private readonly frame: WindowFrame;
   private readonly cwd: string | undefined;
   private readonly env: Record<string, string> | undefined;
@@ -181,8 +185,10 @@ class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement 
     const rows = options.rows === undefined ? undefined : Math.max(1, Math.trunc(options.rows));
     const settings: LiveTerminalOptions = {
       ...options,
-      width: options.width ?? 100,
-      ...(rows === undefined ? { height: options.height ?? 44 } : { height: options.height }),
+      width: options.width ?? options.size ?? 100,
+      ...(rows === undefined
+        ? { height: options.height ?? options.size ?? 44 }
+        : { height: options.height }),
     };
     const title = settings.title ?? "shell";
     const frame = createWindowFrame({ title, className: "sr-terminal-live" });

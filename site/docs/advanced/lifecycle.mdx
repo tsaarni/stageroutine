@@ -13,7 +13,7 @@ Every element, decorator, and background follows four lifecycle events:
 ![Component Lifecycle](/img/component-lifecycle.svg)
 
 * **`onMount`**: Runs once when the element is added to the stage.
-* **`onActivate`**: Runs when the element enters the current scene. Use this to start or resume active media and timers.
+* **`onActivate`**: Runs when the element enters the current scene. Use this to start or resume active media.
 * **`onDeactivate`**: Runs when the element leaves the scene and is no longer visible. Use this to pause active media and timers.
 * **`onUnmount`**: Runs when the presentation closes or the stage is destroyed. Clean up global event listeners here.
 
@@ -22,57 +22,49 @@ Every element, decorator, and background follows four lifecycle events:
 Presentations spend most of their time at rest between steps while the speaker talks. StageRoutine helps preserve system resources automatically:
 
 ### Automatic Animation Pausing
-CSS keyframe animations (such as pulsing borders or rotating icons) pause automatically when an element leaves the screen, and resume when it reappears. You do not need to write cleanup code for CSS animations.
+Explicitly requested backgrounds, repeating pulses, typewriter effects, and camera motion continue between steps while visible. They stop on scene exit or disposal. Completing a step transition does not stop them. You do not need to write cleanup code for CSS animations.
 
 ### Managing Timers and Streams
-The engine cannot automatically stop custom JavaScript intervals, video playback, or webcam feeds. Use `onActivate` and `onDeactivate` to start and pause them:
+Video playback and webcam streams follow visibility. Bind custom ambient timers to `onActivate` and `onDeactivate`. Dispose listeners and resources on unmount. For work that should run only during step transitions, use `evt:stage:activityChanged` instead.
+
+Prefer `onUpdate` for small effects such as grain. It runs during stage updates and needs no interval. For a raw DOM target, `grain()(node)` returns a handle with `dispose()`.
+
+This counter opts into running only during step transitions:
 
 ```tsx
 /** @jsxImportSource stageroutine */
-import { DOMElement, type ElementOptions } from "stageroutine";
+import { Element, type DOMElement, type ElementOptions, type Stage } from "stageroutine";
 
-export interface SecondsCounterOptions extends ElementOptions {
-  initialSeconds?: number;
-}
+export function SecondsCounter(stage: Stage, options: ElementOptions = {}): DOMElement {
+  const label = <span>0s</span>;
+  const counter = Element(label, options);
+  let seconds = 0;
+  let timerId: number | undefined;
 
-export function SecondsCounter(options: SecondsCounterOptions = {}): DOMElement {
-  const { initialSeconds = 0, ...restOptions } = options;
-  let seconds = initialSeconds;
-  let label: HTMLElement;
-  let timerId: number | null = null;
-
-  return new DOMElement(
-    "SecondsCounter",
-    (
-      <div className="seconds-counter">
-        <span ref={(el) => (label = el)}>{seconds}s</span>
-      </div>
-    ),
-    {
-      ...restOptions,
-      onActivate: () => {
-        // Resume counting when entering the scene
-        timerId = window.setInterval(() => {
-          seconds += 1;
-          label.innerText = `${seconds}s`;
-        }, 1000);
-      },
-      onDeactivate: () => {
-        // Pause counting when leaving the scene
-        if (timerId !== null) {
-          clearInterval(timerId);
-          timerId = null;
-        }
-      },
-    },
-  );
+  const stop = () => {
+    if (timerId !== undefined) window.clearInterval(timerId);
+    timerId = undefined;
+  };
+  const detach = stage.on("evt:stage:activityChanged", ({ active }) => {
+    stop();
+    if (active && counter.isActive) {
+      timerId = window.setInterval(() => {
+        label.textContent = String(++seconds) + "s";
+      }, 1000);
+    }
+  });
+  counter.onDeactivate(stop);
+  counter.onUnmount(() => { stop(); detach(); });
+  return counter;
 }
 ```
 
 Use the component in your presentation:
 
 ```typescript
-const counter = SecondsCounter({ position: [80, 36], origin: "top" });
+const counter = SecondsCounter(stage, { position: [80, 36], origin: "top" });
 
 stage.scene("Live Demo").with(counter);
 ```
+
+The RAF metric includes procedural background and overlay loops. Browser animations and typewriter timers have separate metrics. A presentation with visible ambient effects is still doing animation work between steps.

@@ -35,13 +35,15 @@ stage.mount("#stage");
 // hide-end
 ```
 
+Use `columnAlign: ["left", "center", "right"]` to align each column.
+
 ## Row Selection
 
 Clicking or dragging table rows interactively highlights selected rows and dims unselected rows.
 
 ## Reveal
 
-Rows are visible by default. Pass `{ opacity: 0 }` to opt into reveal animations:
+Rows are visible by default. Pass `{ rowsHidden: true }` to opt into reveal animations:
 
 ```typescript
 const table = Table({
@@ -50,7 +52,7 @@ const table = Table({
     ["Auth Gateway", "Operational"],
     ["Payment Engine", "Operational"],
   ],
-  opacity: 0,
+  rowsHidden: true,
 });
 
 // Continuous staggered reveal in a single step

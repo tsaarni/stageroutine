@@ -1,3 +1,4 @@
+import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Reactive visual connector and arrow primitive linking nodes and coordinates with dynamic tracking.
  */
@@ -26,7 +27,7 @@ export interface PulseOptions {
   color?: string;
   /** Duration of the particle traversal in seconds (default: 0.6s). */
   duration?: number;
-  /** Diameter of the particle in virtual canvas pixels (default: 8px). */
+  /** Diameter of the particle in virtual canvas pixels (default: 12px). */
   size?: number;
   /** Traverse the connector backward (from the destination to the origin) (default: false). */
   reverse?: boolean;
@@ -56,7 +57,7 @@ export interface PulseSequenceStep {
   duration?: number;
   /** Particle color override (default: connector stroke color). */
   color?: string;
-  /** Particle diameter in pixels (default: 8px). */
+  /** Particle diameter in pixels (default: 12px). */
   size?: number;
   /** Traverse this connector backward (from destination to origin) (default: false). */
   reverse?: boolean;
@@ -107,14 +108,24 @@ export type LabelPlacement = "start" | "center" | "end" | number;
  */
 export type LabelOffset = readonly [x: number | string, y: number | string] | number | string;
 
-function resolveOffset(val: number | string | undefined, stageH: number): number {
+function resolveOffset(
+  val: number | string | undefined,
+  stageH: number,
+  element: HTMLElement,
+  axis: "x" | "y",
+): number {
   if (val === undefined) return 0;
   if (typeof val === "number") return unitsToPx(val, stageH);
-  const s = val.trim();
-  if (s.endsWith("rem")) {
-    return Number.parseFloat(s) * 16;
-  }
-  return Number.parseFloat(s) || 0;
+  const parent = element.parentElement;
+  if (!parent) return 0;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:absolute;visibility:hidden;width:0;height:0;pointer-events:none";
+  const property = axis === "x" ? "left" : "top";
+  probe.style[property] = val;
+  parent.appendChild(probe);
+  const result = Number.parseFloat(getComputedStyle(probe)[property]) || 0;
+  probe.remove();
+  return result;
 }
 
 /** Half-width of a sequence diagram activation bar in CSS pixels (14px total width). */
@@ -274,23 +285,23 @@ function createHeadMarker(
  * @category Components
  * @inline
  */
-export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
+export interface ConnectorOptions extends ElementOptions {
+  /** Fixed message row in stage units (default: undefined, automatic routing). */
+  rowY?: number;
   /** Optional text label rendered at the connector's midpoint or specified placement. */
   label?: string;
   /** Scale factor for the label badge and text (default: 1). Reactive. */
-  labelScale?: ReactiveProp<number>;
+  labelScale?: number;
   /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
-  labelPlacement?: ReactiveProp<LabelPlacement>;
+  labelPlacement?: LabelPlacement;
   /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
-  labelOffset?: ReactiveProp<LabelOffset>;
+  labelOffset?: LabelOffset;
   /** Horizontal offset for the label in stage units, or a CSS length. Reactive. */
-  labelOffsetX?: ReactiveProp<number | string>;
+  labelOffsetX?: number | string;
   /** Vertical offset for the label in stage units, or a CSS length. Reactive. */
-  labelOffsetY?: ReactiveProp<number | string>;
+  labelOffsetY?: number | string;
   /** Routing style: straight line, 90° orthogonal corners, smooth cubic Bézier, or single-curvature circular arc. */
   routing?: "straight" | "corner" | "bezier" | "arc";
-  /** CSS style declaration or routing shortcut. */
-  style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
   /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
   curvature?: number;
   /** Attachment point on the origin target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
@@ -301,10 +312,8 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   color?: string;
   /** Stroke width in virtual pixels (defaults to 3). */
   strokeWidth?: number;
-  /** Whether the line is styled with dashed strokes. */
-  dashed?: boolean;
-  /** Whether the line is styled with dotted strokes. */
-  dotted?: boolean;
+  /** Stroke pattern (default: "solid"). */
+  strokePattern?: "solid" | "dashed" | "dotted";
   /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
   flow?: FlowEffect;
   /** Head marker at the start/origin endpoint (defaults to "none"). */
@@ -316,12 +325,12 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
   /** Size of the end head marker in virtual canvas pixels (defaults to 16). */
   endHeadSize?: number;
   /** Trim-path start offset from 0.0 to 1.0. */
-  start?: ReactiveProp<number>;
+  start?: number;
   /**
    * Trim-path end offset from 0.0 to 1.0 for draw-in transitions.
    * When animated (e.g. `to(1)`), the arrowhead automatically rides the leading edge of the stroke.
    */
-  end?: ReactiveProp<number>;
+  end?: number;
   /** Corner radius for rounded box intersections (defaults to 12). */
   radius?: number;
   /** Outer clearance padding around card perimeters in virtual pixels (defaults to 6). */
@@ -338,30 +347,37 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
  * Valid endpoint target for a Connector line (DOMElement or point coordinates as an [x, y] tuple).
  * @category Components
  */
-export type ConnectorTarget =
-  | DOMElement
-  | Point
-  | readonly [x: number | string, y: number | string];
+export type ConnectorTarget = DOMElement | readonly [x: number, y: number];
 
 /** Public controls for a connector. @category Components */
 export interface ConnectorElement extends DOMElement {
+  rowY?: number;
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
-  connectorStyle: "straight" | "corner" | "bezier" | "arc";
+  routing: "straight" | "corner" | "bezier" | "arc";
   curvature: number;
   /** Outer clearance padding around target perimeters in virtual pixels. */
   padding: number;
+  fromPadding?: number;
+  toPadding?: number;
   fromAnchor: AnchorMode | ElementAnchor;
   toAnchor: AnchorMode | ElementAnchor;
-  connectorColor: string;
-  labelPlacement: ReactiveProp<LabelPlacement>;
+  strokeWidth: number;
+  strokePattern: "solid" | "dashed" | "dotted";
+  label: string;
+  get labelPlacement(): LabelPlacement;
+  set labelPlacement(value: ReactiveProp<LabelPlacement>);
   labelOffset?: ReactiveProp<LabelOffset>;
   labelOffsetX?: ReactiveProp<number | string>;
   labelOffsetY?: ReactiveProp<number | string>;
-  labelScale: ReactiveProp<number>;
-  flow: FlowEffect;
-  start: ReactiveProp<number>;
-  end: ReactiveProp<number>;
+  get labelScale(): number;
+  set labelScale(value: ReactiveProp<number>);
+  get flow(): FlowEffect;
+  set flow(value: ReactiveProp<FlowEffect>);
+  get start(): number;
+  set start(value: ReactiveProp<number>);
+  get end(): number;
+  set end(value: ReactiveProp<number>);
   pulse(options?: PulseOptions): void;
   cancelPulses(): this;
   startPeriodicPulse(options?: number | PeriodicPulseOptions): this;
@@ -381,6 +397,19 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     "labelScale",
     "labelOffsetX",
     "labelOffsetY",
+    "fromTarget",
+    "toTarget",
+    "routing",
+    "curvature",
+    "padding",
+    "fromPadding",
+    "toPadding",
+    "fromAnchor",
+    "toAnchor",
+    "strokeWidth",
+    "strokePattern",
+    "label",
+    "rowY",
   ]);
 
   private _flow: FlowEffect = "none";
@@ -390,7 +419,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   get flow(): FlowEffect {
     return this._flow;
   }
-  set flow(val: FlowEffect) {
+  set flow(value: ReactiveProp<FlowEffect>) {
+    const val = isTransitionDescriptor(value) ? value.target : value;
     const prev = this._flow;
     this._flow = val ?? "none";
     if (this._flow === "ping") {
@@ -411,22 +441,49 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     this._update();
   }
 
+  rowY?: number;
   fromTarget: ConnectorTarget;
   toTarget: ConnectorTarget;
-  connectorStyle: "straight" | "corner" | "bezier" | "arc";
+  routing: "straight" | "corner" | "bezier" | "arc";
   curvature = 0.2;
-  connectorColor: string;
   strokeWidth: number;
-  isDashed: boolean;
-  isDotted: boolean;
-  startHead: ConnectorHeadType;
-  endHead: ConnectorHeadType;
-  startHeadSize: number;
-  endHeadSize: number;
+  strokePattern: "solid" | "dashed" | "dotted";
+  readonly startHead: ConnectorHeadType;
+  readonly endHead: ConnectorHeadType;
+  readonly startHeadSize: number;
+  readonly endHeadSize: number;
   radius: number;
   padding: number;
-  labelPlacement: ReactiveProp<LabelPlacement> = "center";
-  labelOffset?: ReactiveProp<LabelOffset>;
+  fromPadding?: number;
+  toPadding?: number;
+  label = "";
+  private _labelPlacement: LabelPlacement = "center";
+  get labelPlacement(): LabelPlacement {
+    return this._labelPlacement;
+  }
+  set labelPlacement(value: ReactiveProp<LabelPlacement>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._labelPlacement =
+      typeof raw === "function"
+        ? raw(typeof this._labelPlacement === "number" ? this._labelPlacement : 0)
+        : raw;
+  }
+  get labelOffset(): LabelOffset {
+    return [
+      (this.labelOffsetX as number | string) ?? 0,
+      (this.labelOffsetY as number | string) ?? 0,
+    ];
+  }
+  set labelOffset(value: ReactiveProp<LabelOffset> | undefined) {
+    if (isTransitionDescriptor(value)) value = value.target;
+    if (Array.isArray(value)) {
+      this.labelOffsetX = value[0];
+      this.labelOffsetY = value[1];
+    } else {
+      this.labelOffsetX = 0;
+      this.labelOffsetY = value as number | string | undefined;
+    }
+  }
   labelOffsetX?: ReactiveProp<number | string>;
   labelOffsetY?: ReactiveProp<number | string>;
 
@@ -443,9 +500,35 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
   labelBg: SVGRectElement | null = null;
   labelText: SVGTextElement | null = null;
 
-  start: ReactiveProp<number> = 0;
-  end: ReactiveProp<number> = 1;
-  labelScale: ReactiveProp<number> = 1;
+  private _start: number = 0;
+  get start(): number {
+    return this._start;
+  }
+  set start(value: ReactiveProp<number>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._start =
+      typeof raw === "function" ? raw(typeof this._start === "number" ? this._start : 0) : raw;
+  }
+  private _end: number = 1;
+  get end(): number {
+    return this._end;
+  }
+  set end(value: ReactiveProp<number>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._end =
+      typeof raw === "function" ? raw(typeof this._end === "number" ? this._end : 0) : raw;
+  }
+  private _labelScale: number = 1;
+  get labelScale(): number {
+    return this._labelScale;
+  }
+  set labelScale(value: ReactiveProp<number>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._labelScale =
+      typeof raw === "function"
+        ? raw(typeof this._labelScale === "number" ? this._labelScale : 0)
+        : raw;
+  }
   private periodicIntervalTimer: number | null = null;
   private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
@@ -465,7 +548,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     const color = options.color || "#38bdf8";
-    const sWidth = options.strokeWidth || 3;
+    const sWidth = options.strokeWidth ?? 3;
     path.setAttribute("stroke", color);
     path.setAttribute("stroke-width", String(sWidth));
     path.setAttribute("fill", "none");
@@ -473,9 +556,9 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     path.setAttribute("stroke-linejoin", "round");
     path.setAttribute("pathLength", "1000");
 
-    if (options.dotted) {
+    if (options.strokePattern === "dotted") {
       path.setAttribute("stroke-dasharray", "4 10");
-    } else if (options.dashed) {
+    } else if (options.strokePattern === "dashed") {
       path.setAttribute("stroke-dasharray", "8 6");
     }
 
@@ -496,7 +579,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     let labelBg: SVGRectElement | null = null;
     let labelText: SVGTextElement | null = null;
 
-    if (options.label) {
+    {
       labelGroup = createSvg("g", { class: "sr-connector-label-group" });
       labelGroup.style.pointerEvents = "none";
 
@@ -525,25 +608,18 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         "font-weight": "500",
         "font-family": "system-ui, -apple-system, sans-serif",
       });
-      labelText.textContent = options.label;
+      labelText.textContent = options.label ?? "";
       labelGroup.appendChild(labelText);
 
       svg.appendChild(labelGroup);
     }
 
-    const { style: optStyle, routing, ...domOpts } = options;
-    const resolvedRouting = (typeof optStyle === "string" ? optStyle : routing || "straight") as
-      | "straight"
-      | "corner"
-      | "bezier"
-      | "arc";
-    const resolvedCss = typeof optStyle === "object" ? optStyle : undefined;
-
+    const { routing = "straight", ...domOpts } = options;
+    const resolvedRouting = routing;
     super("Connector", svg, {
       ...domOpts,
       x: 0,
-      y: options.y ?? 0,
-      style: resolvedCss,
+      y: 0,
       customPositioned: true,
     });
 
@@ -551,13 +627,13 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     this.enterDuration = options.enterDuration ?? 0;
 
     this.domElement.style.pointerEvents = "none";
+    this.rowY = options.rowY;
     this.fromTarget = from;
     this.toTarget = to;
-    this.connectorStyle = resolvedRouting;
-    this.connectorColor = color;
+    this.routing = resolvedRouting;
+    this.color = color;
     this.strokeWidth = sWidth;
-    this.isDashed = !!options.dashed;
-    this.isDotted = !!options.dotted;
+    this.strokePattern = options.strokePattern ?? "solid";
     this.startHead = startType;
     this.endHead = endType;
     this.startHeadSize = startSize;
@@ -566,12 +642,15 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     this.endHeadNode = endMarker?.node ?? null;
     this.startRetract = startMarker?.retract ?? 0;
     this.endRetract = endMarker?.retract ?? 0;
+    this.label = options.label ?? "";
     this.labelPlacement = options.labelPlacement ?? "center";
     this.fromAnchor = options.fromAnchor ?? "auto";
     this.toAnchor = options.toAnchor ?? "auto";
     this.curvature = options.curvature ?? 0.2;
     this.radius = options.radius ?? 12;
     this.padding = options.padding ?? 6;
+    this.fromPadding = options.fromPadding;
+    this.toPadding = options.toPadding;
     if (options.labelOffset !== undefined) this.labelOffset = options.labelOffset;
     if (options.labelOffsetX !== undefined) this.labelOffsetX = options.labelOffsetX;
     if (options.labelOffsetY !== undefined) this.labelOffsetY = options.labelOffsetY;
@@ -698,7 +777,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         fromResolved.box,
         toResolved.point,
         this.fromAnchor,
-        this.padding,
+        this.fromPadding ?? this.padding,
       );
       startPt = res.point;
       startSide = res.side;
@@ -711,15 +790,15 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         toResolved.box,
         fromResolved.point,
         this.toAnchor,
-        this.padding,
+        this.toPadding ?? this.padding,
       );
       endPt = res.point;
       endSide = res.side;
       endNormal = res.normal;
     }
 
-    const resolvedY = unitsToPx(typeof this.y === "number" ? this.y : 0, stageH);
-    if (resolvedY > 0) {
+    const resolvedY = unitsToPx(this.rowY, stageH);
+    if (this.rowY !== undefined) {
       const fixedY = resolvedY;
       let x1 = fromResolved.point[0];
       let x2 = toResolved.point[0];
@@ -744,7 +823,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
         }
       )?.lifeline;
 
-      const msgY = typeof this.y === "number" ? this.y : fixedY;
+      const msgY = this.rowY;
       if (fromLifeline?.hasActivationAt?.(msgY)) {
         x1 += dir * activationOffset;
       } else {
@@ -768,11 +847,9 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     const chordNy = dist > 0 ? dy / dist : 0;
 
     const buildPath = (sp: Point, ep: Point): string => {
-      if (this.connectorStyle === "corner")
-        return computeOrthogonalPath(sp, ep, startSide, endSide);
-      if (this.connectorStyle === "bezier")
-        return computeBezierPath(sp, ep, startNormal, endNormal);
-      if (this.connectorStyle === "arc") return computeArcPath(sp, ep, this.curvature);
+      if (this.routing === "corner") return computeOrthogonalPath(sp, ep, startSide, endSide);
+      if (this.routing === "bezier") return computeBezierPath(sp, ep, startNormal, endNormal);
+      if (this.routing === "arc") return computeArcPath(sp, ep, this.curvature);
       return `M ${sp[0]} ${sp[1]} L ${ep[0]} ${ep[1]}`;
     };
 
@@ -786,7 +863,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     let endTy = chordNy;
     let startTx = -chordNx;
     let startTy = -chordNy;
-    if (this.connectorStyle === "arc" || this.connectorStyle === "bezier") {
+    if (this.routing === "arc" || this.routing === "bezier") {
       try {
         const len = this.pathNode.getTotalLength();
         if (len > 2) {
@@ -825,12 +902,21 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
     const d = buildPath(pathStartPt, pathEndPt);
     this.pathNode.setAttribute("d", d);
-    if (this.strokeWidth) {
+    if (this.strokeWidth !== undefined) {
       this.pathNode.setAttribute("stroke-width", String(this.strokeWidth));
     }
-    const currentStroke = (this.color as string | undefined) || this.connectorColor;
+    const currentStroke = (this.color as string | undefined) || "#38bdf8";
     if (currentStroke) {
       this.pathNode.setAttribute("stroke", currentStroke);
+      for (const head of [this.startHeadNode, this.endHeadNode]) {
+        if (!head) continue;
+        for (const node of [head, ...head.querySelectorAll("*")]) {
+          for (const attr of ["fill", "stroke"]) {
+            if (node.hasAttribute(attr) && node.getAttribute(attr) !== "none")
+              node.setAttribute(attr, currentStroke);
+          }
+        }
+      }
     }
 
     if (this.activePulses.size > 0) {
@@ -871,10 +957,10 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
       this.pathNode.removeAttribute("pathLength");
       const offsetPx = -startVal * actualLen;
 
-      if (this.isDotted) {
+      if (this.strokePattern === "dotted") {
         this.pathNode.style.strokeDasharray = "4 10";
         this.pathNode.style.strokeDashoffset = `${offsetPx}`;
-      } else if (this.isDashed) {
+      } else if (this.strokePattern === "dashed") {
         const dash = 8;
         const gap = 6;
         // Trim window: a long solid segment for the visible portion, then zero for the rest
@@ -889,10 +975,10 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     } else {
       this.pathNode.style.opacity = "1";
       this.pathNode.removeAttribute("pathLength");
-      if (this.isDotted) {
+      if (this.strokePattern === "dotted") {
         this.pathNode.style.strokeDasharray = "4 10";
         this.pathNode.style.strokeDashoffset = "0";
-      } else if (this.isDashed) {
+      } else if (this.strokePattern === "dashed") {
         this.pathNode.style.strokeDasharray = "8 6";
         this.pathNode.style.strokeDashoffset = "0";
       } else {
@@ -958,7 +1044,8 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
 
     // Position Label at path midpoint
     if (this.labelGroup && this.labelText && this.labelBg) {
-      if (endVal <= 0.2) {
+      this.labelText.textContent = this.label;
+      if (!this.label || endVal <= 0.2) {
         // Hide instantly. A CSS opacity transition here would fade a stale
         // visible label out over the first frames of the draw-in, flashing the
         // label before the connector has grown.
@@ -997,19 +1084,18 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
           ratio = 0.75;
         }
 
-        let offX = resolveOffset(this.labelOffsetX as number | string | undefined, stageH);
-        let offY = 0;
-
-        if (this.labelOffsetY !== undefined) {
-          offY = resolveOffset(this.labelOffsetY as number | string | undefined, stageH);
-        } else if (this.labelOffset !== undefined) {
-          if (Array.isArray(this.labelOffset)) {
-            offX += resolveOffset(this.labelOffset[0], stageH);
-            offY += resolveOffset(this.labelOffset[1], stageH);
-          } else {
-            offY = resolveOffset(this.labelOffset as number | string, stageH);
-          }
-        }
+        const offX = resolveOffset(
+          this.labelOffsetX as number | string | undefined,
+          stageH,
+          this.domElement,
+          "x",
+        );
+        const offY = resolveOffset(
+          this.labelOffsetY as number | string | undefined,
+          stageH,
+          this.domElement,
+          "y",
+        );
 
         let ptX = 0;
         let ptY = 0;
@@ -1078,7 +1164,7 @@ class ConnectorElementImpl extends DOMElement implements ConnectorElement {
     if (!pathD) return;
 
     const ping = spawnPingPacket(this.svgRoot, pathD, {
-      color: options.color ?? this.connectorColor,
+      color: options.color ?? (this.color as string | undefined) ?? "#38bdf8",
       duration: options.duration ?? 0.6,
       size: options.size ?? 12,
       start: startVal,
@@ -1337,6 +1423,7 @@ export function pulseSequence(
   const attach = () => {
     if (attached) return;
     attached = true;
+
     for (const s of stepList) {
       disposers.push(s.connector.onDeactivate(halt));
     }

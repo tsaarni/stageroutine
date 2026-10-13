@@ -41,7 +41,24 @@ export function getReactiveKeys(target: unknown): ReadonlySet<string> {
  */
 export function isReactiveProperty(target: unknown, prop: string | symbol): boolean {
   if (typeof prop !== "string" || !target || typeof target !== "object") return false;
-  if (prop === "size" || prop === "position") return true;
+  if (
+    prop === "size" ||
+    prop === "position" ||
+    (prop === "labelOffset" && getReactiveKeys(target).has("labelOffsetX"))
+  )
+    return true;
   const keys = getReactiveKeys(target);
   return keys.has(prop);
+}
+
+/** Copies structured presentation values while preserving element identities. */
+export function copyPropertyValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(copyPropertyValue);
+  return value;
+}
+
+export function copyPropertyRecord(props: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(props).map(([key, value]) => [key, copyPropertyValue(value)]),
+  );
 }

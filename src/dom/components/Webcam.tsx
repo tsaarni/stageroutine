@@ -44,6 +44,7 @@ export interface WebcamOptions extends ElementOptions {
 export interface WebcamElement extends DOMElement {
   fit: ImageFit;
   mirror: boolean;
+  background: string;
   deviceId: string | undefined;
   start(): Promise<void>;
   stop(): void;
@@ -60,8 +61,15 @@ class WebcamElementImpl extends MediaSurface implements WebcamElement {
     "fit",
     "mirror",
     "deviceId",
+    "background",
   ]);
 
+  get background(): string {
+    return this.domElement.style.background;
+  }
+  set background(value: string) {
+    this.domElement.style.background = value;
+  }
   readonly videoElement: HTMLVideoElement;
   private stream: MediaStream | null = null;
   private _mirror = true;
@@ -110,7 +118,7 @@ class WebcamElementImpl extends MediaSurface implements WebcamElement {
     const container = document.createElement("div");
     container.className = ["sr-webcam", options.className].filter(Boolean).join(" ");
     if (options.background) {
-      container.style.backgroundColor = options.background;
+      container.style.background = options.background;
     }
 
     const video = document.createElement("video");
@@ -342,7 +350,8 @@ class WebcamElementImpl extends MediaSurface implements WebcamElement {
  * ```tsx
  * // Presenter bubble avatar in the bottom-right corner:
  * const presenter = Frame(paths.circle(), Webcam({ mirror: true }), {
- *   x: "bottom-right",
+ *   position: [154, 84],
+ *   origin: "bottom-right",
  *   size: 180,
  *   active: true,
  * });

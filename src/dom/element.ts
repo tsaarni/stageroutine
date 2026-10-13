@@ -4,6 +4,7 @@
 
 import type { Properties as CSSProperties } from "csstype";
 import { computeTransform } from "../core/interpolators";
+import { logger } from "../core/logger";
 import { splitPosition } from "../core/position";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import { getActiveStage, tryGetActiveStage } from "../core/stage";
@@ -12,6 +13,7 @@ import type {
   CoordProp,
   ElementAnchor,
   Position,
+  PositionCoord,
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
@@ -49,6 +51,16 @@ function resolveCoord(val: unknown, current: number, axis: "x" | "y"): number {
  */
 export type ElementDecorator = (element: DOMElement) => void;
 
+/** Content accepted by container factories. @category Core */
+export type ElementChild =
+  | DOMElement
+  | Node
+  | string
+  | number
+  | boolean
+  | null
+  | readonly ElementChild[];
+
 /**
  * Base positioning and visual options shared across all Stage elements.
  * @category Core
@@ -59,19 +71,30 @@ export interface ElementOptions {
   origin?: ElementAnchor;
   align?: Align;
   position?: Position;
-  x?: CoordProp;
-  y?: CoordProp;
-  width?: SizeProp;
-  height?: SizeProp;
-  size?: SizeProp;
-  scale?: ReactiveProp<number>;
-  rotation?: ReactiveProp<number>;
-  opacity?: ReactiveProp<number>;
-  blur?: ReactiveProp<number>;
-  brightness?: ReactiveProp<number>;
-  color?: ReactiveProp<string>;
+  /** Horizontal position in stage units (default: 0). */
+  x?: PositionCoord;
+  /** Vertical position in stage units (default: 0). */
+  y?: PositionCoord;
+  /** Width in stage units or CSS length (default: content size). */
+  width?: number | string;
+  /** Height in stage units or CSS length (default: content size). */
+  height?: number | string;
+  /** Both dimensions in stage units or CSS length (default: unset). */
+  size?: number | string;
+  /** Scale multiplier (default: 1). */
+  scale?: number;
+  /** Rotation in degrees (default: 0). */
+  rotation?: number;
+  /** Whole-element opacity from 0 to 1 (default: 1). */
+  opacity?: number;
+  /** Blur in virtual pixels (default: 0). */
+  blur?: number;
+  /** Brightness multiplier (default: 1). */
+  brightness?: number;
+  /** Foreground CSS color (default: component/theme color). */
+  color?: string;
   className?: string;
-  style?: CSSProperties | Partial<CSSStyleDeclaration>;
+  style?: CSSProperties;
   theme?: Partial<ThemeConfig>;
   /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
   customPositioned?: boolean;
@@ -95,9 +118,11 @@ export interface ElementOptions {
  * @category Core
  */
 export class DOMElement implements ReactiveElementBase {
-  static _reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
+  /** @internal */
+  protected static _reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
 
-  get _reactiveKeys(): ReadonlySet<string> {
+  /** @internal */
+  protected get _reactiveKeys(): ReadonlySet<string> {
     return (this.constructor as typeof DOMElement)._reactiveKeys;
   }
 
@@ -113,8 +138,8 @@ export class DOMElement implements ReactiveElementBase {
   set origin(val: ReactiveProp<ElementAnchor> | undefined) {
     if (isTransitionDescriptor(val)) {
       this._origin = (val.target ?? "top-left") as ElementAnchor;
-    } else if (val) {
-      this._origin = val as ElementAnchor;
+    } else {
+      this._origin = (val ?? "top-left") as ElementAnchor;
     }
   }
   /** @internal */
@@ -142,15 +167,85 @@ export class DOMElement implements ReactiveElementBase {
     this._y = resolveCoord(val, this._y, "y");
   }
 
-  width?: SizeProp;
-  height?: SizeProp;
-  scale: ReactiveProp<number> = 1;
-  rotation: ReactiveProp<number> = 0;
-  opacity: ReactiveProp<number> = 1;
-  blur: ReactiveProp<number> = 0;
-  brightness: ReactiveProp<number> = 1;
-  color?: ReactiveProp<string>;
-  zIndex?: ReactiveProp<number | string>;
+  private _width?: number | string;
+  get width(): number | string | undefined {
+    return this._width;
+  }
+  set width(value: ReactiveProp<number | string> | undefined) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._width =
+      typeof raw === "function" ? raw(typeof this._width === "number" ? this._width : 0) : raw;
+  }
+  private _height?: number | string;
+  get height(): number | string | undefined {
+    return this._height;
+  }
+  set height(value: ReactiveProp<number | string> | undefined) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._height =
+      typeof raw === "function" ? raw(typeof this._height === "number" ? this._height : 0) : raw;
+  }
+  private _scale = 1;
+  get scale(): number {
+    return this._scale;
+  }
+  set scale(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._scale = value;
+    else if (typeof value === "function") this._scale = value(this._scale);
+    else this._scale = value.target as number;
+  }
+  private _rotation = 0;
+  get rotation(): number {
+    return this._rotation;
+  }
+  set rotation(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._rotation = value;
+    else if (typeof value === "function") this._rotation = value(this._rotation);
+    else this._rotation = value.target as number;
+  }
+  private _opacity = 1;
+  get opacity(): number {
+    return this._opacity;
+  }
+  set opacity(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._opacity = value;
+    else if (typeof value === "function") this._opacity = value(this._opacity);
+    else this._opacity = value.target as number;
+  }
+  private _blur = 0;
+  get blur(): number {
+    return this._blur;
+  }
+  set blur(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._blur = value;
+    else if (typeof value === "function") this._blur = value(this._blur);
+    else this._blur = value.target as number;
+  }
+  private _brightness = 1;
+  get brightness(): number {
+    return this._brightness;
+  }
+  set brightness(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._brightness = value;
+    else if (typeof value === "function") this._brightness = value(this._brightness);
+    else this._brightness = value.target as number;
+  }
+  private _color?: string;
+  get color(): string | undefined {
+    return this._color;
+  }
+  set color(value: ReactiveProp<string> | undefined) {
+    this._color = isTransitionDescriptor(value) ? value.target : value;
+  }
+  private _zIndex?: number | string;
+  get zIndex(): number | string | undefined {
+    return this._zIndex;
+  }
+  set zIndex(value: ReactiveProp<number | string> | undefined) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._zIndex =
+      typeof raw === "function" ? raw(typeof this._zIndex === "number" ? this._zIndex : 0) : raw;
+  }
   exitDuration?: number;
   exitDelay?: number;
   enterDuration?: number;
@@ -162,7 +257,9 @@ export class DOMElement implements ReactiveElementBase {
   get align(): Align | undefined {
     return this._align;
   }
-  set align(val: Align | undefined) {
+  set align(value: ReactiveProp<Align> | undefined) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    const val = typeof raw === "string" ? raw : undefined;
     this._align = val;
     if (val) {
       this.domElement.dataset.align = val;
@@ -171,7 +268,7 @@ export class DOMElement implements ReactiveElementBase {
     }
   }
 
-  get size(): SizeProp | undefined {
+  get size(): number | string | undefined {
     return this.width ?? this.height;
   }
   set size(val: SizeProp | undefined) {
@@ -196,7 +293,7 @@ export class DOMElement implements ReactiveElementBase {
   /**
    * Sets multiple properties on this element with a unified transition descriptor or immediate values.
    */
-  to(props: ElementTransitionProps): ElementTransition {
+  to(props: ElementTransitionProps<this>): ElementTransition {
     return new ElementTransitionBuilder(this, props);
   }
 
@@ -238,6 +335,13 @@ export class DOMElement implements ReactiveElementBase {
     this.id = options.id || `${kind}-${nextId++}`;
     this.kind = kind;
 
+    for (const [key, value] of Object.entries(options)) {
+      if (isTransitionDescriptor(value))
+        throw new Error(
+          `Initial ${key} must be a plain value; animate the registered element instead.`,
+        );
+    }
+
     let rawPosX = options.x;
     let rawPosY = options.y;
     if (options.position === "center") {
@@ -248,27 +352,8 @@ export class DOMElement implements ReactiveElementBase {
       rawPosY = options.position[1];
     }
 
-    const xCentered =
-      rawPosX === "center" ||
-      options.x === "center" ||
-      (isTransitionDescriptor(rawPosX) && rawPosX.target === "center") ||
-      (isTransitionDescriptor(options.x) && options.x.target === "center");
-    const yCentered =
-      rawPosY === "center" ||
-      options.y === "center" ||
-      (isTransitionDescriptor(rawPosY) && rawPosY.target === "center") ||
-      (isTransitionDescriptor(options.y) && options.y.target === "center");
-
-    let defaultOrigin: ElementAnchor = "top-left";
-    if (xCentered && yCentered) {
-      defaultOrigin = "center";
-    } else if (xCentered) {
-      defaultOrigin = "top";
-    } else if (yCentered) {
-      defaultOrigin = "left";
-    }
-
-    this.origin = options.origin || defaultOrigin;
+    const defaultOrigin: ElementAnchor = "top-left";
+    this.origin = options.origin ?? defaultOrigin;
 
     if (html instanceof DOMElement) {
       this.domElement = html.domElement;
@@ -345,6 +430,22 @@ export class DOMElement implements ReactiveElementBase {
     }
     this.domElement.style.opacity = `${this.opacity}`;
 
+    if (options.style) {
+      const owned = [
+        "transform",
+        "transformOrigin",
+        "opacity",
+        "filter",
+        "width",
+        "height",
+        "color",
+        "zIndex",
+      ];
+      for (const key of owned) {
+        if (key in options.style)
+          logger.warn(`[StageRoutine] style.${key} is stage-owned; use a presentation property.`);
+      }
+    }
     if (options.className) {
       this.domElement.classList.add(...options.className.split(" ").filter(Boolean));
     }
@@ -542,4 +643,9 @@ export class DOMElement implements ReactiveElementBase {
  */
 export function mount<T extends ReactiveElementBase>(element: T): T {
   return getActiveStage()._registerElement(element);
+}
+
+/** Wraps a DOM node as a reactive stage element. @category Core */
+export function Element(node: HTMLElement, options: ElementOptions = {}): DOMElement {
+  return mount(new DOMElement("Element", node, options));
 }

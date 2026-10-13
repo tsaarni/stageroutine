@@ -1,3 +1,4 @@
+import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
  */
@@ -10,7 +11,7 @@ import {
   type ReactiveElementBase,
   type ReactiveProp,
 } from "../../core/index";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { DOMElement, type ElementChild, type ElementOptions, mount } from "../element";
 
 import {
   type AnchorMode,
@@ -40,39 +41,44 @@ export interface ShapeOptions extends ElementOptions {
   /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
   variant?: ShapeVariant;
   /** Border stroke color. */
-  borderColor?: ReactiveProp<string>;
+  borderColor?: string;
   /** Optional text content inside the shape container. */
   text?: string;
   /** Background fill color. */
   background?: string;
-  /** Highlighted / glowing active state. */
-  active?: boolean;
+  /** Glowing outline highlight (default: false). */
+  highlighted?: boolean;
   /** Double border outline (e.g. for final states, nested rings). */
   doubleBorder?: boolean;
   /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
-  start?: ReactiveProp<number>;
+  start?: number;
   /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
-  end?: ReactiveProp<number>;
+  end?: number;
   /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
-  flow?: ReactiveProp<FlowEffect>;
+  flow?: FlowEffect;
   /** Stroke outline width in virtual canvas pixels (default: 2). */
   strokeWidth?: number;
   /** Optional child elements or text nodes. */
-  children?: unknown;
+  children?: ElementChild;
 }
 
 /** Public controls for a shape. @category Shape & Frame */
 export interface ShapeElement extends DOMElement {
   readonly path: PathFunction;
   readonly variant: ShapeVariant;
-  readonly items: ReactiveElementBase[];
-  start: ReactiveProp<number>;
-  end: ReactiveProp<number>;
-  flow: ReactiveProp<FlowEffect>;
+  readonly items: readonly ReactiveElementBase[];
+  get start(): number;
+  set start(value: ReactiveProp<number>);
+  get end(): number;
+  set end(value: ReactiveProp<number>);
+  get flow(): FlowEffect;
+  set flow(value: ReactiveProp<FlowEffect>);
   text: string | undefined;
-  borderColor: ReactiveProp<string> | undefined;
+  get borderColor(): string | undefined;
+  set borderColor(value: ReactiveProp<string> | undefined);
+  strokeWidth: number;
   background: string | undefined;
-  active: boolean;
+  highlighted: boolean;
   doubleBorder: boolean;
 }
 
@@ -85,10 +91,11 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     "start",
     "end",
     "flow",
-    "active",
+    "highlighted",
     "doubleBorder",
     "text",
     "borderColor",
+    "strokeWidth",
     "background",
   ]);
 
@@ -101,25 +108,39 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   readonly variant: ShapeVariant;
   readonly items: ReactiveElementBase[] = [];
 
-  start: ReactiveProp<number> = 0;
-  end: ReactiveProp<number> = 1;
-  private strokeWidth: number;
+  private _start = 0;
+  get start(): number {
+    return this._start;
+  }
+  set start(value: ReactiveProp<number>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._start = typeof raw === "function" ? raw(this._start) : raw;
+  }
+  private _end = 1;
+  get end(): number {
+    return this._end;
+  }
+  set end(value: ReactiveProp<number>) {
+    const raw = isTransitionDescriptor(value) ? value.target : value;
+    this._end = typeof raw === "function" ? raw(this._end) : raw;
+  }
+  strokeWidth: number;
 
-  private _flow: ReactiveProp<FlowEffect> = "none";
+  private _flow: FlowEffect = "none";
   private pingIntervalTimer: number | null = null;
   private pingTimeoutTimer: number | null = null;
   private activePings = new Set<PingHandle>();
 
-  get flow(): ReactiveProp<FlowEffect> {
+  get flow(): FlowEffect {
     return this._flow;
   }
   set flow(val: ReactiveProp<FlowEffect>) {
-    this._flow = val ?? "none";
+    this._flow = isTransitionDescriptor(val) ? val.target : (val ?? "none");
     this._update();
   }
 
   private _text?: string;
-  private _borderColor?: ReactiveProp<string>;
+  private _borderColor?: string;
   private _background?: string;
   private textSpan: HTMLElement | null = null;
 
@@ -141,11 +162,11 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     }
   }
 
-  get borderColor(): ReactiveProp<string> | undefined {
+  get borderColor(): string | undefined {
     return this._borderColor;
   }
   set borderColor(val: ReactiveProp<string> | undefined) {
-    this._borderColor = val;
+    this._borderColor = isTransitionDescriptor(val) ? val.target : val;
     this._update();
   }
 
@@ -164,14 +185,13 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
 
   private _active = false;
   private _doubleBorder = false;
-  private primaryColor: string;
   private lastW = 0;
   private lastH = 0;
 
-  get active(): boolean {
+  get highlighted(): boolean {
     return this._active;
   }
-  set active(val: boolean) {
+  set highlighted(val: boolean) {
     this._active = !!val;
     this._update();
   }
@@ -311,16 +331,10 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     this.items = childItems;
     this._path = pathFn;
     this.variant = variant;
-    this.primaryColor =
-      colorStr ??
-      (typeof opts.borderColor === "string" ? opts.borderColor : undefined) ??
-      "#38bdf8";
     this.strokeWidth = opts.strokeWidth ?? 2;
 
     if (opts.borderColor !== undefined) {
       this.borderColor = opts.borderColor;
-    } else if (opts.color !== undefined) {
-      this.borderColor = opts.color;
     }
     if (opts.text !== undefined) this.text = opts.text;
     if (opts.background !== undefined) this.background = opts.background;
@@ -328,7 +342,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     if (opts.end !== undefined) this.end = opts.end;
     if (opts.flow !== undefined) this.flow = opts.flow;
 
-    if (opts.active !== undefined) this._active = !!opts.active;
+    if (opts.highlighted !== undefined) this._active = !!opts.highlighted;
     if (opts.doubleBorder !== undefined) this._doubleBorder = !!opts.doubleBorder;
 
     this.onMount(() => {
@@ -387,9 +401,8 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
 
   private updateVisualState(): void {
     const strokeColor =
-      (this.borderColor as string | undefined) ||
-      (this.color as string | undefined) ||
-      "color-mix(in srgb, var(--sr-text) 10%, transparent)";
+      this.borderColor ??
+      (this.highlighted ? "var(--sr-primary)" : "var(--sr-surface-border-color)");
 
     if (this.color) {
       this.domElement.style.color = String(this.color);
@@ -412,12 +425,12 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       this.pathNode.style.fill = "none";
     }
 
-    if (this.active) {
+    if (this.highlighted) {
       this.domElement.classList.add("is-active");
-      this.pathNode.setAttribute("stroke", this.primaryColor);
-      this.innerPathNode.setAttribute("stroke", this.primaryColor);
-      this.pathNode.style.stroke = this.primaryColor;
-      this.innerPathNode.style.stroke = this.primaryColor;
+      this.pathNode.setAttribute("stroke", strokeColor);
+      this.innerPathNode.setAttribute("stroke", strokeColor);
+      this.pathNode.style.stroke = strokeColor;
+      this.innerPathNode.style.stroke = strokeColor;
     } else {
       this.domElement.classList.remove("is-active");
       this.pathNode.setAttribute("stroke", strokeColor);
@@ -551,6 +564,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
   }
 
   private _startPeriodicPing(): void {
+    if (!this.isActive) return;
     this._stopPeriodicPing();
 
     if (!this.isActive) return;
@@ -689,6 +703,12 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
  * Universal shape container supporting multiple geometries and surface treatments.
  * @category Shape & Frame
  */
+export function Shape(path: PathFunction, options?: ShapeOptions): ShapeElement;
+export function Shape(
+  path: PathFunction,
+  children: ElementChild,
+  options?: ShapeOptions,
+): ShapeElement;
 export function Shape(
   path: PathFunction,
   childrenOrOptions?: unknown,
@@ -701,6 +721,8 @@ export function Shape(
  * Rectangular card container.
  * @category Components
  */
+export function Card(options?: ShapeOptions): ShapeElement;
+export function Card(children: ElementChild, options?: ShapeOptions): ShapeElement;
 export function Card(childrenOrOptions?: unknown, options: ShapeOptions = {}): ShapeElement {
-  return Shape(paths.box(), childrenOrOptions, options);
+  return mount(new ShapeElementImpl(paths.box(), childrenOrOptions, options));
 }

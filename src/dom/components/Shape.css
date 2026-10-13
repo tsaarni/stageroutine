@@ -103,7 +103,7 @@
 
   /* Solid variant: opaque dark fill */
   .sr-shape-solid .sr-shape-frost {
-    background: #18181b;
+    background: var(--sr-surface-solid);
   }
 
   /* Ghost variant: transparent fill */

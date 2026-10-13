@@ -1,5 +1,6 @@
 @layer sr-components {
   .sr-window-frame {
+    color: var(--sr-text-muted);
     background: var(--sr-surface);
     backdrop-filter: var(--sr-surface-backdrop);
     -webkit-backdrop-filter: var(--sr-surface-backdrop);
@@ -38,7 +39,7 @@
     white-space: nowrap;
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
-    color: var(--sr-text-muted);
+    color: inherit;
     letter-spacing: 0.05em;
   }
 

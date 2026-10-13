@@ -50,11 +50,7 @@ function warmUpDreamShader(filterId: string): void {
     }
   };
 
-  if (typeof requestIdleCallback !== "undefined") {
-    requestIdleCallback(run);
-  } else {
-    setTimeout(run, 50);
-  }
+  run();
 }
 
 /**

@@ -3,25 +3,42 @@
  */
 
 import type { Background, BackgroundDecorator, StageContext } from "../../core/types";
+import type { BackgroundOptions } from "./base";
 
 /**
  * Configuration options for full-bleed CSS backgrounds.
  * @category Backgrounds
  */
-export interface CSSBackgroundOptions {
-  id?: string;
-  className?: string;
+export interface CSSBackgroundOptions extends BackgroundOptions {
   /** Standard CSS background value (color, gradient, or url). */
   background?: string;
-  /** Optional initial opacity (default: 1). */
-  opacity?: number;
 }
 
 /**
  * Full-bleed DOM background element styled with standard CSS.
  * @internal
  */
-export class CSSBackgroundElement implements Background {
+export interface CSSBackgroundElement extends Background {
+  background: string;
+}
+
+/** @internal */
+class CSSBackgroundElementImpl implements CSSBackgroundElement {
+  /** @internal */
+  readonly _reactiveKeys: ReadonlySet<string> = new Set(["opacity", "background"]);
+  get opacity(): number {
+    const value = Number.parseFloat(this.domElement.style.opacity);
+    return Number.isNaN(value) ? 1 : value;
+  }
+  set opacity(value: number) {
+    this.domElement.style.opacity = String(value);
+  }
+  get background(): string {
+    return this.domElement.style.background;
+  }
+  set background(value: string) {
+    this.domElement.style.background = value;
+  }
   readonly id: string;
   readonly kind = "CSSBackground";
   readonly domElement: HTMLElement;
@@ -61,7 +78,7 @@ export class CSSBackgroundElement implements Background {
     return {
       kind: this.kind,
       is_mounted: Boolean(this.domElement.isConnected),
-      opacity: Number.parseFloat(this.domElement.style.opacity) || 1,
+      opacity: this.opacity,
     };
   }
 
@@ -81,7 +98,9 @@ export class CSSBackgroundElement implements Background {
  * CSSBackground("url('/wallpaper.jpg') center / cover no-repeat");
  * ```
  */
-export function CSSBackground(cssOrOptions: string | CSSBackgroundOptions = {}): Background {
+export function CSSBackground(
+  cssOrOptions: string | CSSBackgroundOptions = {},
+): CSSBackgroundElement {
   const options = typeof cssOrOptions === "string" ? { background: cssOrOptions } : cssOrOptions;
-  return new CSSBackgroundElement(options);
+  return new CSSBackgroundElementImpl(options);
 }

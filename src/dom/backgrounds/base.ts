@@ -24,10 +24,37 @@ export interface BackgroundOptions {
  * @internal
  */
 export abstract class BackgroundElement implements Background {
+  /** @internal */
+  readonly _reactiveKeys: ReadonlySet<string> = new Set(["opacity"]);
+  get opacity(): number {
+    const value = Number.parseFloat(this.domElement.style.opacity);
+    return Number.isNaN(value) ? 1 : value;
+  }
+  set opacity(value: number) {
+    this.domElement.style.opacity = String(value);
+  }
   readonly id: string;
   readonly kind: string;
   readonly domElement: HTMLElement;
   protected isRunning = false;
+  private frameListeners = new Set<() => void>();
+  private disposeListeners = new Set<() => void>();
+  onUpdate(fn: () => void): () => void {
+    this.frameListeners.add(fn);
+    return () => {
+      this.frameListeners.delete(fn);
+    };
+  }
+  onUnmount(fn: () => void): () => void {
+    this.disposeListeners.add(fn);
+    return () => {
+      this.disposeListeners.delete(fn);
+    };
+  }
+  protected frameUpdated(): void {
+    for (const listener of this.frameListeners) listener();
+  }
+  protected attached = false;
   private resizeObserver: ResizeObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
 
@@ -54,7 +81,7 @@ export abstract class BackgroundElement implements Background {
       const op = Number.parseFloat(this.domElement.style.opacity);
       const isVisible =
         (Number.isNaN(op) || op > 0.01) && this.domElement.style.visibility !== "hidden";
-      if (isVisible && !this.isRunning) {
+      if (isVisible && this.attached && !this.isRunning) {
         this.resume();
       } else if (!isVisible && this.isRunning) {
         this.pause();
@@ -97,9 +124,13 @@ export abstract class BackgroundElement implements Background {
 
   /** Clean up WebGL resources, geometries, textures, and observers */
   dispose(): void {
+    this.attached = false;
     this.pause();
     this.mutationObserver?.disconnect();
     this.resizeObserver?.disconnect();
+    for (const listener of this.disposeListeners) listener();
+    this.disposeListeners.clear();
+    this.frameListeners.clear();
     this.domElement.remove();
   }
 
@@ -108,7 +139,9 @@ export abstract class BackgroundElement implements Background {
     if (!this.domElement.parentElement) {
       stage.container.prepend(this.domElement);
     }
-    this.resume();
+    this.attached = true;
+    if (this.opacity > 0.01 && this.domElement.style.visibility !== "hidden") this.resume();
+    else this.pause();
     this.onResize(window.innerWidth, window.innerHeight);
   }
 
@@ -118,7 +151,7 @@ export abstract class BackgroundElement implements Background {
       kind: this.kind,
       is_running: this.isRunning ? 1 : 0,
       is_mounted: Boolean(this.domElement.isConnected),
-      opacity: Number.parseFloat(this.domElement.style.opacity) || 1,
+      opacity: this.opacity,
     };
   }
 }

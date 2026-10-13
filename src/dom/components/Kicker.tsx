@@ -3,7 +3,8 @@
  */
 
 import "./Kicker.css";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type ElementOptions, mount } from "../element";
+import { TextContentElement, type TextElement } from "./TextContent";
 
 /**
  * Configuration options for the Kicker component.
@@ -16,8 +17,10 @@ export type KickerOptions = ElementOptions;
  * Micro-label component used for chapter indices and section category tags.
  * @category Components
  */
-export function Kicker(label: string, options: KickerOptions = {}): DOMElement {
+export function Kicker(label: string, options: KickerOptions = {}): TextElement {
   const { className, ...restOptions } = options;
   const classes = ["sr-kicker", className].filter(Boolean).join(" ");
-  return mount(new DOMElement("Kicker", <div className={classes}>{label}</div>, restOptions));
+  return mount(
+    new TextContentElement("Kicker", <div className={classes}></div>, label, restOptions),
+  );
 }

@@ -1,3 +1,4 @@
+import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Geometric clipping container that shapes media and child elements to custom SVG contours.
  */
@@ -8,7 +9,7 @@ import {
   type ReactiveElementBase,
   type ReactiveProp,
 } from "../../core/index";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { DOMElement, type ElementChild, type ElementOptions, mount } from "../element";
 import {
   type AnchorMode,
   type AnchorPoint,
@@ -26,23 +27,26 @@ import { isDynamicPath, type PathFunction, type PathRuntimeContext } from "../pa
  */
 export interface FrameOptions extends ElementOptions {
   /** Optional border outline color. */
-  borderColor?: ReactiveProp<string>;
+  borderColor?: string;
   /** Optional background fill color. */
   background?: string;
-  /** Border stroke outline width in virtual canvas pixels (default: 0). */
+  /** Border stroke outline width in virtual canvas pixels (default: 2 with borderColor, otherwise 0; highlighted minimum: 2). */
   strokeWidth?: number;
-  /** Highlighted / glowing active state. */
-  active?: boolean;
+  /** Glowing outline highlight (default: false). */
+  highlighted?: boolean;
   /** Optional child elements or media node. */
-  children?: unknown;
+  children?: ElementChild;
 }
 
 /** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
   readonly path: PathFunction;
-  readonly items: ReactiveElementBase[];
-  active: boolean;
-  borderColor: ReactiveProp<string> | undefined;
+  readonly items: readonly ReactiveElementBase[];
+  highlighted: boolean;
+  get borderColor(): string | undefined;
+  set borderColor(value: ReactiveProp<string> | undefined);
+  strokeWidth: number;
+  background?: string;
 }
 
 /**
@@ -51,8 +55,10 @@ export interface FrameElement extends DOMElement {
 class FrameElementImpl extends DOMElement implements FrameElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement._reactiveKeys,
-    "active",
+    "highlighted",
     "borderColor",
+    "strokeWidth",
+    "background",
   ]);
 
   private readonly _path: PathFunction;
@@ -66,26 +72,26 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   private readonly svgElement: SVGSVGElement;
   private readonly pathNode: SVGPathElement;
 
+  background?: string;
   private _active = false;
-  private _borderColor?: ReactiveProp<string>;
-  private primaryColor: string;
-  private strokeWidth: number;
+  private _borderColor?: string;
+  strokeWidth: number;
   private lastW = 0;
   private lastH = 0;
 
-  get active(): boolean {
+  get highlighted(): boolean {
     return this._active;
   }
-  set active(val: boolean) {
+  set highlighted(val: boolean) {
     this._active = !!val;
     this._update();
   }
 
-  get borderColor(): ReactiveProp<string> | undefined {
+  get borderColor(): string | undefined {
     return this._borderColor;
   }
   set borderColor(val: ReactiveProp<string> | undefined) {
-    this._borderColor = val;
+    this._borderColor = isTransitionDescriptor(val) ? val.target : val;
     this._update();
   }
 
@@ -163,23 +169,15 @@ class FrameElementImpl extends DOMElement implements FrameElement {
     this.pathNode = pathNode;
     this.items = childItems;
 
-    this.primaryColor =
-      (typeof opts.color === "string" ? opts.color : undefined) ??
-      (typeof opts.borderColor === "string" ? opts.borderColor : undefined) ??
-      "#38bdf8";
     this.strokeWidth = opts.strokeWidth ?? (opts.borderColor ? 2 : 0);
 
     if (opts.borderColor !== undefined) {
       this.borderColor = opts.borderColor;
-    } else if (opts.color !== undefined) {
-      this.borderColor = opts.color;
     }
 
-    if (opts.background) {
-      contentDiv.style.background = opts.background;
-    }
+    this.background = opts.background;
 
-    if (opts.active !== undefined) this._active = !!opts.active;
+    if (opts.highlighted !== undefined) this._active = !!opts.highlighted;
 
     this.onMount(() => {
       this._update();
@@ -217,19 +215,19 @@ class FrameElementImpl extends DOMElement implements FrameElement {
   }
 
   private updateVisualState(): void {
+    this.contentDiv.style.background = this.background ?? "";
     const strokeColor =
-      (this.borderColor as string | undefined) ||
-      (this.color as string | undefined) ||
-      "transparent";
+      this.borderColor ??
+      (this.highlighted ? "var(--sr-primary)" : "var(--sr-surface-border-color)");
 
     if (this.color) {
       this.domElement.style.color = String(this.color);
     }
 
-    if (this.active) {
+    if (this.highlighted) {
       this.domElement.classList.add("is-active");
-      this.pathNode.setAttribute("stroke", this.primaryColor);
-      this.pathNode.style.stroke = this.primaryColor;
+      this.pathNode.setAttribute("stroke", strokeColor);
+      this.pathNode.style.stroke = strokeColor;
       this.pathNode.style.display = "";
     } else if (this.strokeWidth > 0 && strokeColor !== "transparent") {
       this.domElement.classList.remove("is-active");
@@ -241,7 +239,7 @@ class FrameElementImpl extends DOMElement implements FrameElement {
       this.pathNode.style.display = "none";
     }
 
-    const effectiveWidth = this.active && this.strokeWidth === 0 ? 2 : this.strokeWidth;
+    const effectiveWidth = this.highlighted && this.strokeWidth === 0 ? 2 : this.strokeWidth;
     this.pathNode.setAttribute("stroke-width", String(effectiveWidth));
     this.pathNode.style.strokeWidth = `${effectiveWidth}px`;
   }
@@ -302,6 +300,12 @@ class FrameElementImpl extends DOMElement implements FrameElement {
  * Clips media or DOM child elements to an SVG path geometry contour.
  * @category Shape & Frame
  */
+export function Frame(path: PathFunction, options?: FrameOptions): FrameElement;
+export function Frame(
+  path: PathFunction,
+  children: ElementChild,
+  options?: FrameOptions,
+): FrameElement;
 export function Frame(
   path: PathFunction,
   childOrOptions?: unknown,

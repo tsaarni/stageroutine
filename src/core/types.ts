@@ -97,7 +97,7 @@ export interface TransitionRecord {
 
 /**
  * Theme configuration object for customizing stage canvas, typography, and surface tokens.
- * Supports camelCase property names (e.g. `surfaceBorder`) or raw CSS variable names (`--sr-surface-border`).
+ * Supports camelCase property names (e.g. `surfaceBorderColor`) or raw CSS variable names (`--sr-surface-border-color`).
  * @category Core
  */
 import type { ThemeConfig } from "../theme/tokens";
@@ -111,6 +111,7 @@ export interface StepSnapshot {
   sceneName: string;
   stepIndex: number;
   properties: Map<string, Record<string, unknown>>;
+  backgroundProperties?: Record<string, unknown>;
   activeElementIds: Set<string>;
   theme?: ThemeConfig;
 }
@@ -250,6 +251,8 @@ export interface StageEventMap {
   "evt:annotation:undone": undefined;
   "evt:annotation:redone": undefined;
 
+  "evt:stage:activityChanged": { active: boolean };
+
   // Stage lifecycle
   "evt:stage:resized": StageResizedEvent;
   "req:stage:requestState": undefined;
@@ -356,8 +359,14 @@ export type BackgroundDecorator = (bg: Background | ReactiveElementBase) => void
  * @category Backgrounds
  */
 export interface Background {
+  /** Backdrop opacity from 0 to 1 (default: 1). Snapshot-restored. */
+  opacity: number;
   readonly domElement?: HTMLElement;
   attach(stage: StageContext): void;
+  /** Runs after an active background frame. */
+  onUpdate?(fn: () => void): () => void;
+  /** Releases decorator resources on disposal. */
+  onUnmount?(fn: () => void): () => void;
   dispose?(): void;
   decorate(decorator: BackgroundDecorator): this;
   play?(): void;
@@ -431,8 +440,7 @@ export type PositionCoord = number | "center";
 export type ReactiveProp<T> =
   | T
   | TransitionDescriptor<T>
-  | (T extends number ? (current: number) => number : never)
-  | (T extends Position ? PositionUpdater : never);
+  | (T extends number ? (current: number) => number : never);
 
 /**
  * Stage coordinate in stage units (or `"center"` to center along that axis).
@@ -457,10 +465,7 @@ export type Point = readonly [x: number, y: number];
  * Stage coordinate pair in stage units, or `"center"` to center on both axes.
  * @category Core
  */
-export type Position =
-  | readonly [x: PositionCoord, y: PositionCoord]
-  | readonly PositionCoord[]
-  | "center";
+export type Position = readonly [x: PositionCoord, y: PositionCoord] | "center";
 
 /**
  * 9-position content alignment grid for text and children inside a container.
@@ -514,6 +519,8 @@ export interface ReactiveElementBase {
   x: CoordProp;
   y: CoordProp;
   position?: ReactiveProp<Position> | PositionUpdater;
+  width?: SizeProp;
+  height?: SizeProp;
   size?: SizeProp;
   scale: ReactiveProp<number>;
   rotation: ReactiveProp<number>;

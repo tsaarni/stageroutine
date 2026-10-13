@@ -354,20 +354,30 @@ function inspectEntryPoint(
       const isAbstract =
         ts.canHaveModifiers(decl) &&
         ts.getModifiers(decl)?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword);
-      const classKeyword = isAbstract ? "export abstract class" : "export class";
+      const typeOnly = exp.declarations?.some(
+        (node) =>
+          ts.isExportSpecifier(node) &&
+          (node.isTypeOnly ||
+            (ts.isNamedExports(node.parent) &&
+              ts.isExportDeclaration(node.parent.parent) &&
+              node.parent.parent.isTypeOnly)),
+      );
+      let classKeyword = isAbstract ? "export abstract class" : "export class";
+      if (typeOnly) classKeyword = "export interface";
 
       const typeParamsStr = decl.typeParameters?.length
         ? `<${decl.typeParameters.map((tp) => printNode(tp)).join(", ")}>`
         : "";
 
-      const heritageStr = decl.heritageClauses
-        ? ` ${cleanTypeString(decl.heritageClauses.map((hc) => printNode(hc)).join(" "))}`
-        : "";
+      const heritageStr =
+        !typeOnly && decl.heritageClauses
+          ? ` ${cleanTypeString(decl.heritageClauses.map((hc) => printNode(hc)).join(" "))}`
+          : "";
       checkHeritageClauses(decl.heritageClauses, `Class \`${exp.name}\``);
 
       const members: string[] = [];
 
-      for (const sig of constructorType.getConstructSignatures()) {
+      for (const sig of typeOnly ? [] : constructorType.getConstructSignatures()) {
         const sigDoc = formatSignatureJSDoc(sig, checker, "  ");
         if (sigDoc) {
           members.push(sigDoc);
@@ -392,8 +402,30 @@ function inspectEntryPoint(
             (m) =>
               m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword,
           );
-          if (!isStatic && (isPrivate || prop.name.startsWith("_"))) continue;
+          if (isPrivate || prop.name.startsWith("_")) continue;
 
+          const accessors = prop.declarations?.filter(
+            (node): node is ts.GetAccessorDeclaration | ts.SetAccessorDeclaration =>
+              ts.isGetAccessorDeclaration(node) || ts.isSetAccessorDeclaration(node),
+          );
+          if (accessors?.length) {
+            for (const accessor of accessors) {
+              const signature = checker.getSignatureFromDeclaration(accessor);
+              if (!signature) continue;
+              if (ts.isGetAccessorDeclaration(accessor)) {
+                const type = checker.typeToString(
+                  checker.getReturnTypeOfSignature(signature),
+                  sourceFile,
+                  ts.TypeFormatFlags.NoTruncation,
+                );
+                members.push(`  get ${prop.name}(): ${cleanTypeString(type)};`);
+              } else {
+                const parameter = accessor.parameters[0];
+                if (parameter) members.push(`  set ${prop.name}(${printNode(parameter)});`);
+              }
+            }
+            continue;
+          }
           const memberDoc = formatJSDoc(prop, checker, "  ");
           const isReadonly =
             !isStatic && modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword);
@@ -434,7 +466,7 @@ function inspectEntryPoint(
         }
       };
 
-      formatMembers(checker.getPropertiesOfType(constructorType), true);
+      if (!typeOnly) formatMembers(checker.getPropertiesOfType(constructorType), true);
       formatMembers(checker.getPropertiesOfType(instanceType), false);
 
       const classHeader = [classKeyword, `${exp.name}${typeParamsStr}`, heritageStr.trim()]
@@ -443,7 +475,7 @@ function inspectEntryPoint(
 
       items.push({
         name: exp.name,
-        category: "class",
+        category: typeOnly ? "interface" : "class",
         signature: `${classHeader} {\n${members.join("\n")}\n}`,
         doc,
       });

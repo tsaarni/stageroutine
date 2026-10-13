@@ -3,7 +3,8 @@
  */
 
 import "./Title.css";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type ElementOptions, mount } from "../element";
+import { TextContentElement, type TextElement } from "./TextContent";
 
 /**
  * Visual typography variant for the Title component.
@@ -33,14 +34,13 @@ const TITLE_CLASSES: Record<TitleVariant, string> = {
  * Headline typography component supporting default title, hero, and serif editorial variants.
  * @category Components
  */
-export function Title(text: string, options: TitleOptions = {}): DOMElement {
+export function Title(text: string, options: TitleOptions = {}): TextElement {
   const { className, variant = "title", ...restOptions } = options;
   const classes = [TITLE_CLASSES[variant], className].filter(Boolean).join(" ");
   const div = (
     <div className={classes}>
       {options.kicker && <span className="sr-kicker">{options.kicker}</span>}
-      {text}
     </div>
   );
-  return mount(new DOMElement("Title", div, restOptions));
+  return mount(new TextContentElement("Title", div, text, restOptions));
 }

@@ -57,3 +57,5 @@ const cam = Frame(paths.circle(), Webcam({ mirror: true }), {
 - [`Video`](../api/functions/Video.md)
 - [`Webcam`](../api/functions/Webcam.md)
 - [`Frame`](../api/functions/Frame.md)
+
+`currentTime` is the authored seek target in seconds (default: 0). Backward navigation restores it. Read `playbackTime` for the observed playback position. Live playback time is not a snapshot.

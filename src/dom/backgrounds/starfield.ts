@@ -11,13 +11,13 @@ import { BackgroundElement, type BackgroundOptions, getCanvasMetrics } from "./b
  * @category Backgrounds
  * @inline
  */
-export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
+export interface StarfieldOptions extends BackgroundOptions {
   /** Number of star particles (default: 2000) */
   count?: number;
   /** Base travel speed through starfield (default: 1.0) */
   speed?: number;
-  /** Color of stars (default: 0xffffff) */
-  color?: number | string;
+  /** Color of stars (default: "#ffffff") */
+  color?: string;
   /** Particle size in pixels (default: 2.5) */
   size?: number;
   /** Radius of space spread (default: 2000) */
@@ -53,7 +53,7 @@ export class StarfieldElement extends BackgroundElement {
     this.baseSpeed = options.speed ?? 1.0;
     this.targetSpeed = this.baseSpeed;
     this.spread = options.spread ?? 2000;
-    const color = options.color ?? 0xffffff;
+    const color = options.color ?? "#ffffff";
     const size = options.size ?? 2.5;
 
     // 1. Scene & Camera
@@ -101,8 +101,6 @@ export class StarfieldElement extends BackgroundElement {
 
     this.stars = new THREE.Points(geometry, particleMaterial);
     this.scene.add(this.stars);
-
-    this.resume();
   }
 
   override attach(stage: StageContext): void {
@@ -111,9 +109,6 @@ export class StarfieldElement extends BackgroundElement {
     // Smooth tilt and warp burst on scene changes
     this.unbindScene = stage.on("evt:nav:sceneChanged", ({ to }) => {
       this.targetSpeed = this.baseSpeed * 3.5;
-      setTimeout(() => {
-        this.targetSpeed = this.baseSpeed;
-      }, 1200);
 
       let hash = 0;
       const name = to || "";
@@ -130,10 +125,11 @@ export class StarfieldElement extends BackgroundElement {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    if (this.scene && this.camera) this.renderer.render(this.scene, this.camera);
   }
 
   resume(): void {
-    if (this.isRunning) return;
+    if (this.isRunning || !this.attached) return;
     this.isRunning = true;
 
     let lastFrameTime = 0;
@@ -145,6 +141,7 @@ export class StarfieldElement extends BackgroundElement {
       if (elapsedDelta >= STARFIELD_FRAME_INTERVAL_MS) {
         lastFrameTime = timestamp - (elapsedDelta % STARFIELD_FRAME_INTERVAL_MS);
 
+        this.targetSpeed += (this.baseSpeed - this.targetSpeed) * 0.05;
         const posAttr = this.stars.geometry.attributes.position;
         const posArray = posAttr.array as Float32Array;
 
@@ -160,6 +157,7 @@ export class StarfieldElement extends BackgroundElement {
         this.camera.rotation.y += (this.targetRotY - this.camera.rotation.y) * 0.05;
 
         this.renderer.render(this.scene, this.camera);
+        this.frameUpdated();
       }
 
       this.animFrameId = requestAnimationFrame(animate);

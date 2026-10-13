@@ -308,18 +308,17 @@ export class FluidBackgroundElement extends BackgroundElement {
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = "0";
     this.domElement.appendChild(canvas);
-
-    this.resume();
   }
 
   onResize(width: number, height: number): void {
     if (!this.renderer || !this.material) return;
     this.renderer.setSize(width, height);
+    if (this.scene && this.camera) this.renderer.render(this.scene, this.camera);
     this.material.uniforms.u_resolution.value.set(width, height);
   }
 
   resume(): void {
-    if (this.isRunning) return;
+    if (this.isRunning || !this.attached) return;
     this.isRunning = true;
     this.clock.start();
 
@@ -335,6 +334,7 @@ export class FluidBackgroundElement extends BackgroundElement {
         const elapsed = this.clock.getElapsedTime();
         this.material.uniforms.u_time.value = elapsed * this.config.waveSpeed;
         this.renderer.render(this.scene, this.camera);
+        this.frameUpdated();
       }
 
       this.animFrameId = requestAnimationFrame(animate);

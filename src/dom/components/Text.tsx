@@ -3,7 +3,8 @@
  */
 
 import "./Text.css";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type ElementOptions, mount } from "../element";
+import { TextContentElement, type TextElement } from "./TextContent";
 
 /**
  * Configuration options for the Text component.
@@ -16,8 +17,8 @@ export type TextOptions = ElementOptions;
  * Body copy paragraph component formatted for high-legibility stage presentations.
  * @category Components
  */
-export function Text(text: string, options: TextOptions = {}): DOMElement {
+export function Text(text: string, options: TextOptions = {}): TextElement {
   const { className, ...restOptions } = options;
   const classes = ["sr-text", className].filter(Boolean).join(" ");
-  return mount(new DOMElement("Text", <p className={classes}>{text}</p>, restOptions));
+  return mount(new TextContentElement("Text", <p className={classes}></p>, text, restOptions));
 }

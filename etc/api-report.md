@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 198 symbols |
+| `stageroutine` | 205 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -55,7 +55,9 @@ export function BrowserWindow(options: BrowserWindowOptions): BrowserWindowEleme
 export function BulletList(items: BulletItemInput[], options?: BulletListOptions): BulletListElement;
 
 /** Rectangular card container. */
-export function Card(childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
+export function Card(options?: ShapeOptions): ShapeElement;
+
+export function Card(children: ElementChild, options?: ShapeOptions): ShapeElement;
 
 /**
  * Code snippet component with syntax highlighting powered by the Shiki TextMate engine
@@ -74,7 +76,7 @@ export function Connector(from: ConnectorTarget, to: ConnectorTarget, options?: 
  * CSSBackground("url('/wallpaper.jpg') center / cover no-repeat");
  * ```
  */
-export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): Background;
+export function CSSBackground(cssOrOptions?: string | CSSBackgroundOptions): CSSBackgroundElement;
 
 /**
  * Registers an icon set or custom SVG icons.
@@ -97,8 +99,13 @@ export function defineIcons(def: IconDefinition): void;
  */
 export function dream(options?: DreamOptions): ElementDecorator;
 
+/** Wraps a DOM node as a reactive stage element. */
+export function Element(node: HTMLElement, options?: ElementOptions): DOMElement;
+
 /** Clips media or DOM child elements to an SVG path geometry contour. */
-export function Frame(path: PathFunction, childOrOptions?: unknown, options?: FrameOptions): FrameElement;
+export function Frame(path: PathFunction, options?: FrameOptions): FrameElement;
+
+export function Frame(path: PathFunction, children: ElementChild, options?: FrameOptions): FrameElement;
 
 /** Decorates an element with a glowing neon aura and optional pulse animation. */
 export function glow(options?: GlowOptions): ElementDecorator;
@@ -110,14 +117,14 @@ export function gradient(options?: GradientOptions): ElementDecorator;
 export function GradientFluid(options?: GradientFluidOptions): Background;
 
 /** Decorates an element or background with a film grain texture. */
-export function grain(options?: GrainOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => void;
+export function grain(options?: GrainOptions): (target: DOMElement | Background | ReactiveElementBase | HTMLElement) => { dispose: () => void; };
 
 /**
  * Creates a zero-DOM logical group proxy over multiple stage elements.
  * Grouping allows broadcasting transitions, property mutations, and decorators
  * across elements without adding container elements to the DOM tree.
  */
-export function group(...items: (DOMElement | ReactiveElementBase | (DOMElement | ReactiveElementBase)[] | GroupElement | null | undefined | false)[]): GroupElement;
+export function group<const T extends readonly (ReactiveElementBase | readonly ReactiveElementBase[] | GroupElement | null | undefined | false)[]>(...items: T): GroupElement<Extract<T[number], ReactiveElementBase> | Extract<T[number], readonly ReactiveElementBase[]>[number] | Extract<T[number], GroupElement>["elements"][number]>;
 
 /**
  * Creates a reactive Icon element on stage.
@@ -153,7 +160,7 @@ export function Image(srcOrOptions?: string | ImageOptions, maybeOptions?: Image
 export function kenBurns(options?: KenBurnsOptions): ElementDecorator;
 
 /** Micro-label component used for chapter indices and section category tags. */
-export function Kicker(label: string, options?: KickerOptions): DOMElement;
+export function Kicker(label: string, options?: KickerOptions): TextElement;
 
 /**
  * Laser pointer overlay with glowing trail and cursor suppression.
@@ -197,10 +204,12 @@ export function scrim(options?: ScrimOptions): ElementDecorator;
 export function SequenceDiagram(options?: SequenceDiagramOptions): SequenceDiagramController;
 
 /** Universal shape container supporting multiple geometries and surface treatments. */
-export function Shape(path: PathFunction, childrenOrOptions?: unknown, options?: ShapeOptions): ShapeElement;
+export function Shape(path: PathFunction, options?: ShapeOptions): ShapeElement;
+
+export function Shape(path: PathFunction, children: ElementChild, options?: ShapeOptions): ShapeElement;
 
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
-export function stagger(elements: (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerTransition;
+export function stagger(elements: readonly (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerTransition;
 
 /** Creates an interactive 3D Starfield background element. */
 export function Starfield(options?: StarfieldOptions): Background;
@@ -212,10 +221,10 @@ export function Table(options: TableOptions): TableElement;
 export function TerminalBlock(options?: TerminalBlockOptions): TerminalBlockElement;
 
 /** Body copy paragraph component formatted for high-legibility stage presentations. */
-export function Text(text: string, options?: TextOptions): DOMElement;
+export function Text(text: string, options?: TextOptions): TextElement;
 
 /** Headline typography component supporting default title, hero, and serif editorial variants. */
-export function Title(text: string, options?: TitleOptions): DOMElement;
+export function Title(text: string, options?: TitleOptions): TextElement;
 
 /**
  * Creates a fluent transition modifier with a 2D coordinate delta updater.
@@ -291,7 +300,8 @@ export function vignette(options?: VignetteOptions): (target: DOMElement | Backg
  * @example ```tsx
  * // Presenter bubble avatar in the bottom-right corner:
  * const presenter = Frame(paths.circle(), Webcam({ mirror: true }), {
- *   x: "bottom-right",
+ *   position: [154, 84],
+ *   origin: "bottom-right",
  *   size: 180,
  *   active: true,
  * });
@@ -304,72 +314,6 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
 ### Classes
 
 ```ts
-/**
- * Animated DOM element instance managed by the reactive Stage runtime.
- * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
- */
-export class DOMElement implements ReactiveElementBase {
-  constructor(kind: string, html: HTMLElement | SVGElement | DocumentFragment | DOMElement | string, options?: ElementOptions): DOMElement;
-  static _reactiveKeys: ReadonlySet<string>;
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  /** Which point of the element sits on its coordinate. */
-  origin: ElementAnchor;
-  /** Horizontal coordinate in stage units. */
-  x: number;
-  /** Vertical coordinate in stage units. */
-  y: number;
-  width: SizeProp | undefined;
-  height: SizeProp | undefined;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  opacity: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color: ReactiveProp<string> | undefined;
-  zIndex: ReactiveProp<string | number> | undefined;
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  align: Align | undefined;
-  size: SizeProp | undefined;
-  /** Coordinate pair in stage units. */
-  position: Position;
-  /** Sets multiple properties on this element with a unified transition descriptor or immediate values. */
-  to(props: ElementTransitionProps): ElementTransition;
-  /** Whether this element is currently attached to the DOM tree. */
-  isMounted: boolean;
-  /** Whether this element is visible and active in the current scene (opacity > 0). */
-  isActive: boolean;
-  /** Registers a callback invoked when the element is attached to the stage DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback invoked when the element is detached from the stage DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback invoked when the element becomes visible in the active scene. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback invoked when the element transitions out of visibility. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /**
-   * Registers a click interaction handler on this element.
-   * If the handler returns a function, that function is invoked as a reset cleanup
-   * when clicking outside this element or pressing Escape.
-   */
-  onClick(handler: (event: MouseEvent) => (() => void) | unknown): DOMElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): DOMElement;
-}
-
 /**
  * Client for synchronizing a custom presenter view with the main presentation window
  * via BroadcastChannel.
@@ -419,7 +363,8 @@ export class Stage {
    * context will cause the latter instance to overwrite `activeStage`.
    */
   constructor(options?: StageOptions): Stage;
-  isMounted: boolean;
+  get isMounted(): boolean;
+  get isMoving(): boolean;
   /**
    * Attaches an overlay plugin to the stage.
    *
@@ -432,14 +377,10 @@ export class Stage {
   overlay(plugin: OverlayPlugin): Stage;
   on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
   emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]): void;
-  /** Virtual stage canvas width in pixels (default: 1920). */
-  width: number;
-  /** Virtual stage canvas height in pixels (default: 1080). */
-  height: number;
-  /** Stage width in stage units (160 on a 16:9 stage). */
-  unitsWide: number;
-  /** Stage height in stage units (always 90). */
-  unitsTall: number;
+  get width(): number;
+  get height(): number;
+  get unitsWide(): number;
+  get unitsTall(): number;
   /** Declares a new presentation scene and returns a builder to populate its elements. */
   scene(name: string): SceneBuilder;
   /**
@@ -449,7 +390,7 @@ export class Stage {
    * stage.theme({
    *   background: "#0f172a",
    *   surface: "#1e293b",
-   *   surfaceBorder: "1px solid #334155",
+   *   surfaceBorderColor: "#334155",
    *   text: "#f8fafc",
    * });
    * ```
@@ -459,7 +400,7 @@ export class Stage {
    * Sets the stage background (color string, gradient, or procedural element).
    * @example ```ts
    * stage.background("#0f172a");
-   * stage.background(new Starfield());
+   * stage.background(Starfield());
    * ```
    */
   background(bg: string | Background | ReactiveElementBase): Stage;
@@ -576,8 +517,14 @@ export interface AsciiFluidOptions extends BackgroundOptions {
  * @category Backgrounds
  */
 export interface Background {
+    /** Backdrop opacity from 0 to 1 (default: 1). Snapshot-restored. */
+    opacity: number;
     readonly domElement?: HTMLElement;
     attach(stage: StageContext): void;
+    /** Runs after an active background frame. */
+    onUpdate?(fn: () => void): () => void;
+    /** Releases decorator resources on disposal. */
+    onUnmount?(fn: () => void): () => void;
     dispose?(): void;
     decorate(decorator: BackgroundDecorator): this;
     play?(): void;
@@ -673,14 +620,14 @@ export interface BulletItem {
     /** Additional CSS class name. */
     className?: string;
     /** Inline styles for this item. */
-    style?: CSSProperties | Partial<CSSStyleDeclaration>;
+    style?: CSSProperties;
     /** Theme token overrides for this item. */
     theme?: Partial<ThemeConfig>;
 }
 
 /** Public controls for a bullet list. @category Components */
 export interface BulletListElement extends DOMElement {
-    readonly items: DOMElement[];
+    readonly items: readonly DOMElement[];
     reveal(options?: StaggerOptions): StaggerTransition;
 }
 
@@ -690,6 +637,8 @@ export interface BulletListElement extends DOMElement {
  * @inline
  */
 export interface BulletListOptions extends ElementOptions {
+    /** Hide items initially for reveal (default: false). */
+    itemsHidden?: boolean;
     /** Vertical spacing between bullet items in stage units, or a CSS length. */
     itemSpacing?: number | string;
     /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
@@ -754,6 +703,7 @@ export interface CirclePathOptions {
 
 /** Public controls for a code block. @category Components */
 export interface CodeBlockElement extends DOMElement {
+    code: string;
 }
 
 /**
@@ -761,10 +711,11 @@ export interface CodeBlockElement extends DOMElement {
  * @category Components
  * @inline
  */
-export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
+export interface CodeBlockOptions extends ElementOptions {
+    /** Code language (default: "typescript"). */
     lang?: string;
-    /** Shiki syntax highlighting theme (e.g. "vitesse-dark", "github-dark") or Stage ThemeConfig */
-    theme?: string | ElementOptions["theme"];
+    /** Shiki syntax theme (default: "vitesse-dark"). */
+    syntaxTheme?: string;
     className?: string;
     /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
     interactive?: boolean;
@@ -772,23 +723,33 @@ export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
 
 /** Public controls for a connector. @category Components */
 export interface ConnectorElement extends DOMElement {
+    rowY?: number;
     fromTarget: ConnectorTarget;
     toTarget: ConnectorTarget;
-    connectorStyle: "straight" | "corner" | "bezier" | "arc";
+    routing: "straight" | "corner" | "bezier" | "arc";
     curvature: number;
     /** Outer clearance padding around target perimeters in virtual pixels. */
     padding: number;
+    fromPadding?: number;
+    toPadding?: number;
     fromAnchor: AnchorMode | ElementAnchor;
     toAnchor: AnchorMode | ElementAnchor;
-    connectorColor: string;
-    labelPlacement: ReactiveProp<LabelPlacement>;
+    strokeWidth: number;
+    strokePattern: "solid" | "dashed" | "dotted";
+    label: string;
+    get labelPlacement(): LabelPlacement;
+    set labelPlacement(value: ReactiveProp<LabelPlacement>);
     labelOffset?: ReactiveProp<LabelOffset>;
     labelOffsetX?: ReactiveProp<number | string>;
     labelOffsetY?: ReactiveProp<number | string>;
-    labelScale: ReactiveProp<number>;
-    flow: FlowEffect;
-    start: ReactiveProp<number>;
-    end: ReactiveProp<number>;
+    get labelScale(): number;
+    set labelScale(value: ReactiveProp<number>);
+    get flow(): FlowEffect;
+    set flow(value: ReactiveProp<FlowEffect>);
+    get start(): number;
+    set start(value: ReactiveProp<number>);
+    get end(): number;
+    set end(value: ReactiveProp<number>);
     pulse(options?: PulseOptions): void;
     cancelPulses(): this;
     startPeriodicPulse(options?: number | PeriodicPulseOptions): this;
@@ -800,23 +761,23 @@ export interface ConnectorElement extends DOMElement {
  * @category Components
  * @inline
  */
-export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
+export interface ConnectorOptions extends ElementOptions {
+    /** Fixed message row in stage units (default: undefined, automatic routing). */
+    rowY?: number;
     /** Optional text label rendered at the connector's midpoint or specified placement. */
     label?: string;
     /** Scale factor for the label badge and text (default: 1). Reactive. */
-    labelScale?: ReactiveProp<number>;
+    labelScale?: number;
     /** Position of the label along the path ("start" | "center" | "end" | 0..1 ratio). Reactive. */
-    labelPlacement?: ReactiveProp<LabelPlacement>;
+    labelPlacement?: LabelPlacement;
     /** Offset to nudge the label ([x, y] in stage units, or a CSS length). Reactive. */
-    labelOffset?: ReactiveProp<LabelOffset>;
+    labelOffset?: LabelOffset;
     /** Horizontal offset for the label in stage units, or a CSS length. Reactive. */
-    labelOffsetX?: ReactiveProp<number | string>;
+    labelOffsetX?: number | string;
     /** Vertical offset for the label in stage units, or a CSS length. Reactive. */
-    labelOffsetY?: ReactiveProp<number | string>;
+    labelOffsetY?: number | string;
     /** Routing style: straight line, 90° orthogonal corners, smooth cubic Bézier, or single-curvature circular arc. */
     routing?: "straight" | "corner" | "bezier" | "arc";
-    /** CSS style declaration or routing shortcut. */
-    style?: "straight" | "corner" | "bezier" | "arc" | Partial<CSSStyleDeclaration>;
     /** Curvature bow factor for "arc" routing (defaults to 0.2). Positive bows outward, negative bows inward. */
     curvature?: number;
     /** Attachment point on the origin target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
@@ -827,10 +788,8 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     color?: string;
     /** Stroke width in virtual pixels (defaults to 3). */
     strokeWidth?: number;
-    /** Whether the line is styled with dashed strokes. */
-    dashed?: boolean;
-    /** Whether the line is styled with dotted strokes. */
-    dotted?: boolean;
+    /** Stroke pattern (default: "solid"). */
+    strokePattern?: "solid" | "dashed" | "dotted";
     /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
     flow?: FlowEffect;
     /** Head marker at the start/origin endpoint (defaults to "none"). */
@@ -842,12 +801,12 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
     /** Size of the end head marker in virtual canvas pixels (defaults to 16). */
     endHeadSize?: number;
     /** Trim-path start offset from 0.0 to 1.0. */
-    start?: ReactiveProp<number>;
+    start?: number;
     /**
      * Trim-path end offset from 0.0 to 1.0 for draw-in transitions.
      * When animated (e.g. `to(1)`), the arrowhead automatically rides the leading edge of the stroke.
      */
-    end?: ReactiveProp<number>;
+    end?: number;
     /** Corner radius for rounded box intersections (defaults to 12). */
     radius?: number;
     /** Outer clearance padding around card perimeters in virtual pixels (defaults to 6). */
@@ -861,16 +820,20 @@ export interface ConnectorOptions extends Omit<ElementOptions, "style"> {
 }
 
 /**
+ * Full-bleed DOM background element styled with standard CSS.
+ * @internal
+ */
+export interface CSSBackgroundElement extends Background {
+    background: string;
+}
+
+/**
  * Configuration options for full-bleed CSS backgrounds.
  * @category Backgrounds
  */
-export interface CSSBackgroundOptions {
-    id?: string;
-    className?: string;
+export interface CSSBackgroundOptions extends BackgroundOptions {
     /** Standard CSS background value (color, gradient, or url). */
     background?: string;
-    /** Optional initial opacity (default: 1). */
-    opacity?: number;
 }
 
 /**
@@ -880,6 +843,77 @@ export interface CSSBackgroundOptions {
 export interface DiamondPathOptions {
     /** Corner tip radius in pixels (default: 10.5). */
     radius?: number;
+}
+
+export interface DOMElement {
+  readonly id: string;
+  readonly kind: string;
+  readonly domElement: HTMLElement;
+  get origin(): ElementAnchor;
+  set origin(val: ReactiveProp<ElementAnchor> | undefined);
+  get x(): number;
+  set x(val: CoordProp);
+  get y(): number;
+  set y(val: CoordProp);
+  get width(): string | number | undefined;
+  set width(value: ReactiveProp<number | string> | undefined);
+  get height(): string | number | undefined;
+  set height(value: ReactiveProp<number | string> | undefined);
+  get scale(): number;
+  set scale(value: ReactiveProp<number>);
+  get rotation(): number;
+  set rotation(value: ReactiveProp<number>);
+  get opacity(): number;
+  set opacity(value: ReactiveProp<number>);
+  get blur(): number;
+  set blur(value: ReactiveProp<number>);
+  get brightness(): number;
+  set brightness(value: ReactiveProp<number>);
+  get color(): string | undefined;
+  set color(value: ReactiveProp<string> | undefined);
+  get zIndex(): string | number | undefined;
+  set zIndex(value: ReactiveProp<number | string> | undefined);
+  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
+  exitDuration: number | undefined;
+  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
+  exitDelay: number | undefined;
+  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
+  enterDuration: number | undefined;
+  /** Delay in seconds before entering scene transition begins (defaults to 0). */
+  enterDelay: number | undefined;
+  get align(): Align | undefined;
+  set align(value: ReactiveProp<Align> | undefined);
+  get size(): string | number | undefined;
+  set size(val: SizeProp | undefined);
+  get position(): Position;
+  set position(val: ReactiveProp<Position> | PositionUpdater | undefined);
+  /** Sets multiple properties on this element with a unified transition descriptor or immediate values. */
+  to(props: ElementTransitionProps<DOMElement>): ElementTransition;
+  /** Whether this element is currently attached to the DOM tree. */
+  isMounted: boolean;
+  /** Whether this element is visible and active in the current scene (opacity > 0). */
+  isActive: boolean;
+  /** Registers a callback invoked when the element is attached to the stage DOM. */
+  onMount(fn: () => void): () => void;
+  /** Registers a callback invoked when the element is detached from the stage DOM. */
+  onUnmount(fn: () => void): () => void;
+  /** Registers a callback invoked when the element becomes visible in the active scene. */
+  onActivate(fn: () => void): () => void;
+  /** Registers a callback invoked when the element transitions out of visibility. */
+  onDeactivate(fn: () => void): () => void;
+  /**
+   * Registers a callback invoked whenever reactive properties are mutated during transitions.
+   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
+   */
+  onUpdate(fn: (progress: number) => void): () => void;
+  /**
+   * Registers a click interaction handler on this element.
+   * If the handler returns a function, that function is invoked as a reset cleanup
+   * when clicking outside this element or pressing Escape.
+   */
+  onClick(handler: (event: MouseEvent) => (() => void) | unknown): DOMElement;
+  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
+  decorate(decorator: ElementDecorator): DOMElement;
 }
 
 /**
@@ -912,19 +946,30 @@ export interface ElementOptions {
     origin?: ElementAnchor;
     align?: Align;
     position?: Position;
-    x?: CoordProp;
-    y?: CoordProp;
-    width?: SizeProp;
-    height?: SizeProp;
-    size?: SizeProp;
-    scale?: ReactiveProp<number>;
-    rotation?: ReactiveProp<number>;
-    opacity?: ReactiveProp<number>;
-    blur?: ReactiveProp<number>;
-    brightness?: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
+    /** Horizontal position in stage units (default: 0). */
+    x?: PositionCoord;
+    /** Vertical position in stage units (default: 0). */
+    y?: PositionCoord;
+    /** Width in stage units or CSS length (default: content size). */
+    width?: number | string;
+    /** Height in stage units or CSS length (default: content size). */
+    height?: number | string;
+    /** Both dimensions in stage units or CSS length (default: unset). */
+    size?: number | string;
+    /** Scale multiplier (default: 1). */
+    scale?: number;
+    /** Rotation in degrees (default: 0). */
+    rotation?: number;
+    /** Whole-element opacity from 0 to 1 (default: 1). */
+    opacity?: number;
+    /** Blur in virtual pixels (default: 0). */
+    blur?: number;
+    /** Brightness multiplier (default: 1). */
+    brightness?: number;
+    /** Foreground CSS color (default: component/theme color). */
+    color?: string;
     className?: string;
-    style?: CSSProperties | Partial<CSSStyleDeclaration>;
+    style?: CSSProperties;
     theme?: Partial<ThemeConfig>;
     /** Whether this element manages its own CSS transform / positioning (disables stage translate3d). */
     customPositioned?: boolean;
@@ -955,34 +1000,15 @@ export interface ElementTransition {
     apply(): void;
 }
 
-/**
- * Transitionable element properties and targets.
- * @category Motion
- */
-export interface ElementTransitionProps {
-    x?: CoordProp;
-    y?: CoordProp;
-    position?: ReactiveProp<Position> | PositionUpdater;
-    width?: SizeProp;
-    height?: SizeProp;
-    size?: SizeProp;
-    scale?: ReactiveProp<number>;
-    rotation?: ReactiveProp<number>;
-    opacity?: ReactiveProp<number>;
-    blur?: ReactiveProp<number>;
-    brightness?: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    origin?: ReactiveProp<ElementAnchor>;
-    align?: ReactiveProp<Align>;
-    [key: string]: unknown;
-}
-
 /** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
     readonly path: PathFunction;
-    readonly items: ReactiveElementBase[];
-    active: boolean;
-    borderColor: ReactiveProp<string> | undefined;
+    readonly items: readonly ReactiveElementBase[];
+    highlighted: boolean;
+    get borderColor(): string | undefined;
+    set borderColor(value: ReactiveProp<string> | undefined);
+    strokeWidth: number;
+    background?: string;
 }
 
 /**
@@ -992,15 +1018,15 @@ export interface FrameElement extends DOMElement {
  */
 export interface FrameOptions extends ElementOptions {
     /** Optional border outline color. */
-    borderColor?: ReactiveProp<string>;
+    borderColor?: string;
     /** Optional background fill color. */
     background?: string;
-    /** Border stroke outline width in virtual canvas pixels (default: 0). */
+    /** Border stroke outline width in virtual canvas pixels (default: 2 with borderColor, otherwise 0; highlighted minimum: 2). */
     strokeWidth?: number;
-    /** Highlighted / glowing active state. */
-    active?: boolean;
+    /** Glowing outline highlight (default: false). */
+    highlighted?: boolean;
     /** Optional child elements or media node. */
-    children?: unknown;
+    children?: ElementChild;
 }
 
 /**
@@ -1075,8 +1101,8 @@ export interface GrainOptions {
  * Public fluent contract for a logical group of elements.
  * @category Core
  */
-export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase> {
-    readonly elements: readonly (DOMElement | ReactiveElementBase)[];
+export interface GroupElement<T extends ReactiveElementBase = ReactiveElementBase> extends Iterable<T> {
+    readonly elements: readonly T[];
     opacity: ReactiveProp<number>;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
@@ -1086,9 +1112,8 @@ export interface GroupElement extends Iterable<DOMElement | ReactiveElementBase>
     x: CoordProp;
     y: CoordProp;
     position: ReactiveProp<Position> | PositionUpdater;
-    size: CoordProp;
-    [key: string]: unknown;
-    to(props: ElementTransitionProps): ElementTransition;
+    size: SizeProp;
+    to(props: ElementTransitionProps<T>): ElementTransition;
     decorate(...decorators: ElementDecorator[]): this;
 }
 
@@ -1278,12 +1303,11 @@ export interface LayoutOptions {
 /** Public controls for a sequence diagram lifeline. @category Components */
 export interface LifelineElement extends DOMElement {
     readonly actor: DOMElement;
-    length: number;
+    height: number;
     color: string;
-    readonly activations: ActivationBarElement[];
-    setLength(length: number): void;
+    readonly activations: readonly ActivationBarElement[];
     activate(options?: ActivationOptions): ActivationBarElement;
-    hasActivationAt(yPx: number): boolean;
+    hasActivationAt(y: number): boolean;
 }
 
 /**
@@ -1292,7 +1316,7 @@ export interface LifelineElement extends DOMElement {
  */
 export interface LifelineOptions extends ElementOptions {
     /** Vertical length of the dashed line in stage units (default: 42). Automatically extends when activations exceed length. */
-    length?: number;
+    height?: number;
     /** Stroke color of the dashed line (default: "rgba(148, 163, 184, 0.7)"). */
     color?: string;
 }
@@ -1532,7 +1556,7 @@ export interface PulseOptions {
     color?: string;
     /** Duration of the particle traversal in seconds (default: 0.6s). */
     duration?: number;
-    /** Diameter of the particle in virtual canvas pixels (default: 8px). */
+    /** Diameter of the particle in virtual canvas pixels (default: 12px). */
     size?: number;
     /** Traverse the connector backward (from the destination to the origin) (default: false). */
     reverse?: boolean;
@@ -1575,7 +1599,7 @@ export interface PulseSequenceStep {
     duration?: number;
     /** Particle color override (default: connector stroke color). */
     color?: string;
-    /** Particle diameter in pixels (default: 8px). */
+    /** Particle diameter in pixels (default: 12px). */
     size?: number;
     /** Traverse this connector backward (from destination to origin) (default: false). */
     reverse?: boolean;
@@ -1598,6 +1622,8 @@ export interface ReactiveElementBase {
     x: CoordProp;
     y: CoordProp;
     position?: ReactiveProp<Position> | PositionUpdater;
+    width?: SizeProp;
+    height?: SizeProp;
     size?: SizeProp;
     scale: ReactiveProp<number>;
     rotation: ReactiveProp<number>;
@@ -1701,11 +1727,11 @@ export interface ScrimOptions {
 
 /** Public coordinator for a sequence diagram. @category Components */
 export interface SequenceDiagramController {
-    readonly participants: DOMElement[];
-    readonly lifelines: LifelineElement[];
-    readonly messages: ConnectorElement[];
-    readonly activations: ActivationBarElement[];
-    readonly elements: DOMElement[];
+    readonly participants: readonly DOMElement[];
+    readonly lifelines: readonly LifelineElement[];
+    readonly messages: readonly ConnectorElement[];
+    readonly activations: readonly ActivationBarElement[];
+    readonly elements: readonly DOMElement[];
     startY: number;
     gapY: number;
     addParticipant(actor: DOMElement, options?: LifelineOptions): LifelineElement;
@@ -1740,14 +1766,19 @@ export interface SequenceDiagramOptions {
 export interface ShapeElement extends DOMElement {
     readonly path: PathFunction;
     readonly variant: ShapeVariant;
-    readonly items: ReactiveElementBase[];
-    start: ReactiveProp<number>;
-    end: ReactiveProp<number>;
-    flow: ReactiveProp<FlowEffect>;
+    readonly items: readonly ReactiveElementBase[];
+    get start(): number;
+    set start(value: ReactiveProp<number>);
+    get end(): number;
+    set end(value: ReactiveProp<number>);
+    get flow(): FlowEffect;
+    set flow(value: ReactiveProp<FlowEffect>);
     text: string | undefined;
-    borderColor: ReactiveProp<string> | undefined;
+    get borderColor(): string | undefined;
+    set borderColor(value: ReactiveProp<string> | undefined);
+    strokeWidth: number;
     background: string | undefined;
-    active: boolean;
+    highlighted: boolean;
     doubleBorder: boolean;
 }
 
@@ -1760,25 +1791,25 @@ export interface ShapeOptions extends ElementOptions {
     /** Surface material preset: "surface" (background fill, default), "ghost" (outline), or "solid" (opaque fill). */
     variant?: ShapeVariant;
     /** Border stroke color. */
-    borderColor?: ReactiveProp<string>;
+    borderColor?: string;
     /** Optional text content inside the shape container. */
     text?: string;
     /** Background fill color. */
     background?: string;
-    /** Highlighted / glowing active state. */
-    active?: boolean;
+    /** Glowing outline highlight (default: false). */
+    highlighted?: boolean;
     /** Double border outline (e.g. for final states, nested rings). */
     doubleBorder?: boolean;
     /** Trim-path start offset from 0.0 to 1.0 (default: 0). */
-    start?: ReactiveProp<number>;
+    start?: number;
     /** Trim-path end offset from 0.0 to 1.0 (default: 1). */
-    end?: ReactiveProp<number>;
+    end?: number;
     /** Continuous ambient stroke animation ("none" | "traveling" | "chase" | "ping", default: "none"). */
-    flow?: ReactiveProp<FlowEffect>;
+    flow?: FlowEffect;
     /** Stroke outline width in virtual canvas pixels (default: 2). */
     strokeWidth?: number;
     /** Optional child elements or text nodes. */
-    children?: unknown;
+    children?: ElementChild;
 }
 
 /**
@@ -1846,6 +1877,9 @@ export interface StageEventMap {
     "req:annotation:redo": undefined;
     "evt:annotation:undone": undefined;
     "evt:annotation:redone": undefined;
+    "evt:stage:activityChanged": {
+        active: boolean;
+    };
     // Stage lifecycle
     "evt:stage:resized": StageResizedEvent;
     "req:stage:requestState": undefined;
@@ -1935,7 +1969,7 @@ export interface StaggerOptions {
     /** Easing curve for each element transition (default: "quartOut"). */
     ease?: BuiltinEase | EaseCurve;
     /** Animated target properties for each element (default: `{ opacity: 1 }`). */
-    props?: Record<string, unknown>;
+    props?: ElementTransitionProps;
 }
 
 /**
@@ -1946,7 +1980,7 @@ export interface StaggerTransition {
     duration(seconds: number): this;
     overlap(milestone: AnimationMilestone): this;
     ease(curve: BuiltinEase | EaseCurve): this;
-    props(properties: Record<string, unknown>): this;
+    props(properties: ElementTransitionProps): this;
     when(target: ReactiveElementBase | string, milestone?: AnimationMilestone): this;
     after(target: ReactiveElementBase | string): this;
     apply(): void;
@@ -1957,13 +1991,13 @@ export interface StaggerTransition {
  * @category Backgrounds
  * @inline
  */
-export interface StarfieldOptions extends Omit<BackgroundOptions, "color"> {
+export interface StarfieldOptions extends BackgroundOptions {
     /** Number of star particles (default: 2000) */
     count?: number;
     /** Base travel speed through starfield (default: 1.0) */
     speed?: number;
-    /** Color of stars (default: 0xffffff) */
-    color?: number | string;
+    /** Color of stars (default: "#ffffff") */
+    color?: string;
     /** Particle size in pixels (default: 2.5) */
     size?: number;
     /** Radius of space spread (default: 2000) */
@@ -1983,7 +2017,7 @@ export interface StarPathOptions {
 
 /** Public controls for a table. @category Components */
 export interface TableElement extends DOMElement {
-    readonly rows: DOMElement[];
+    readonly rows: readonly DOMElement[];
     reveal(options?: StaggerOptions): StaggerTransition;
 }
 
@@ -1992,13 +2026,15 @@ export interface TableElement extends DOMElement {
  * @category Components
  * @inline
  */
-export interface TableOptions extends Omit<ElementOptions, "align"> {
+export interface TableOptions extends ElementOptions {
+    /** Hide body rows initially for reveal (default: false). */
+    rowsHidden?: boolean;
     /** Column header labels displayed in the table header row. */
     headers?: string[];
     /** Two-dimensional matrix of row cell values (strings, numbers, or elements). */
     rows: (string | number | HTMLElement | DOMElement)[][];
     /** Text alignment per column (default: "left"). */
-    align?: Align[];
+    columnAlign?: ("left" | "center" | "right")[];
     /** Additional CSS class name. */
     className?: string;
     /** Whether clicking or dragging rows focuses them interactively (default: true). */
@@ -2020,6 +2056,8 @@ export interface TailTargetSpec {
 
 /** Public controls for a terminal block. @category Components */
 export interface TerminalBlockElement extends DOMElement {
+    title: string;
+    lines: readonly string[];
 }
 
 /**
@@ -2031,11 +2069,16 @@ export interface TerminalBlockOptions extends ElementOptions {
     /** Window title bar label (default: "bash - 80x24"). */
     title?: string;
     /** Command-line output lines to display. */
-    lines?: string[];
+    lines?: readonly string[];
     /** Additional CSS class name. */
     className?: string;
     /** Whether clicking or dragging lines focuses them interactively (default: true). */
     interactive?: boolean;
+}
+
+/** Mutable text content. @category Components */
+export interface TextElement extends DOMElement {
+    text: string;
 }
 
 /**
@@ -2061,8 +2104,14 @@ export interface ThemeConfig {
     textDim?: string;
     /** Component surface background color. */
     surface?: string;
-    /** Component surface border stroke. */
-    surfaceBorder?: string;
+    /** Surface border color (default: text at 15% opacity). */
+    surfaceBorderColor?: string;
+    /** Surface border width as a CSS length (default: "1px"). */
+    surfaceBorderWidth?: string;
+    /** Opaque surface background (default: "#18181b"). */
+    surfaceSolid?: string;
+    /** Subtle media backdrop (default: "#1e293b"). */
+    surfaceSubtle?: string;
     /** Subtle surface highlight color. */
     surfaceHighlight?: string;
     /** Box shadow applied to raised surfaces. */
@@ -2213,6 +2262,8 @@ export interface VideoElement extends DOMElement {
     src: string;
     playing: boolean;
     currentTime: number;
+    /** Observed playback position in seconds. */
+    readonly playbackTime: number;
     playbackRate: number;
     volume: number;
     muted: boolean;
@@ -2269,6 +2320,7 @@ export interface VignetteOptions {
 export interface WebcamElement extends DOMElement {
     fit: ImageFit;
     mirror: boolean;
+    background: string;
     deviceId: string | undefined;
     start(): Promise<void>;
     stop(): void;
@@ -2376,9 +2428,9 @@ export type ConnectorHeadType = "none" | "arrow" | "open" | "dot" | "circle" | "
  * Valid endpoint target for a Connector line (DOMElement or point coordinates as an [x, y] tuple).
  * @category Components
  */
-export type ConnectorTarget = DOMElement | Point | readonly [
-    x: number | string,
-    y: number | string
+export type ConnectorTarget = DOMElement | readonly [
+    x: number,
+    y: number
 ];
 
 /**
@@ -2404,11 +2456,39 @@ export type EaseCurve = (t: number) => number;
  */
 export type ElementAnchor = AnchorKeyword | Point;
 
+/** Content accepted by container factories. @category Core */
+export type ElementChild = DOMElement | Node | string | number | boolean | null | readonly ElementChild[];
+
 /**
  * Callback function that applies visual effects or behavior to a stage element.
  * @category Decorators
  */
 export type ElementDecorator = (element: DOMElement) => void;
+
+/**
+ * Transitionable element properties and targets.
+ * @category Motion
+ */
+/** Transition targets from an element's presentation properties. @category Motion */
+export type ElementTransitionProps<T = ReactiveElementBase> = {
+    x?: CoordProp;
+    y?: CoordProp;
+    position?: ReactiveProp<Position> | PositionUpdater;
+    width?: SizeProp;
+    height?: SizeProp;
+    size?: SizeProp;
+    scale?: ReactiveProp<number>;
+    rotation?: ReactiveProp<number>;
+    opacity?: ReactiveProp<number>;
+    blur?: ReactiveProp<number>;
+    brightness?: ReactiveProp<number>;
+    color?: ReactiveProp<string>;
+    origin?: ReactiveProp<ElementAnchor>;
+    align?: ReactiveProp<Align>;
+    zIndex?: ReactiveProp<number | string>;
+} & {
+    [K in keyof T as K extends string ? K extends `_${string}` | "id" | "kind" | "domElement" | "isMounted" | "isActive" | "items" | "rows" | "path" | "variant" | "actor" | "lifeline" | "activations" | "playbackTime" | "status" | "videoElement" | "imgElement" ? never : T[K] extends (...args: never[]) => unknown ? never : K : never]?: ReactiveProp<T[K]>;
+};
 
 /**
  * Continuous ambient stroke animations supported across shapes and connectors.
@@ -2484,13 +2564,7 @@ export type LayoutAnimation = boolean | ((coord: number | "center", element: Lay
  * Any stage element that layout helpers can measure and position.
  * @category Layout
  */
-export type LayoutElement = DOMElement | ReactiveElementBase | {
-    x?: unknown;
-    y?: unknown;
-    width?: unknown;
-    height?: unknown;
-    domElement?: HTMLElement;
-};
+export type LayoutElement = ReactiveElementBase;
 
 /**
  * Minimal logging API with configurable log levels.
@@ -2531,7 +2605,7 @@ export type Point = readonly [
 export type Position = readonly [
     x: PositionCoord,
     y: PositionCoord
-] | readonly PositionCoord[] | "center";
+] | "center";
 
 /**
  * Coordinate value on a stage axis: a number in stage units, or `"center"`.
@@ -2560,7 +2634,7 @@ export type PositionUpdater = ((x: number, y: number) => readonly [
  * or a numeric relative-delta updater.
  * @category Core
  */
-export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never) | (T extends Position ? PositionUpdater : never);
+export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never);
 
 /**
  * Perpendicular alignment mode for relative placement.

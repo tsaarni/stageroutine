@@ -2,6 +2,7 @@
  * Fluent builder for coordinating multi-property transitions across one or more elements.
  */
 
+import { isReactiveProperty } from "../core/reactive";
 import { getActiveStage } from "../core/stage";
 import type {
   Align,
@@ -23,7 +24,9 @@ import { isTransitionDescriptor, to } from "./transitions";
  * Transitionable element properties and targets.
  * @category Motion
  */
-export interface ElementTransitionProps {
+
+/** Transition targets from an element's presentation properties. @category Motion */
+export type ElementTransitionProps<T = ReactiveElementBase> = {
   x?: CoordProp;
   y?: CoordProp;
   position?: ReactiveProp<Position> | PositionUpdater;
@@ -38,8 +41,33 @@ export interface ElementTransitionProps {
   color?: ReactiveProp<string>;
   origin?: ReactiveProp<ElementAnchor>;
   align?: ReactiveProp<Align>;
-  [key: string]: unknown;
-}
+  zIndex?: ReactiveProp<number | string>;
+} & {
+  [K in keyof T as K extends string
+    ? K extends
+        | `_${string}`
+        | "id"
+        | "kind"
+        | "domElement"
+        | "isMounted"
+        | "isActive"
+        | "items"
+        | "rows"
+        | "path"
+        | "variant"
+        | "actor"
+        | "lifeline"
+        | "activations"
+        | "playbackTime"
+        | "status"
+        | "videoElement"
+        | "imgElement"
+      ? never
+      : T[K] extends (...args: never[]) => unknown
+        ? never
+        : K
+    : never]?: ReactiveProp<T[K]>;
+};
 
 /**
  * Public fluent contract for multi-property transitions on an element or group.
@@ -63,11 +91,11 @@ export interface ElementTransition {
  * @internal
  */
 export class ElementTransitionBuilder implements ElementTransition {
-  private elements: (DOMElement | ReactiveElementBase)[];
-  private props: ElementTransitionProps;
-  private durationSec = 0.6;
-  private delaySec = 0;
-  private easeCurve: BuiltinEase | EaseCurve = "cubicOut";
+  private elements: readonly (DOMElement | ReactiveElementBase)[];
+  private props: object;
+  private durationSec?: number;
+  private delaySec?: number;
+  private easeCurve?: BuiltinEase | EaseCurve;
   private triggerTarget?: ReactiveElementBase | string;
   private triggerMilestone: AnimationMilestone = "end";
   private triggerProperty?: string;
@@ -78,9 +106,9 @@ export class ElementTransitionBuilder implements ElementTransition {
     element:
       | DOMElement
       | ReactiveElementBase
-      | (DOMElement | ReactiveElementBase)[]
+      | readonly (DOMElement | ReactiveElementBase)[]
       | { elements: readonly (DOMElement | ReactiveElementBase)[] },
-    props: ElementTransitionProps,
+    props: object,
   ) {
     if (Array.isArray(element)) {
       this.elements = element;
@@ -149,12 +177,27 @@ export class ElementTransitionBuilder implements ElementTransition {
     for (const el of this.elements) {
       if (!el) continue;
       for (const [key, val] of Object.entries(this.props)) {
-        if (val === undefined) continue;
+        if (!isReactiveProperty(el, key) && key !== "labelOffset") {
+          throw new Error(`Unsupported transition property: ${key}`);
+        }
+        if (val === undefined) {
+          (el as unknown as Record<string, unknown>)[key] = undefined;
+          continue;
+        }
         const targetVal = isTransitionDescriptor(val) ? val.target : val;
-        const builder = to(targetVal)
-          .duration(this.durationSec)
-          .delay(this.delaySec)
-          .ease(this.easeCurve);
+        const descriptor = isTransitionDescriptor(val) ? val : undefined;
+        const builder = to(targetVal);
+        if (descriptor) {
+          builder.durationMs = descriptor.durationMs;
+          builder.delayMs = descriptor.delayMs;
+          builder.curve = descriptor.curve;
+          builder.triggerTarget = descriptor.triggerTarget;
+          builder.triggerMilestone = descriptor.triggerMilestone;
+          builder.triggerProperty = descriptor.triggerProperty;
+        }
+        if (this.durationSec !== undefined) builder.duration(this.durationSec);
+        if (this.delaySec !== undefined) builder.delay(this.delaySec);
+        if (this.easeCurve !== undefined) builder.ease(this.easeCurve);
 
         if (this.triggerTarget) {
           builder.when(this.triggerTarget, this.triggerMilestone, this.triggerProperty);

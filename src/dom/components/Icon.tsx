@@ -90,6 +90,10 @@ export interface IconElement extends DOMElement {
  * @internal
  */
 class IconElementImpl extends DOMElement implements IconElement {
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
+    "name",
+  ]);
   private _name: string;
 
   get name(): string {
@@ -109,14 +113,8 @@ class IconElementImpl extends DOMElement implements IconElement {
     const classes = ["sr-icon", options.className].filter(Boolean).join(" ");
     container.className = classes;
 
-    const initialSize = options.size ?? options.width ?? options.height ?? 32;
-    const formattedSize =
-      typeof initialSize === "number" ? `${initialSize}px` : String(initialSize);
-    container.style.width = formattedSize;
-    container.style.height = formattedSize;
-
     const finalOptions: IconOptions = {
-      size: initialSize,
+      size: "32px",
       ...options,
     };
 

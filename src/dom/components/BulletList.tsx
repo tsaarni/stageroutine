@@ -28,7 +28,7 @@ export interface BulletItem {
   /** Additional CSS class name. */
   className?: string;
   /** Inline styles for this item. */
-  style?: CSSProperties | Partial<CSSStyleDeclaration>;
+  style?: CSSProperties;
   /** Theme token overrides for this item. */
   theme?: Partial<ThemeConfig>;
 }
@@ -45,6 +45,8 @@ export type BulletItemInput = string | BulletItem | BulletItemInput[];
  * @inline
  */
 export interface BulletListOptions extends ElementOptions {
+  /** Hide items initially for reveal (default: false). */
+  itemsHidden?: boolean;
   /** Vertical spacing between bullet items in stage units, or a CSS length. */
   itemSpacing?: number | string;
   /** Marker symbol(s) for bullet points (default: "–"). Single symbol or an array per depth level. A per-item `marker` overrides this. */
@@ -102,7 +104,7 @@ function resolveMarker(marker: string | readonly string[] | undefined, level: nu
 
 /** Public controls for a bullet list. @category Components */
 export interface BulletListElement extends DOMElement {
-  readonly items: DOMElement[];
+  readonly items: readonly DOMElement[];
   reveal(options?: StaggerOptions): StaggerTransition;
 }
 
@@ -110,11 +112,11 @@ export interface BulletListElement extends DOMElement {
  * @internal
  */
 class BulletListElementImpl extends DOMElement implements BulletListElement {
-  readonly items: DOMElement[];
+  readonly items: readonly DOMElement[];
 
   constructor(items: BulletItemInput[], options: BulletListOptions = {}) {
-    const isHiddenInitially = options.opacity === 0;
-    const containerOptions = isHiddenInitially ? { ...options, opacity: 1 } : options;
+    const isHiddenInitially = options.itemsHidden ?? false;
+    const containerOptions = options;
     const container = document.createElement("div");
     container.className = ["sr-bullet-list", options.className].filter(Boolean).join(" ");
     if (options.itemSpacing !== undefined) {
@@ -134,8 +136,8 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
       }
       rawItemElements.push(itemEl);
 
-      const markerColor = item.markerColor ?? options.markerColor ?? item.color ?? options.color;
-      const textColor = item.color ?? options.color;
+      const markerColor = item.markerColor ?? options.markerColor ?? item.color;
+      const textColor = item.color;
 
       const markerEl = document.createElement("span");
       markerEl.className = "sr-bullet-marker";
@@ -161,7 +163,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
         style: {
           position: "relative",
           ...item.style,
-        } as CSSProperties | Partial<CSSStyleDeclaration>,
+        } as CSSProperties,
         theme: item.theme,
       });
 

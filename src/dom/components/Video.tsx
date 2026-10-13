@@ -41,6 +41,8 @@ export interface VideoElement extends DOMElement {
   src: string;
   playing: boolean;
   currentTime: number;
+  /** Observed playback position in seconds. */
+  readonly playbackTime: number;
   playbackRate: number;
   volume: number;
   muted: boolean;
@@ -59,6 +61,7 @@ class VideoElementImpl extends VideoSurface implements VideoElement {
     "fit",
     "src",
     "playing",
+    "currentTime",
     "playbackRate",
     "volume",
     "muted",
@@ -94,12 +97,24 @@ class VideoElementImpl extends VideoSurface implements VideoElement {
     this.videoElement.src = val;
   }
 
-  get currentTime(): number {
+  private seekTarget = 0;
+  get playbackTime(): number {
     return this.videoElement.currentTime;
+  }
+  get currentTime(): number {
+    return this.seekTarget;
   }
 
   set currentTime(val: number) {
-    this.videoElement.currentTime = Math.max(0, val);
+    const target = Math.max(0, val);
+    if (target === this.seekTarget) return;
+    this.seekTarget = target;
+    this.videoElement.currentTime = target;
+  }
+
+  /** @internal */
+  _resetOnBackwardNavigation(): void {
+    this.videoElement.currentTime = this.seekTarget;
   }
 
   get playbackRate(): number {
@@ -156,6 +171,14 @@ class VideoElementImpl extends VideoSurface implements VideoElement {
 
     this.videoElement = video;
     this.applyInitialFit(options.fit ?? "contain");
+    this.onActivate(() => {
+      this.videoElement.currentTime = this.seekTarget;
+    });
+    const restoreSeek = () => {
+      this.videoElement.currentTime = this.seekTarget;
+    };
+    video.addEventListener("loadedmetadata", restoreSeek);
+    this.onUnmount(() => video.removeEventListener("loadedmetadata", restoreSeek));
 
     if (options.currentTime !== undefined && typeof options.currentTime === "number") {
       this.currentTime = options.currentTime;

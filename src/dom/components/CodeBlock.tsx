@@ -13,30 +13,46 @@ import { attachRangeSelection } from "../interaction";
  * @category Components
  * @inline
  */
-export interface CodeBlockOptions extends Omit<ElementOptions, "theme"> {
+export interface CodeBlockOptions extends ElementOptions {
+  /** Code language (default: "typescript"). */
   lang?: string;
-  /** Shiki syntax highlighting theme (e.g. "vitesse-dark", "github-dark") or Stage ThemeConfig */
-  theme?: string | ElementOptions["theme"];
+  /** Shiki syntax theme (default: "vitesse-dark"). */
+  syntaxTheme?: string;
   className?: string;
   /** Whether clicking or dragging lines focuses them interactively. Defaults to true. */
   interactive?: boolean;
 }
 
 /** Public controls for a code block. @category Components */
-export interface CodeBlockElement extends DOMElement {}
+export interface CodeBlockElement extends DOMElement {
+  code: string;
+}
 
 /**
  * @internal
  */
 class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
+  static override _reactiveKeys: ReadonlySet<string> = new Set([
+    ...DOMElement._reactiveKeys,
+    "code",
+  ]);
+  private codeValue = "";
+  private renderCode: (value: string) => void = () => {};
+  get code(): string {
+    return this.codeValue;
+  }
+  set code(value: string) {
+    this.codeValue = value;
+    this.renderCode(value);
+  }
   constructor(snippet: string | string[], options: CodeBlockOptions = {}) {
     const lang = options.lang || "typescript";
-    const shikiTheme = typeof options.theme === "string" ? options.theme : "vitesse-dark";
+    const shikiTheme = options.syntaxTheme ?? "vitesse-dark";
     const classes = ["sr-code-block", options.className].filter(Boolean).join(" ");
     const isInteractive = options.interactive ?? true;
 
     const rawSnippet = Array.isArray(snippet) ? snippet.join("\n") : snippet;
-    const trimmed = rawSnippet.trim();
+    let trimmed = rawSnippet.trim();
 
     const preEl = document.createElement("pre");
     preEl.className = classes;
@@ -86,26 +102,36 @@ class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
 
     let destroyed = false;
 
-    // Highlight with Shiki TextMate engine
-    codeToHtml(trimmed, { lang, theme: shikiTheme })
-      .then((html) => {
-        if (destroyed) return;
-        const temp = document.createElement("div");
-        temp.innerHTML = html;
-        const innerCode = temp.querySelector("code");
-        if (innerCode) {
-          codeEl.innerHTML = innerCode.innerHTML;
-          setupLineElements();
-          controller.refresh();
-        }
-      })
-      .catch(() => {
-        // Graceful fallback
-      });
+    let revision = 0;
+    const render = (value: string) => {
+      trimmed = value.trim();
+      codeEl.replaceChildren();
+      setupLineElements();
+      controller.refresh();
+      const current = ++revision;
+      codeToHtml(trimmed, { lang, theme: shikiTheme })
+        .then((html) => {
+          if (destroyed || current !== revision) return;
+          const temp = document.createElement("div");
+          temp.innerHTML = html;
+          const innerCode = temp.querySelector("code");
+          if (innerCode) {
+            codeEl.innerHTML = innerCode.innerHTML;
+            setupLineElements();
+            controller.refresh();
+          }
+        })
+        .catch(() => {
+          // Graceful fallback
+        });
+    };
+    render(rawSnippet);
 
     const elementTheme = typeof options.theme === "object" ? options.theme : undefined;
     super("CodeBlock", preEl, { ...options, theme: elementTheme });
 
+    this.codeValue = rawSnippet;
+    this.renderCode = render;
     this.onUnmount(() => {
       destroyed = true;
       controller.destroy();

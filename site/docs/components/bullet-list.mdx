@@ -76,14 +76,14 @@ Clicking or dragging bullet items interactively highlights selected rows and dim
 
 ## Reveal
 
-Items are visible by default. Pass `{ opacity: 0 }` to opt into reveal animations:
+Items are visible by default. Pass `{ itemsHidden: true }` to opt into reveal animations:
 
 ```typescript
 const list = BulletList([
   "First bullet point",
   "Second bullet point",
   "Third bullet point",
-], { opacity: 0 });
+], { itemsHidden: true });
 
 // Continuous staggered reveal in a single step
 list.reveal();

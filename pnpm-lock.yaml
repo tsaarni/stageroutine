@@ -89,19 +89,6 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
 
-  examples/esjcop-presentation:
-    dependencies:
-      stageroutine:
-        specifier: workspace:*
-        version: link:../..
-      three:
-        specifier: ^0.185.1
-        version: 0.185.1
-    devDependencies:
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-
   site:
     dependencies:
       '@docusaurus/core':

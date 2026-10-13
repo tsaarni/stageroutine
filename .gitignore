@@ -1,6 +1,9 @@
 # Dependencies
 node_modules
 
+# Local examples
+/examples/
+
 # Build output
 dist
 site/build

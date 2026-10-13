@@ -1,7 +1,6 @@
 packages:
   - '.'
   - 'site'
-  - 'examples/*'
 
 
 allowBuilds:

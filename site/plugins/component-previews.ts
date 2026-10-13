@@ -36,7 +36,6 @@ export function componentPreviewsPlugin(): Plugin {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} Preview</title>
   <style>
-    html { font-size: 13px; }
     body { margin: 0; background: #0c0e12; overflow: hidden; }
   </style>
 </head>
@@ -106,18 +105,25 @@ export function componentPreviewsPlugin(): Plugin {
       }
 
       // Check whether any preview snippet or generated preview output has actually changed
-      let hasChanges = false;
+      const config = readFileSync(resolve(rootDir, "site/previews.config.ts"), "utf-8");
+      const configCachePath = resolve(previewsCacheDir, "build-config.txt");
+      let hasChanges =
+        !existsSync(configCachePath) || readFileSync(configCachePath, "utf-8") !== config;
 
       // 1. Check if all extracted previews already match the cached .ts files and static output exists
       for (const [name, code] of extracted.entries()) {
         const tsPath = resolve(previewsCacheDir, `${name}.ts`);
+        const htmlCachePath = resolve(previewsCacheDir, `${name}.html`);
         const htmlStaticPath = resolve(staticPreviewsDir, `${name}.html`);
-        if (!existsSync(tsPath) || !existsSync(htmlStaticPath)) {
+        if (!existsSync(tsPath) || !existsSync(htmlCachePath) || !existsSync(htmlStaticPath)) {
           hasChanges = true;
           break;
         }
         const existingCode = readFileSync(tsPath, "utf-8");
-        if (existingCode !== code) {
+        if (
+          existingCode !== code ||
+          readFileSync(htmlCachePath, "utf-8") !== renderPreviewHtml(name, `${name}.ts`)
+        ) {
           hasChanges = true;
           break;
         }
@@ -160,6 +166,7 @@ export function componentPreviewsPlugin(): Plugin {
         cwd: rootDir,
         stdio: "inherit",
       });
+      writeFileSync(configCachePath, config, "utf-8");
     },
 
     configureWebpack() {

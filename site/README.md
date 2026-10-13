@@ -29,4 +29,4 @@ The Docusaurus build runs three automated tasks during `loadContent`:
 `previews.config.ts` is a Vite configuration file used only for building component previews:
 - Compiles multiple HTML entry points from `.cache/previews/`.
 - Disables presenter channel sync (`channel: false`).
-- Sets virtual viewport dimensions to 1000x350 pixels (scaled at 80% to fit documentation typography).
+- Uses an 800 × 450 px canvas (160 × 90 stage units) so text stays readable at documentation widths. Preview frames resize at a 16:9 aspect ratio.

@@ -3,17 +3,11 @@ title: LiveTerminal
 sidebar_position: 12
 ---
 
-import { DemoFrame } from "@site/src/components/DemoFrame";
-
 # LiveTerminal
 
 An interactive shell for live demos, with optional setup commands.
 
 The dev server runs a local pseudo-terminal (PTY) through `node-pty`. `xterm.js` renders the terminal. A WebSocket carries input, output, and resize events.
-
-The preview shows fallback text.
-
-<DemoFrame src="/stageroutine/previews/live-terminal.html" />
 
 ## Enable the terminal server
 
@@ -37,31 +31,19 @@ The server accepts local connections only.
 
 ## Add a terminal
 
-```typescript preview="live-terminal.html"
-// hide-start
-import { Stage } from "stageroutine";
-const stage = new Stage();
-// hide-end
+```typescript
 import { LiveTerminal } from "stageroutine";
 
 const demo = LiveTerminal({
   position: "center",
-  width: 210,
+  width: 120,
   rows: 6,
   title: "Live demo",
   cwd: ".",
   command: "export DEMO_MODE=1",
   restartButton: true,
   transcript: ["$ export DEMO_MODE=1", "$ pnpm test", "Tests: 42 passed"],
-  // hide-start
-  theme: { fontSizeCode: "1rem", fontSizeKicker: "0.85rem" },
-  // hide-end
 });
-// hide-start
-stage.scene("Live demo").with(demo);
-stage.pause();
-stage.mount("#stage");
-// hide-end
 ```
 
 `cwd` selects a folder inside the project (default: project root). `command` runs before a new shell opens (default: none). Folder changes and exported variables carry into the shell.

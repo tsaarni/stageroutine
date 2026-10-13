@@ -4,7 +4,7 @@ interface DemoFrameProps {
   title?: string;
 }
 
-export function DemoFrame({ src, height = 280, title = "StageRoutine Live Demo" }: DemoFrameProps) {
+export function DemoFrame({ src, height, title = "StageRoutine Live Demo" }: DemoFrameProps) {
   return (
     <div
       style={{
@@ -20,7 +20,8 @@ export function DemoFrame({ src, height = 280, title = "StageRoutine Live Demo" 
         title={title}
         style={{
           width: "100%",
-          height: `${height}px`,
+          height: height === undefined ? "auto" : `${height}px`,
+          aspectRatio: height === undefined ? "16 / 9" : undefined,
           border: "none",
           display: "block",
         }}

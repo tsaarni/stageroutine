@@ -7,6 +7,9 @@
 | `pnpm dev` | Start Vite dev server |
 | `pnpm build` | Build production bundles |
 | `pnpm verify` | Format, fix, and type-check |
+| `pnpm test` | Run Playwright browser tests (headless) |
+| `pnpm test:headed` | Run browser tests with visible browser window |
+| `pnpm test:ui` | Open interactive Playwright UI Mode debugger |
 | `pnpm chrome-dev` | Launch Chrome with remote debugging (port 9222) |
 | `pnpm docs:serve` | Start local documentation server |
 | `pnpm docs:build` | Build production documentation site |
@@ -16,7 +19,8 @@
 The presentation exposes a diagnostics hook. Query it with the Chrome DevTools MCP `evaluate_script` tool, or press `Shift + M` for formatted metrics.
 
 ```js
-window.__STAGEROUTINE_DEV__.getMetrics(pattern?)                   // gauges/counters (optional RegExp)
+window.__STAGEROUTINE_DEV__.getMetrics(pattern?)                   // gauges/counters in Prometheus text format (optional RegExp)
+window.__STAGEROUTINE_DEV__.getMetricsData(pattern?)               // structured metric map (used by test assertions)
 window.__STAGEROUTINE_DEV__.showMetrics()                          // open metrics in a tab
 window.__STAGEROUTINE_DEV__.perf.sample(ms?)                       // frame cadence right now
 window.__STAGEROUTINE_DEV__.perf.run({ first, last, ms?, minHz? }) // walk steps; rest + entering Hz

@@ -1652,6 +1652,7 @@ export class Stage {
     const devWindow = window as unknown as {
       __STAGEROUTINE_DEV__?: {
         getMetrics: (pattern?: RegExp) => string;
+        getMetricsData: (pattern?: RegExp) => Record<string, unknown>;
         showMetrics: () => void;
         perf: PerfProbe;
         outline: () => OutlineScene[];
@@ -1659,6 +1660,7 @@ export class Stage {
     };
     const devHook = {
       getMetrics: (pattern?: RegExp) => this._metrics.getMetrics(pattern),
+      getMetricsData: (pattern?: RegExp) => this._metrics.collect(pattern),
       showMetrics: () => this._openMetricsWindow(),
       perf: createPerfProbe(this),
       outline: () => this._getOutline(),

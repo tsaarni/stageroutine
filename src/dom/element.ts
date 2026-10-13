@@ -468,6 +468,9 @@ export class DOMElement implements ReactiveElementBase {
       this.onDeactivate(options.onDeactivate);
     }
 
+    if (options.id) {
+      this.domElement.id = options.id;
+    }
     this.domElement.dataset.elementId = this.id;
     this.domElement.dataset.elementKind = this.kind;
   }

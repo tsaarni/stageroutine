@@ -979,7 +979,7 @@ export interface ElementTransitionProps {
 
 /** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
-    path: PathFunction;
+    readonly path: PathFunction;
     readonly items: ReactiveElementBase[];
     active: boolean;
     borderColor: ReactiveProp<string> | undefined;
@@ -1738,7 +1738,7 @@ export interface SequenceDiagramOptions {
 
 /** Public controls for a shape. @category Shape & Frame */
 export interface ShapeElement extends DOMElement {
-    path: PathFunction;
+    readonly path: PathFunction;
     readonly variant: ShapeVariant;
     readonly items: ReactiveElementBase[];
     start: ReactiveProp<number>;
@@ -1876,6 +1876,13 @@ export interface StageOptions {
      * Default: `"stageroutine-channel"`.
      */
     channel?: string | false;
+    /**
+     * Global content scale factor for typography, spacing, and padding.
+     * Values below 1 shrink UI chrome; values above 1 enlarge it.
+     * Element positions and explicit dimensions (stage units) are not affected.
+     * Default: `1`.
+     */
+    scale?: number;
 }
 
 /**
@@ -2064,6 +2071,10 @@ export interface ThemeConfig {
     surfaceBackdrop?: string;
     /** Base border radius (e.g. "12px"). */
     radius?: string;
+    /** Triple-extra-small spacing token. */
+    space3xs?: string;
+    /** Double-extra-small spacing token. */
+    space2xs?: string;
     /** Extra-small spacing token. */
     spaceXs?: string;
     /** Small spacing token. */
@@ -2248,7 +2259,7 @@ export interface VideoOptions extends ElementOptions {
 export interface VignetteOptions {
     /** Vignette color (default: "#09090b"). */
     color?: string;
-    /** Center darkness opacity from 0 to 1 (default: 0.9). */
+    /** Center darkness opacity from 0 to 1 (default: 1). */
     opacity?: number;
     /** Custom radial gradient falloff shape (default: "ellipse 55% 55% at 50% 50%"). */
     shape?: string;

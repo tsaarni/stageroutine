@@ -66,6 +66,21 @@ function resolveDefaultHeight(): number {
 const VALID_CLASS_IDENTIFIER = /^[a-zA-Z_-][\w-]*$/;
 const TRANSITION_START_MARK = "sr/start";
 const TRANSITION_END_MARK = "sr/end";
+/** Props rendered as inline styles by `_applyStyles`. */
+const STYLE_RENDERED_KEYS: ReadonlySet<string> = new Set([
+  "x",
+  "y",
+  "width",
+  "height",
+  "scale",
+  "rotation",
+  "origin",
+  "opacity",
+  "blur",
+  "brightness",
+  "color",
+  "zIndex",
+]);
 
 /** A single step in the dev outline. */
 interface OutlineStep {
@@ -1249,7 +1264,7 @@ export class Stage {
     }
     this.elementRegistry.set(element.id, element);
 
-    // Baseline property snapshot - captures only declared @reactive properties
+    // Baseline of all reactive props; `undefined` is kept so navigation can reset to default.
     const initialProps: Record<string, unknown> = {};
     const reactiveKeys = getReactiveKeys(element);
 
@@ -1259,7 +1274,7 @@ export class Stage {
         if (key === "zIndex" && val === undefined) {
           val = element.domElement?.style.zIndex || "auto";
         }
-        if (val !== undefined && typeof val !== "function") {
+        if (typeof val !== "function") {
           initialProps[key] = val;
         }
       } catch {
@@ -1874,13 +1889,7 @@ export class Stage {
       }
 
       const props = snap.properties.get(id) || this.initialProperties.get(id) || {};
-      for (const [key, val] of Object.entries(props)) {
-        try {
-          (el as unknown as Record<string, unknown>)[key] = val;
-        } catch {
-          // ignore read-only
-        }
-      }
+      this._syncElementFields(el, props);
       if (backward) {
         (el as StageManagedElement)._resetOnBackwardNavigation?.();
       }
@@ -1950,11 +1959,14 @@ export class Stage {
 
     const prevSnap = stepIdx > 0 ? this.snapshots[stepIdx - 1] : null;
 
-    // Reset local propertyState to the state right before this step
+    // Reset state to the previous step. Component fields are synced here; styles come from `_applyStyles`.
     this.propertyState.clear();
     for (const [id, initialProp] of this.initialProperties.entries()) {
       const baseProps = prevSnap?.properties.get(id) ?? initialProp;
       this.propertyState.set(id, { ...baseProps });
+
+      const el = this.elementRegistry.get(id);
+      if (el) this._syncElementFields(el, baseProps, STYLE_RENDERED_KEYS);
     }
 
     // Combine explicit transitions with automatic scene enter/exit transitions
@@ -2300,9 +2312,14 @@ export class Stage {
       if (blur > 0) filters.push(`blur(${blur}px)`);
       if (brightness !== 1) filters.push(`brightness(${brightness})`);
       node.style.filter = filters.join(" ");
+    } else if (node.style.filter) {
+      node.style.removeProperty("filter");
     }
+    // Key present but unset: clear the inline style. Absent key: leave it.
     if (color && color !== "inherit") {
       node.style.color = color;
+    } else if ("color" in props && node.style.color) {
+      node.style.removeProperty("color");
     }
     if (props.zIndex !== undefined) {
       const zNum = Number(props.zIndex);
@@ -2313,43 +2330,42 @@ export class Stage {
       if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
         node.style.width = formattedWidth;
       }
+    } else if ("width" in props && node.style.width) {
+      node.style.removeProperty("width");
     }
     if (props.height !== undefined) {
       const formattedHeight = cssLength(props.height as number | string);
       if (formattedHeight !== undefined && node.style.height !== formattedHeight) {
         node.style.height = formattedHeight;
       }
+    } else if ("height" in props && node.style.height) {
+      node.style.removeProperty("height");
     }
 
-    for (const [key, value] of Object.entries(props)) {
-      if (
-        key !== "x" &&
-        key !== "y" &&
-        key !== "width" &&
-        key !== "height" &&
-        key !== "scale" &&
-        key !== "rotation" &&
-        key !== "origin" &&
-        key !== "opacity" &&
-        key !== "blur" &&
-        key !== "brightness" &&
-        key !== "color" &&
-        key !== "zIndex" &&
-        key in element
-      ) {
-        try {
-          (element as unknown as Record<string, unknown>)[key] = value;
-        } catch {
-          // ignore read-only properties
-        }
-      }
-    }
+    this._syncElementFields(element, props, STYLE_RENDERED_KEYS);
 
     if (dispatchUpdate) {
       if (typeof managed._dispatchUpdate === "function") {
         managed._dispatchUpdate(1);
       } else if (typeof managed._update === "function") {
         managed._update();
+      }
+    }
+  }
+
+  /** Writes props onto element fields, skipping unchanged values. */
+  private _syncElementFields(
+    el: ReactiveElementBase,
+    props: Record<string, unknown>,
+    skip?: ReadonlySet<string>,
+  ): void {
+    const record = el as unknown as Record<string, unknown>;
+    for (const [key, val] of Object.entries(props)) {
+      if (skip?.has(key) || !(key in record) || record[key] === val) continue;
+      try {
+        record[key] = val;
+      } catch {
+        // ignore read-only properties
       }
     }
   }

@@ -63,7 +63,7 @@ export interface ShapeOptions extends ElementOptions {
 
 /** Public controls for a shape. @category Shape & Frame */
 export interface ShapeElement extends DOMElement {
-  path: PathFunction;
+  readonly path: PathFunction;
   readonly variant: ShapeVariant;
   readonly items: ReactiveElementBase[];
   start: ReactiveProp<number>;
@@ -82,7 +82,6 @@ export interface ShapeElement extends DOMElement {
 class ShapeElementImpl extends DOMElement implements ShapeElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement._reactiveKeys,
-    "path",
     "start",
     "end",
     "flow",
@@ -93,16 +92,10 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
     "background",
   ]);
 
-  private _path: PathFunction;
+  private readonly _path: PathFunction;
 
   get path(): PathFunction {
     return this._path;
-  }
-  set path(val: PathFunction) {
-    this._path = val;
-    this.lastW = 0;
-    this.lastH = 0;
-    this._update();
   }
 
   readonly variant: ShapeVariant;

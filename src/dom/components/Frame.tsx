@@ -39,7 +39,7 @@ export interface FrameOptions extends ElementOptions {
 
 /** Public controls for a frame. @category Shape & Frame */
 export interface FrameElement extends DOMElement {
-  path: PathFunction;
+  readonly path: PathFunction;
   readonly items: ReactiveElementBase[];
   active: boolean;
   borderColor: ReactiveProp<string> | undefined;
@@ -51,21 +51,14 @@ export interface FrameElement extends DOMElement {
 class FrameElementImpl extends DOMElement implements FrameElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
     ...DOMElement._reactiveKeys,
-    "path",
     "active",
     "borderColor",
   ]);
 
-  private _path: PathFunction;
+  private readonly _path: PathFunction;
 
   get path(): PathFunction {
     return this._path;
-  }
-  set path(val: PathFunction) {
-    this._path = val;
-    this.lastW = 0;
-    this.lastH = 0;
-    this._update();
   }
 
   readonly items: ReactiveElementBase[] = [];

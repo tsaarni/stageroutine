@@ -2,7 +2,6 @@
  * Bullet list component with individual bullet point animation and interactive click-and-drag focus.
  */
 
-import "./BulletList.css";
 import type { Properties as CSSProperties } from "csstype";
 import { getActiveStage } from "../../core/index";
 import { cssLength } from "../../core/units";

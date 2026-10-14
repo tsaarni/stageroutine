@@ -37,7 +37,7 @@
  * @packageDocumentation
  */
 
-// Global stylesheet (design tokens, cascade layers, component styling, and body resets)
+// Global stylesheet (design tokens, cascade layers, component styling, and stage structure)
 import "./dom/style.css";
 
 // Browsers load web fonts lazily by default.

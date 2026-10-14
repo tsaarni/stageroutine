@@ -2,7 +2,6 @@
  * Shared reactive media surface for Image, Video, and Webcam.
  */
 
-import "./Media.css";
 import { logger } from "../../core/index";
 import { DOMElementImpl } from "../element";
 

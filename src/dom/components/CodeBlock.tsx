@@ -3,7 +3,6 @@
  * and interactive line/multi-line drag focus.
  */
 
-import "./CodeBlock.css";
 import { codeToHtml } from "shiki";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";

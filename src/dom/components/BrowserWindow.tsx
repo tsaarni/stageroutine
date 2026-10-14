@@ -1,4 +1,3 @@
-import "./BrowserWindow.css";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { createWindowFrame, type WindowFrame } from "./WindowFrame";
 

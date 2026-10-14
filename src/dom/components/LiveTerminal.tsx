@@ -1,7 +1,5 @@
 /** Interactive shell for presenter-led live demos. */
 
-import "@xterm/xterm/css/xterm.css";
-import "./LiveTerminal.css";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { logger } from "../../core/index";

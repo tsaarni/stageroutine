@@ -1,0 +1,199 @@
+/* ==========================================================================
+   Typography & Headings
+   ========================================================================== */
+
+.markdown h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.035em;
+}
+
+.markdown h2 {
+  margin-top: 2.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 6%, transparent);
+
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.025em;
+}
+
+.markdown h3 {
+  margin-top: 1.75rem;
+
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  letter-spacing: -0.015em;
+}
+
+/* StageRoutine Editorial Serif Italics */
+.markdown em,
+.markdown i {
+  font-family: Newsreader, Georgia, serif;
+  font-weight: 300;
+  font-style: italic;
+  color: #cbd5e1;
+}
+
+/* Micro-kickers & Badges */
+.sr-kicker-badge {
+  display: inline-block;
+
+  margin-bottom: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 25%, transparent);
+  border-radius: 9999px;
+
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ifm-color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+}
+
+/* ==========================================================================
+   Frosted Glass Tables (.sr-table & markdown tables)
+   ========================================================================== */
+
+.markdown table {
+  overflow: hidden;
+  display: table;
+  border-spacing: 0;
+  border-collapse: separate;
+
+  width: 100%;
+  margin: 1.5rem 0;
+  border: var(--site-glass-border);
+  border-top: var(--site-glass-border-top);
+  border-radius: 10px;
+
+  background: var(--site-glass-bg);
+  backdrop-filter: var(--site-glass-backdrop);
+  box-shadow: var(--site-glass-shadow);
+}
+
+.markdown table thead {
+  background: color-mix(in srgb, var(--ifm-font-color-base) 3%, transparent);
+}
+
+.markdown table tr {
+  border-top: none;
+  background-color: transparent;
+  transition: background-color 0.15s ease-out;
+}
+
+.markdown table tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.markdown table tr:hover {
+  background-color: color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent);
+}
+
+.markdown table th {
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 10%, transparent);
+
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.markdown table td {
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 5%, transparent);
+
+  font-size: 0.92rem;
+  color: #e4e4e7;
+}
+
+.markdown table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ==========================================================================
+   Frosted Glass Admonitions / Callouts
+   ========================================================================== */
+
+.alert {
+  border: var(--site-glass-border);
+  border-top: var(--site-glass-border-top);
+  border-radius: 10px;
+
+  color: #e4e4e7;
+
+  backdrop-filter: var(--site-glass-backdrop);
+  box-shadow: var(--site-glass-shadow);
+}
+
+.alert--info {
+  border-color: color-mix(in srgb, var(--ifm-color-primary) 35%, transparent);
+  border-top-color: color-mix(in srgb, var(--ifm-color-primary) 65%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(
+        in srgb,
+        var(--ifm-color-primary) 9%,
+        color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent)
+      )
+      0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
+  );
+  box-shadow:
+    var(--site-glass-shadow),
+    0 0 20px -5px color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+}
+
+.alert--warning {
+  border-color: color-mix(in srgb, #f59e0b 35%, transparent);
+  border-top-color: color-mix(in srgb, #f59e0b 65%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f59e0b 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+      0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
+  );
+  box-shadow:
+    var(--site-glass-shadow),
+    0 0 20px -5px color-mix(in srgb, #f59e0b 12%, transparent);
+}
+
+.alert--success {
+  border-color: color-mix(in srgb, #10b981 35%, transparent);
+  border-top-color: color-mix(in srgb, #10b981 65%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #10b981 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+      0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
+  );
+  box-shadow:
+    var(--site-glass-shadow),
+    0 0 20px -5px color-mix(in srgb, #10b981 12%, transparent);
+}
+
+.alert--danger {
+  border-color: color-mix(in srgb, #f43f5e 35%, transparent);
+  border-top-color: color-mix(in srgb, #f43f5e 65%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f43f5e 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+      0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
+  );
+  box-shadow:
+    var(--site-glass-shadow),
+    0 0 20px -5px color-mix(in srgb, #f43f5e 12%, transparent);
+}

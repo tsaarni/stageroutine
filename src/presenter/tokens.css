@@ -1,0 +1,50 @@
+:root {
+  /* Typography */
+  --md-font-sans: var(--sr-brand-font-sans);
+  --md-font-mono: var(--sr-brand-font-mono);
+  --md-font-icon: "Material Symbols Outlined";
+
+  /* Material Design 3 Palette */
+  --md-sys-color-background: #0f0f11;
+  --md-sys-color-surface: #0f0f11;
+  --md-sys-color-surface-dim: #09090b;
+  --md-sys-color-surface-container-lowest: #050507;
+  --md-sys-color-surface-container-low: #18181b;
+  --md-sys-color-surface-container: #222226;
+  --md-sys-color-surface-container-high: #2b2b30;
+  --md-sys-color-surface-container-highest: #36363d;
+  --md-sys-color-primary: #f4f4f5;
+  --md-sys-color-on-primary: #09090b;
+  --md-sys-color-primary-container: #36363d;
+  --md-sys-color-on-primary-container: #fff;
+  --md-sys-color-secondary: #d4d4d8;
+  --md-sys-color-on-secondary: #09090b;
+  --md-sys-color-secondary-container: #27272a;
+  --md-sys-color-on-secondary-container: #f4f4f5;
+  --md-sys-color-tertiary: #a1a1aa;
+  --md-sys-color-tertiary-container: #27272a;
+  --md-sys-color-on-tertiary-container: #f4f4f5;
+  --md-sys-color-error: #f87171;
+  --md-sys-color-on-surface: #f4f4f5;
+  --md-sys-color-on-surface-variant: #a1a1aa;
+  --md-sys-color-outline: #52525b;
+  --md-sys-color-outline-variant: #27272a;
+  --md-sys-color-timer-active: #4ade80;
+  --md-sys-color-timer-paused: #fbbf24;
+  --md-sys-color-record: #ef4444;
+  --md-sys-badge-bg: rgb(0 0 0 / 25%);
+  --md-sys-hover-overlay: rgb(255 255 255 / 8%);
+  --md-sys-active-overlay: rgb(255 255 255 / 14%);
+
+  /* Shape Tokens */
+  --md-shape-full: 9999px;
+  --md-shape-lg: 16px;
+  --md-shape-md: 12px;
+  --md-shape-sm: 8px;
+  --md-shape-xs: 4px;
+
+  /* Motion Tokens */
+  --md-motion-easing: cubic-bezier(0.2, 0, 0, 1);
+  --md-motion-short: 150ms;
+  --md-motion-medium: 250ms;
+}

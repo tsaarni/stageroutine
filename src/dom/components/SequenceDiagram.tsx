@@ -3,7 +3,6 @@ import type { ReactiveProp } from "../../core/types";
  * Sequence diagram primitives: Lifeline, Activation execution blocks, and SequenceDiagram builder.
  */
 
-import "./SequenceDiagram.css";
 import { stageUnitPx, tryGetActiveStage, units } from "../../core/index";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { measureOffscreen } from "../layout";

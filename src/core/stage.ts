@@ -5,6 +5,7 @@ import { copyPropertyRecord, copyPropertyValue } from "./reactive";
 
 import { builtinEasings } from "../motion/transitions";
 import { PresenterHost } from "../presenter/host";
+import { registerStageStyleContext } from "../theme/context";
 import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
 import { computeTransform, resolveAnchor } from "./interpolators";
@@ -295,6 +296,7 @@ export class Stage {
   private set isAnimating(active: boolean) {
     if (active === this.animationActive) return;
     this.animationActive = active;
+    this.container?.toggleAttribute("data-sr-moving", active);
     this.emit("evt:stage:activityChanged", { active });
   }
 
@@ -454,6 +456,11 @@ export class Stage {
       ...(this.options.theme || {}),
     };
 
+    registerStageStyleContext(this, () => ({
+      theme: this.currentTheme,
+      scale: this.options.scale ?? 1,
+    }));
+
     if (this.options.logLevel) {
       logger.setLevel(this.options.logLevel);
     }
@@ -606,9 +613,15 @@ export class Stage {
       }
       if (isHidden) hiddenRunningCount++;
 
+      const animName = (anim as CSSAnimation).animationName || anim.id || "unnamed";
+      const isAmbientFlow = animName === "sr-flow-traveling-kf" || animName === "sr-flow-chase-kf";
+      if (!isHidden && isAmbientFlow) {
+        continue;
+      }
+
       const info = targetEl ? getElementTargetInfo(targetEl) : { target: "unknown" };
       const labels: Record<string, string> = {
-        name: (anim as CSSAnimation).animationName || anim.id || "unnamed",
+        name: animName,
         target: info.target,
         hidden: isHidden ? "1" : "0",
       };
@@ -1283,7 +1296,7 @@ export class Stage {
       } catch {
         // ignore read-only
       }
-      if (!this.isAnimating && (!this.isMountedState || el.isActive !== false)) {
+      if (!this.isAnimating && el.isActive) {
         this._applyStyles(el, elProps, false);
       }
     }
@@ -1408,12 +1421,6 @@ export class Stage {
 
   private _applyTheme(theme: ThemeConfig): void {
     if (!this.container) return;
-    if (theme.background && typeof this.backgroundSource !== "string") {
-      this.container.style.background = theme.background;
-    }
-    if (theme.text) {
-      this.container.style.color = theme.text;
-    }
     applyThemeTokens(this.container, theme);
   }
 
@@ -1520,17 +1527,16 @@ export class Stage {
 
     // Setup viewport container
     this.container.innerHTML = "";
-    this.container.style.margin = "0";
-    this.container.style.padding = "0";
-    this.container.style.width = "100vw";
-    this.container.style.height = "100vh";
-    this.container.style.overflow = "hidden";
-    this.container.style.display = "flex";
-    this.container.style.alignItems = "center";
-    this.container.style.justifyContent = "center";
-    this.container.style.fontFamily = "system-ui, -apple-system, sans-serif";
-    this.container.style.userSelect = "none";
-    this.container.style.webkitUserSelect = "none";
+    this.container.classList.add("sr-stage");
+    const previousScale = el.style.getPropertyValue("--sr-scale");
+    this.container.style.setProperty("--sr-scale", String(this.options.scale ?? 1));
+    this.mountCleanups.push(() => {
+      el.classList.remove("sr-stage");
+      el.removeAttribute("data-sr-moving");
+      applyThemeTokens(el, {});
+      if (previousScale) el.style.setProperty("--sr-scale", previousScale);
+      else el.style.removeProperty("--sr-scale");
+    });
 
     const onSelectStart = (e: Event) => e.preventDefault();
     el.addEventListener("selectstart", onSelectStart);
@@ -1539,21 +1545,12 @@ export class Stage {
     this._applyTheme(this.currentTheme);
 
     this.viewport = document.createElement("div");
-    this.viewport.style.position = "relative";
+    this.viewport.className = "sr-viewport";
     this.viewport.style.width = `${this.options.width}px`;
     this.viewport.style.height = `${this.options.height}px`;
     this.viewport.style.minWidth = `${this.options.width}px`;
     this.viewport.style.minHeight = `${this.options.height}px`;
-    this.viewport.style.flexShrink = "0";
-    this.viewport.style.containerType = "size";
     this.viewport.style.setProperty(STAGE_UNIT_VAR, `calc(100cqh / ${STAGE_UNITS_TALL})`);
-    if (this.options.scale !== undefined && this.options.scale !== 1) {
-      this.viewport.style.setProperty("--sr-scale", String(this.options.scale));
-    }
-    this.viewport.style.transformOrigin = "center center";
-    this.viewport.style.zIndex = "1";
-    this.viewport.style.userSelect = "none";
-    this.viewport.style.webkitUserSelect = "none";
 
     this.container.appendChild(this.viewport);
 
@@ -1654,6 +1651,7 @@ export class Stage {
     // Check URL Hash for live HMR positioning
     const initialIndex = this._resolveHashTarget();
     this.currentStepIndex = initialIndex;
+    this.isMountedState = true;
     this._applySnapshot(initialIndex);
 
     const onHashChange = () => {
@@ -1664,8 +1662,6 @@ export class Stage {
     };
     window.addEventListener("hashchange", onHashChange);
     this.mountCleanups.push(() => window.removeEventListener("hashchange", onHashChange));
-
-    this.isMountedState = true;
 
     // Attach global dev diagnostics hook
     const devWindow = window as unknown as {

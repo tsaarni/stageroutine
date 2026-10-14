@@ -1,0 +1,12 @@
+@layer sr-accessibility {
+  @media (prefers-reduced-motion: reduce) {
+    :where(.sr-stage) *,
+    :where(.sr-stage) *::before,
+    :where(.sr-stage) *::after {
+      transition: none !important;
+
+      /* Also covers inline decorator animation declarations. */
+      animation: none !important;
+    }
+  }
+}

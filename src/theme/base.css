@@ -1,71 +1,14 @@
-/**
- * Base design tokens and cascade layers for StageRoutine.
- */
-
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
-@import "@fontsource/inter/700.css";
-@import "@fontsource/jetbrains-mono/400.css";
-@import "@fontsource/jetbrains-mono/500.css";
-@import "@fontsource/jetbrains-mono/600.css";
-@import "@fontsource/newsreader/300.css";
-@import "@fontsource/newsreader/300-italic.css";
-@import "@fontsource/newsreader/400.css";
-@import "@fontsource/newsreader/400-italic.css";
-
-/* Declare cascade layers: framework sits in sr-base, sr-components, and sr-align, so user styles always win */
-@layer sr-base, sr-components, sr-align;
-
 @layer sr-base {
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: var(--sr-background);
-  }
-
-  :root {
-    user-select: none;
-    -webkit-user-select: none;
-
+  .sr-stage {
     /* Core Canvas & Palette */
     --sr-background: #0c0d12;
-    --sr-text: #ffffff;
-    --sr-primary: #38bdf8;
-    --sr-accent: var(--sr-primary);
-
-    /* Secondary Text (Auto-derived from text color) */
-    --sr-text-muted: color-mix(in srgb, var(--sr-text) 72%, transparent);
-    --sr-text-dim: color-mix(in srgb, var(--sr-text) 50%, transparent);
+    --sr-text: #fff;
+    --sr-primary: var(--sr-brand-cyan);
 
     /* Surface & Container Tokens (Adaptive to theme text and background) */
-    --sr-surface: linear-gradient(
-      180deg,
-      color-mix(
-          in srgb,
-          var(--sr-text) 12%,
-          color-mix(in srgb, var(--sr-background) 75%, transparent)
-        )
-        0%,
-      color-mix(
-          in srgb,
-          var(--sr-text) 5%,
-          color-mix(in srgb, var(--sr-background) 68%, transparent)
-        )
-        100%
-    );
-    --sr-surface-border-color: color-mix(in srgb, var(--sr-text) 15%, transparent);
     --sr-surface-border-width: 1px;
     --sr-surface-solid: #18181b;
     --sr-surface-subtle: #1e293b;
-    --sr-surface-border: var(--sr-surface-border-width) solid var(--sr-surface-border-color);
-    --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 25%, transparent);
-    --sr-surface-shadow:
-      0 calc(1.25rem * var(--sr-scale, 1)) calc(4rem * var(--sr-scale, 1))
-      calc(-1rem * var(--sr-scale, 1)) rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 18%, transparent);
     --sr-surface-backdrop: blur(16px);
 
     /* Content Scale Factor (default: 1) */
@@ -90,8 +33,58 @@
     --sr-font-size-kicker: calc(1rem * var(--sr-scale, 1));
 
     /* Font Families */
-    --sr-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --sr-font-serif: "Newsreader", Georgia, serif;
-    --sr-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --sr-font-sans: var(--sr-brand-font-sans);
+    --sr-font-serif: var(--sr-brand-font-serif);
+    --sr-font-mono: var(--sr-brand-font-mono);
+    --sr-error: #f87171;
+    --sr-focus-opacity: 0.35;
+    --sr-motion-duration: 0.3s;
+    --sr-motion-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sr-stage,
+  [data-sr-theme~="primary"] {
+    --sr-accent: var(--sr-primary);
+  }
+
+  .sr-stage,
+  [data-sr-theme~="text"],
+  [data-sr-theme~="background"] {
+    --sr-surface: linear-gradient(
+      180deg,
+      color-mix(
+          in srgb,
+          var(--sr-text) 12%,
+          color-mix(in srgb, var(--sr-background) 75%, transparent)
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--sr-text) 5%,
+          color-mix(in srgb, var(--sr-background) 68%, transparent)
+        )
+        100%
+    );
+  }
+
+  .sr-stage,
+  [data-sr-theme~="text"],
+  [data-sr-theme~="surfaceBorderColor"],
+  [data-sr-theme~="surfaceBorderWidth"] {
+    --sr-surface-border: var(--sr-surface-border-width) solid var(--sr-surface-border-color);
+  }
+
+  /* Local text overrides also derive local secondary colors. */
+  .sr-stage,
+  [data-sr-theme~="text"] {
+    --sr-text-muted: color-mix(in srgb, var(--sr-text) 72%, transparent);
+    --sr-text-dim: color-mix(in srgb, var(--sr-text) 50%, transparent);
+    --sr-surface-border-color: color-mix(in srgb, var(--sr-text) 15%, transparent);
+    --sr-surface-highlight: color-mix(in srgb, var(--sr-text) 25%, transparent);
+    --sr-surface-shadow:
+      0 calc(1.25rem * var(--sr-scale, 1)) calc(4rem * var(--sr-scale, 1))
+      calc(-1rem * var(--sr-scale, 1)) rgb(0 0 0 / 60%),
+      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 18%, transparent);
+    --sr-focus-background: color-mix(in srgb, var(--sr-text) 8%, transparent);
   }
 }

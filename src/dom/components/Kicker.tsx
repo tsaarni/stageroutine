@@ -2,7 +2,6 @@
  * Micro-label typography component for chapter indices, category tags, and subtitles.
  */
 
-import "./Kicker.css";
 import { type ElementOptions, mount } from "../element";
 import { TextContentElement, type TextElement } from "./TextContent";
 

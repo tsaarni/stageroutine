@@ -2,7 +2,6 @@
  * Terminal block component with macOS-style window controls and line-by-line interactive focus.
  */
 
-import "./TerminalBlock.css";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 import { createWindowFrame, createWindowLines } from "./WindowFrame";

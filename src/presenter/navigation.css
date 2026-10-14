@@ -1,0 +1,206 @@
+/* Footer Bar: Next Preview & Navigation Controls */
+footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+
+  padding: 12px 20px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.next-preview-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  min-width: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-md);
+
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.next-preview-header {
+  gap: 5px;
+
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-sys-color-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.next-preview-body {
+  gap: 10px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.next-scene-title {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+}
+
+.next-notes-snippet {
+  overflow: hidden;
+  flex: 1;
+
+  color: var(--md-sys-color-on-surface-variant);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Navigation Action Buttons */
+.nav-controls {
+  gap: 10px;
+}
+
+.m3-btn {
+  cursor: pointer;
+
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+
+  height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--md-shape-full);
+
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+
+  transition:
+    background-color var(--md-motion-short) ease,
+    transform 100ms ease,
+    box-shadow var(--md-motion-short) ease;
+}
+
+.m3-btn:active {
+  transform: scale(0.96);
+}
+
+.m3-btn-tonal {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-secondary-container);
+  background-color: var(--md-sys-color-secondary-container);
+}
+
+.m3-btn-tonal:hover {
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.m3-btn-tonal:disabled {
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.4;
+}
+
+.m3-btn-filled {
+  color: var(--md-sys-color-on-primary);
+  background-color: var(--md-sys-color-primary);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 30%);
+}
+
+.m3-btn-filled:hover {
+  background-color: var(--md-sys-color-on-primary-container);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 40%);
+}
+
+.m3-btn-filled:disabled {
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* Jump Dropdown Menu */
+.m3-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.m3-dropdown-menu {
+  position: absolute;
+  z-index: 10000;
+  top: calc(100% + 6px);
+  left: 0;
+
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+
+  min-width: 260px;
+  max-height: 320px;
+  padding: 6px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-md);
+
+  background-color: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 40%);
+}
+
+.m3-dropdown-menu.open {
+  display: flex;
+  animation: menu-pop var(--md-motion-short) var(--md-motion-easing);
+}
+
+@keyframes menu-pop {
+  from {
+    transform: translateY(-6px) scale(0.97);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.m3-dropdown-item {
+  cursor: pointer;
+
+  gap: 10px;
+
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--md-shape-sm);
+
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  text-align: left;
+
+  background: transparent;
+
+  transition: background-color 100ms ease;
+}
+
+.m3-dropdown-item:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.m3-dropdown-item.active {
+  font-weight: 600;
+  color: var(--md-sys-color-on-primary-container);
+  background-color: var(--md-sys-color-primary-container);
+}
+
+.dropdown-scene-num,
+.dropdown-step-num {
+  color: var(--md-sys-color-outline);
+}
+
+.m3-dropdown-item.active .dropdown-scene-num,
+.m3-dropdown-item.active .dropdown-step-num {
+  color: var(--md-sys-color-primary);
+}

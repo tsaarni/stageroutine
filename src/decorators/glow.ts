@@ -3,7 +3,6 @@
  */
 
 import type { DOMElement, ElementDecorator } from "../dom/element";
-import { appendAnimation } from "./gradient";
 
 /**
  * Configuration options for the glow decorator.
@@ -17,24 +16,6 @@ export interface GlowOptions {
   duration?: number;
 }
 
-let glowCounter = 0;
-
-function injectKeyframes(name: string, body: string) {
-  let styleTag = document.getElementById("sr-decorators-style") as HTMLStyleElement;
-  if (!styleTag) {
-    styleTag = document.createElement("style");
-    styleTag.id = "sr-decorators-style";
-    document.head.appendChild(styleTag);
-  }
-  styleTag.textContent += `\n@keyframes ${name} {\n${body}\n}`;
-}
-
-const BASE_FILTER =
-  "drop-shadow(0 0 6px rgba(192, 132, 252, 0.65)) drop-shadow(0 0 22px rgba(167, 139, 250, 0.45)) drop-shadow(0 0 48px rgba(147, 51, 234, 0.25))";
-
-const PEAK_FILTER =
-  "drop-shadow(0 0 10px rgba(192, 132, 252, 0.85)) drop-shadow(0 0 32px rgba(167, 139, 250, 0.6)) drop-shadow(0 0 65px rgba(147, 51, 234, 0.35))";
-
 /**
  * Decorates an element with a glowing neon aura and optional pulse animation.
  * @category Decorators
@@ -45,22 +26,8 @@ export function glow(options: GlowOptions = {}): ElementDecorator {
   return (element: DOMElement) => {
     const el = element.domElement;
 
-    el.style.filter = BASE_FILTER;
-    el.style.display = "inline-block";
-
-    if (pulse) {
-      const animName = `sr-neon-bloom-${glowCounter++}`;
-      injectKeyframes(
-        animName,
-        `  0%,
-  100% {
-    filter: ${BASE_FILTER};
-  }
-  50% {
-    filter: ${PEAK_FILTER};
-  }`,
-      );
-      appendAnimation(el, `${animName} ${duration}s ease-in-out infinite`);
-    }
+    el.classList.add("sr-glow");
+    el.classList.toggle("sr-glow-pulse", pulse);
+    el.style.setProperty("--sr-glow-duration", `${duration}s`);
   };
 }

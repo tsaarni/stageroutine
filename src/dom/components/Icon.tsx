@@ -2,7 +2,6 @@
  * Standalone reactive Icon element for stage presentations and technical diagrams.
  */
 
-import "./Icon.css";
 import { logger } from "../../core/index";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 

@@ -1,3 +1,4 @@
+import "./style.css";
 /**
  * Demo presentation script showing how to build animated presentations with StageRoutine.
  */

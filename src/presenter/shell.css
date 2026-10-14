@@ -1,0 +1,130 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  user-select: none;
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  height: 100vh;
+
+  font-family: var(--md-font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--md-sys-color-on-surface);
+
+  background-color: var(--md-sys-color-background);
+}
+
+.material-symbols-outlined {
+  direction: ltr;
+  display: inline-block;
+
+  font-family: var(--md-font-icon);
+  font-size: 18px;
+  font-feature-settings: "liga";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  vertical-align: middle;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  position: relative;
+
+  overflow: hidden;
+
+  width: 100%;
+  height: 3px;
+
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.progress-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+  transition: width var(--md-motion-medium) var(--md-motion-easing);
+}
+
+/* Header & Footer Bars */
+header,
+footer {
+  flex-shrink: 0;
+  background-color: var(--md-sys-color-surface-container-low);
+}
+
+header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+
+  box-sizing: border-box;
+  height: 54px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.header-left,
+.header-right,
+.app-brand,
+.wall-clock,
+.timer-widget,
+.timer-actions,
+.notes-card-header,
+.font-size-controls,
+.next-preview-header,
+.next-preview-body,
+.nav-controls,
+.m3-dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+.header-left {
+  gap: 10px;
+  min-width: 0;
+}
+
+.header-right {
+  gap: 12px;
+}
+
+.app-brand {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+
+  margin-right: 4px;
+
+  font-weight: 700;
+  line-height: 1;
+  color: var(--md-sys-color-primary);
+  letter-spacing: 0.2px;
+}
+
+.app-brand-logo {
+  display: block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+@media (prefers-color-scheme: light) {
+  .app-brand-logo {
+    filter: invert(1);
+  }
+}

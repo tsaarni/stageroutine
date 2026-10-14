@@ -1,0 +1,334 @@
+/* Main Workspace: Speaker Notes */
+main {
+  overflow: hidden;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  padding: 14px 20px;
+}
+
+.notes-card {
+  overflow: hidden;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  padding: 16px 20px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-lg);
+
+  background-color: var(--md-sys-color-surface-container-low);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 15%);
+}
+
+.notes-scroll-body {
+  user-select: text;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.notes-scroll-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.notes-scroll-body::-webkit-scrollbar-thumb {
+  border-radius: var(--md-shape-full);
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.notes-scroll-body::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+}
+
+.notes-content {
+  padding-bottom: 140px;
+
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--md-sys-color-on-surface);
+
+  transition: font-size var(--md-motion-short) ease;
+}
+
+.notes-scene-section {
+  scroll-margin: 30px 0;
+
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: var(--md-shape-md);
+
+  opacity: 0.75;
+  background-color: transparent;
+
+  transition: opacity 0.2s ease;
+}
+
+.notes-scene-section.active-scene {
+  opacity: 1;
+}
+
+.notes-scene-section h2,
+.notes-scene-heading {
+  cursor: pointer;
+
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  margin-top: 0;
+  margin-bottom: 12px;
+  margin-left: -6px;
+  padding: 4px 6px;
+  border-radius: var(--md-shape-sm);
+
+  font-size: 1.15em;
+  font-weight: 700;
+  color: var(--md-sys-color-primary);
+
+  transition: background-color 0.15s ease;
+}
+
+.notes-scene-heading:hover {
+  background-color: rgb(255 255 255 / 4%);
+}
+
+.scene-heading-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+
+  font-size: 9px;
+  font-weight: 800;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+
+  background: var(--md-sys-color-primary);
+}
+
+.notes-scene-body {
+  margin-left: 8px;
+  padding-left: 12px;
+  border-left: 1px solid rgb(255 255 255 / 8%);
+}
+
+.notes-step-block {
+  cursor: pointer;
+  scroll-margin: 30px 0;
+
+  margin: 4px 0;
+  padding: 6px 10px;
+  border-radius: var(--md-shape-sm);
+
+  color: var(--md-sys-color-on-surface-variant);
+
+  opacity: 0.75;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.notes-step-block:hover {
+  opacity: 0.95;
+  background-color: rgb(255 255 255 / 2.5%);
+}
+
+.notes-scene-section.active-scene .notes-step-block.active-step {
+  color: var(--md-sys-color-on-surface);
+  opacity: 1;
+  background-color: rgb(255 255 255 / 4%);
+}
+
+.notes-scene-section.active-scene .notes-step-block.past-step,
+.notes-scene-section.active-scene .notes-step-block.future-step {
+  opacity: 0.75;
+}
+
+.notes-scene-section h3 {
+  margin-top: 12px;
+  margin-bottom: 6px;
+
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.notes-scene-section p {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.notes-scene-section p:last-child {
+  margin-bottom: 0;
+}
+
+.notes-scene-section ul,
+.notes-scene-section ol {
+  margin-bottom: 10px;
+  padding-left: 18px;
+}
+
+.notes-scene-section li {
+  margin-bottom: 4px;
+}
+
+.notes-scene-section code {
+  padding: 2px 5px;
+  border-radius: 4px;
+
+  font-family: var(--md-font-mono);
+  font-size: 0.9em;
+  color: var(--md-sys-color-on-surface);
+
+  background: rgb(255 255 255 / 6%);
+}
+
+/* Presenter Cues & Stage Directions (Material Design 3 Assist Card) */
+.presenter-cue {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+
+  margin: 10px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-sm);
+
+  font-size: 13px;
+  line-height: 1.45;
+
+  background-color: var(--md-sys-color-surface-container);
+
+  transition:
+    background-color var(--md-motion-short) ease,
+    border-color var(--md-motion-short) ease;
+}
+
+.presenter-cue:hover {
+  border-color: var(--md-sys-color-outline);
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.cue-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 18px;
+}
+
+.cue-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cue-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.cue-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.cue-body {
+  font-weight: 450;
+  color: var(--md-sys-color-on-surface);
+}
+
+.cue-body p {
+  margin: 0;
+}
+
+/* Action: Warm Amber */
+.presenter-cue.cue-action .cue-icon,
+.presenter-cue.cue-action .cue-label {
+  color: var(--md-sys-color-timer-paused);
+}
+
+/* Cue: Crisp Cyan / Blue */
+.presenter-cue.cue-cue .cue-icon,
+.presenter-cue.cue-cue .cue-label {
+  color: #38bdf8;
+}
+
+/* Warn: Soft Red */
+.presenter-cue.cue-warn .cue-icon,
+.presenter-cue.cue-warn .cue-label {
+  color: var(--md-sys-color-error);
+}
+
+/* Badges & Keystroke Labels */
+.kbd,
+.dropdown-scene-num,
+.dropdown-step-num {
+  padding: 1px 5px;
+  border-radius: var(--md-shape-xs);
+
+  font-family: var(--md-font-mono);
+  font-size: 12px;
+
+  background: var(--md-sys-badge-bg);
+}
+
+/* Indented Numbered Step Break Indicator */
+.notes-step-break {
+  user-select: none;
+
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  margin: 16px 0 10px;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.step-break-bullet {
+  font-size: 10px;
+  color: var(--md-sys-color-outline);
+}
+
+.step-break-label {
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.3px;
+}
+
+.step-break-line {
+  flex: 1;
+  height: 1px;
+  opacity: 0.25;
+  background: var(--md-sys-color-outline-variant);
+}
+
+.notes-step-break .kbd {
+  padding: 0 4px;
+  border-radius: 3px;
+
+  font-size: 9px;
+  color: var(--md-sys-color-outline);
+
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.step-break-badge .kbd {
+  padding: 0 4px;
+  border-radius: 3px;
+
+  font-size: 9px;
+  color: var(--md-sys-color-on-surface-variant);
+
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.notes-empty-state {
+  font-style: italic;
+  color: var(--md-sys-color-outline);
+}

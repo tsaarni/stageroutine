@@ -22,6 +22,8 @@ export const defaultLight: ThemeConfig = {
   background: "#fafafa",
   text: "#09090b",
   primary: "#0284c7",
+  surfaceSolid: "#f4f4f5",
+  surfaceSubtle: "#e2e8f0",
 };
 
 /**

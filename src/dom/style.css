@@ -1,9 +1,13 @@
-/**
- * Global CSS stylesheet for StageRoutine.
- * Aggregates design tokens, cascade layers, and modular component styles.
- */
+/* Normal application rules override these framework layers. Runtime geometry is inline. */
+@layer sr-brand, sr-vendor, sr-base, sr-components, sr-align, sr-accessibility;
 
+@import "../theme/brand.css";
+@import "../theme/fonts.css";
+@import "@xterm/xterm/css/xterm.css" layer(sr-vendor);
 @import "../theme/base.css";
+@import "./stage.css";
+@import "./surfaces.css";
+@import "./interaction.css";
 @import "./components/Title.css";
 @import "./components/Text.css";
 @import "./components/Kicker.css";
@@ -19,31 +23,10 @@
 @import "./components/SequenceDiagram.css";
 @import "./components/Connector.css";
 @import "./components/Flow.css";
+@import "./components/WindowFrame.css";
+@import "./components/BrowserWindow.css";
 @import "../overlays/navigation.css";
 
-@layer sr-align {
-  /* 9-position content alignment grid for containers and text */
-  [data-align] {
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-
-  [data-align*="top"] {
-    justify-content: flex-start;
-  }
-
-  [data-align*="bottom"] {
-    justify-content: flex-end;
-  }
-
-  [data-align*="left"] {
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  [data-align*="right"] {
-    align-items: flex-end;
-    text-align: right;
-  }
-}
+@import "../decorators/effects.css";
+@import "./alignment.css";
+@import "./accessibility.css";

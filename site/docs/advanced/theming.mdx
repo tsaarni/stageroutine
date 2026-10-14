@@ -108,16 +108,16 @@ StageRoutine waits for `document.fonts.ready` on startup. Fonts load before layo
 
 ### Typographic Scale
 
-StageRoutine scales typography for standard 1080p canvas dimensions. You can customize the scale using font size tokens:
+These defaults use `scale: 1`. The stage `scale` option multiplies default font sizes, spacing, and radii. Explicit theme lengths keep their supplied values.
 
 | Token | CSS Variable | Default Value | Target Components |
 | :--- | :--- | :--- | :--- |
-| `fontSizeHero` | `--sr-font-size-hero` | `6.5rem` | `Title({ variant: "hero" })` |
-| `fontSizeTitle` | `--sr-font-size-title` | `3.85rem` | `Title()` |
-| `fontSizeLead` | `--sr-font-size-lead` | `2.45rem` | `Title({ variant: "serif" })` |
-| `fontSizeBody` | `--sr-font-size-body` | `1.85rem` | `Text()`, `BulletList()`, `Table()` |
-| `fontSizeCode` | `--sr-font-size-code` | `1.45rem` | `CodeBlock()`, `TerminalBlock()` body |
-| `fontSizeKicker` | `--sr-font-size-kicker` | `1.2rem` | `Kicker()`, `TerminalBlock()` header |
+| `fontSizeHero` | `--sr-font-size-hero` | `5.5rem` | `Title({ variant: "hero" })` |
+| `fontSizeTitle` | `--sr-font-size-title` | `3.25rem` | `Title()` |
+| `fontSizeLead` | `--sr-font-size-lead` | `2.1rem` | `Title({ variant: "serif" })` |
+| `fontSizeBody` | `--sr-font-size-body` | `1.55rem` | `Text()`, `BulletList()`, `Table()` |
+| `fontSizeCode` | `--sr-font-size-code` | `1.25rem` | `CodeBlock()`, `TerminalBlock()` body |
+| `fontSizeKicker` | `--sr-font-size-kicker` | `1rem` | `Kicker()`, `TerminalBlock()` header |
 
 Override scale tokens in your theme configuration:
 
@@ -220,3 +220,24 @@ Referencing these variables ensures your custom elements automatically respond w
   color: var(--sr-text);
 }
 ```
+
+## Stylesheet scope
+
+Stage styles apply inside the mounted container. The host page owns its margins and scrolling.
+For a full-page presentation, add this to the page stylesheet:
+
+```css
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+```
+
+Component defaults use cascade layers. Your unlayered CSS overrides normal framework rules.
+The runtime owns animated positions, dimensions, and opacity. Set those through element properties.
+
+Stage theme changes are saved with each step. Going backward restores earlier values and removes later overrides.
+Local `theme` options recalculate derived colors where you set them.
+
+Decorative CSS loops pause between stage transitions. Reduced-motion preferences disable CSS effects and background motion.

@@ -55,6 +55,21 @@ export abstract class BackgroundElement implements Background {
     for (const listener of this.frameListeners) listener();
   }
   protected attached = false;
+  private reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  protected get canAnimate(): boolean {
+    return (
+      this.attached &&
+      !this.reducedMotion.matches &&
+      this.opacity > 0.01 &&
+      this.domElement.style.visibility !== "hidden"
+    );
+  }
+
+  private syncActivity = (): void => {
+    if (this.canAnimate) this.resume();
+    else this.pause();
+  };
   private resizeObserver: ResizeObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
 
@@ -77,16 +92,7 @@ export abstract class BackgroundElement implements Background {
     this.domElement = container;
 
     // Auto-pause continuous RAF loop when invisible (0% GPU/CPU waste)
-    this.mutationObserver = new MutationObserver(() => {
-      const op = Number.parseFloat(this.domElement.style.opacity);
-      const isVisible =
-        (Number.isNaN(op) || op > 0.01) && this.domElement.style.visibility !== "hidden";
-      if (isVisible && this.attached && !this.isRunning) {
-        this.resume();
-      } else if (!isVisible && this.isRunning) {
-        this.pause();
-      }
-    });
+    this.mutationObserver = new MutationObserver(this.syncActivity);
     this.mutationObserver.observe(this.domElement, {
       attributes: true,
       attributeFilter: ["style"],
@@ -140,8 +146,11 @@ export abstract class BackgroundElement implements Background {
       stage.container.prepend(this.domElement);
     }
     this.attached = true;
-    if (this.opacity > 0.01 && this.domElement.style.visibility !== "hidden") this.resume();
-    else this.pause();
+    this.reducedMotion.addEventListener("change", this.syncActivity);
+    this.onUnmount(() => {
+      this.reducedMotion.removeEventListener("change", this.syncActivity);
+    });
+    this.syncActivity();
     this.onResize(window.innerWidth, window.innerHeight);
   }
 

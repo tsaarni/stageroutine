@@ -1,0 +1,42 @@
+@layer sr-components {
+  .sr-clickable {
+    cursor: pointer;
+  }
+
+  .sr-focus-item {
+    user-select: none;
+    transition:
+      background-color var(--sr-motion-duration) var(--sr-motion-easing),
+      color var(--sr-motion-duration) var(--sr-motion-easing),
+      opacity var(--sr-motion-duration) var(--sr-motion-easing),
+      translate var(--sr-motion-duration) var(--sr-motion-easing);
+  }
+
+  /* Selection temporarily overrides runtime reveal opacity, not visibility or transforms. */
+  .sr-focus-container.has-focus .sr-focus-item:not(.is-focused) {
+    opacity: var(--sr-focus-opacity) !important;
+  }
+
+  .sr-focus-item.is-focused {
+    opacity: 1 !important;
+  }
+
+  :is(.sr-code-line, .sr-terminal-line, .sr-table-row).is-focused {
+    background-color: var(--sr-focus-background);
+  }
+
+  :is(.sr-code-line, .sr-terminal-line).is-range-start {
+    border-top-left-radius: var(--sr-radius);
+    border-top-right-radius: var(--sr-radius);
+  }
+
+  :is(.sr-code-line, .sr-terminal-line).is-range-end {
+    border-bottom-right-radius: var(--sr-radius);
+    border-bottom-left-radius: var(--sr-radius);
+  }
+
+  :where(.sr-stage) :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--sr-primary);
+    outline-offset: 2px;
+  }
+}

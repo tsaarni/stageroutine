@@ -71,4 +71,41 @@ test.describe("Stage Navigation & Restoration", () => {
     expect(restoredBoxB.x).toBeCloseTo(initialBoxB.x, 1);
     expect(restoredBoxB.y).toBeCloseTo(initialBoxB.y, 1);
   });
+
+  test("elements declared in later scene remain hidden when mounting at earlier scene", async ({
+    stage,
+    page,
+  }) => {
+    await page.evaluate(() => {
+      window.location.hash = "#scene-0/1";
+    });
+
+    await stage.mount((SR) => {
+      const s = new SR.Stage({ channel: false });
+
+      const cardA = SR.Card("A", { id: "card-a", position: [100, 100] });
+
+      // Scene 0: only cardA, cardA changes position in step 1
+      s.scene("scene-0").with(cardA);
+      s.pause();
+
+      cardA.y = SR.to(200);
+      s.pause();
+
+      // Scene 1: cardB observes cardA
+      const cardB = SR.Card("B", { id: "card-b", opacity: 0 });
+      cardA.onUpdate(() => {
+        cardB.height = 50;
+      });
+
+      s.scene("scene-1").with(cardA, cardB);
+      cardB.to({ opacity: 1 }).duration(0.2).after(cardA);
+      s.pause();
+
+      return s;
+    });
+
+    const cardB = stage.locator("#card-b");
+    await expect(cardB).toHaveCSS("display", "none");
+  });
 });

@@ -102,4 +102,60 @@ test.describe("Effects & Decorators", () => {
     expect(stillRunning).toBe(false);
     await stage.expectAtRest();
   });
+
+  test("ambient flow animations continue running on active elements and pause on scene exit", async ({
+    stage,
+  }) => {
+    await stage.mount((SR) => {
+      const s = new SR.Stage({ channel: false });
+
+      const shape = SR.Shape(SR.paths.box(), {
+        id: "flow-shape",
+        position: [20, 20],
+        width: 30,
+        height: 20,
+        flow: "traveling",
+      });
+
+      s.scene("Active").with(shape);
+      s.pause();
+
+      s.scene("Exit").with();
+      s.pause();
+
+      return s;
+    });
+
+    const shape = stage.locator("#flow-shape");
+    const path = stage.locator("#flow-shape .sr-shape-path-main");
+
+    // 1. CSS animation runs while element is active
+    await expect(path).toHaveCSS("animation-play-state", "running");
+
+    // 2. Animation continues running over time
+    await expect
+      .poll(async () => {
+        return shape.evaluate((el) => {
+          const anims = el.getAnimations({ subtree: true });
+          return (
+            anims.length > 0 &&
+            anims[0].playState === "running" &&
+            (anims[0].currentTime ?? 0) > 100
+          );
+        });
+      })
+      .toBe(true);
+
+    // 3. Exit scene
+    await stage.next();
+
+    // 4. Animation stops when element leaves the scene
+    await expect(shape).toHaveCSS("display", "none");
+    const stillRunning = await shape.evaluate((el) => {
+      const anims = el.getAnimations({ subtree: true });
+      return anims.some((a) => a.playState === "running");
+    });
+    expect(stillRunning).toBe(false);
+    await stage.expectAtRest();
+  });
 });

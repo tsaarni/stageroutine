@@ -27,8 +27,11 @@ export function StageSubtitle({ children, className }: StageSubtitleProps): Reac
   }, []);
 
   return (
-    <p className={`${styles.glowContainer} ${className ?? ""}`} style={{ opacity: ready ? 1 : 0 }}>
-      <span className={styles.gradientText}>{children}</span>
+    <p
+      className={`sr-glow sr-glow-pulse ${styles.glowContainer} ${className ?? ""}`}
+      style={{ opacity: ready ? 1 : 0 }}
+    >
+      <span className="sr-gradient-text sr-gradient-flow">{children}</span>
     </p>
   );
 }

@@ -1,41 +1,26 @@
 @layer sr-components {
-  .sr-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--sr-space-3xs) var(--sr-space-sm);
-    border-radius: 9999px;
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-kicker);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: var(--sr-surface);
-    backdrop-filter: var(--sr-surface-backdrop);
-    -webkit-backdrop-filter: var(--sr-surface-backdrop);
-    color: var(--sr-text-muted);
-    border: var(--sr-surface-border);
-    border-top-color: var(--sr-surface-highlight);
-    box-shadow: var(--sr-surface-shadow);
-  }
-
   .sr-shape,
   .sr-card {
     position: relative;
-    box-sizing: border-box;
+
     display: flex;
     flex-direction: column;
+    gap: var(--sr-space-xs);
     align-items: center;
     justify-content: center;
-    gap: var(--sr-space-xs);
+
+    box-sizing: border-box;
     padding: var(--sr-space-xs) var(--sr-space-sm);
-    color: var(--sr-text);
+
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-code);
     font-weight: 500;
     line-height: 1.35;
+    color: var(--sr-text);
     text-align: center;
-    overflow-wrap: break-word;
     word-break: normal;
+    overflow-wrap: break-word;
+
     transition:
       border-color 0.35s ease,
       box-shadow 0.35s ease;
@@ -45,27 +30,31 @@
       line-height: 1.25;
     }
 
-    & > *:not(.sr-shape-stroke-svg):not(.sr-shape-frost) {
+    & > *:not(.sr-shape-stroke-svg, .sr-shape-frost) {
       position: relative;
       z-index: 2;
-      text-align: inherit;
+
       line-height: 1.25;
-      overflow-wrap: break-word;
+      text-align: inherit;
       word-break: normal;
+      overflow-wrap: break-word;
     }
   }
 
   /* Vector border outline SVG overlay */
   .sr-shape-stroke-svg {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    pointer-events: none !important;
-    overflow: visible !important;
-    z-index: 1 !important;
+    pointer-events: none;
+
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+
+    overflow: visible;
+
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
   }
 
   .sr-shape-path-main,
@@ -74,6 +63,7 @@
     stroke: color-mix(in srgb, var(--sr-text) 18%, transparent);
     stroke-linecap: round;
     stroke-linejoin: round;
+
     transition:
       stroke 0.35s ease,
       filter 0.35s ease;
@@ -81,23 +71,23 @@
 
   /* Frosted glass fill: square HTML div masked by SVG vector silhouette */
   .sr-shape-frost {
-    position: absolute !important;
-    inset: calc(-1 * var(--sr-frost-overflow, 0px)) !important;
-    width: auto !important;
-    height: auto !important;
-    pointer-events: none !important;
-    z-index: 0 !important;
-    mask-size: 100% 100%;
-    -webkit-mask-size: 100% 100%;
+    pointer-events: none;
+
+    position: absolute;
+    z-index: 0;
+    inset: calc(-1 * var(--sr-frost-overflow, 0px));
+
+    width: auto;
+    height: auto;
+
     mask-repeat: no-repeat;
-    -webkit-mask-repeat: no-repeat;
+    mask-size: 100% 100%;
   }
 
   /* Surface variant: frosted glass gradient + backdrop blur + shadow */
   .sr-shape-surface .sr-shape-frost {
-    backdrop-filter: var(--sr-surface-backdrop, blur(16px));
-    -webkit-backdrop-filter: var(--sr-surface-backdrop, blur(16px));
     background: var(--sr-surface);
+    backdrop-filter: var(--sr-surface-backdrop, blur(16px));
     box-shadow: var(--sr-surface-shadow);
   }
 
@@ -113,82 +103,16 @@
 
   /* Drop shadow on vector stroke overlay */
   .sr-shape-surface .sr-shape-stroke-svg {
-    filter: drop-shadow(0 var(--sr-space-sm) var(--sr-space-lg) rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 var(--sr-space-sm) var(--sr-space-lg) rgb(0 0 0 / 60%));
   }
 
   .sr-shape-solid .sr-shape-stroke-svg {
-    filter: drop-shadow(0 var(--sr-space-xs) var(--sr-space-lg) rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 var(--sr-space-xs) var(--sr-space-lg) rgb(0 0 0 / 50%));
   }
 
   /* Highlighted / active shape glow */
   .sr-shape.is-active .sr-shape-path-main,
   .sr-shape.is-active .sr-shape-path-inner {
-    filter: drop-shadow(0 0 8px currentColor);
-  }
-
-  .sr-state-node.has-double-border {
-    outline: 2px solid color-mix(in srgb, var(--sr-text) 20%, transparent);
-    outline-offset: 4px;
-  }
-
-  /* UML State Pseudostates (initial & final) */
-  .sr-state-node {
-    --sr-orb-gradient: radial-gradient(
-      circle at 32% 30%,
-      #ffffff 0%,
-      rgba(255, 255, 255, 0.95) 32%,
-      rgba(214, 217, 223, 0.88) 68%,
-      rgba(139, 143, 151, 0.72) 100%
-    );
-  }
-
-  /* Initial pseudostate: solid glowing orb (fill lives on the masked frost layer) */
-  .sr-state-initial .sr-shape-frost {
-    display: block !important;
-    background: var(--sr-orb-gradient);
-    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.35))
-      drop-shadow(0 0 32px rgba(255, 255, 255, 0.16));
-  }
-
-  .sr-state-initial .sr-shape-stroke-svg {
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
-  }
-
-  /* Final pseudostate: faint disc, outer ring (SVG stroke), and solid inner dot */
-  .sr-state-final .sr-shape-frost {
-    display: block !important;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgba(255, 255, 255, 0.08) 0%,
-      rgba(255, 255, 255, 0.02) 58%,
-      transparent 100%
-    );
-  }
-
-  .sr-state-final .sr-shape-stroke-svg {
-    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.14))
-      drop-shadow(0 0 30px rgba(255, 255, 255, 0.07));
-  }
-
-  .sr-state-final::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 44%;
-    aspect-ratio: 1;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: var(--sr-orb-gradient);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow:
-      0 0 10px rgba(255, 255, 255, 0.4),
-      0 0 22px rgba(255, 255, 255, 0.18),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.25);
-    z-index: 2;
-  }
-
-  .sr-clickable {
-    cursor: pointer;
+    filter: drop-shadow(0 0 8px currentcolor);
   }
 }

@@ -1,0 +1,97 @@
+:root,
+[data-theme="dark"] {
+  /* StageRoutine Cyber Cyan & Monochrome Highlights */
+  --ifm-color-primary: var(--sr-brand-cyan);
+  --ifm-color-primary-dark: #0284c7;
+  --ifm-color-primary-darker: #0369a1;
+  --ifm-color-primary-darkest: #075985;
+  --ifm-color-primary-light: #7dd3fc;
+  --ifm-color-primary-lighter: #bae6fd;
+  --ifm-color-primary-lightest: #e0f2fe;
+
+  /* Shared fonts; website typography and surfaces have their own scale. */
+  --sr-font-sans: var(--sr-brand-font-sans);
+  --sr-font-serif: var(--sr-brand-font-serif);
+  --sr-font-mono: var(--sr-brand-font-mono);
+
+  /* Typography */
+  --ifm-font-family-base: var(--sr-font-sans);
+  --ifm-font-family-monospace: var(--sr-font-mono);
+  --ifm-heading-font-family: var(--sr-font-sans);
+  --ifm-font-size-base: 15.5px;
+  --ifm-line-height-base: 1.65;
+  --ifm-heading-color: #fff;
+  --ifm-heading-line-height: 1.25;
+
+  /* StageRoutine Dark Palette */
+  --ifm-background-color: #09090b;
+  --ifm-background-surface-color: #09090b;
+  --ifm-text-color: #e4e4e7;
+  --ifm-font-color-base: #e4e4e7;
+  --ifm-color-emphasis-0: color-mix(in srgb, var(--ifm-font-color-base) 3%, transparent);
+  --ifm-color-emphasis-100: color-mix(in srgb, var(--ifm-font-color-base) 5%, transparent);
+  --ifm-color-emphasis-200: color-mix(in srgb, var(--ifm-font-color-base) 8%, transparent);
+  --ifm-color-emphasis-300: color-mix(in srgb, var(--ifm-font-color-base) 12%, transparent);
+  --ifm-color-emphasis-400: #71717a;
+  --ifm-color-emphasis-600: #a1a1aa;
+  --ifm-color-emphasis-700: #d4d4d8;
+  --ifm-color-emphasis-800: #e4e4e7;
+  --ifm-color-emphasis-900: #f4f4f5;
+  --ifm-color-content-secondary: #a1a1aa;
+
+  /* Glassmorphism & Surface Tokens */
+  --site-surface-raised: #121216;
+  --site-border: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 10%, transparent);
+  --site-window-shadow:
+    0 1.5rem 4rem -1rem rgb(0 0 0 / 60%),
+    inset 0 1px 0 0 color-mix(in srgb, var(--ifm-font-color-base) 12%, transparent);
+  --site-glass-backdrop: blur(24px) saturate(190%) contrast(102%);
+  --site-glass-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ifm-font-color-base) 6.5%, transparent) 0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
+  );
+  --site-glass-border: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 11%, transparent);
+  --site-glass-border-top: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 22%, transparent);
+  --site-glass-shadow:
+    0 1.5rem 4rem -1rem rgb(0 0 0 / 60%),
+    inset 0 1px 0 0 color-mix(in srgb, var(--ifm-font-color-base) 16%, transparent);
+  --site-glass-hover-bg: linear-gradient(
+    180deg,
+    color-mix(
+        in srgb,
+        var(--ifm-color-primary) 9%,
+        color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent)
+      )
+      0%,
+    color-mix(in srgb, var(--ifm-font-color-base) 2%, transparent) 100%
+  );
+  --site-glass-hover-border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 42%, transparent);
+  --site-glass-hover-border-top: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 68%, transparent);
+  --site-glass-hover-shadow:
+    0 1.25rem 3rem -0.75rem rgb(0 0 0 / 70%),
+    0 0 24px color-mix(in srgb, var(--ifm-color-primary) 15%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--ifm-font-color-base) 22%, transparent);
+
+  /* Layout & Surface Tokens */
+  --ifm-global-radius: 0.5rem;
+  --ifm-card-border-radius: 0.75rem;
+  --ifm-navbar-background-color: color-mix(in srgb, var(--ifm-background-color) 75%, transparent);
+  --ifm-navbar-shadow: none;
+  --ifm-navbar-height: 3.75rem;
+  --ifm-footer-background-color: #09090b;
+  --ifm-toc-border-color: color-mix(in srgb, var(--ifm-font-color-base) 7%, transparent);
+  --ifm-table-border-color: color-mix(in srgb, var(--ifm-font-color-base) 10%, transparent);
+  --ifm-table-stripe-background: color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent);
+  --ifm-menu-color: #a1a1aa;
+  --ifm-menu-color-active: #fff;
+  --ifm-menu-color-background-active: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  --ifm-menu-color-background-hover: color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent);
+  --ifm-code-font-size: 88%;
+  --docusaurus-highlighted-code-line-bg: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 15%,
+    transparent
+  );
+}

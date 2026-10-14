@@ -3,7 +3,6 @@ import { isTransitionDescriptor } from "../../motion/transitions";
  * Reactive visual connector and arrow primitive linking nodes and coordinates with dynamic tracking.
  */
 
-import "./Connector.css";
 import { type Gauge, getActiveStage, tryGetActiveStage, unitsToPx } from "../../core/index";
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
@@ -679,13 +678,13 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
 
     this.onActivate(() => {
       this._resumePeriodicPulse();
-      this._resumeFlowAnimation();
+
       this._update();
     });
 
     this.onDeactivate(() => {
       this._pausePeriodicPulse();
-      this._pauseFlowAnimation();
+
       this.cancelPulses();
     });
 
@@ -730,7 +729,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
   override _deactivate(): void {
     this.cancelPulses();
     this._pausePeriodicPulse();
-    this._pauseFlowAnimation();
+
     super._deactivate();
   }
 
@@ -741,7 +740,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     this.metricDisposables = [];
     this.cancelPulses();
     this._pausePeriodicPulse();
-    this._pauseFlowAnimation();
+
     super._unmount();
   }
 
@@ -1280,10 +1279,11 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
 
   private updateFlowClasses(): void {
     const flowVal = typeof this.flow === "string" ? this.flow : "none";
-    this.svgRoot.classList.remove("sr-flow-traveling", "sr-flow-chase", "sr-flow-ping");
+    for (const mode of ["traveling", "chase", "ping"]) {
+      this.svgRoot.classList.toggle(`sr-flow-${mode}`, flowVal === mode);
+    }
 
     if (flowVal && flowVal !== "none") {
-      this.svgRoot.classList.add(`sr-flow-${flowVal}`);
       if (flowVal === "chase") {
         this.pathNode.setAttribute("pathLength", "100");
       } else {
@@ -1291,27 +1291,6 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
       }
     } else {
       this.pathNode.removeAttribute("pathLength");
-    }
-  }
-
-  private _resumeFlowAnimation(): void {
-    const flowVal = typeof this.flow === "string" ? this.flow : "none";
-    if (flowVal && flowVal !== "none") {
-      this.domElement.style.animationPlayState = "running";
-      this.pathNode.style.animationPlayState = "running";
-      for (const anim of this.pathNode.getAnimations()) {
-        anim.play();
-      }
-    }
-  }
-
-  private _pauseFlowAnimation(): void {
-    const flowVal = typeof this.flow === "string" ? this.flow : "none";
-    if (flowVal && flowVal !== "none") {
-      this.pathNode.style.animationPlayState = "paused";
-      for (const anim of this.pathNode.getAnimations()) {
-        anim.pause();
-      }
     }
   }
 }

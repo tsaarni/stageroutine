@@ -534,12 +534,18 @@ export default function BrandGuidelines(): React.JSX.Element {
               </div>
             </div>
 
+            <p>
+              Default sizes are listed in the{" "}
+              <Link to="/docs/advanced/theming#typographic-scale">theming reference</Link>. Samples
+              below are scaled to fit.
+            </p>
+
             {/* Typographic Scale Ladder */}
             <div className={styles.typeScaleLadder}>
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Hero Scale</span>
-                  <span className={styles.typeScaleVar}>--sr-font-size-hero (6.5rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-hero</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
@@ -552,7 +558,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Title Scale</span>
-                  <span className={styles.typeScaleVar}>--sr-font-size-title (3.85rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-title</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
@@ -565,7 +571,7 @@ export default function BrandGuidelines(): React.JSX.Element {
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
                   <span className={styles.typeScaleName}>Lead / Subtitle</span>
-                  <span className={styles.typeScaleVar}>--sr-font-size-lead (2.45rem)</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-lead</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}

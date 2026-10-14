@@ -9,9 +9,9 @@
   }
 
   .sr-terminal-live > .sr-terminal-body {
+    overflow: auto;
     min-height: 0;
     line-height: normal;
-    overflow: auto;
 
     & .sr-terminal-line {
       white-space: pre;
@@ -19,49 +19,51 @@
   }
 
   .sr-terminal-screen {
-    flex: 1 1 auto;
-    min-height: 0;
     overflow: hidden;
-    background: var(--sr-background);
+    flex: 1 1 auto;
+
+    min-height: 0;
+
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-code);
 
+    background: var(--sr-background);
+
     & > .xterm {
+      box-sizing: border-box;
       width: 100%;
       height: 100%;
-      box-sizing: border-box;
       padding: var(--sr-space-xs);
     }
   }
 
   .sr-terminal-note {
-    white-space: pre;
+    margin-bottom: var(--sr-space-xs);
+
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
     color: var(--sr-text-dim);
-    margin-bottom: var(--sr-space-xs);
+    white-space: pre;
   }
 }
 
-/*
- * xterm.css paints its scroll viewport black; this override stays outside the
- * layer to win over the unlayered third-party stylesheet.
- */
-.sr-terminal-screen > .xterm .xterm-viewport {
-  background-color: transparent;
-  scrollbar-width: none;
-}
+@layer sr-components {
+  .sr-terminal-screen > .xterm .xterm-viewport {
+    scrollbar-width: none;
+    background-color: transparent;
+  }
 
-.sr-terminal-screen > .xterm .xterm-viewport::-webkit-scrollbar {
-  display: none;
-}
+  .sr-terminal-screen > .xterm .xterm-viewport::-webkit-scrollbar {
+    display: none;
+  }
 
-/* Slim down xterm's custom scrollbar (VS Code ScrollableElement). */
-.sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical {
-  width: 8px !important;
-}
+  /* Slim down xterm's custom scrollbar (VS Code ScrollableElement). */
+  .sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical {
+    width: 8px !important;
+  }
 
-.sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
-  width: 8px !important;
-  border-radius: 4px;
+  .sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+    width: 8px !important;
+    border-radius: 4px;
+  }
 }

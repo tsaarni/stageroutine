@@ -2,7 +2,6 @@
  * Headline typography component supporting default title, hero, and serif editorial variants.
  */
 
-import "./Title.css";
 import { type ElementOptions, mount } from "../element";
 import { TextContentElement, type TextElement } from "./TextContent";
 

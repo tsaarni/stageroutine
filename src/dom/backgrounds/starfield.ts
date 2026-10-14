@@ -129,7 +129,7 @@ export class StarfieldElement extends BackgroundElement {
   }
 
   resume(): void {
-    if (this.isRunning || !this.attached) return;
+    if (this.isRunning || !this.canAnimate) return;
     this.isRunning = true;
 
     let lastFrameTime = 0;

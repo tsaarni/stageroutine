@@ -1,36 +1,25 @@
 @layer sr-components {
-  .sr-table-row {
-    user-select: none;
-    -webkit-user-select: none;
-
-    &.sr-clickable {
-      cursor: pointer;
-    }
-
-    &.is-focused {
-      background-color: color-mix(in srgb, var(--sr-text) 8%, transparent);
-      color: inherit;
-      opacity: 1 !important;
-    }
-  }
-
   .sr-table {
-    width: 100%;
     border-collapse: collapse;
-    text-align: left;
+
+    width: 100%;
+
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-body);
     color: inherit;
+    text-align: left;
 
     & th {
+      padding: var(--sr-space-xs) var(--sr-space-sm);
+      border-bottom: var(--sr-surface-border);
+
       font-family: var(--sr-font-mono);
       font-size: var(--sr-font-size-kicker);
       font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
       color: inherit;
-      padding: var(--sr-space-xs) var(--sr-space-sm);
-      border-bottom: var(--sr-surface-border);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+
       background: color-mix(in srgb, var(--sr-text) 2%, transparent);
     }
 
@@ -41,30 +30,6 @@
 
     & tr:last-child td {
       border-bottom: none;
-    }
-  }
-
-  .sr-table-container {
-    color: var(--sr-text-muted);
-    background: var(--sr-surface);
-    backdrop-filter: var(--sr-surface-backdrop);
-    -webkit-backdrop-filter: var(--sr-surface-backdrop);
-    border: var(--sr-surface-border);
-    border-top-color: var(--sr-surface-highlight);
-    border-radius: var(--sr-radius);
-    box-shadow: var(--sr-surface-shadow);
-    overflow: hidden;
-    box-sizing: border-box;
-
-    &.has-focus .sr-table-row {
-      transition:
-        background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    &.has-focus .sr-table-row:not(.is-focused) {
-      opacity: 0.35 !important;
     }
   }
 }

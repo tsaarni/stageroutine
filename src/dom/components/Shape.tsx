@@ -3,7 +3,6 @@ import { isTransitionDescriptor } from "../../motion/transitions";
  * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
  */
 
-import "./Shape.css";
 import {
   type ElementAnchor,
   type FlowEffect,
@@ -256,12 +255,10 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
 
     const mainPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     mainPath.setAttribute("class", "sr-shape-path-main");
-    mainPath.style.fill = "none";
     svg.appendChild(mainPath);
 
     const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     innerPath.setAttribute("class", "sr-shape-path-inner");
-    innerPath.style.fill = "none";
     innerPath.style.display = "none";
     svg.appendChild(innerPath);
 
@@ -356,8 +353,6 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
     });
 
     this.onActivate(() => {
-      this.pathNode.style.animationPlayState = "running";
-      this.innerPathNode.style.animationPlayState = "running";
       if (this.flow === "ping") {
         this._startPeriodicPing();
       }
@@ -368,8 +363,6 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
     });
 
     this.onDeactivate(() => {
-      this.pathNode.style.animationPlayState = "paused";
-      this.innerPathNode.style.animationPlayState = "paused";
       this._stopPeriodicPing();
       for (const item of this.items) {
         (item as { _deactivate?: () => void })._deactivate?.();
@@ -535,10 +528,11 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
   private updateFlowClasses(): void {
     const flowVal = typeof this.flow === "string" ? this.flow : "none";
     const svg = this.svgElement;
-    svg.classList.remove("sr-flow-traveling", "sr-flow-chase", "sr-flow-ping");
+    for (const mode of ["traveling", "chase", "ping"]) {
+      svg.classList.toggle(`sr-flow-${mode}`, flowVal === mode);
+    }
 
     if (flowVal && flowVal !== "none") {
-      svg.classList.add(`sr-flow-${flowVal}`);
       if (flowVal === "chase") {
         this.pathNode.setAttribute("pathLength", "100");
         this.innerPathNode.setAttribute("pathLength", "100");

@@ -574,8 +574,14 @@ export class DOMElementImpl implements DOMElement {
   _activate(): void {
     if (this.isActive) return;
     this.isActive = true;
+    this.domElement.style.removeProperty("--sr-element-play-state");
     if (typeof this.domElement?.getAnimations === "function") {
       for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        if (
+          anim instanceof CSSAnimation &&
+          ["sr-neon-bloom", "sr-neon-sweep"].includes(anim.animationName)
+        )
+          continue;
         anim.play();
       }
     }
@@ -589,8 +595,16 @@ export class DOMElementImpl implements DOMElement {
    * Notifies registered `onDeactivate` listeners to pause timers, RAF loops, or media streams.
    */
   _deactivate(): void {
+    this.domElement.style.setProperty("--sr-element-play-state", "paused");
     if (typeof this.domElement?.getAnimations === "function") {
       for (const anim of this.domElement.getAnimations({ subtree: true })) {
+        if (
+          anim instanceof CSSAnimation &&
+          ["sr-neon-bloom", "sr-neon-sweep", "sr-flow-traveling-kf", "sr-flow-chase-kf"].includes(
+            anim.animationName,
+          )
+        )
+          continue;
         anim.pause();
       }
     }

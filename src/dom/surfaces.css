@@ -1,0 +1,17 @@
+@layer sr-components {
+  .sr-window-frame,
+  .sr-table-container {
+    overflow: hidden;
+
+    box-sizing: border-box;
+    border: var(--sr-surface-border);
+    border-top-color: var(--sr-surface-highlight);
+    border-radius: var(--sr-radius);
+
+    color: var(--sr-text-muted);
+
+    background: var(--sr-surface);
+    backdrop-filter: var(--sr-surface-backdrop);
+    box-shadow: var(--sr-surface-shadow);
+  }
+}

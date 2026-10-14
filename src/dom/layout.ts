@@ -18,6 +18,8 @@ import {
 } from "../core/index";
 import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
+import { getStageStyleContext } from "../theme/context";
+import { applyThemeTokens } from "../theme/tokens";
 import { type DOMElement, DOMElementImpl, mount } from "./element";
 
 export type { RuleOptions };
@@ -151,21 +153,27 @@ export function measureOffscreen(dom: HTMLElement): { width: number; height: num
   if (dom.isConnected) {
     return { width: dom.offsetWidth, height: dom.offsetHeight };
   }
-  const prevVis = dom.style.visibility;
-  const prevPos = dom.style.position;
-  const prevLeft = dom.style.left;
-  dom.style.visibility = "hidden";
-  dom.style.position = "absolute";
-  dom.style.left = "-9999px";
-  // biome-ignore lint/plugin: offscreen measurement
-  document.body.appendChild(dom);
-  const width = dom.offsetWidth;
-  const height = dom.offsetHeight;
-  dom.remove();
-  dom.style.visibility = prevVis;
-  dom.style.position = prevPos;
-  dom.style.left = prevLeft;
-  return { width, height };
+  const stage = tryGetActiveStage();
+  const context = stage && getStageStyleContext(stage);
+  const host = document.createElement("div");
+  host.className = "sr-stage sr-measurement";
+  host.style.width = `${stage?.width ?? 1920}px`;
+  host.style.height = `${stage?.height ?? 1080}px`;
+  host.style.setProperty("--sr-scale", String(context?.scale ?? 1));
+  if (context) applyThemeTokens(host, context.theme);
+
+  const parent = dom.parentNode;
+  const next = dom.nextSibling;
+  host.appendChild(dom);
+  // biome-ignore lint/plugin: temporary offscreen measurement host
+  document.body.appendChild(host);
+  try {
+    return { width: dom.offsetWidth, height: dom.offsetHeight };
+  } finally {
+    if (parent) parent.insertBefore(dom, next);
+    else dom.remove();
+    host.remove();
+  }
 }
 
 /** Stage width in stage units, falling back to a 16:9 stage before mount. */

@@ -26,6 +26,8 @@ export interface RangeSelectionController {
 export function attachRangeSelection(options: RangeSelectionOptions): RangeSelectionController {
   const { container, getItems, interactive = true, onRangeChange } = options;
 
+  container.classList.add("sr-focus-container");
+
   let currentRange: [number, number] | null = null;
   let isDragging = false;
   let dragAnchorIndex: number | null = null;
@@ -59,9 +61,9 @@ export function attachRangeSelection(options: RangeSelectionOptions): RangeSelec
   };
 
   const markClickable = () => {
-    if (!interactive) return;
     for (const el of getItems()) {
-      el.classList.add("sr-clickable");
+      el.classList.add("sr-focus-item");
+      el.classList.toggle("sr-clickable", interactive);
     }
   };
 

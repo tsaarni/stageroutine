@@ -2,35 +2,44 @@
   .sr-image,
   .sr-video,
   .sr-webcam {
-    display: block;
     user-select: none;
+    display: block;
+
     -webkit-user-drag: none;
   }
 
   .sr-webcam {
     position: relative;
+
+    overflow: hidden;
+
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    background-color: var(--sr-surface-subtle, #1e293b);
     border-radius: inherit;
+
+    background-color: var(--sr-surface-subtle, #1e293b);
   }
 
   .sr-webcam-video {
+    pointer-events: auto;
+
     position: absolute;
     inset: 0;
+
+    display: block;
+
     width: 100%;
     height: 100%;
-    display: block;
-    background: transparent;
     border-radius: inherit;
+
     opacity: 0;
+    background: transparent;
+
     transition: opacity 0.35s ease-out;
-    pointer-events: auto;
   }
 
   .sr-webcam-video.is-mirrored {
-    transform-origin: 50% 50% !important;
+    transform-origin: 50% 50%;
     scale: -1 1;
   }
 }

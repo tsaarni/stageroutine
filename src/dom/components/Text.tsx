@@ -2,7 +2,6 @@
  * Body copy paragraph component formatted for high-legibility stage presentations.
  */
 
-import "./Text.css";
 import { type ElementOptions, mount } from "../element";
 import { TextContentElement, type TextElement } from "./TextContent";
 

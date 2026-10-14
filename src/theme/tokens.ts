@@ -113,20 +113,18 @@ export const TOKEN_MAP: Record<keyof ThemeConfig, string> = {
   fontSizeKicker: "--sr-font-size-kicker",
 };
 
-/**
- * Applies a partial ThemeConfig to a DOM element by setting CSS custom properties.
- */
-export function applyThemeTokens(element: HTMLElement, theme: Partial<ThemeConfig>): void {
-  for (const [key, value] of Object.entries(theme)) {
-    if (value !== undefined) {
-      const cssVar = TOKEN_MAP[key as keyof ThemeConfig];
-      if (cssVar) {
-        element.style.setProperty(cssVar, String(value));
-        // If primary is set but accent is omitted, keep them in sync
-        if (key === "primary" && theme.accent === undefined) {
-          element.style.setProperty("--sr-accent", String(value));
-        }
-      }
+/** Replaces managed theme overrides; omitted values return to CSS defaults. */
+export function applyThemeTokens(element: HTMLElement, theme: ThemeConfig): void {
+  const keys: string[] = [];
+  for (const key of Object.keys(TOKEN_MAP) as (keyof ThemeConfig)[]) {
+    const value = theme[key];
+    if (value === undefined) {
+      element.style.removeProperty(TOKEN_MAP[key]);
+    } else {
+      element.style.setProperty(TOKEN_MAP[key], value);
+      keys.push(key);
     }
   }
+  if (keys.length) element.dataset.srTheme = keys.join(" ");
+  else delete element.dataset.srTheme;
 }

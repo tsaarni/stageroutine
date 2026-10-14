@@ -1,0 +1,9 @@
+@layer sr-brand {
+  :root {
+    --sr-brand-cyan: #38bdf8;
+    --sr-brand-font-sans:
+      "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif;
+    --sr-brand-font-serif: "Newsreader", georgia, serif;
+    --sr-brand-font-mono: "JetBrains Mono", ui-monospace, menlo, monospace;
+  }
+}

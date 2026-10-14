@@ -4,8 +4,6 @@
  * @internal
  */
 
-import "./WindowFrame.css";
-
 /** Tone of the header status light. */
 export type WindowStatusTone = "live" | "idle" | "error";
 

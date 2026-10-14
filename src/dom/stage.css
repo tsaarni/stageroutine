@@ -1,0 +1,61 @@
+@layer sr-base {
+  .sr-stage {
+    --sr-effect-play-state: paused;
+
+    user-select: none;
+
+    position: relative;
+
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+
+    font-family: var(--sr-font-sans);
+    color: var(--sr-text);
+
+    background: var(--sr-background);
+  }
+
+  .sr-stage[data-sr-moving] {
+    --sr-effect-play-state: running;
+  }
+
+  .sr-viewport {
+    position: relative;
+    z-index: 1;
+    transform-origin: center;
+
+    container-type: size;
+    flex-shrink: 0;
+  }
+
+  .sr-measurement {
+    position: fixed;
+    top: 0;
+    left: -10000px;
+
+    container-type: size;
+    display: block;
+
+    visibility: hidden;
+  }
+
+  .sr-background {
+    pointer-events: none;
+
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+
+    overflow: hidden;
+
+    width: 100%;
+    height: 100%;
+  }
+}

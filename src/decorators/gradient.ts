@@ -20,47 +20,12 @@ export interface GradientOptions {
   angle?: number;
 }
 
-const DEFAULT_GRADIENT = [
-  "#a78bfa 0%",
-  "#e0e7ff 22%",
-  "#ffffff 35%",
-  "#bae6fd 48%",
-  "#c4b5fd 65%",
-  "#a78bfa 100%",
-];
-
-let flowCounter = 0;
-
-function injectKeyframes(name: string, body: string) {
-  let styleTag = document.getElementById("sr-decorators-style") as HTMLStyleElement;
-  if (!styleTag) {
-    styleTag = document.createElement("style");
-    styleTag.id = "sr-decorators-style";
-    document.head.appendChild(styleTag);
-  }
-  styleTag.textContent += `\n@keyframes ${name} {\n${body}\n}`;
-}
-
-/**
- * @internal
- */
-export function appendAnimation(el: HTMLElement, animDef: string) {
-  const current = el.style.animation
-    ? el.style.animation
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-  current.push(animDef);
-  el.style.animation = current.join(", ");
-}
-
 /**
  * Decorates an element with a linear gradient text effect and optional flowing animation.
  * @category Decorators
  */
 export function gradient(options: GradientOptions = {}): ElementDecorator {
-  const { colors = DEFAULT_GRADIENT, flow = true, duration = 7, angle = 90 } = options;
+  const { colors, flow = true, duration = 7, angle = 90 } = options;
 
   return (element: DOMElement) => {
     const el = element.domElement;
@@ -71,29 +36,11 @@ export function gradient(options: GradientOptions = {}): ElementDecorator {
     inner.append(...el.childNodes);
     el.appendChild(inner);
 
-    inner.style.background = `linear-gradient(${angle}deg, ${colors.join(", ")})`;
-    inner.style.backgroundClip = "text";
-    inner.style.webkitBackgroundClip = "text";
-    inner.style.webkitTextFillColor = "transparent";
-    inner.style.display = "inline-block";
-    inner.style.lineHeight = "1.2";
-    el.style.display = "inline-block";
-
-    if (flow) {
-      inner.style.backgroundSize = "200% auto";
-      const animName = `sr-neon-sweep-${flowCounter++}`;
-      injectKeyframes(
-        animName,
-        `  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }`,
-      );
-      appendAnimation(inner, `${animName} ${duration}s linear infinite`);
-    } else {
-      inner.style.backgroundSize = "100% auto";
-    }
+    el.classList.add("sr-gradient");
+    inner.className = "sr-gradient-text";
+    inner.classList.toggle("sr-gradient-flow", flow);
+    inner.style.setProperty("--sr-gradient-angle", `${angle}deg`);
+    inner.style.setProperty("--sr-gradient-duration", `${duration}s`);
+    if (colors) inner.style.setProperty("--sr-gradient-colors", colors.join(", "));
   };
 }

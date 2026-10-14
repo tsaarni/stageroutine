@@ -1,252 +1,309 @@
 .homePageWrapper {
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 .heroWrapper {
   position: relative;
-  flex: 1;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+
   overflow: hidden;
-  background-color: #09090b;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 100vh;
+
+  background-color: var(--ifm-background-color);
 }
 
 .heroVignette {
+  pointer-events: none;
+
   position: absolute;
+  z-index: 0;
   inset: 0;
+
   width: 100%;
   height: 100%;
+
+  opacity: 0.9;
   background: radial-gradient(
     ellipse 55% 55% at 50% 50%,
     #09090b 0%,
-    rgba(9, 9, 11, 0.85) 45%,
-    rgba(9, 9, 11, 0) 80%
+    rgb(9 9 11 / 85%) 45%,
+    rgb(9 9 11 / 0%) 80%
   );
-  opacity: 0.9;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .letterboxTop,
 .letterboxBottom {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: clamp(3.5rem, 9vh, 6.5rem);
-  background: #000000;
-  z-index: 2;
   pointer-events: none;
+
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  left: 0;
+
+  height: clamp(3.5rem, 9vh, 6.5rem);
+
+  background: #000;
 }
 
 .letterboxTop {
   top: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
 }
 
 .letterboxBottom {
   bottom: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgb(255 255 255 / 7%);
 }
 
 .heroContent {
   position: relative;
   z-index: 3;
-  text-align: center;
-  max-width: 860px;
-  padding: 2rem 1.5rem;
+
   /* Positioned elegantly in the light beam */
   transform: translateY(1rem);
+
+  max-width: 860px;
+  padding: 2rem 1.5rem;
+
+  text-align: center;
 }
 
 .heroLogoWrapper {
+  position: relative;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   margin: 0 auto 1.25rem;
-  position: relative;
 }
 
 .heroLogo {
+  display: block;
+
   width: clamp(92px, 8vw, 104px);
   height: clamp(92px, 8vw, 104px);
-  display: block;
-  color: #ffffff;
+
+  color: #fff;
+
   filter: var(
     --logo-bloom-filter,
-    drop-shadow(0 0 14px rgba(224, 242, 254, 0.18)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.32))
+    drop-shadow(0 0 14px rgb(224 242 254 / 18%)) drop-shadow(0 0 5px rgb(255 255 255 / 32%))
   );
+
   transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .heroTitle {
+  margin: 0 auto 0.85rem;
+
   font-family: var(--sr-font-sans);
   font-size: clamp(2.5rem, 4.5vw, 3.75rem);
   font-weight: 700;
-  letter-spacing: -0.04em;
   line-height: 1.05;
-  color: #ffffff;
-  margin: 0 auto 0.85rem;
+  color: #fff;
   text-shadow:
-    0 2px 24px rgba(9, 9, 11, 0.95),
-    0 0 16px rgba(9, 9, 11, 0.85);
+    0 2px 24px rgb(9 9 11 / 95%),
+    0 0 16px rgb(9 9 11 / 85%);
+  letter-spacing: -0.04em;
 }
 
 .buttons {
   position: relative;
   z-index: 3;
+
   display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
+
   margin-top: clamp(3.25rem, 7vh, 5.5rem);
   padding: 0;
 }
 
 .primaryButton {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  color: #ffffff !important;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0.8rem 2.2rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.4),
-    0 8px 32px -4px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(56, 189, 248, 0.15);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-decoration: none !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  padding: 0.8rem 2.2rem;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-top: 1px solid rgb(255 255 255 / 50%);
+  border-radius: 9999px;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+
+  background: linear-gradient(135deg, rgb(255 255 255 / 16%) 0%, rgb(255 255 255 / 4%) 100%);
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 40%),
+    0 8px 32px -4px rgb(0 0 0 / 50%),
+    0 0 20px rgb(56 189 248 / 15%);
+
+  transition:
+    background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .primaryButton:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.45);
-  border-top-color: rgba(255, 255, 255, 0.75);
-  color: #ffffff !important;
-  box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
-    0 12px 36px -4px rgba(0, 0, 0, 0.6),
-    0 0 28px rgba(56, 189, 248, 0.28);
   transform: translateY(-2px);
-  text-decoration: none !important;
+
+  border-color: rgb(255 255 255 / 45%);
+  border-top-color: rgb(255 255 255 / 75%);
+
+  color: #fff;
+  text-decoration: none;
+
+  background: linear-gradient(135deg, rgb(255 255 255 / 25%) 0%, rgb(255 255 255 / 8%) 100%);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 60%),
+    0 12px 36px -4px rgb(0 0 0 / 60%),
+    0 0 28px rgb(56 189 248 / 28%);
 }
 
 .secondaryButton {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  color: #e4e4e7 !important;
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 0.8rem 2rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
-    0 8px 24px -4px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-decoration: none !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  padding: 0.8rem 2rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-top: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 9999px;
+
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #e4e4e7;
+  text-decoration: none;
+
+  background: linear-gradient(135deg, rgb(255 255 255 / 8%) 0%, rgb(255 255 255 / 2%) 100%);
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 20%),
+    0 8px 24px -4px rgb(0 0 0 / 40%);
+
+  transition:
+    background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .secondaryButton:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.04) 100%);
-  border-color: rgba(255, 255, 255, 0.3);
-  border-top-color: rgba(255, 255, 255, 0.5);
-  color: #ffffff !important;
-  box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
-    0 12px 30px -4px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
-  text-decoration: none !important;
+
+  border-color: rgb(255 255 255 / 30%);
+  border-top-color: rgb(255 255 255 / 50%);
+
+  color: #fff;
+  text-decoration: none;
+
+  background: linear-gradient(135deg, rgb(255 255 255 / 15%) 0%, rgb(255 255 255 / 4%) 100%);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 35%),
+    0 12px 30px -4px rgb(0 0 0 / 50%),
+    0 0 20px rgb(255 255 255 / 12%);
 }
 
 .demoButton {
   position: relative;
+
   overflow: hidden;
-  border-color: rgba(56, 189, 248, 0.45) !important;
-  border-top-color: rgba(255, 255, 255, 0.6) !important;
-  color: #ffffff !important;
+
+  border-color: rgb(56 189 248 / 45%);
+  border-top-color: rgb(255 255 255 / 60%);
+
+  color: #fff;
+  text-shadow: 0 0 12px rgb(56 189 248 / 35%);
+
   box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 0 12px rgba(56, 189, 248, 0.12),
-    0 0 14px -1px rgba(56, 189, 248, 0.42),
-    0 0 32px -4px rgba(56, 189, 248, 0.22),
-    0 0 60px -8px rgba(167, 139, 250, 0.14) !important;
-  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    inset 0 1px 1px 0 rgb(255 255 255 / 35%),
+    inset 0 0 12px rgb(56 189 248 / 12%),
+    0 0 14px -1px rgb(56 189 248 / 42%),
+    0 0 32px -4px rgb(56 189 248 / 22%),
+    0 0 60px -8px rgb(167 139 250 / 14%);
 }
 
 .demoButton:hover {
-  border-color: rgba(56, 189, 248, 0.75) !important;
-  border-top-color: #ffffff !important;
-  box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 0 16px rgba(56, 189, 248, 0.25),
-    0 0 20px 1px rgba(56, 189, 248, 0.65),
-    0 0 44px 0 rgba(56, 189, 248, 0.35),
-    0 0 75px 2px rgba(167, 139, 250, 0.25) !important;
-  text-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
   transform: translateY(-2px);
+
+  border-color: rgb(56 189 248 / 75%);
+  border-top-color: #fff;
+
+  text-shadow: 0 0 14px rgb(56 189 248 / 60%);
+
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 60%),
+    inset 0 0 16px rgb(56 189 248 / 25%),
+    0 0 20px 1px rgb(56 189 248 / 65%),
+    0 0 44px 0 rgb(56 189 248 / 35%),
+    0 0 75px 2px rgb(167 139 250 / 25%);
 }
 
 /* Glass surface specular reflection sweep */
 .demoButton::after {
+  pointer-events: none;
   content: "";
+
   position: absolute;
   top: 0;
   left: -120%;
+  transform: skewX(-20deg);
+
   width: 75%;
   height: 100%;
+
   background: linear-gradient(
     115deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.02) 25%,
-    rgba(255, 255, 255, 0.18) 48%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(56, 189, 248, 0.2) 55%,
+    rgb(255 255 255 / 2%) 25%,
+    rgb(255 255 255 / 18%) 48%,
+    rgb(255 255 255 / 30%) 50%,
+    rgb(56 189 248 / 20%) 55%,
     transparent 75%
   );
-  transform: skewX(-20deg);
+
   animation: srLightReflection 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
 }
 
 /* Top rim specular highlight glint that travels along the curved bevel */
 .demoButton::before {
+  pointer-events: none;
   content: "";
+
   position: absolute;
   top: 0;
   left: -120%;
+
   width: 60px;
   height: 2px;
+
   background: radial-gradient(
     ellipse at 50% 0%,
-    #ffffff 0%,
-    rgba(255, 255, 255, 0.9) 35%,
-    rgba(56, 189, 248, 0.75) 65%,
+    #fff 0%,
+    rgb(255 255 255 / 90%) 35%,
+    rgb(56 189 248 / 75%) 65%,
     transparent 100%
   );
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8));
+  filter: drop-shadow(0 0 4px rgb(56 189 248 / 80%));
+
   animation: srLightReflection 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
 }
 
 /* Mouse over immediately triggers a fast reflection sweep */
@@ -258,36 +315,42 @@
 @keyframes srLightReflection {
   0%,
   25% {
-    left: -120%;
+    transform: translateX(0) skewX(-20deg);
     opacity: 0;
   }
+
   30% {
     opacity: 1;
   }
+
   55% {
-    left: 140%;
+    transform: translateX(600%) skewX(-20deg);
     opacity: 1;
   }
+
   60%,
   100% {
-    left: 140%;
+    transform: translateX(600%) skewX(-20deg);
     opacity: 0;
   }
 }
 
 @keyframes srLightReflectionHover {
   0% {
-    left: -120%;
+    transform: translateX(0) skewX(-20deg);
     opacity: 0;
   }
+
   15% {
     opacity: 1;
   }
+
   85% {
     opacity: 1;
   }
+
   100% {
-    left: 140%;
+    transform: translateX(600%) skewX(-20deg);
     opacity: 0;
   }
 }

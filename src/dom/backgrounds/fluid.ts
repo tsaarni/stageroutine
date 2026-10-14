@@ -270,6 +270,7 @@ export class FluidBackgroundElement extends BackgroundElement {
   private material: THREE.ShaderMaterial | null = null;
   private animFrameId: number | null = null;
   private clock: THREE.Clock = new THREE.Clock();
+  private elapsedTime = 0;
   private config: FluidEngineConfig;
 
   constructor(kind: string, config: FluidEngineConfig, options: BaseFluidOptions = {}) {
@@ -313,12 +314,12 @@ export class FluidBackgroundElement extends BackgroundElement {
   onResize(width: number, height: number): void {
     if (!this.renderer || !this.material) return;
     this.renderer.setSize(width, height);
-    if (this.scene && this.camera) this.renderer.render(this.scene, this.camera);
     this.material.uniforms.u_resolution.value.set(width, height);
+    if (this.scene && this.camera) this.renderer.render(this.scene, this.camera);
   }
 
   resume(): void {
-    if (this.isRunning || !this.attached) return;
+    if (this.isRunning || !this.canAnimate) return;
     this.isRunning = true;
     this.clock.start();
 
@@ -331,8 +332,8 @@ export class FluidBackgroundElement extends BackgroundElement {
       const elapsedDelta = timestamp - lastFrameTime;
       if (elapsedDelta >= FLUID_FRAME_INTERVAL_MS) {
         lastFrameTime = timestamp - (elapsedDelta % FLUID_FRAME_INTERVAL_MS);
-        const elapsed = this.clock.getElapsedTime();
-        this.material.uniforms.u_time.value = elapsed * this.config.waveSpeed;
+        this.elapsedTime += this.clock.getDelta();
+        this.material.uniforms.u_time.value = this.elapsedTime * this.config.waveSpeed;
         this.renderer.render(this.scene, this.camera);
         this.frameUpdated();
       }

@@ -19,28 +19,62 @@
         "noImportantStyles": "off"
       },
       "correctness": {
+        "noInvalidGridAreas": "error",
+        "noInvalidPositionAtImportRule": "error",
         "noUndeclaredDependencies": "off",
+        "noUnknownFunction": "error",
+        "noUnknownMediaFeatureName": "error",
+        "noUnknownProperty": "error",
+        "noUnknownPseudoClass": "error",
+        "noUnknownPseudoElement": "error",
+        "noUnknownTypeSelector": "error",
+        "noUnknownUnit": "error",
+        "noUnmatchableAnbSelector": "error",
         "noUnusedImports": "error"
       },
       "suspicious": {
         "noAssignInExpressions": "error",
         "noDoubleEquals": "error",
+        "noDuplicateAtImportRules": "error",
+        "noDuplicateCustomProperties": "error",
+        "noDuplicateFontNames": "error",
+        "noDuplicateProperties": "error",
+        "noDuplicateSelectorsKeyframeBlock": "error",
+        "noEmptyBlock": "error",
         "noExplicitAny": "error",
-        "noTsIgnore": "error"
+        "noImportantInKeyframe": "error",
+        "noShorthandPropertyOverrides": "error",
+        "noTsIgnore": "error",
+        "noUnknownAtRules": "error"
       },
       "style": {
         "noNestedTernary": "error",
         "noNonNullAssertion": "error",
-        "useImportType": "error"
+        "useAsConstAssertion": "error",
+        "useConst": "error",
+        "useImportType": "error",
+        "useShorthandAssign": "error",
+        "useTemplate": "error"
       },
       "a11y": {
         "useFocusableInteractive": "error",
+        "useGenericFontNames": "error",
         "useKeyWithClickEvents": "error",
         "useValidAnchor": "error"
       },
       "nursery": {
+        "noDuplicateSelectors": "error",
         "noFloatingPromises": "error"
       }
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "double"
+    },
+    "parser": {
+      "cssModules": true
     }
   },
   "javascript": {

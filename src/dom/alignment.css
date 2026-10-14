@@ -1,0 +1,26 @@
+@layer sr-align {
+  /* 9-position content alignment grid for containers and text */
+  :where(.sr-stage) [data-align] {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  :where(.sr-stage) [data-align*="top"] {
+    justify-content: flex-start;
+  }
+
+  :where(.sr-stage) [data-align*="bottom"] {
+    justify-content: flex-end;
+  }
+
+  :where(.sr-stage) [data-align*="left"] {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  :where(.sr-stage) [data-align*="right"] {
+    align-items: flex-end;
+    text-align: right;
+  }
+}

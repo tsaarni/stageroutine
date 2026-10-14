@@ -2,7 +2,6 @@
  * Table component with column alignment, row proxies, and interactive row-level focus.
  */
 
-import "./Table.css";
 import { getActiveStage } from "../../core/index";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";

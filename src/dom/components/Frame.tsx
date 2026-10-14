@@ -1,8 +1,6 @@
-import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Geometric clipping container that shapes media and child elements to custom SVG contours.
  */
-import "./Frame.css";
 import {
   type ElementAnchor,
   getActiveStage,
@@ -10,6 +8,7 @@ import {
   type ReactiveProp,
   type StageManagedElement,
 } from "../../core/index";
+import { isTransitionDescriptor } from "../../motion/transitions";
 import {
   type DOMElement,
   DOMElementImpl,
@@ -131,7 +130,6 @@ class FrameElementImpl extends DOMElementImpl implements FrameElement {
 
     const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
     pathNode.setAttribute("class", "sr-frame-path-main");
-    pathNode.style.fill = "none";
     svg.appendChild(pathNode);
 
     el.appendChild(svg);

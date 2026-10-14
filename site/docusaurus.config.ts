@@ -337,8 +337,20 @@ const config: Config = {
       copyright: `© ${new Date().getFullYear()} StageRoutine`,
     },
     prism: {
-      theme: prismThemes.dracula,
-      darkTheme: prismThemes.dracula,
+      theme: {
+        ...prismThemes.dracula,
+        plain: {
+          ...prismThemes.dracula.plain,
+          backgroundColor: "transparent",
+        },
+      },
+      darkTheme: {
+        ...prismThemes.dracula,
+        plain: {
+          ...prismThemes.dracula.plain,
+          backgroundColor: "transparent",
+        },
+      },
     },
   } satisfies Preset.ThemeConfig,
 

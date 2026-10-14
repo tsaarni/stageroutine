@@ -14,11 +14,11 @@
 
   /* Selection temporarily overrides runtime reveal opacity, not visibility or transforms. */
   .sr-focus-container.has-focus .sr-focus-item:not(.is-focused) {
-    opacity: var(--sr-focus-opacity) !important;
+    opacity: var(--sr-focus-opacity);
   }
 
   .sr-focus-item.is-focused {
-    opacity: 1 !important;
+    opacity: 1;
   }
 
   :is(.sr-code-line, .sr-terminal-line, .sr-table-row).is-focused {

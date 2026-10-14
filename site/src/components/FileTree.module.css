@@ -38,7 +38,7 @@
   font-family: var(--ifm-font-family-monospace, monospace);
   font-size: 0.78rem;
   font-weight: 500;
-  color: #a1a1aa;
+  color: var(--ifm-color-content-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -125,37 +125,37 @@
 }
 
 .iconFolder {
-  color: #38bdf8;
+  color: var(--ifm-color-primary);
 }
 
 .iconSvg {
-  color: #a78bfa;
+  color: rgb(167 139 250);
 }
 
 .iconFile {
-  color: #94a3b8;
+  color: color-mix(in srgb, var(--ifm-font-color-base) 70%, transparent);
 }
 
 .folderName {
   font-weight: 500;
-  color: #f4f4f5;
+  color: var(--ifm-color-emphasis-900);
 }
 
 .fileName {
   font-weight: 400;
-  color: #d4d4d8;
+  color: var(--ifm-color-emphasis-700);
 }
 
 .comment {
   margin-left: auto;
   padding: 1px 7px;
-  border: 1px solid rgb(56 189 248 / 20%);
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
   border-radius: 4px;
 
   font-size: 0.75rem;
   font-weight: 500;
-  color: #38bdf8;
+  color: var(--ifm-color-primary);
   letter-spacing: 0.02em;
 
-  background: rgb(56 189 248 / 8%);
+  background: color-mix(in srgb, var(--ifm-color-primary) 8%, transparent);
 }

@@ -33,7 +33,7 @@
   opacity: 0.9;
   background: radial-gradient(
     ellipse 55% 55% at 50% 50%,
-    #09090b 0%,
+    rgb(9 9 11) 0%,
     rgb(9 9 11 / 85%) 45%,
     rgb(9 9 11 / 0%) 80%
   );
@@ -50,7 +50,7 @@
 
   height: clamp(3.5rem, 9vh, 6.5rem);
 
-  background: #000;
+  background: rgb(0 0 0);
 }
 
 .letterboxTop {
@@ -92,7 +92,7 @@
   width: clamp(92px, 8vw, 104px);
   height: clamp(92px, 8vw, 104px);
 
-  color: #fff;
+  color: rgb(255 255 255);
 
   filter: var(
     --logo-bloom-filter,
@@ -109,7 +109,7 @@
   font-size: clamp(2.5rem, 4.5vw, 3.75rem);
   font-weight: 700;
   line-height: 1.05;
-  color: #fff;
+  color: rgb(255 255 255);
   text-shadow:
     0 2px 24px rgb(9 9 11 / 95%),
     0 0 16px rgb(9 9 11 / 85%);
@@ -142,7 +142,7 @@
 
   font-size: 0.95rem;
   font-weight: 600;
-  color: #fff;
+  color: rgb(255 255 255);
   text-decoration: none;
 
   background: linear-gradient(135deg, rgb(255 255 255 / 16%) 0%, rgb(255 255 255 / 4%) 100%);
@@ -166,7 +166,7 @@
   border-color: rgb(255 255 255 / 45%);
   border-top-color: rgb(255 255 255 / 75%);
 
-  color: #fff;
+  color: rgb(255 255 255);
   text-decoration: none;
 
   background: linear-gradient(135deg, rgb(255 255 255 / 25%) 0%, rgb(255 255 255 / 8%) 100%);
@@ -188,7 +188,7 @@
 
   font-size: 0.95rem;
   font-weight: 500;
-  color: #e4e4e7;
+  color: rgb(228 228 231);
   text-decoration: none;
 
   background: linear-gradient(135deg, rgb(255 255 255 / 8%) 0%, rgb(255 255 255 / 2%) 100%);
@@ -211,7 +211,7 @@
   border-color: rgb(255 255 255 / 30%);
   border-top-color: rgb(255 255 255 / 50%);
 
-  color: #fff;
+  color: rgb(255 255 255);
   text-decoration: none;
 
   background: linear-gradient(135deg, rgb(255 255 255 / 15%) 0%, rgb(255 255 255 / 4%) 100%);
@@ -229,7 +229,7 @@
   border-color: rgb(56 189 248 / 45%);
   border-top-color: rgb(255 255 255 / 60%);
 
-  color: #fff;
+  color: rgb(255 255 255);
   text-shadow: 0 0 12px rgb(56 189 248 / 35%);
 
   box-shadow:
@@ -244,7 +244,7 @@
   transform: translateY(-2px);
 
   border-color: rgb(56 189 248 / 75%);
-  border-top-color: #fff;
+  border-top-color: rgb(255 255 255);
 
   text-shadow: 0 0 14px rgb(56 189 248 / 60%);
 
@@ -296,7 +296,7 @@
 
   background: radial-gradient(
     ellipse at 50% 0%,
-    #fff 0%,
+    rgb(255 255 255) 0%,
     rgb(255 255 255 / 90%) 35%,
     rgb(56 189 248 / 75%) 65%,
     transparent 100%

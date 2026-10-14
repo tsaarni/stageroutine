@@ -296,7 +296,6 @@ export class Stage {
   private set isAnimating(active: boolean) {
     if (active === this.animationActive) return;
     this.animationActive = active;
-    this.container?.toggleAttribute("data-sr-moving", active);
     this.emit("evt:stage:activityChanged", { active });
   }
 
@@ -614,7 +613,11 @@ export class Stage {
       if (isHidden) hiddenRunningCount++;
 
       const animName = (anim as CSSAnimation).animationName || anim.id || "unnamed";
-      const isAmbientFlow = animName === "sr-flow-traveling-kf" || animName === "sr-flow-chase-kf";
+      const isAmbientFlow =
+        animName === "sr-flow-traveling-kf" ||
+        animName === "sr-flow-chase-kf" ||
+        animName === "sr-neon-sweep" ||
+        animName === "sr-neon-bloom";
       if (!isHidden && isAmbientFlow) {
         continue;
       }
@@ -1532,7 +1535,6 @@ export class Stage {
     this.container.style.setProperty("--sr-scale", String(this.options.scale ?? 1));
     this.mountCleanups.push(() => {
       el.classList.remove("sr-stage");
-      el.removeAttribute("data-sr-moving");
       applyThemeTokens(el, {});
       if (previousScale) el.style.setProperty("--sr-scale", previousScale);
       else el.style.removeProperty("--sr-scale");

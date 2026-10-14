@@ -1,14 +1,14 @@
 @layer sr-base {
   .sr-stage {
     /* Core Canvas & Palette */
-    --sr-background: #0c0d12;
-    --sr-text: #fff;
+    --sr-background: rgb(12 13 18);
+    --sr-text: rgb(255 255 255);
     --sr-primary: var(--sr-brand-cyan);
 
     /* Surface & Container Tokens (Adaptive to theme text and background) */
     --sr-surface-border-width: 1px;
-    --sr-surface-solid: #18181b;
-    --sr-surface-subtle: #1e293b;
+    --sr-surface-solid: rgb(24 24 27);
+    --sr-surface-subtle: rgb(30 41 59);
     --sr-surface-backdrop: blur(16px);
 
     /* Content Scale Factor (default: 1) */
@@ -36,7 +36,7 @@
     --sr-font-sans: var(--sr-brand-font-sans);
     --sr-font-serif: var(--sr-brand-font-serif);
     --sr-font-mono: var(--sr-brand-font-mono);
-    --sr-error: #f87171;
+    --sr-error: rgb(248 113 113);
     --sr-focus-opacity: 0.35;
     --sr-motion-duration: 0.3s;
     --sr-motion-easing: cubic-bezier(0.4, 0, 0.2, 1);

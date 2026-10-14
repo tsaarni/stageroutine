@@ -1,7 +1,5 @@
 @layer sr-base {
   .sr-stage {
-    --sr-effect-play-state: paused;
-
     user-select: none;
 
     position: relative;
@@ -20,10 +18,6 @@
     color: var(--sr-text);
 
     background: var(--sr-background);
-  }
-
-  .sr-stage[data-sr-moving] {
-    --sr-effect-play-state: running;
   }
 
   .sr-viewport {

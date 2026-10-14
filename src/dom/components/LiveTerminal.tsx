@@ -83,7 +83,8 @@ function resolveColor(host: HTMLElement, expression: string, fallback: string): 
  * Compares getBoundingClientRect (screen pixels) with offsetWidth (layout pixels).
  */
 function getAncestorScale(el: HTMLElement): number {
-  const viewport = el.closest("[style*='container-type']") as HTMLElement | null;
+  const viewport = (el.closest(".sr-viewport") ||
+    el.closest("[style*='container-type']")) as HTMLElement | null;
   if (!viewport) return 1;
   const layout = viewport.offsetWidth;
   if (layout <= 0) return 1;

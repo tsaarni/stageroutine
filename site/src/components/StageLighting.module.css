@@ -41,9 +41,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stageLightingSvg {
-    transform: none !important;
-    opacity: 1 !important;
-    transition: none !important;
+  .stageLightingSvg,
+  .stageLightingOn .stageLightingSvg {
+    transform: none;
+    opacity: 1;
+    transition: none;
   }
 }

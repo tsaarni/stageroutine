@@ -59,11 +59,11 @@
 
   /* Slim down xterm's custom scrollbar (VS Code ScrollableElement). */
   .sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical {
-    width: 8px !important;
+    width: 8px;
   }
 
   .sr-terminal-screen > .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
-    width: 8px !important;
+    width: 8px;
     border-radius: 4px;
   }
 }

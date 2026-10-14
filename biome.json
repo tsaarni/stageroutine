@@ -16,7 +16,7 @@
     "rules": {
       "preset": "recommended",
       "complexity": {
-        "noImportantStyles": "off"
+        "noImportantStyles": "error"
       },
       "correctness": {
         "noInvalidGridAreas": "error",
@@ -48,6 +48,7 @@
         "noUnknownAtRules": "error"
       },
       "style": {
+        "noHexColors": "error",
         "noNestedTernary": "error",
         "noNonNullAssertion": "error",
         "useAsConstAssertion": "error",
@@ -97,7 +98,9 @@
       "!**/site/static/assets",
       "!**/site/static/demo",
       "!**/site/static/previews",
-      "!**/site/.cache"
+      "!**/site/.cache",
+      "!**/test-results",
+      "!*.html"
     ]
   },
   "overrides": [

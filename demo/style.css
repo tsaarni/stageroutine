@@ -8,7 +8,7 @@
   .sr-state-node {
     --sr-orb-gradient: radial-gradient(
       circle at 32% 30%,
-      #fff 0%,
+      rgb(255 255 255) 0%,
       rgb(255 255 255 / 95%) 32%,
       rgb(214 217 223 / 88%) 68%,
       rgb(139 143 151 / 72%) 100%

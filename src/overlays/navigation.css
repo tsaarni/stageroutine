@@ -4,7 +4,7 @@
   .sr-pointer-mode *,
   .sr-cursor-hidden,
   .sr-cursor-hidden * {
-    cursor: none !important;
+    cursor: none;
   }
 
   /* Annotation drawing surface uses a crosshair when no laser pointer is active. */
@@ -14,7 +14,7 @@
 
   .sr-annotation-mode,
   .sr-annotation-mode * {
-    user-select: none !important;
+    user-select: none;
   }
 
   /* Navigation Overlay */
@@ -73,7 +73,7 @@
     font-family: var(--sr-font-sans);
     font-size: var(--sr-space-md);
     line-height: 1;
-    color: var(--sr-text-dim, #52525b);
+    color: var(--sr-text-dim, rgb(82 82 91));
 
     appearance: none;
     background: transparent;

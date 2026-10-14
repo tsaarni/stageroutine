@@ -2,8 +2,8 @@
   font:
     14px / 1.5 system-ui,
     sans-serif;
-  color: #e4e4e7;
-  background: #111827;
+  color: rgb(228 228 231);
+  background: rgb(17 24 39);
 }
 body {
   margin: 0;
@@ -14,7 +14,7 @@ main {
   margin: auto;
 }
 span {
-  color: #6ee7b7;
+  color: rgb(110 231 183);
   font-size: 11px;
   letter-spacing: 0.1em;
 }
@@ -25,9 +25,9 @@ h1 {
 }
 p {
   margin: 0 0 12px;
-  color: #a1a1aa;
+  color: rgb(161 161 170);
 }
 a {
-  color: #6ee7b7;
+  color: rgb(110 231 183);
   text-underline-offset: 3px;
 }

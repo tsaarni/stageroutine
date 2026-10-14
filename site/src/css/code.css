@@ -9,7 +9,7 @@
 
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.88em;
-  color: #e0f2fe;
+  color: var(--ifm-color-primary-lightest);
 
   background-color: color-mix(in srgb, var(--ifm-color-primary) 8%, transparent);
 }
@@ -43,7 +43,7 @@ pre code {
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.78rem;
   font-weight: 500;
-  color: #a1a1aa;
+  color: var(--ifm-color-content-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 
@@ -70,8 +70,7 @@ pre code {
   margin: 0;
   padding: 1.25rem 1.5rem;
 
-  /* Prism sets the background inline. */
-  background: transparent !important;
+  background: transparent;
 }
 
 .theme-code-block code {
@@ -85,7 +84,7 @@ pre code {
   border: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 12%, transparent);
   border-radius: 6px;
 
-  color: #cbd5e1;
+  color: color-mix(in srgb, var(--ifm-font-color-base) 88%, transparent);
 
   background: color-mix(in srgb, var(--ifm-font-color-base) 6%, transparent);
   backdrop-filter: blur(12px);

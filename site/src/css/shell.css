@@ -2,7 +2,7 @@
 html,
 body {
   color: var(--ifm-text-color);
-  background-color: #09090b;
+  background-color: rgb(9 9 11);
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -10,7 +10,7 @@ body {
 
 .main-wrapper {
   min-height: calc(100vh - var(--ifm-navbar-height));
-  background-color: #09090b;
+  background-color: rgb(9 9 11);
 }
 
 /* Custom Scrollbars */
@@ -20,7 +20,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: rgb(9 9 11);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -66,19 +66,19 @@ body:has(.homepage) .navbar {
 .navbar__title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ifm-heading-color);
   letter-spacing: -0.03em;
 }
 
 .navbar__link {
   font-weight: 500;
-  color: #a1a1aa;
+  color: var(--ifm-color-content-secondary);
   transition: color 0.15s ease;
 }
 
 .navbar__link:hover,
 .navbar__link--active {
-  color: #fff;
+  color: var(--ifm-heading-color);
 }
 
 /* ==========================================================================
@@ -124,7 +124,7 @@ body:has(.homepage) .navbar {
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.75rem;
   font-weight: 600;
-  color: #71717a;
+  color: var(--ifm-color-content-secondary);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -135,7 +135,7 @@ body:has(.homepage) .navbar {
   border-bottom-left-radius: 2px;
 
   font-weight: 600;
-  color: #fff;
+  color: var(--ifm-heading-color);
 
   background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
 }
@@ -146,7 +146,7 @@ body:has(.homepage) .navbar {
 
 .table-of-contents__link {
   font-size: 0.85rem;
-  color: #71717a;
+  color: var(--ifm-color-content-secondary);
   transition: color 0.15s ease;
 }
 
@@ -232,7 +232,7 @@ article:has(.theme-doc-markdown) {
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.72rem;
   font-weight: 600;
-  color: #71717a;
+  color: var(--ifm-color-content-secondary);
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
@@ -241,7 +241,7 @@ article:has(.theme-doc-markdown) {
   font-family: var(--ifm-font-family-base);
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ifm-heading-color);
   letter-spacing: -0.015em;
 
   transition: color 0.15s ease;
@@ -257,18 +257,18 @@ article:has(.theme-doc-markdown) {
 
 .footer {
   border-top: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 6%, transparent);
-  background: #09090b;
+  background: rgb(9 9 11);
 }
 
 .footer__title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ifm-footer-title-color);
   letter-spacing: 0.04em;
 }
 
 .footer__link-item {
-  color: #71717a;
+  color: var(--ifm-footer-link-color);
   transition: color 0.15s ease;
 }
 

@@ -1,13 +1,14 @@
 :root,
+html[data-theme="dark"],
 [data-theme="dark"] {
   /* StageRoutine Cyber Cyan & Monochrome Highlights */
   --ifm-color-primary: var(--sr-brand-cyan);
-  --ifm-color-primary-dark: #0284c7;
-  --ifm-color-primary-darker: #0369a1;
-  --ifm-color-primary-darkest: #075985;
-  --ifm-color-primary-light: #7dd3fc;
-  --ifm-color-primary-lighter: #bae6fd;
-  --ifm-color-primary-lightest: #e0f2fe;
+  --ifm-color-primary-dark: rgb(2 132 199);
+  --ifm-color-primary-darker: rgb(3 105 161);
+  --ifm-color-primary-darkest: rgb(7 89 133);
+  --ifm-color-primary-light: rgb(125 211 252);
+  --ifm-color-primary-lighter: rgb(186 230 253);
+  --ifm-color-primary-lightest: rgb(224 242 254);
 
   /* Shared fonts; website typography and surfaces have their own scale. */
   --sr-font-sans: var(--sr-brand-font-sans);
@@ -20,27 +21,27 @@
   --ifm-heading-font-family: var(--sr-font-sans);
   --ifm-font-size-base: 15.5px;
   --ifm-line-height-base: 1.65;
-  --ifm-heading-color: #fff;
+  --ifm-heading-color: rgb(255 255 255);
   --ifm-heading-line-height: 1.25;
 
   /* StageRoutine Dark Palette */
-  --ifm-background-color: #09090b;
-  --ifm-background-surface-color: #09090b;
-  --ifm-text-color: #e4e4e7;
-  --ifm-font-color-base: #e4e4e7;
+  --ifm-background-color: rgb(9 9 11);
+  --ifm-background-surface-color: rgb(9 9 11);
+  --ifm-text-color: rgb(228 228 231);
+  --ifm-font-color-base: rgb(228 228 231);
   --ifm-color-emphasis-0: color-mix(in srgb, var(--ifm-font-color-base) 3%, transparent);
   --ifm-color-emphasis-100: color-mix(in srgb, var(--ifm-font-color-base) 5%, transparent);
   --ifm-color-emphasis-200: color-mix(in srgb, var(--ifm-font-color-base) 8%, transparent);
   --ifm-color-emphasis-300: color-mix(in srgb, var(--ifm-font-color-base) 12%, transparent);
-  --ifm-color-emphasis-400: #71717a;
-  --ifm-color-emphasis-600: #a1a1aa;
-  --ifm-color-emphasis-700: #d4d4d8;
-  --ifm-color-emphasis-800: #e4e4e7;
-  --ifm-color-emphasis-900: #f4f4f5;
-  --ifm-color-content-secondary: #a1a1aa;
+  --ifm-color-emphasis-400: rgb(113 113 122);
+  --ifm-color-emphasis-600: rgb(161 161 170);
+  --ifm-color-emphasis-700: rgb(212 212 216);
+  --ifm-color-emphasis-800: rgb(228 228 231);
+  --ifm-color-emphasis-900: rgb(244 244 245);
+  --ifm-color-content-secondary: var(--ifm-color-emphasis-600);
 
   /* Glassmorphism & Surface Tokens */
-  --site-surface-raised: #121216;
+  --site-surface-raised: rgb(18 18 22);
   --site-border: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 10%, transparent);
   --site-window-shadow:
     0 1.5rem 4rem -1rem rgb(0 0 0 / 60%),
@@ -80,12 +81,12 @@
   --ifm-navbar-background-color: color-mix(in srgb, var(--ifm-background-color) 75%, transparent);
   --ifm-navbar-shadow: none;
   --ifm-navbar-height: 3.75rem;
-  --ifm-footer-background-color: #09090b;
+  --ifm-footer-background-color: var(--ifm-background-color);
   --ifm-toc-border-color: color-mix(in srgb, var(--ifm-font-color-base) 7%, transparent);
   --ifm-table-border-color: color-mix(in srgb, var(--ifm-font-color-base) 10%, transparent);
   --ifm-table-stripe-background: color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent);
-  --ifm-menu-color: #a1a1aa;
-  --ifm-menu-color-active: #fff;
+  --ifm-menu-color: var(--ifm-color-emphasis-600);
+  --ifm-menu-color-active: var(--ifm-heading-color);
   --ifm-menu-color-background-active: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
   --ifm-menu-color-background-hover: color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent);
   --ifm-code-font-size: 88%;

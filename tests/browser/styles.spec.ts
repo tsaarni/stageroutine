@@ -134,7 +134,10 @@ test("shared surface and frame geometry remain overridable", async ({ stage, pag
   await expect(stage.locator("#table")).toHaveCSS("border-radius", "20px");
 });
 
-test("decorative CSS loops run only during transitions", async ({ stage, page }) => {
+test("decorative CSS loops run continuously while active and pause on scene exit", async ({
+  stage,
+  page,
+}) => {
   await stage.mount((SR) => {
     const s = new SR.Stage({ channel: false });
     const title = SR.Title("Glow", { id: "glow", position: [20, 20] })
@@ -142,17 +145,25 @@ test("decorative CSS loops run only during transitions", async ({ stage, page })
       .decorate(SR.gradient());
     s.scene("Start").with(title);
     s.pause();
-    title.to({ x: 40 }).duration(0.6);
+    s.scene("Exit").with();
     s.pause();
     return s;
   });
-  await expect(stage.locator("#glow")).toHaveCSS("animation-play-state", "paused");
-  await page.keyboard.press("ArrowRight");
   await expect(stage.locator("#glow")).toHaveCSS("animation-play-state", "running");
+  await expect(stage.locator("#glow .sr-gradient-text")).toHaveCSS(
+    "animation-play-state",
+    "running",
+  );
   await stage.expectAtRest();
-  await expect(stage.locator("#glow")).toHaveCSS("animation-play-state", "paused");
+  await stage.next();
+  await expect(stage.locator("#glow")).toHaveCSS("display", "none");
+  await stage.expectAtRest();
   await stage.prev();
-  await expect(stage.locator("#glow")).toHaveCSS("animation-play-state", "paused");
+  await expect(stage.locator("#glow")).toHaveCSS("animation-play-state", "running");
+  await expect(stage.locator("#glow .sr-gradient-text")).toHaveCSS(
+    "animation-play-state",
+    "running",
+  );
   await expect(page.locator("#sr-decorators-style")).toHaveCount(0);
 });
 

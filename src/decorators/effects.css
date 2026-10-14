@@ -11,7 +11,7 @@
 
   .sr-glow-pulse {
     animation: sr-neon-bloom var(--sr-glow-duration, 4s) ease-in-out infinite;
-    animation-play-state: var(--sr-element-play-state, var(--sr-effect-play-state, running));
+    animation-play-state: var(--sr-element-play-state, running);
   }
 
   .sr-gradient {
@@ -27,12 +27,12 @@
       var(--sr-gradient-angle, 90deg),
       var(
         --sr-gradient-colors,
-        #a78bfa 0%,
-        #e0e7ff 22%,
-        #fff 35%,
-        #bae6fd 48%,
-        #c4b5fd 65%,
-        #a78bfa 100%
+        rgb(167 139 250) 0%,
+        rgb(224 231 255) 22%,
+        rgb(255 255 255) 35%,
+        rgb(186 230 253) 48%,
+        rgb(196 181 253) 65%,
+        rgb(167 139 250) 100%
       )
     );
     background-clip: text;
@@ -43,7 +43,7 @@
   .sr-gradient-flow {
     background-size: 200% auto;
     animation: sr-neon-sweep var(--sr-gradient-duration, 7s) linear infinite;
-    animation-play-state: var(--sr-element-play-state, var(--sr-effect-play-state, running));
+    animation-play-state: var(--sr-element-play-state, running);
   }
 
   @keyframes sr-neon-bloom {

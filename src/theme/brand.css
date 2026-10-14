@@ -1,6 +1,6 @@
 @layer sr-brand {
   :root {
-    --sr-brand-cyan: #38bdf8;
+    --sr-brand-cyan: rgb(56 189 248);
     --sr-brand-font-sans:
       "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif;
     --sr-brand-font-serif: "Newsreader", georgia, serif;

@@ -635,7 +635,9 @@ export function resolveTargetBox(target: unknown, stageH = 1080): ResolvedTarget
     };
     const dom = el.domElement;
     const viewport =
-      (dom.parentElement?.closest("[style*='container-type']") as HTMLElement) || dom.parentElement;
+      (dom.parentElement?.closest(".sr-viewport") as HTMLElement | null) ||
+      (dom.parentElement?.closest("[style*='container-type']") as HTMLElement | null) ||
+      dom.parentElement;
 
     if (viewport && dom.isConnected) {
       const vRect = viewport.getBoundingClientRect();

@@ -5,7 +5,7 @@
 .markdown h1 {
   font-size: 2.25rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ifm-heading-color);
   letter-spacing: -0.035em;
 }
 
@@ -16,7 +16,7 @@
 
   font-size: 1.55rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ifm-heading-color);
   letter-spacing: -0.025em;
 }
 
@@ -25,7 +25,7 @@
 
   font-size: 1.25rem;
   font-weight: 600;
-  color: #f4f4f5;
+  color: var(--ifm-color-emphasis-900);
   letter-spacing: -0.015em;
 }
 
@@ -35,7 +35,7 @@
   font-family: Newsreader, Georgia, serif;
   font-weight: 300;
   font-style: italic;
-  color: #cbd5e1;
+  color: color-mix(in srgb, var(--ifm-font-color-base) 88%, transparent);
 }
 
 /* Micro-kickers & Badges */
@@ -104,7 +104,7 @@
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.75rem;
   font-weight: 600;
-  color: #a1a1aa;
+  color: var(--ifm-color-content-secondary);
   text-align: left;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -116,7 +116,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--ifm-font-color-base) 5%, transparent);
 
   font-size: 0.92rem;
-  color: #e4e4e7;
+  color: var(--ifm-font-color-base);
 }
 
 .markdown table tr:last-child td {
@@ -132,7 +132,7 @@
   border-top: var(--site-glass-border-top);
   border-radius: 10px;
 
-  color: #e4e4e7;
+  color: var(--ifm-font-color-base);
 
   backdrop-filter: var(--site-glass-backdrop);
   box-shadow: var(--site-glass-shadow);
@@ -157,43 +157,55 @@
 }
 
 .alert--warning {
-  border-color: color-mix(in srgb, #f59e0b 35%, transparent);
-  border-top-color: color-mix(in srgb, #f59e0b 65%, transparent);
+  border-color: color-mix(in srgb, var(--ifm-color-warning) 35%, transparent);
+  border-top-color: color-mix(in srgb, var(--ifm-color-warning) 65%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #f59e0b 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+    color-mix(
+        in srgb,
+        var(--ifm-color-warning) 9%,
+        color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent)
+      )
       0%,
     color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
   );
   box-shadow:
     var(--site-glass-shadow),
-    0 0 20px -5px color-mix(in srgb, #f59e0b 12%, transparent);
+    0 0 20px -5px color-mix(in srgb, var(--ifm-color-warning) 12%, transparent);
 }
 
 .alert--success {
-  border-color: color-mix(in srgb, #10b981 35%, transparent);
-  border-top-color: color-mix(in srgb, #10b981 65%, transparent);
+  border-color: color-mix(in srgb, var(--ifm-color-success) 35%, transparent);
+  border-top-color: color-mix(in srgb, var(--ifm-color-success) 65%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #10b981 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+    color-mix(
+        in srgb,
+        var(--ifm-color-success) 9%,
+        color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent)
+      )
       0%,
     color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
   );
   box-shadow:
     var(--site-glass-shadow),
-    0 0 20px -5px color-mix(in srgb, #10b981 12%, transparent);
+    0 0 20px -5px color-mix(in srgb, var(--ifm-color-success) 12%, transparent);
 }
 
 .alert--danger {
-  border-color: color-mix(in srgb, #f43f5e 35%, transparent);
-  border-top-color: color-mix(in srgb, #f43f5e 65%, transparent);
+  border-color: color-mix(in srgb, var(--ifm-color-danger) 35%, transparent);
+  border-top-color: color-mix(in srgb, var(--ifm-color-danger) 65%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #f43f5e 9%, color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent))
+    color-mix(
+        in srgb,
+        var(--ifm-color-danger) 9%,
+        color-mix(in srgb, var(--ifm-font-color-base) 4%, transparent)
+      )
       0%,
     color-mix(in srgb, var(--ifm-font-color-base) 1.5%, transparent) 100%
   );
   box-shadow:
     var(--site-glass-shadow),
-    0 0 20px -5px color-mix(in srgb, #f43f5e 12%, transparent);
+    0 0 20px -5px color-mix(in srgb, var(--ifm-color-danger) 12%, transparent);
 }

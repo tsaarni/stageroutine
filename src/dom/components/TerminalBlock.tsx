@@ -3,7 +3,7 @@
  */
 
 import "./TerminalBlock.css";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 import { createWindowFrame, createWindowLines } from "./WindowFrame";
 
@@ -32,9 +32,9 @@ export interface TerminalBlockElement extends DOMElement {
 /**
  * @internal
  */
-class TerminalBlockElementImpl extends DOMElement implements TerminalBlockElement {
+class TerminalBlockElementImpl extends DOMElementImpl implements TerminalBlockElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "title",
     "lines",
   ]);

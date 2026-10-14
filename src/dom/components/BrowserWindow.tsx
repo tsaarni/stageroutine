@@ -1,5 +1,5 @@
 import "./BrowserWindow.css";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { createWindowFrame, type WindowFrame } from "./WindowFrame";
 
 /** Browser window options. Default size: 120 × 65 stage units. @category Components @inline */
@@ -50,9 +50,9 @@ function navigationButton(label: string, glyph: string): HTMLButtonElement {
 }
 
 /** @internal */
-class BrowserWindowElementImpl extends DOMElement implements BrowserWindowElement {
+class BrowserWindowElementImpl extends DOMElementImpl implements BrowserWindowElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "url",
     "title",
   ]);

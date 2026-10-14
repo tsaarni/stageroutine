@@ -3,7 +3,7 @@
  */
 
 import { resolveAnchor } from "../core/interpolators";
-import type { ElementAnchor } from "../core/types";
+import type { ElementAnchor, StageManagedElement } from "../core/types";
 import type { DOMElement, ElementDecorator } from "../dom/element";
 
 /**
@@ -192,7 +192,8 @@ export function kenBurns(options: KenBurnsOptions = {}): ElementDecorator {
         target.style.transformOrigin = "50% 50%";
         target.style.willChange = "transform";
 
-        const isRootStageTarget = target === element.domElement && !element._isCustomPositioned;
+        const isRootStageTarget =
+          target === element.domElement && !(element as StageManagedElement)._isCustomPositioned;
         if (isRootStageTarget) {
           element.onUpdate(() => {
             target.style.transformOrigin = "50% 50%";

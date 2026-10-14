@@ -4,7 +4,7 @@
 
 import { logger } from "../../core/index";
 import { storage } from "../../core/storage";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { type ImageFit, MediaSurface } from "./Media";
 
 /**
@@ -57,7 +57,7 @@ export interface WebcamElement extends DOMElement {
  */
 class WebcamElementImpl extends MediaSurface implements WebcamElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "fit",
     "mirror",
     "deviceId",

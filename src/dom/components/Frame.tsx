@@ -8,8 +8,15 @@ import {
   getActiveStage,
   type ReactiveElementBase,
   type ReactiveProp,
+  type StageManagedElement,
 } from "../../core/index";
-import { DOMElement, type ElementChild, type ElementOptions, mount } from "../element";
+import {
+  type DOMElement,
+  DOMElementImpl,
+  type ElementChild,
+  type ElementOptions,
+  mount,
+} from "../element";
 import {
   type AnchorMode,
   type AnchorPoint,
@@ -52,9 +59,9 @@ export interface FrameElement extends DOMElement {
 /**
  * @internal
  */
-class FrameElementImpl extends DOMElement implements FrameElement {
+class FrameElementImpl extends DOMElementImpl implements FrameElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "highlighted",
     "borderColor",
     "strokeWidth",
@@ -136,12 +143,12 @@ class FrameElementImpl extends DOMElement implements FrameElement {
         if (child instanceof Node) {
           contentDiv.appendChild(child);
         } else if (
-          child instanceof DOMElement ||
+          child instanceof DOMElementImpl ||
           (child && typeof child === "object" && "domElement" in child)
         ) {
           const childEl = child as DOMElement;
           childItems.push(childEl);
-          childEl._isCustomPositioned = true;
+          (childEl as StageManagedElement)._isCustomPositioned = true;
           childEl.domElement.style.position = "relative";
           childEl.domElement.style.left = "auto";
           childEl.domElement.style.top = "auto";

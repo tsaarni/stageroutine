@@ -5,7 +5,7 @@
 
 import "./CodeBlock.css";
 import { codeToHtml } from "shiki";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -31,9 +31,9 @@ export interface CodeBlockElement extends DOMElement {
 /**
  * @internal
  */
-class CodeBlockElementImpl extends DOMElement implements CodeBlockElement {
+class CodeBlockElementImpl extends DOMElementImpl implements CodeBlockElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "code",
   ]);
   private codeValue = "";

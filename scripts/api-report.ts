@@ -29,6 +29,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 interface EntryPoint {
@@ -39,6 +40,7 @@ interface EntryPoint {
 interface ExportItem {
   readonly name: string;
   readonly category: "function" | "class" | "interface" | "type" | "enum" | "variable";
+  readonly typeOnly?: boolean;
   readonly signature: string;
   readonly doc?: string;
 }
@@ -52,8 +54,8 @@ interface EntryResult {
 const ROOT_DIR = process.cwd();
 const PRINTER = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-function getEntryPointsFromPackageJson(): readonly EntryPoint[] {
-  const pkg = JSON.parse(fs.readFileSync(path.resolve(ROOT_DIR, "package.json"), "utf8"));
+function getEntryPointsFromPackageJson(rootDir: string): readonly EntryPoint[] {
+  const pkg = JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"));
   const entries: EntryPoint[] = [];
 
   for (const [subpath, target] of Object.entries(pkg.exports ?? {})) {
@@ -187,7 +189,7 @@ function isInternalProjectSymbol(symbol: ts.Symbol | undefined, program: ts.Prog
   return (
     !program.isSourceFileDefaultLibrary(sourceFile) &&
     !program.isSourceFileFromExternalLibrary(sourceFile) &&
-    sourceFile.fileName.includes("/src/")
+    !sourceFile.isDeclarationFile
   );
 }
 
@@ -246,8 +248,9 @@ function inspectEntryPoint(
   program: ts.Program,
   checker: ts.TypeChecker,
   packageExportsMap: Map<string, string[]>,
+  rootDir: string,
 ): EntryResult {
-  const absPath = path.resolve(ROOT_DIR, entry.file);
+  const absPath = path.resolve(rootDir, entry.file);
   const sourceFile = program.getSourceFile(absPath);
   if (!sourceFile) {
     throw new Error(`Could not find source file: ${entry.file}`);
@@ -363,7 +366,7 @@ function inspectEntryPoint(
               node.parent.parent.isTypeOnly)),
       );
       let classKeyword = isAbstract ? "export abstract class" : "export class";
-      if (typeOnly) classKeyword = "export interface";
+      if (typeOnly) classKeyword = "declare class";
 
       const typeParamsStr = decl.typeParameters?.length
         ? `<${decl.typeParameters.map((tp) => printNode(tp)).join(", ")}>`
@@ -382,8 +385,19 @@ function inspectEntryPoint(
         if (sigDoc) {
           members.push(sigDoc);
         }
-        const sigStr = checker.signatureToString(sig, sourceFile, ts.TypeFormatFlags.NoTruncation);
-        members.push(`  constructor${cleanTypeString(sigStr)};`);
+        checkSignatureTypes(
+          sig,
+          `Constructor of \`${exp.name}\``,
+          (name) => `Constructor parameter \`${name}\` of \`${exp.name}\``,
+        );
+        const signatureNode = checker.signatureToSignatureDeclaration(
+          sig,
+          ts.SyntaxKind.Constructor,
+          decl,
+          ts.NodeBuilderFlags.NoTruncation,
+        );
+        if (!signatureNode) throw new Error(`Cannot format constructor of ${exp.name}`);
+        members.push(`  ${printNode(signatureNode)}`);
       }
 
       const formatMembers = (props: ts.Symbol[], isStatic: boolean) => {
@@ -402,7 +416,12 @@ function inspectEntryPoint(
             (m) =>
               m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword,
           );
-          if (isPrivate || prop.name.startsWith("_")) continue;
+          if (
+            isPrivate ||
+            (ts.isPropertyDeclaration(propDecl) && ts.isPrivateIdentifier(propDecl.name)) ||
+            prop.name.startsWith("_")
+          )
+            continue;
 
           const accessors = prop.declarations?.filter(
             (node): node is ts.GetAccessorDeclaration | ts.SetAccessorDeclaration =>
@@ -412,27 +431,45 @@ function inspectEntryPoint(
             for (const accessor of accessors) {
               const signature = checker.getSignatureFromDeclaration(accessor);
               if (!signature) continue;
+              checkSignatureTypes(
+                signature,
+                `Getter \`${prop.name}\` of class \`${exp.name}\``,
+                (name) => `Setter parameter \`${name}\` of \`${exp.name}.${prop.name}\``,
+              );
+              const accessorDoc =
+                formatSignatureJSDoc(signature, checker, "  ") ?? formatJSDoc(prop, checker, "  ");
+              if (accessorDoc) members.push(accessorDoc);
+              const prefix = isStatic ? "static " : "";
               if (ts.isGetAccessorDeclaration(accessor)) {
                 const type = checker.typeToString(
                   checker.getReturnTypeOfSignature(signature),
                   sourceFile,
                   ts.TypeFormatFlags.NoTruncation,
                 );
-                members.push(`  get ${prop.name}(): ${cleanTypeString(type)};`);
+                members.push(`  ${prefix}get ${prop.name}(): ${cleanTypeString(type)};`);
               } else {
                 const parameter = accessor.parameters[0];
-                if (parameter) members.push(`  set ${prop.name}(${printNode(parameter)});`);
+                if (parameter)
+                  members.push(`  ${prefix}set ${prop.name}(${printNode(parameter)});`);
               }
             }
             continue;
           }
           const memberDoc = formatJSDoc(prop, checker, "  ");
-          const isReadonly =
-            !isStatic && modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword);
+          const isReadonly = modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword);
           const propType = checker.getTypeOfSymbolAtLocation(prop, propDecl);
-          const propSigs = propType.getCallSignatures();
+          const propSigs = checker.getNonNullableType(propType).getCallSignatures();
 
-          if (propSigs.length > 0) {
+          checkType(propType, `Property \`${prop.name}\` of class \`${exp.name}\``);
+          const optional = prop.flags & ts.SymbolFlags.Optional ? "?" : "";
+          for (const signature of propSigs) {
+            checkSignatureTypes(
+              signature,
+              `Member \`${prop.name}\` return type of class \`${exp.name}\``,
+              (name) => `Parameter \`${name}\` of \`${exp.name}.${prop.name}\``,
+            );
+          }
+          if (ts.isMethodDeclaration(propDecl) || ts.isMethodSignature(propDecl)) {
             const prefix = isStatic ? "static " : "";
             for (const s of propSigs) {
               const sigDoc = formatSignatureJSDoc(s, checker, "  ") ?? memberDoc;
@@ -441,10 +478,17 @@ function inspectEntryPoint(
               }
               const sigStr = checker.signatureToString(
                 s,
-                sourceFile,
+                propDecl,
                 ts.TypeFormatFlags.NoTruncation,
               );
-              members.push(`  ${prefix}${prop.name}${cleanTypeString(sigStr)};`);
+              const signatureDecl = s.getDeclaration();
+              const rendered =
+                signatureDecl &&
+                ts.isMethodDeclaration(signatureDecl) &&
+                signatureDecl.type?.kind === ts.SyntaxKind.ThisType
+                  ? sigStr.replace(/: [^:]+$/, ": this")
+                  : sigStr;
+              members.push(`  ${prefix}${prop.name}${optional}${cleanTypeString(rendered)};`);
             }
           } else {
             if (memberDoc) {
@@ -453,15 +497,16 @@ function inspectEntryPoint(
             let prefix = "";
             if (isStatic) {
               prefix = "static ";
-            } else if (isReadonly) {
-              prefix = "readonly ";
+            }
+            if (isReadonly) {
+              prefix += "readonly ";
             }
             const typeStr = checker.typeToString(
               propType,
               sourceFile,
               ts.TypeFormatFlags.NoTruncation,
             );
-            members.push(`  ${prefix}${prop.name}: ${cleanTypeString(typeStr)};`);
+            members.push(`  ${prefix}${prop.name}${optional}: ${cleanTypeString(typeStr)};`);
           }
         }
       };
@@ -475,8 +520,9 @@ function inspectEntryPoint(
 
       items.push({
         name: exp.name,
-        category: typeOnly ? "interface" : "class",
-        signature: `${classHeader} {\n${members.join("\n")}\n}`,
+        category: "class",
+        typeOnly: Boolean(typeOnly),
+        signature: `${typeOnly ? "// Instance type only; no runtime constructor or static members are exported.\n// Private and protected members constrain compatibility.\n" : ""}${classHeader} {\n${members.join("\n")}\n}${typeOnly ? `\nexport type { ${exp.name} };` : ""}`,
         doc,
       });
       continue;
@@ -509,6 +555,17 @@ function inspectEntryPoint(
         if (prop.name.startsWith("_")) continue;
         const propDecl = prop.declarations?.[0];
         if (!propDecl) continue;
+        for (const accessor of prop.declarations ?? []) {
+          if (!ts.isGetAccessorDeclaration(accessor) && !ts.isSetAccessorDeclaration(accessor))
+            continue;
+          const signature = checker.getSignatureFromDeclaration(accessor);
+          if (signature)
+            checkSignatureTypes(
+              signature,
+              `Getter \`${prop.name}\` of interface \`${exp.name}\``,
+              (name) => `Setter parameter \`${name}\` of interface \`${exp.name}.${prop.name}\``,
+            );
+        }
         const propType = checker.getTypeOfSymbolAtLocation(prop, propDecl);
         const sigs = propType.getCallSignatures();
 
@@ -578,17 +635,17 @@ const ENTRY_POINT_DESCRIPTIONS: Record<string, string> = {
     "Vite plugin configuring JSX transforms, automatic icon resolution, and presenter view routing.",
 };
 
-export function generateApiReport(): { content: string; warningCount: number } {
-  const configPath = ts.findConfigFile(ROOT_DIR, ts.sys.fileExists, "tsconfig.json");
+export function generateApiReport(rootDir = ROOT_DIR): { content: string; warningCount: number } {
+  const configPath = ts.findConfigFile(rootDir, ts.sys.fileExists, "tsconfig.json");
   if (!configPath) {
     throw new Error("Could not find tsconfig.json");
   }
 
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-  const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, ROOT_DIR);
+  const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, rootDir);
 
-  const entryPoints = getEntryPointsFromPackageJson();
-  const entryFilePaths = entryPoints.map((e) => path.resolve(ROOT_DIR, e.file));
+  const entryPoints = getEntryPointsFromPackageJson(rootDir);
+  const entryFilePaths = entryPoints.map((e) => path.resolve(rootDir, e.file));
 
   const program = ts.createProgram({
     rootNames: entryFilePaths,
@@ -604,7 +661,7 @@ export function generateApiReport(): { content: string; warningCount: number } {
   // Pre-pass: Map each exported symbol to the entry points exporting it
   const packageExportsMap = new Map<string, string[]>();
   for (const entry of entryPoints) {
-    const absPath = path.resolve(ROOT_DIR, entry.file);
+    const absPath = path.resolve(rootDir, entry.file);
     const sourceFile = program.getSourceFile(absPath);
     if (!sourceFile) continue;
     const modSymbol = checker.getSymbolAtLocation(sourceFile);
@@ -617,7 +674,7 @@ export function generateApiReport(): { content: string; warningCount: number } {
   }
 
   const results = entryPoints.map((entry) =>
-    inspectEntryPoint(entry, program, checker, packageExportsMap),
+    inspectEntryPoint(entry, program, checker, packageExportsMap, rootDir),
   );
 
   const lines: string[] = [
@@ -650,7 +707,7 @@ export function generateApiReport(): { content: string; warningCount: number } {
   lines.push("| Entry Point | Exports |");
   lines.push("| :--- | :--- |");
   for (const r of results) {
-    lines.push(`| \`${r.name}\` | ${r.items.length} symbols |`);
+    lines.push(`| \`${r.name}\` | ${new Set(r.items.map((item) => item.name)).size} symbols |`);
   }
   lines.push("");
 
@@ -700,38 +757,40 @@ export function generateApiReport(): { content: string; warningCount: number } {
   };
 }
 
-// CLI Execution & Flags
-const args = new Set(process.argv.slice(2));
-const isStdout = args.has("--stdout");
-const isCheck = args.has("--check");
-const isStrict = args.has("--strict");
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // CLI Execution & Flags
+  const args = new Set(process.argv.slice(2));
+  const isStdout = args.has("--stdout");
+  const isCheck = args.has("--check");
+  const isStrict = args.has("--strict");
 
-const { content: reportContent, warningCount } = generateApiReport();
-const outputPath = path.resolve(ROOT_DIR, "etc/api-report.md");
+  const { content: reportContent, warningCount } = generateApiReport();
+  const outputPath = path.resolve(ROOT_DIR, "etc/api-report.md");
 
-if (isStdout) {
-  process.stdout.write(reportContent);
-} else if (isCheck) {
-  const existingContent = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : null;
-  if (existingContent === null) {
-    console.error("etc/api-report.md does not exist. Run pnpm api:report to generate it.");
-    process.exit(1);
-  }
-  if (existingContent !== reportContent) {
-    console.error("Public API report is outdated. Run pnpm api:report to update.");
-    process.exit(1);
-  }
-  if (isStrict && warningCount > 0) {
-    console.error(`Found ${warningCount} forgotten exports or diagnostic issues.`);
-    process.exit(1);
-  }
-  console.log("Public API report is up to date.");
-} else {
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, reportContent, "utf8");
-  console.log(`Public API report written to ${path.relative(ROOT_DIR, outputPath)}`);
-  if (isStrict && warningCount > 0) {
-    console.error(`Found ${warningCount} forgotten exports or diagnostic issues.`);
-    process.exit(1);
+  if (isStdout) {
+    process.stdout.write(reportContent);
+  } else if (isCheck) {
+    const existingContent = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : null;
+    if (existingContent === null) {
+      console.error("etc/api-report.md does not exist. Run pnpm api:report to generate it.");
+      process.exit(1);
+    }
+    if (existingContent !== reportContent) {
+      console.error("Public API report is outdated. Run pnpm api:report to update.");
+      process.exit(1);
+    }
+    if (isStrict && warningCount > 0) {
+      console.error(`Found ${warningCount} forgotten exports or diagnostic issues.`);
+      process.exit(1);
+    }
+    console.log("Public API report is up to date.");
+  } else {
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, reportContent, "utf8");
+    console.log(`Public API report written to ${path.relative(ROOT_DIR, outputPath)}`);
+    if (isStrict && warningCount > 0) {
+      console.error(`Found ${warningCount} forgotten exports or diagnostic issues.`);
+      process.exit(1);
+    }
   }
 }

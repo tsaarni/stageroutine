@@ -2,7 +2,7 @@
  * Standalone reactive Video element for screen recordings, video walkthroughs, and animated media.
  */
 
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { type ImageFit, VideoSurface } from "./Media";
 
 /**
@@ -57,7 +57,7 @@ export interface VideoElement extends DOMElement {
  */
 class VideoElementImpl extends VideoSurface implements VideoElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "fit",
     "src",
     "playing",

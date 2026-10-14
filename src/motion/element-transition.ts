@@ -15,7 +15,7 @@ import type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
-  SizeProp,
+  Size,
 } from "../core/types";
 import type { DOMElement } from "../dom/element";
 import { isTransitionDescriptor, to } from "./transitions";
@@ -30,9 +30,9 @@ export type ElementTransitionProps<T = ReactiveElementBase> = {
   x?: CoordProp;
   y?: CoordProp;
   position?: ReactiveProp<Position> | PositionUpdater;
-  width?: SizeProp;
-  height?: SizeProp;
-  size?: SizeProp;
+  width?: ReactiveProp<Size>;
+  height?: ReactiveProp<Size>;
+  size?: ReactiveProp<Size>;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;

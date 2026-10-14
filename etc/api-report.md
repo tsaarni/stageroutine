@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 205 symbols |
+| `stageroutine` | 201 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -319,7 +319,7 @@ export function Webcam(options?: WebcamOptions): WebcamElement;
  * via BroadcastChannel.
  */
 export class PresenterClient {
-  constructor(channelName?: string): PresenterClient;
+  constructor(channelName?: string);
   /**
    * Registers a callback invoked whenever the presentation state changes.
    * @param callback Receives the latest {@link StageStateChangedEvent} payload.
@@ -339,7 +339,7 @@ export class PresenterClient {
 
 /** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
 export class PresenterRecorder {
-  constructor(): PresenterRecorder;
+  constructor();
   onUpdate(callback: (state: { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; }) => void): void;
   /** Toggles microphone audio track capture on or off. */
   toggleMic(): void;
@@ -362,8 +362,9 @@ export class Stage {
    * Creating multiple `Stage` instances simultaneously in the same JS execution
    * context will cause the latter instance to overwrite `activeStage`.
    */
-  constructor(options?: StageOptions): Stage;
+  constructor(options?: StageOptions);
   get isMounted(): boolean;
+  /** Whether the stage is currently animating. Default: false. */
   get isMoving(): boolean;
   /**
    * Attaches an overlay plugin to the stage.
@@ -374,15 +375,19 @@ export class Stage {
    * stage.overlay(NavigationOverlay());
    * ```
    */
-  overlay(plugin: OverlayPlugin): Stage;
+  overlay(plugin: OverlayPlugin): this;
   on<K extends keyof StageEventMap>(event: K, handler: (data: StageEventMap[K]) => void): () => void;
   emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]): void;
+  /** Virtual stage canvas width in pixels (default: 1920). */
   get width(): number;
+  /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number;
+  /** Stage width in stage units (160 on a 16:9 stage). */
   get unitsWide(): number;
+  /** Stage height in stage units (always 90). */
   get unitsTall(): number;
   /** Declares a new presentation scene and returns a builder to populate its elements. */
-  scene(name: string): SceneBuilder;
+  scene(name: string): Scene;
   /**
    * Apply global or per-scene theme variable overrides.
    * Updates CSS custom properties on the stage container and preserves them across step snapshots.
@@ -395,7 +400,7 @@ export class Stage {
    * });
    * ```
    */
-  theme(config: ThemeConfig): Stage;
+  theme(config: ThemeConfig): this;
   /**
    * Sets the stage background (color string, gradient, or procedural element).
    * @example ```ts
@@ -403,15 +408,15 @@ export class Stage {
    * stage.background(Starfield());
    * ```
    */
-  background(bg: string | Background | ReactiveElementBase): Stage;
+  background(bg: string | Background | ReactiveElementBase): this;
   /** Loads a full markdown presenter notes document for the presentation. */
-  notesDocument(doc: string): Stage;
+  notesDocument(doc: string): this;
   /** Sets presenter speaker notes for the current step. */
-  note(text: string | string[]): Stage;
+  note(text: string | string[]): this;
   /** Completes the current presentation step, recording pending mutations and transitions into a snapshot. */
   pause(): void;
   /** Mounts the presentation stage into the target container element and begins playback. */
-  mount(target?: string | HTMLElement): Stage;
+  mount(target?: string | HTMLElement): this;
   /**
    * Tears down the stage: stops animation loops and releases the background,
    * overlays, element media, DOM, and communication resources.
@@ -845,75 +850,32 @@ export interface DiamondPathOptions {
     radius?: number;
 }
 
-export interface DOMElement {
-  readonly id: string;
-  readonly kind: string;
-  readonly domElement: HTMLElement;
-  get origin(): ElementAnchor;
-  set origin(val: ReactiveProp<ElementAnchor> | undefined);
-  get x(): number;
-  set x(val: CoordProp);
-  get y(): number;
-  set y(val: CoordProp);
-  get width(): string | number | undefined;
-  set width(value: ReactiveProp<number | string> | undefined);
-  get height(): string | number | undefined;
-  set height(value: ReactiveProp<number | string> | undefined);
-  get scale(): number;
-  set scale(value: ReactiveProp<number>);
-  get rotation(): number;
-  set rotation(value: ReactiveProp<number>);
-  get opacity(): number;
-  set opacity(value: ReactiveProp<number>);
-  get blur(): number;
-  set blur(value: ReactiveProp<number>);
-  get brightness(): number;
-  set brightness(value: ReactiveProp<number>);
-  get color(): string | undefined;
-  set color(value: ReactiveProp<string> | undefined);
-  get zIndex(): string | number | undefined;
-  set zIndex(value: ReactiveProp<number | string> | undefined);
-  /** Duration in seconds for exiting scene transition (defaults to stage defaultDuration if undefined). */
-  exitDuration: number | undefined;
-  /** Delay in seconds before exiting scene transition begins (defaults to 0). */
-  exitDelay: number | undefined;
-  /** Duration in seconds for entering scene transition (defaults to stage defaultDuration if undefined). */
-  enterDuration: number | undefined;
-  /** Delay in seconds before entering scene transition begins (defaults to 0). */
-  enterDelay: number | undefined;
-  get align(): Align | undefined;
-  set align(value: ReactiveProp<Align> | undefined);
-  get size(): string | number | undefined;
-  set size(val: SizeProp | undefined);
-  get position(): Position;
-  set position(val: ReactiveProp<Position> | PositionUpdater | undefined);
-  /** Sets multiple properties on this element with a unified transition descriptor or immediate values. */
-  to(props: ElementTransitionProps<DOMElement>): ElementTransition;
-  /** Whether this element is currently attached to the DOM tree. */
-  isMounted: boolean;
-  /** Whether this element is visible and active in the current scene (opacity > 0). */
-  isActive: boolean;
-  /** Registers a callback invoked when the element is attached to the stage DOM. */
-  onMount(fn: () => void): () => void;
-  /** Registers a callback invoked when the element is detached from the stage DOM. */
-  onUnmount(fn: () => void): () => void;
-  /** Registers a callback invoked when the element becomes visible in the active scene. */
-  onActivate(fn: () => void): () => void;
-  /** Registers a callback invoked when the element transitions out of visibility. */
-  onDeactivate(fn: () => void): () => void;
-  /**
-   * Registers a callback invoked whenever reactive properties are mutated during transitions.
-   * Receives normalized transition progress from 0 (start) to 1 (complete/rest).
-   */
-  onUpdate(fn: (progress: number) => void): () => void;
-  /**
-   * Registers a click interaction handler on this element.
-   * If the handler returns a function, that function is invoked as a reset cleanup
-   * when clicking outside this element or pressing Escape.
-   */
-  onClick(handler: (event: MouseEvent) => (() => void) | unknown): DOMElement;
-  /** Applies a decorator function to enhance this element with custom styles, animations, or behaviors. */
-  decorate(decorator: ElementDecorator): DOMElement;
+/**
+ * Animated DOM element instance managed by the reactive Stage runtime.
+ * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
+ * @category Core
+ */
+export interface DOMElement extends ReactiveElementBase {
+    get origin(): ElementAnchor;
+    set origin(value: ReactiveProp<ElementAnchor> | undefined);
+    get align(): Align | undefined;
+    set align(value: ReactiveProp<Align> | undefined);
+    get position(): Position;
+    set position(value: ReactiveProp<Position> | PositionUpdater | undefined);
+    /** Whether the element is mounted (default: false). */
+    readonly isMounted: boolean;
+    /** Whether the element is active (default: false). */
+    readonly isActive: boolean;
+    onMount(fn: () => void): () => void;
+    onUnmount(fn: () => void): () => void;
+    onActivate(fn: () => void): () => void;
+    onDeactivate(fn: () => void): () => void;
+    onUpdate(fn: (progress: number) => void): () => void;
+    onClick(handler: (event: MouseEvent) => (() => void) | unknown): this;
+    /** Sets properties with one transition. */
+    to(props: ElementTransitionProps<this>): ElementTransition;
+    /** Applies an element decorator. */
+    decorate(decorator: ElementDecorator): this;
 }
 
 /**
@@ -951,11 +913,11 @@ export interface ElementOptions {
     /** Vertical position in stage units (default: 0). */
     y?: PositionCoord;
     /** Width in stage units or CSS length (default: content size). */
-    width?: number | string;
+    width?: Size;
     /** Height in stage units or CSS length (default: content size). */
-    height?: number | string;
+    height?: Size;
     /** Both dimensions in stage units or CSS length (default: unset). */
-    size?: number | string;
+    size?: Size;
     /** Scale multiplier (default: 1). */
     scale?: number;
     /** Rotation in degrees (default: 0). */
@@ -1112,7 +1074,7 @@ export interface GroupElement<T extends ReactiveElementBase = ReactiveElementBas
     x: CoordProp;
     y: CoordProp;
     position: ReactiveProp<Position> | PositionUpdater;
-    size: SizeProp;
+    size: ReactiveProp<Size>;
     to(props: ElementTransitionProps<T>): ElementTransition;
     decorate(...decorators: ElementDecorator[]): this;
 }
@@ -1276,9 +1238,9 @@ export interface LayoutOptions {
     /** Vertical start position in stage units, or `"center"` to center the arrangement. */
     y?: number | "center";
     /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
-    width?: number | string | (number | string)[];
+    width?: Size | Size[];
     /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
-    height?: number | string | (number | string)[];
+    height?: Size | Size[];
     /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
     gap?: number;
     /** Horizontal gutter spacing in stage units. */
@@ -1618,19 +1580,31 @@ export interface ReactiveElementBase {
     /** Which point of the element sits on its coordinate (default: `"top-left"`). */
     origin?: ReactiveProp<ElementAnchor>;
     align?: ReactiveProp<Align>;
-    opacity: ReactiveProp<number>;
-    x: CoordProp;
-    y: CoordProp;
+    get opacity(): number;
+    set opacity(value: ReactiveProp<number>);
+    get x(): number;
+    set x(value: CoordProp);
+    get y(): number;
+    set y(value: CoordProp);
     position?: ReactiveProp<Position> | PositionUpdater;
-    width?: SizeProp;
-    height?: SizeProp;
-    size?: SizeProp;
-    scale: ReactiveProp<number>;
-    rotation: ReactiveProp<number>;
-    blur: ReactiveProp<number>;
-    brightness: ReactiveProp<number>;
-    color?: ReactiveProp<string>;
-    zIndex?: ReactiveProp<number | string>;
+    get width(): Size | undefined;
+    set width(value: ReactiveProp<Size> | undefined);
+    get height(): Size | undefined;
+    set height(value: ReactiveProp<Size> | undefined);
+    get size(): Size | undefined;
+    set size(value: ReactiveProp<Size> | undefined);
+    get scale(): number;
+    set scale(value: ReactiveProp<number>);
+    get rotation(): number;
+    set rotation(value: ReactiveProp<number>);
+    get blur(): number;
+    set blur(value: ReactiveProp<number>);
+    get brightness(): number;
+    set brightness(value: ReactiveProp<number>);
+    get color(): string | undefined;
+    set color(value: ReactiveProp<string> | undefined);
+    get zIndex(): number | string | undefined;
+    set zIndex(value: ReactiveProp<number | string> | undefined);
     readonly isMounted?: boolean;
     readonly isActive?: boolean;
     onMount?(fn: () => void): () => void;
@@ -1707,6 +1681,19 @@ export interface RuleOptions {
     radius?: number | string;
     /** Additional CSS class name. */
     className?: string;
+}
+
+/** Fluent scene contract. @category Core */
+export interface Scene {
+    readonly name: string;
+    with(...elements: (ReactiveElementBase | {
+        items?: ReactiveElementBase[];
+    } | {
+        rows?: ReactiveElementBase[];
+    } | {
+        elements?: readonly unknown[];
+    } | Iterable<unknown> | null | undefined | false)[]): this;
+    theme(config: ThemeConfig): this;
 }
 
 /**
@@ -2474,9 +2461,9 @@ export type ElementTransitionProps<T = ReactiveElementBase> = {
     x?: CoordProp;
     y?: CoordProp;
     position?: ReactiveProp<Position> | PositionUpdater;
-    width?: SizeProp;
-    height?: SizeProp;
-    size?: SizeProp;
+    width?: ReactiveProp<Size>;
+    height?: ReactiveProp<Size>;
+    size?: ReactiveProp<Size>;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
@@ -2652,7 +2639,7 @@ export type ShapeVariant = "surface" | "ghost" | "solid";
  * Element size in stage units, or an authored CSS length such as `"40rem"`.
  * @category Core
  */
-export type SizeProp = ReactiveProp<number | string>;
+export type Size = number | string;
 
 /**
  * A slot in a stack layout: either a single element or a nested array of elements (column/row).

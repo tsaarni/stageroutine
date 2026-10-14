@@ -27,6 +27,7 @@ import type {
   OverlayContext,
   OverlayPlugin,
   ReactiveElementBase,
+  Size,
   StageEventMap,
   StageManagedElement,
   StageOptions,
@@ -146,7 +147,25 @@ function getElementTargetInfo(node: Element): {
   };
 }
 
-class SceneBuilder {
+/** Fluent scene contract. @category Core */
+export interface Scene {
+  readonly name: string;
+  with(
+    ...elements: (
+      | ReactiveElementBase
+      | { items?: ReactiveElementBase[] }
+      | { rows?: ReactiveElementBase[] }
+      | { elements?: readonly unknown[] }
+      | Iterable<unknown>
+      | null
+      | undefined
+      | false
+    )[]
+  ): this;
+  theme(config: ThemeConfig): this;
+}
+
+class SceneBuilder implements Scene {
   private stage: Stage;
   readonly name: string;
 
@@ -1321,7 +1340,7 @@ export class Stage {
   }
 
   /** Declares a new presentation scene and returns a builder to populate its elements. */
-  scene(name: string): SceneBuilder {
+  scene(name: string): Scene {
     return new SceneBuilder(this, name);
   }
 
@@ -2377,7 +2396,7 @@ export class Stage {
       node.style.zIndex = Number.isFinite(zNum) ? String(Math.round(zNum)) : String(props.zIndex);
     }
     if (props.width !== undefined) {
-      const formattedWidth = cssLength(props.width as number | string);
+      const formattedWidth = cssLength(props.width as Size);
       if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
         node.style.width = formattedWidth;
       }
@@ -2385,7 +2404,7 @@ export class Stage {
       node.style.removeProperty("width");
     }
     if (props.height !== undefined) {
-      const formattedHeight = cssLength(props.height as number | string);
+      const formattedHeight = cssLength(props.height as Size);
       if (formattedHeight !== undefined && node.style.height !== formattedHeight) {
         node.style.height = formattedHeight;
       }

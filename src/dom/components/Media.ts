@@ -4,7 +4,7 @@
 
 import "./Media.css";
 import { logger } from "../../core/index";
-import { DOMElement } from "../element";
+import { DOMElementImpl } from "../element";
 
 /**
  * Media object-fit scaling mode:
@@ -20,7 +20,7 @@ export type ImageFit = "contain" | "cover" | "fill" | "none" | "scale-down";
 /**
  * @internal Base class for elements wrapping a single media node.
  */
-export abstract class MediaSurface extends DOMElement {
+export abstract class MediaSurface extends DOMElementImpl {
   private _fit: ImageFit = "contain";
 
   /** Media node that receives `object-fit`. @internal */

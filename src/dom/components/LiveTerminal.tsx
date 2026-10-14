@@ -6,7 +6,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { logger } from "../../core/index";
 import type { TerminalStatus } from "../../core/terminal-protocol";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection, type RangeSelectionController } from "../interaction";
 import { type TerminalFailure, TerminalSession, terminalEndpoint } from "./TerminalSession";
 import { createWindowFrame, createWindowLines, type WindowFrame } from "./WindowFrame";
@@ -154,9 +154,9 @@ function patchMouseService(terminal: XTerm, scaleGetter: () => number): void {
  * Reactive terminal element running a pseudo-terminal on the development machine.
  * @internal
  */
-class LiveTerminalElementImpl extends DOMElement implements LiveTerminalElement {
+class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "title",
   ]);
   private readonly frame: WindowFrame;

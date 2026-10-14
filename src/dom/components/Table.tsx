@@ -5,7 +5,7 @@
 import "./Table.css";
 import { getActiveStage } from "../../core/index";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -37,7 +37,7 @@ export interface TableElement extends DOMElement {
 /**
  * @internal
  */
-class TableElementImpl extends DOMElement implements TableElement {
+class TableElementImpl extends DOMElementImpl implements TableElement {
   readonly rows: readonly DOMElement[];
 
   constructor(options: TableOptions) {
@@ -84,7 +84,7 @@ class TableElementImpl extends DOMElement implements TableElement {
         const td = document.createElement("td");
         if (cellData instanceof HTMLElement) {
           td.appendChild(cellData);
-        } else if (cellData instanceof DOMElement) {
+        } else if (cellData instanceof DOMElementImpl) {
           td.appendChild(cellData.domElement);
         } else {
           td.textContent = String(cellData);
@@ -99,7 +99,7 @@ class TableElementImpl extends DOMElement implements TableElement {
       tbody.appendChild(tr);
       rawRowElements.push(tr);
 
-      const rowDOM = new DOMElement("TableRow", tr, {
+      const rowDOM = new DOMElementImpl("TableRow", tr, {
         opacity: isHiddenInitially ? 0 : 1,
         x: isHiddenInitially ? 2 : 0,
         y: 0,

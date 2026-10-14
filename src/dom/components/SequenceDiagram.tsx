@@ -5,7 +5,7 @@ import type { ReactiveProp } from "../../core/types";
 
 import "./SequenceDiagram.css";
 import { stageUnitPx, tryGetActiveStage, units } from "../../core/index";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { measureOffscreen } from "../layout";
 import { Connector, type ConnectorElement, type ConnectorOptions } from "./Connector";
 
@@ -182,8 +182,8 @@ export interface SequenceDiagramController {
  * Vertical dashed lifeline element rendered below its participant actor.
  * @internal
  */
-class LifelineElementImpl extends DOMElement implements LifelineElement {
-  static override _reactiveKeys: ReadonlySet<string> = new Set([...DOMElement._reactiveKeys]);
+class LifelineElementImpl extends DOMElementImpl implements LifelineElement {
+  static override _reactiveKeys: ReadonlySet<string> = new Set([...DOMElementImpl._reactiveKeys]);
 
   actor: DOMElement;
   diagram?: SequenceDiagramControllerImpl;
@@ -291,7 +291,7 @@ class LifelineElementImpl extends DOMElement implements LifelineElement {
  * Execution activation bar element attached to a lifeline.
  * @internal
  */
-class ActivationBarElementImpl extends DOMElement implements ActivationBarElement {
+class ActivationBarElementImpl extends DOMElementImpl implements ActivationBarElement {
   lifeline: LifelineElementImpl;
   /** @internal */
   _fromTarget?: ConnectorElement | number;

@@ -8,7 +8,7 @@ import { getActiveStage } from "../../core/index";
 import { cssLength } from "../../core/units";
 import { type StaggerOptions, type StaggerTransition, stagger } from "../../motion/stagger";
 import type { ThemeConfig } from "../../theme/tokens";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import { attachRangeSelection } from "../interaction";
 
 /**
@@ -111,7 +111,7 @@ export interface BulletListElement extends DOMElement {
 /**
  * @internal
  */
-class BulletListElementImpl extends DOMElement implements BulletListElement {
+class BulletListElementImpl extends DOMElementImpl implements BulletListElement {
   readonly items: readonly DOMElement[];
 
   constructor(items: BulletItemInput[], options: BulletListOptions = {}) {
@@ -155,7 +155,7 @@ class BulletListElementImpl extends DOMElement implements BulletListElement {
       itemEl.appendChild(text);
       container.appendChild(itemEl);
 
-      const childDOM = new DOMElement("BulletItem", itemEl, {
+      const childDOM = new DOMElementImpl("BulletItem", itemEl, {
         opacity: isHiddenInitially ? 0 : 1,
         x: isHiddenInitially ? 2 : 0,
         y: 0,

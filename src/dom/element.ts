@@ -17,7 +17,7 @@ import type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
-  SizeProp,
+  Size,
 } from "../core/types";
 import { cssLength, STAGE_UNITS_TALL, stageUnitsWide } from "../core/units";
 import {
@@ -76,11 +76,11 @@ export interface ElementOptions {
   /** Vertical position in stage units (default: 0). */
   y?: PositionCoord;
   /** Width in stage units or CSS length (default: content size). */
-  width?: number | string;
+  width?: Size;
   /** Height in stage units or CSS length (default: content size). */
-  height?: number | string;
+  height?: Size;
   /** Both dimensions in stage units or CSS length (default: unset). */
-  size?: number | string;
+  size?: Size;
   /** Scale multiplier (default: 1). */
   scale?: number;
   /** Rotation in degrees (default: 0). */
@@ -117,13 +117,37 @@ export interface ElementOptions {
  * Wraps an underlying HTML/SVG element and exposes bindable transform and visual properties.
  * @category Core
  */
-export class DOMElement implements ReactiveElementBase {
+export interface DOMElement extends ReactiveElementBase {
+  get origin(): ElementAnchor;
+  set origin(value: ReactiveProp<ElementAnchor> | undefined);
+  get align(): Align | undefined;
+  set align(value: ReactiveProp<Align> | undefined);
+  get position(): Position;
+  set position(value: ReactiveProp<Position> | PositionUpdater | undefined);
+  /** Whether the element is mounted (default: false). */
+  readonly isMounted: boolean;
+  /** Whether the element is active (default: false). */
+  readonly isActive: boolean;
+  onMount(fn: () => void): () => void;
+  onUnmount(fn: () => void): () => void;
+  onActivate(fn: () => void): () => void;
+  onDeactivate(fn: () => void): () => void;
+  onUpdate(fn: (progress: number) => void): () => void;
+  onClick(handler: (event: MouseEvent) => (() => void) | unknown): this;
+  /** Sets properties with one transition. */
+  to(props: ElementTransitionProps<this>): ElementTransition;
+  /** Applies an element decorator. */
+  decorate(decorator: ElementDecorator): this;
+}
+
+/** Internal DOM implementation. @internal */
+export class DOMElementImpl implements DOMElement {
   /** @internal */
   protected static _reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
 
   /** @internal */
   protected get _reactiveKeys(): ReadonlySet<string> {
-    return (this.constructor as typeof DOMElement)._reactiveKeys;
+    return (this.constructor as typeof DOMElementImpl)._reactiveKeys;
   }
 
   readonly id: string;
@@ -167,20 +191,20 @@ export class DOMElement implements ReactiveElementBase {
     this._y = resolveCoord(val, this._y, "y");
   }
 
-  private _width?: number | string;
-  get width(): number | string | undefined {
+  private _width?: Size;
+  get width(): Size | undefined {
     return this._width;
   }
-  set width(value: ReactiveProp<number | string> | undefined) {
+  set width(value: ReactiveProp<Size> | undefined) {
     const raw = isTransitionDescriptor(value) ? value.target : value;
     this._width =
       typeof raw === "function" ? raw(typeof this._width === "number" ? this._width : 0) : raw;
   }
-  private _height?: number | string;
-  get height(): number | string | undefined {
+  private _height?: Size;
+  get height(): Size | undefined {
     return this._height;
   }
-  set height(value: ReactiveProp<number | string> | undefined) {
+  set height(value: ReactiveProp<Size> | undefined) {
     const raw = isTransitionDescriptor(value) ? value.target : value;
     this._height =
       typeof raw === "function" ? raw(typeof this._height === "number" ? this._height : 0) : raw;
@@ -268,10 +292,10 @@ export class DOMElement implements ReactiveElementBase {
     }
   }
 
-  get size(): number | string | undefined {
+  get size(): Size | undefined {
     return this.width ?? this.height;
   }
-  set size(val: SizeProp | undefined) {
+  set size(val: ReactiveProp<Size> | undefined) {
     this.width = val;
     this.height = val;
   }
@@ -355,7 +379,7 @@ export class DOMElement implements ReactiveElementBase {
     const defaultOrigin: ElementAnchor = "top-left";
     this.origin = options.origin ?? defaultOrigin;
 
-    if (html instanceof DOMElement) {
+    if (html instanceof DOMElementImpl) {
       this.domElement = html.domElement;
       this.id = options.id || html.id;
       this.origin = options.origin || html.origin || defaultOrigin;
@@ -398,11 +422,11 @@ export class DOMElement implements ReactiveElementBase {
       this._isCustomPositioned = true;
     }
 
-    const initialWidth = cssLength(this.width as number | string | undefined);
+    const initialWidth = cssLength(this.width);
     if (initialWidth !== undefined) {
       this.domElement.style.width = initialWidth;
     }
-    const initialHeight = cssLength(this.height as number | string | undefined);
+    const initialHeight = cssLength(this.height);
     if (initialHeight !== undefined) {
       this.domElement.style.height = initialHeight;
     }
@@ -650,5 +674,5 @@ export function mount<T extends ReactiveElementBase>(element: T): T {
 
 /** Wraps a DOM node as a reactive stage element. @category Core */
 export function Element(node: HTMLElement, options: ElementOptions = {}): DOMElement {
-  return mount(new DOMElement("Element", node, options));
+  return mount(new DOMElementImpl("Element", node, options));
 }

@@ -7,6 +7,7 @@ import {
   getActiveStage,
   type Point,
   type ReactiveElementBase,
+  type Size,
   STAGE_UNIT_VAR,
   STAGE_UNITS_TALL,
   stageUnitPx,
@@ -17,7 +18,7 @@ import {
 } from "../core/index";
 import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
-import { DOMElement, mount } from "./element";
+import { type DOMElement, DOMElementImpl, mount } from "./element";
 
 export type { RuleOptions };
 
@@ -64,9 +65,9 @@ export interface LayoutOptions {
   /** Vertical start position in stage units, or `"center"` to center the arrangement. */
   y?: number | "center";
   /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
-  width?: number | string | (number | string)[];
+  width?: Size | Size[];
   /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
-  height?: number | string | (number | string)[];
+  height?: Size | Size[];
   /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
   gap?: number;
   /** Horizontal gutter spacing in stage units. */
@@ -174,7 +175,7 @@ function stageWidthUnits(): number {
 
 function measureElement(
   el: LayoutElement,
-  explicitWidth?: number | string,
+  explicitWidth?: Size,
 ): { width: number; height: number } {
   const dom = (el as { domElement?: HTMLElement }).domElement;
   if (!dom) return { width: 24, height: 7.2 };
@@ -216,8 +217,8 @@ function applyPosition(
   options: {
     animate?: LayoutAnimation;
     duration?: number;
-    width?: number | string | (number | string)[];
-    height?: number | string | (number | string)[];
+    width?: Size | Size[];
+    height?: Size | Size[];
   } = {},
   index = 0,
 ): void {
@@ -393,7 +394,7 @@ function createLayoutRule(
   node.style.display = "block";
   applyRuleStyles(node, options);
 
-  const el = new DOMElement("rule", node, {
+  const el = new DOMElementImpl("rule", node, {
     x,
     y,
     width,

@@ -4,7 +4,7 @@
 
 import "./Icon.css";
 import { logger } from "../../core/index";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 
 /**
  * Definition for registering an icon namespace or resolver.
@@ -89,9 +89,9 @@ export interface IconElement extends DOMElement {
  * Reactive Icon element wrapping an SVG icon on the presentation stage.
  * @internal
  */
-class IconElementImpl extends DOMElement implements IconElement {
+class IconElementImpl extends DOMElementImpl implements IconElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "name",
   ]);
   private _name: string;

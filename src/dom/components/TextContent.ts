@@ -1,4 +1,4 @@
-import { DOMElement, type ElementOptions } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions } from "../element";
 
 /** Mutable text content. @category Components */
 export interface TextElement extends DOMElement {
@@ -6,9 +6,9 @@ export interface TextElement extends DOMElement {
 }
 
 /** @internal */
-export class TextContentElement extends DOMElement implements TextElement {
+export class TextContentElement extends DOMElementImpl implements TextElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "text",
   ]);
   private readonly textNode: Text;

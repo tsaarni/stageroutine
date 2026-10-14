@@ -6,7 +6,7 @@ import { isTransitionDescriptor } from "../../motion/transitions";
 import "./Connector.css";
 import { type Gauge, getActiveStage, tryGetActiveStage, unitsToPx } from "../../core/index";
 import type { AnchorMode, ElementAnchor, FlowEffect, ReactiveProp } from "../../core/types";
-import { DOMElement, type ElementOptions, mount } from "../element";
+import { type DOMElement, DOMElementImpl, type ElementOptions, mount } from "../element";
 import {
   type CardinalSide,
   computeArcPath,
@@ -387,9 +387,9 @@ export interface ConnectorElement extends DOMElement {
 /**
  * @internal
  */
-class ConnectorElementImpl extends DOMElement implements ConnectorElement {
+class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "start",
     "end",
     "flow",

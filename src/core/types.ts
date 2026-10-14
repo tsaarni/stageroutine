@@ -453,7 +453,7 @@ export type CoordProp = ReactiveProp<PositionCoord>;
  * Element size in stage units, or an authored CSS length such as `"40rem"`.
  * @category Core
  */
-export type SizeProp = ReactiveProp<number | string>;
+export type Size = number | string;
 
 /**
  * 2D point as a fixed-length [x, y] tuple.
@@ -515,19 +515,31 @@ export interface ReactiveElementBase {
   /** Which point of the element sits on its coordinate (default: `"top-left"`). */
   origin?: ReactiveProp<ElementAnchor>;
   align?: ReactiveProp<Align>;
-  opacity: ReactiveProp<number>;
-  x: CoordProp;
-  y: CoordProp;
+  get opacity(): number;
+  set opacity(value: ReactiveProp<number>);
+  get x(): number;
+  set x(value: CoordProp);
+  get y(): number;
+  set y(value: CoordProp);
   position?: ReactiveProp<Position> | PositionUpdater;
-  width?: SizeProp;
-  height?: SizeProp;
-  size?: SizeProp;
-  scale: ReactiveProp<number>;
-  rotation: ReactiveProp<number>;
-  blur: ReactiveProp<number>;
-  brightness: ReactiveProp<number>;
-  color?: ReactiveProp<string>;
-  zIndex?: ReactiveProp<number | string>;
+  get width(): Size | undefined;
+  set width(value: ReactiveProp<Size> | undefined);
+  get height(): Size | undefined;
+  set height(value: ReactiveProp<Size> | undefined);
+  get size(): Size | undefined;
+  set size(value: ReactiveProp<Size> | undefined);
+  get scale(): number;
+  set scale(value: ReactiveProp<number>);
+  get rotation(): number;
+  set rotation(value: ReactiveProp<number>);
+  get blur(): number;
+  set blur(value: ReactiveProp<number>);
+  get brightness(): number;
+  set brightness(value: ReactiveProp<number>);
+  get color(): string | undefined;
+  set color(value: ReactiveProp<string> | undefined);
+  get zIndex(): number | string | undefined;
+  set zIndex(value: ReactiveProp<number | string> | undefined);
   readonly isMounted?: boolean;
   readonly isActive?: boolean;
   onMount?(fn: () => void): () => void;

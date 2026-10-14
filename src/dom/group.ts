@@ -9,7 +9,7 @@ import type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
-  SizeProp,
+  Size,
 } from "../core/types";
 import {
   type ElementTransition,
@@ -35,7 +35,7 @@ export interface GroupElement<T extends ReactiveElementBase = ReactiveElementBas
   x: CoordProp;
   y: CoordProp;
   position: ReactiveProp<Position> | PositionUpdater;
-  size: SizeProp;
+  size: ReactiveProp<Size>;
 
   to(props: ElementTransitionProps<T>): ElementTransition;
   decorate(...decorators: ElementDecorator[]): this;

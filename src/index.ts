@@ -62,6 +62,7 @@ if (document.fonts) {
 // Core runtime
 export { logger, Stage } from "./core/index";
 export type { LogLevel } from "./core/logger";
+export type { Scene } from "./core/stage";
 export type { TerminalStatus } from "./core/terminal-protocol";
 export type {
   Align,
@@ -89,7 +90,7 @@ export type {
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
-  SizeProp,
+  Size,
   StageContext,
   StageEventMap,
   StageOptions,

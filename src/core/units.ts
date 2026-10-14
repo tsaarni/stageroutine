@@ -5,6 +5,8 @@
  * 160 units wide. One unit is the same distance on both axes.
  */
 
+import type { Size } from "./types";
+
 /** Stage height in stage units. */
 export const STAGE_UNITS_TALL = 90;
 
@@ -28,7 +30,7 @@ export function units(value: number): string {
 }
 
 /** Formats a coordinate or size as a CSS length. Numbers are stage units, strings pass through. */
-export function cssLength(value: number | string | undefined): string | undefined {
+export function cssLength(value: Size | undefined): string | undefined {
   if (value === undefined || value === null) return undefined;
   if (typeof value === "number") return units(value);
   const str = String(value).trim();

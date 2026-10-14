@@ -11,7 +11,13 @@ import {
   type ReactiveElementBase,
   type ReactiveProp,
 } from "../../core/index";
-import { DOMElement, type ElementChild, type ElementOptions, mount } from "../element";
+import {
+  type DOMElement,
+  DOMElementImpl,
+  type ElementChild,
+  type ElementOptions,
+  mount,
+} from "../element";
 
 import {
   type AnchorMode,
@@ -85,9 +91,9 @@ export interface ShapeElement extends DOMElement {
 /**
  * @internal
  */
-class ShapeElementImpl extends DOMElement implements ShapeElement {
+class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
   static override _reactiveKeys: ReadonlySet<string> = new Set([
-    ...DOMElement._reactiveKeys,
+    ...DOMElementImpl._reactiveKeys,
     "start",
     "end",
     "flow",
@@ -277,7 +283,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
       } else if (children instanceof Node) {
         el.appendChild(children);
       } else if (
-        children instanceof DOMElement ||
+        children instanceof DOMElementImpl ||
         (children && typeof children === "object" && "domElement" in children)
       ) {
         const childEl = children as unknown as ReactiveElementBase;
@@ -293,7 +299,7 @@ class ShapeElementImpl extends DOMElement implements ShapeElement {
           if (child instanceof Node) {
             el.appendChild(child);
           } else if (
-            child instanceof DOMElement ||
+            child instanceof DOMElementImpl ||
             (child && typeof child === "object" && "domElement" in child)
           ) {
             const childEl = child as unknown as ReactiveElementBase;

@@ -53,6 +53,29 @@ export class StageDriver {
     }
   }
 
+  /** Maps stage units to browser pixels, including scaling and letterboxing. */
+  async stageUnitsToClientPixels(x: number, y: number): Promise<{ x: number; y: number }> {
+    return this.page.evaluate(
+      ({ x, y }) => {
+        const stage = window.__STAGE_INSTANCE__;
+        const viewport = document.querySelector("#stage > div");
+        if (!stage || !viewport) throw new Error("Stage is not mounted");
+        const rect = viewport.getBoundingClientRect();
+        return {
+          x: rect.left + (x / stage.unitsWide) * rect.width,
+          y: rect.top + (y / stage.unitsTall) * rect.height,
+        };
+      },
+      { x, y },
+    );
+  }
+
+  /** Clicks at stage coordinates, in stage units. */
+  async clickAtStageUnits(x: number, y: number): Promise<void> {
+    const point = await this.stageUnitsToClientPixels(x, y);
+    await this.page.mouse.click(point.x, point.y);
+  }
+
   /**
    * Advances to the next step via keyboard and waits for transitions to settle at rest.
    */

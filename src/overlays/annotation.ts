@@ -582,6 +582,13 @@ export function Annotation(options: AnnotationOptions = {}): OverlayPlugin & Ann
 
       boundPointerDown = (e: PointerEvent) => {
         if (!isActive) return;
+        if (e.button !== 0 && e.button !== 2) return;
+
+        // Cancelling pointerdown also cancels the browser's default focus release.
+        const focused = document.activeElement;
+        if (focused instanceof HTMLElement && ctx?.container.contains(focused)) {
+          focused.blur();
+        }
 
         if (e.button === 2 || e.detail === 2) {
           e.preventDefault();
@@ -589,7 +596,6 @@ export function Annotation(options: AnnotationOptions = {}): OverlayPlugin & Ann
           return;
         }
 
-        if (e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
 

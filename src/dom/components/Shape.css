@@ -84,6 +84,11 @@
     mask-size: 100% 100%;
   }
 
+  /* Keep the backdrop group stable when scene entrance changes parent opacity. */
+  .sr-shape-surface {
+    backdrop-filter: blur(0px);
+  }
+
   /* Surface variant: frosted glass gradient + backdrop blur + shadow */
   .sr-shape-surface .sr-shape-frost {
     background: var(--sr-surface);

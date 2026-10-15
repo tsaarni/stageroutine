@@ -54,14 +54,14 @@
       180deg,
       color-mix(
           in srgb,
-          var(--sr-text) 12%,
-          color-mix(in srgb, var(--sr-background) 75%, transparent)
+          var(--sr-text) 10%,
+          color-mix(in srgb, var(--sr-background) 50%, transparent)
         )
         0%,
       color-mix(
           in srgb,
-          var(--sr-text) 5%,
-          color-mix(in srgb, var(--sr-background) 68%, transparent)
+          var(--sr-text) 4%,
+          color-mix(in srgb, var(--sr-background) 45%, transparent)
         )
         100%
     );
@@ -76,7 +76,9 @@
 
   /* Local text overrides also derive local secondary colors. */
   .sr-stage,
-  [data-sr-theme~="text"] {
+  [data-sr-theme~="text"],
+  [data-sr-theme~="primary"],
+  [data-sr-theme~="accent"] {
     --sr-text-muted: color-mix(in srgb, var(--sr-text) 72%, transparent);
     --sr-text-dim: color-mix(in srgb, var(--sr-text) 50%, transparent);
     --sr-surface-border-color: color-mix(in srgb, var(--sr-text) 15%, transparent);
@@ -84,7 +86,9 @@
     --sr-surface-shadow:
       0 calc(1.25rem * var(--sr-scale, 1)) calc(4rem * var(--sr-scale, 1))
       calc(-1rem * var(--sr-scale, 1)) rgb(0 0 0 / 60%),
-      inset 0 1px 0 0 color-mix(in srgb, var(--sr-text) 18%, transparent);
+      0 0 calc(2.5rem * var(--sr-scale, 1)) color-mix(in srgb, var(--sr-primary) 6%, transparent),
+      inset 0 1px 0 0
+      color-mix(in srgb, var(--sr-accent) 24%, color-mix(in srgb, var(--sr-text) 12%, transparent));
     --sr-focus-background: color-mix(in srgb, var(--sr-text) 8%, transparent);
   }
 }

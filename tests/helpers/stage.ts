@@ -93,6 +93,14 @@ export class StageDriver {
   }
 
   /**
+   * Reloads the page and waits for stage restoration to settle at rest.
+   */
+  async reload(): Promise<void> {
+    await this.page.reload();
+    await this.expectAtRest();
+  }
+
+  /**
    * Reads structured diagnostic metrics, optionally filtered by RegExp.
    */
   async getMetrics(pattern?: RegExp): Promise<Record<string, unknown>> {

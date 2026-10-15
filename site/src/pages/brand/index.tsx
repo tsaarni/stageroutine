@@ -14,6 +14,7 @@ interface ThemePreset {
   background: string;
   text: string;
   primary: string;
+  secondary: string;
 }
 
 const THEME_PRESETS: ThemePreset[] = [
@@ -24,6 +25,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.defaultDark.background ?? "#0c0d12",
     text: themes.defaultDark.text ?? "#ffffff",
     primary: themes.defaultDark.primary ?? "#38bdf8",
+    secondary: themes.defaultDark.accent ?? "#818cf8",
   },
   {
     id: "tokyoNight",
@@ -32,6 +34,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.tokyoNight.background ?? "#1a1b26",
     text: themes.tokyoNight.text ?? "#c0caf5",
     primary: themes.tokyoNight.primary ?? "#7aa2f7",
+    secondary: themes.tokyoNight.accent ?? "#7dcfff",
   },
   {
     id: "dracula",
@@ -40,6 +43,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.dracula.background ?? "#282a36",
     text: themes.dracula.text ?? "#f8f8f2",
     primary: themes.dracula.primary ?? "#ff79c6",
+    secondary: themes.dracula.accent ?? "#bd93f9",
   },
   {
     id: "cyberpunk",
@@ -48,6 +52,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.cyberpunk.background ?? "#0d0221",
     text: themes.cyberpunk.text ?? "#00f0ff",
     primary: themes.cyberpunk.primary ?? "#ff003c",
+    secondary: themes.cyberpunk.accent ?? "#a855f7",
   },
   {
     id: "defaultLight",
@@ -56,6 +61,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.defaultLight.background ?? "#fafafa",
     text: themes.defaultLight.text ?? "#09090b",
     primary: themes.defaultLight.primary ?? "#0284c7",
+    secondary: themes.defaultLight.accent ?? "#6366f1",
   },
 ];
 
@@ -105,9 +111,10 @@ export default function BrandGuidelines(): React.JSX.Element {
               <span className={styles.sectionTag}>01 / Color Scheming</span>
               <h2 className={styles.sectionTitle}>Theme Engine &amp; Adaptive Palette</h2>
               <p className={styles.sectionSubtitle}>
-                Themes define 3 base properties: <code>background</code>, <code>text</code>, and{" "}
-                <code>primary</code>. Selecting a preset updates the stage canvas, foundation
-                tokens, and derived opacity scales in real time.
+                Themes define 4 base properties: <code>background</code>, <code>text</code>,{" "}
+                <code>primary</code>, and <code>secondary</code> (accent). Selecting a preset
+                updates the stage canvas, foundation tokens, and derived opacity scales in real
+                time.
               </p>
             </div>
 
@@ -124,7 +131,24 @@ export default function BrandGuidelines(): React.JSX.Element {
                       }`}
                       onClick={() => setActivePreset(preset)}
                     >
-                      <span className={styles.tabDot} style={{ background: preset.primary }} />
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          gap: "3px",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span
+                          className={styles.tabDot}
+                          style={{ background: preset.primary }}
+                          title={`Primary: ${preset.primary}`}
+                        />
+                        <span
+                          className={styles.tabDot}
+                          style={{ background: preset.secondary }}
+                          title={`Secondary: ${preset.secondary}`}
+                        />
+                      </span>
                       {preset.name}
                     </button>
                   ))}
@@ -146,14 +170,17 @@ export default function BrandGuidelines(): React.JSX.Element {
               {/* Simulated Stage Canvas */}
               <div
                 className={styles.sandboxStageCanvas}
-                style={{ backgroundColor: activePreset.background }}
+                style={{
+                  backgroundColor: activePreset.background,
+                  backgroundImage: `radial-gradient(circle at 18% 22%, color-mix(in srgb, ${activePreset.primary} 15%, transparent) 0%, transparent 48%), radial-gradient(circle at 82% 78%, color-mix(in srgb, ${activePreset.secondary} 12%, transparent) 0%, transparent 48%)`,
+                }}
               >
                 <div
                   className={styles.sandboxStageCard}
                   style={{
-                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 9%, transparent) 0%, color-mix(in srgb, ${activePreset.text} 3.5%, transparent) 100%)`,
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 10%, color-mix(in srgb, ${activePreset.background} 50%, transparent)) 0%, color-mix(in srgb, ${activePreset.text} 4%, color-mix(in srgb, ${activePreset.background} 45%, transparent)) 100%)`,
                     border: `1px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
-                    boxShadow: `0 20px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 color-mix(in srgb, ${activePreset.text} 18%, transparent)`,
+                    boxShadow: `0 20px 48px rgba(0, 0, 0, 0.45), 0 0 40px color-mix(in srgb, ${activePreset.primary} 6%, transparent), inset 0 1px 0 0 color-mix(in srgb, ${activePreset.secondary} 24%, color-mix(in srgb, ${activePreset.text} 12%, transparent))`,
                     color: activePreset.text,
                   }}
                 >
@@ -185,7 +212,7 @@ export default function BrandGuidelines(): React.JSX.Element {
                     className={styles.sandboxSubtitle}
                     style={{ color: `color-mix(in srgb, ${activePreset.text} 72%, transparent)` }}
                   >
-                    Secondary description demonstrating layout hierarchy.
+                    Secondary description demonstrating layout hierarchy and dual-accent styling.
                   </p>
 
                   <div
@@ -201,31 +228,53 @@ export default function BrandGuidelines(): React.JSX.Element {
                       stage.theme(themes.{activePreset.id})
                     </span>
 
-                    <button
-                      type="button"
-                      className={styles.sandboxBtn}
-                      style={{
-                        background: activePreset.primary,
-                        color:
-                          activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
-                            ? "#ffffff"
-                            : activePreset.background,
-                      }}
-                    >
-                      <span>Action</span>
-                      <MicroLogo
-                        width={14}
-                        height={14}
+                    <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+                      <button
+                        type="button"
                         style={{
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "0.45rem 0.95rem",
+                          border: `1px solid color-mix(in srgb, ${activePreset.secondary} 35%, transparent)`,
+                          borderRadius: "9999px",
+                          fontFamily: "var(--sr-font-sans)",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                          background: `color-mix(in srgb, ${activePreset.secondary} 12%, transparent)`,
+                          color: activePreset.secondary,
+                          transition: "transform 0.15s ease, filter 0.15s ease",
+                        }}
+                      >
+                        Secondary
+                      </button>
+
+                      <button
+                        type="button"
+                        className={styles.sandboxBtn}
+                        style={{
+                          background: activePreset.primary,
                           color:
                             activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
                               ? "#ffffff"
                               : activePreset.background,
                         }}
-                        aria-hidden="true"
-                        role="img"
-                      />
-                    </button>
+                      >
+                        <span>Action</span>
+                        <MicroLogo
+                          width={14}
+                          height={14}
+                          style={{
+                            color:
+                              activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
+                                ? "#ffffff"
+                                : activePreset.background,
+                          }}
+                          aria-hidden="true"
+                          role="img"
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -236,11 +285,14 @@ export default function BrandGuidelines(): React.JSX.Element {
               Foundation Input Tokens (<code>themes.{activePreset.id}</code>)
             </h3>
             <p className={styles.subSectionSubtitle}>
-              The 3 explicit properties configured in <code>stage.theme()</code> for the selected
+              The 4 explicit properties configured in <code>stage.theme()</code> for the selected
               theme.
             </p>
 
-            <div className={styles.paletteGrid}>
+            <div
+              className={styles.paletteGrid}
+              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}
+            >
               {[
                 {
                   name: "Canvas Background",
@@ -256,6 +308,11 @@ export default function BrandGuidelines(): React.JSX.Element {
                   name: "Primary Accent",
                   hex: activePreset.primary,
                   role: "Active brand accent & focus (--sr-primary)",
+                },
+                {
+                  name: "Secondary Accent",
+                  hex: activePreset.secondary,
+                  role: "Secondary accent & highlights (--sr-accent)",
                 },
               ].map((swatch) => (
                 <button
@@ -337,16 +394,16 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.derivationPreview}
                   style={{
-                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 8%, color-mix(in srgb, ${activePreset.background} 88%, transparent)) 0%, color-mix(in srgb, ${activePreset.text} 3%, color-mix(in srgb, ${activePreset.background} 82%, transparent)) 100%)`,
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 10%, color-mix(in srgb, ${activePreset.background} 50%, transparent)) 0%, color-mix(in srgb, ${activePreset.text} 4%, color-mix(in srgb, ${activePreset.background} 45%, transparent)) 100%)`,
                     border: `1px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
-                    boxShadow: `inset 0 1px 0 0 color-mix(in srgb, ${activePreset.text} 18%, transparent)`,
+                    boxShadow: `inset 0 1px 0 0 color-mix(in srgb, ${activePreset.secondary} 24%, color-mix(in srgb, ${activePreset.text} 12%, transparent))`,
                     color: activePreset.text,
                   }}
                 >
-                  8% &rarr; 3% Surface
+                  10% &rarr; 4% Surface
                 </div>
                 <span className={styles.derivationFormula}>
-                  linear-gradient(text 8% / bg 88% to text 3% / bg 82%)
+                  linear-gradient(text 10% / bg 50% to text 4% / bg 45%)
                 </span>
                 <h4 className={styles.derivationName}>--sr-surface</h4>
                 <p className={styles.derivationDesc}>
@@ -400,17 +457,14 @@ export default function BrandGuidelines(): React.JSX.Element {
                 <div
                   className={styles.derivationPreview}
                   style={{
-                    backgroundColor: activePreset.primary,
-                    color:
-                      activePreset.id === "defaultLight" || activePreset.id === "cyberpunk"
-                        ? "#ffffff"
-                        : activePreset.background,
+                    backgroundColor: activePreset.secondary,
+                    color: activePreset.id === "defaultLight" ? "#ffffff" : activePreset.background,
                   }}
                 >
-                  Accent: {activePreset.primary}
+                  Accent: {activePreset.secondary}
                 </div>
                 <span className={styles.derivationFormula}>
-                  var(--sr-primary) &rarr; {activePreset.primary}
+                  var(--sr-accent) &rarr; {activePreset.secondary}
                 </span>
                 <h4 className={styles.derivationName}>--sr-accent</h4>
                 <p className={styles.derivationDesc}>
@@ -588,18 +642,54 @@ export default function BrandGuidelines(): React.JSX.Element {
 
               <div className={styles.typeScaleRow}>
                 <div className={styles.typeScaleInfo}>
-                  <span className={styles.typeScaleName}>Body &amp; Code</span>
-                  <span className={styles.typeScaleVar}>--sr-font-size-body / code</span>
+                  <span className={styles.typeScaleName}>Body Text</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-body</span>
+                </div>
+                <div
+                  className={styles.typeScaleSample}
+                  style={{
+                    fontFamily: "var(--sr-font-sans)",
+                    fontSize: "1.05rem",
+                    color: "rgba(255, 255, 255, 0.9)",
+                  }}
+                >
+                  Standard interface copy and paragraph descriptions for readable presentation.
+                </div>
+              </div>
+
+              <div className={styles.typeScaleRow}>
+                <div className={styles.typeScaleInfo}>
+                  <span className={styles.typeScaleName}>Code &amp; Monospace</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-code</span>
                 </div>
                 <div
                   className={styles.typeScaleSample}
                   style={{
                     fontFamily: "var(--sr-font-mono)",
-                    fontSize: "0.95rem",
+                    fontSize: "0.92rem",
                     color: "#38bdf8",
                   }}
                 >
                   const result = compute(options);
+                </div>
+              </div>
+
+              <div className={styles.typeScaleRow}>
+                <div className={styles.typeScaleInfo}>
+                  <span className={styles.typeScaleName}>Kicker &amp; Label</span>
+                  <span className={styles.typeScaleVar}>--sr-font-size-kicker</span>
+                </div>
+                <div
+                  className={styles.typeScaleSample}
+                  style={{
+                    fontFamily: "var(--sr-font-mono)",
+                    fontSize: "0.78rem",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#a1a1aa",
+                  }}
+                >
+                  Category &middot; Overview
                 </div>
               </div>
             </div>

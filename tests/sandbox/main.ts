@@ -16,6 +16,12 @@ window.__SR__ = SR;
 
 // When the test injects a setup function, run it and mount
 window.__SR_RUN_SETUP__ = (setupFnString: string) => {
+  try {
+    sessionStorage.setItem("__SR_SETUP_FN__", setupFnString);
+  } catch {
+    // ignore
+  }
+
   // Clean up any previous stage
   if (window.__STAGE_INSTANCE__) {
     window.__STAGE_INSTANCE__.dispose();
@@ -34,3 +40,12 @@ window.__SR_RUN_SETUP__ = (setupFnString: string) => {
     stage.mount("#stage");
   }
 };
+
+try {
+  const saved = sessionStorage.getItem("__SR_SETUP_FN__");
+  if (saved) {
+    window.__SR_RUN_SETUP__(saved);
+  }
+} catch {
+  // ignore
+}

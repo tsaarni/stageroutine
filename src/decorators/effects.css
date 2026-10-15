@@ -1,9 +1,11 @@
 @layer sr-components {
   .sr-glow {
-    --sr-glow-base: drop-shadow(0 0 6px rgb(192 132 252 / 65%))
-      drop-shadow(0 0 22px rgb(167 139 250 / 45%)) drop-shadow(0 0 48px rgb(147 51 234 / 25%));
-    --sr-glow-peak: drop-shadow(0 0 10px rgb(192 132 252 / 85%))
-      drop-shadow(0 0 32px rgb(167 139 250 / 60%)) drop-shadow(0 0 65px rgb(147 51 234 / 35%));
+    --sr-glow-base: drop-shadow(0 0 6px color-mix(in srgb, var(--sr-secondary) 65%, transparent))
+      drop-shadow(0 0 22px color-mix(in srgb, var(--sr-secondary) 45%, transparent))
+      drop-shadow(0 0 48px color-mix(in srgb, var(--sr-secondary) 25%, transparent));
+    --sr-glow-peak: drop-shadow(0 0 10px color-mix(in srgb, var(--sr-secondary) 85%, transparent))
+      drop-shadow(0 0 32px color-mix(in srgb, var(--sr-secondary) 60%, transparent))
+      drop-shadow(0 0 65px color-mix(in srgb, var(--sr-secondary) 35%, transparent));
 
     display: inline-block;
     filter: var(--sr-glow-base);
@@ -27,12 +29,11 @@
       var(--sr-gradient-angle, 90deg),
       var(
         --sr-gradient-colors,
-        rgb(167 139 250) 0%,
-        rgb(224 231 255) 22%,
-        rgb(255 255 255) 35%,
-        rgb(186 230 253) 48%,
-        rgb(196 181 253) 65%,
-        rgb(167 139 250) 100%
+        var(--sr-secondary) 0%,
+        var(--sr-primary) 35%,
+        var(--sr-text) 50%,
+        var(--sr-primary) 65%,
+        var(--sr-secondary) 100%
       )
     );
     background-clip: text;

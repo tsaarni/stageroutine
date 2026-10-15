@@ -307,7 +307,7 @@ export interface ConnectorOptions extends ElementOptions {
   fromAnchor?: AnchorMode | ElementAnchor;
   /** Attachment point on the destination target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
   toAnchor?: AnchorMode | ElementAnchor;
-  /** Stroke color of the connector line (defaults to #38bdf8). */
+  /** Stroke color of the connector line (default: var(--sr-primary)). */
   color?: string;
   /** Stroke width in virtual pixels (defaults to 3). */
   strokeWidth?: number;
@@ -532,6 +532,29 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
   private periodicTimeoutTimer: number | null = null;
   private periodicOptions: PeriodicPulseOptions | null = null;
   private activePulses = new Set<PingHandle>();
+  private resizeLabel(): void {
+    if (!this.labelText || !this.labelBg) return;
+    try {
+      const bbox = this.labelText.getBBox();
+      const padX = 10;
+      const padY = 4;
+      if (bbox.width > 0 && bbox.height > 0) {
+        this.labelBg.setAttribute("x", String(bbox.x - padX));
+        this.labelBg.setAttribute("y", String(bbox.y - padY));
+        this.labelBg.setAttribute("width", String(bbox.width + padX * 2));
+        this.labelBg.setAttribute("height", String(bbox.height + padY * 2));
+      }
+    } catch {
+      const textLen = (this.labelText.textContent || "").length;
+      const w = textLen * 10 + 20;
+      const h = 26;
+      this.labelBg.setAttribute("x", String(-w / 2));
+      this.labelBg.setAttribute("y", String(-h / 2));
+      this.labelBg.setAttribute("width", String(w));
+      this.labelBg.setAttribute("height", String(h));
+    }
+  }
+
   constructor(from: ConnectorTarget, to: ConnectorTarget, options: ConnectorOptions = {}) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.style.position = "absolute";
@@ -546,7 +569,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     svg.setAttribute("preserveAspectRatio", "none");
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    const color = options.color || "#38bdf8";
+    const color = options.color || "var(--sr-primary)";
     const sWidth = options.strokeWidth ?? 3;
     path.setAttribute("stroke", color);
     path.setAttribute("stroke-width", String(sWidth));
@@ -592,7 +615,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
         width: initW,
         height: initH,
         rx: 5,
-        fill: "rgba(15, 23, 42, 0.95)",
+        fill: "var(--sr-surface-solid)",
         stroke: color,
         "stroke-width": 1,
         "stroke-opacity": 0.4,
@@ -602,10 +625,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
       labelText = createSvg("text", {
         "text-anchor": "middle",
         "dominant-baseline": "central",
-        fill: "#f8fafc",
-        "font-size": "13px",
-        "font-weight": "500",
-        "font-family": "system-ui, -apple-system, sans-serif",
+        fill: "var(--sr-text)",
       });
       labelText.textContent = options.label ?? "";
       labelGroup.appendChild(labelText);
@@ -659,6 +679,11 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     this.labelGroup = labelGroup;
     this.labelBg = labelBg;
     this.labelText = labelText;
+    if (labelText) {
+      const observer = new ResizeObserver(() => this.resizeLabel());
+      observer.observe(labelText);
+      this.onUnmount(() => observer.disconnect());
+    }
 
     if (options.start !== undefined) this.start = options.start;
     if (options.end !== undefined) this.end = options.end;
@@ -904,7 +929,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     if (this.strokeWidth !== undefined) {
       this.pathNode.setAttribute("stroke-width", String(this.strokeWidth));
     }
-    const currentStroke = (this.color as string | undefined) || "#38bdf8";
+    const currentStroke = (this.color as string | undefined) || "var(--sr-primary)";
     if (currentStroke) {
       this.pathNode.setAttribute("stroke", currentStroke);
       for (const head of [this.startHeadNode, this.endHeadNode]) {
@@ -1053,25 +1078,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
       } else {
         this.labelGroup.style.transition = "";
         this.labelGroup.style.opacity = "1";
-        try {
-          const bbox = this.labelText.getBBox();
-          const padX = 10;
-          const padY = 4;
-          if (bbox.width > 0 && bbox.height > 0) {
-            this.labelBg.setAttribute("x", String(bbox.x - padX));
-            this.labelBg.setAttribute("y", String(bbox.y - padY));
-            this.labelBg.setAttribute("width", String(bbox.width + padX * 2));
-            this.labelBg.setAttribute("height", String(bbox.height + padY * 2));
-          }
-        } catch {
-          const textLen = (this.labelText.textContent || "").length;
-          const w = textLen * 10 + 20;
-          const h = 26;
-          this.labelBg.setAttribute("x", String(-w / 2));
-          this.labelBg.setAttribute("y", String(-h / 2));
-          this.labelBg.setAttribute("width", String(w));
-          this.labelBg.setAttribute("height", String(h));
-        }
+        this.resizeLabel();
 
         let ratio = 0.5;
         const rawPlacement = this.labelPlacement;
@@ -1163,7 +1170,7 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     if (!pathD) return;
 
     const ping = spawnPingPacket(this.svgRoot, pathD, {
-      color: options.color ?? (this.color as string | undefined) ?? "#38bdf8",
+      color: options.color ?? (this.color as string | undefined) ?? "var(--sr-primary)",
       duration: options.duration ?? 0.6,
       size: options.size ?? 12,
       start: startVal,

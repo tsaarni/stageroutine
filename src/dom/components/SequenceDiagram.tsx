@@ -117,7 +117,7 @@ export interface ActivationOptions extends ElementOptions {
   y?: number;
   /** Explicit bar height in stage units (default: 18). */
   height?: number;
-  /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
+  /** Fill color and glow highlight for the activation bar (default: "var(--sr-primary)"). */
   color?: string;
 }
 
@@ -331,13 +331,13 @@ class ActivationBarElementImpl extends DOMElementImpl implements ActivationBarEl
     this.domElement.style.left = `${x - 7}px`;
     this.domElement.style.top = `${y + yNum * stageUnitPx(stageH)}px`;
     this.domElement.style.height = units(hNum);
-    const color = typeof this.color === "string" ? this.color : "#38bdf8";
+    const color = typeof this.color === "string" ? this.color : "var(--sr-primary)";
     this.domElement.style.background = color;
     this.domElement.style.boxShadow = `0 0 12px color-mix(in srgb, ${color} 40%, transparent)`;
   }
 
   constructor(lifeline: LifelineElementImpl, options: ActivationOptions = {}) {
-    const color = options.color || "#38bdf8";
+    const color = options.color || "var(--sr-primary)";
     const bar = document.createElement("div");
     bar.className = "sr-activation sr-activation-bar";
     bar.style.position = "absolute";

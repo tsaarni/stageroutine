@@ -8,6 +8,7 @@
 @import "./stage.css";
 @import "./surfaces.css";
 @import "./interaction.css";
+@import "./typography.css";
 @import "./components/Title.css";
 @import "./components/Text.css";
 @import "./components/Kicker.css";

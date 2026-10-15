@@ -5,6 +5,7 @@ import Layout from "@theme/Layout";
 import type React from "react";
 import { useState } from "react";
 import { themes } from "../../../../src/theme/presets";
+import "../../../../src/theme/base.css";
 import styles from "./brand.module.css";
 
 interface ThemePreset {
@@ -25,7 +26,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.defaultDark.background ?? "#0c0d12",
     text: themes.defaultDark.text ?? "#ffffff",
     primary: themes.defaultDark.primary ?? "#38bdf8",
-    secondary: themes.defaultDark.accent ?? "#818cf8",
+    secondary: themes.defaultDark.secondary ?? "#818cf8",
   },
   {
     id: "tokyoNight",
@@ -34,7 +35,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.tokyoNight.background ?? "#1a1b26",
     text: themes.tokyoNight.text ?? "#c0caf5",
     primary: themes.tokyoNight.primary ?? "#7aa2f7",
-    secondary: themes.tokyoNight.accent ?? "#7dcfff",
+    secondary: themes.tokyoNight.secondary ?? "#7dcfff",
   },
   {
     id: "dracula",
@@ -43,7 +44,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.dracula.background ?? "#282a36",
     text: themes.dracula.text ?? "#f8f8f2",
     primary: themes.dracula.primary ?? "#ff79c6",
-    secondary: themes.dracula.accent ?? "#bd93f9",
+    secondary: themes.dracula.secondary ?? "#bd93f9",
   },
   {
     id: "cyberpunk",
@@ -52,7 +53,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.cyberpunk.background ?? "#0d0221",
     text: themes.cyberpunk.text ?? "#00f0ff",
     primary: themes.cyberpunk.primary ?? "#ff003c",
-    secondary: themes.cyberpunk.accent ?? "#a855f7",
+    secondary: themes.cyberpunk.secondary ?? "#a855f7",
   },
   {
     id: "defaultLight",
@@ -61,7 +62,7 @@ const THEME_PRESETS: ThemePreset[] = [
     background: themes.defaultLight.background ?? "#fafafa",
     text: themes.defaultLight.text ?? "#09090b",
     primary: themes.defaultLight.primary ?? "#0284c7",
-    secondary: themes.defaultLight.accent ?? "#6366f1",
+    secondary: themes.defaultLight.secondary ?? "#6366f1",
   },
 ];
 
@@ -112,9 +113,8 @@ export default function BrandGuidelines(): React.JSX.Element {
               <h2 className={styles.sectionTitle}>Theme Engine &amp; Adaptive Palette</h2>
               <p className={styles.sectionSubtitle}>
                 Themes define 4 base properties: <code>background</code>, <code>text</code>,{" "}
-                <code>primary</code>, and <code>secondary</code> (accent). Selecting a preset
-                updates the stage canvas, foundation tokens, and derived opacity scales in real
-                time.
+                <code>primary</code>, and <code>secondary</code>. Selecting a preset updates the
+                stage canvas, foundation tokens, and derived opacity scales in real time.
               </p>
             </div>
 
@@ -169,18 +169,25 @@ export default function BrandGuidelines(): React.JSX.Element {
 
               {/* Simulated Stage Canvas */}
               <div
-                className={styles.sandboxStageCanvas}
-                style={{
-                  backgroundColor: activePreset.background,
-                  backgroundImage: `radial-gradient(circle at 18% 22%, color-mix(in srgb, ${activePreset.primary} 15%, transparent) 0%, transparent 48%), radial-gradient(circle at 82% 78%, color-mix(in srgb, ${activePreset.secondary} 12%, transparent) 0%, transparent 48%)`,
-                }}
+                className={`sr-stage ${styles.sandboxStageCanvas}`}
+                style={
+                  {
+                    "--sr-background": activePreset.background,
+                    "--sr-text": activePreset.text,
+                    "--sr-primary": activePreset.primary,
+                    "--sr-secondary": activePreset.secondary,
+                    backgroundColor: "var(--sr-background)",
+                    backgroundImage:
+                      "radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--sr-primary) 15%, transparent) 0%, transparent 48%), radial-gradient(circle at 82% 78%, color-mix(in srgb, var(--sr-secondary) 12%, transparent) 0%, transparent 48%)",
+                  } as React.CSSProperties
+                }
               >
                 <div
                   className={styles.sandboxStageCard}
                   style={{
-                    background: `linear-gradient(180deg, color-mix(in srgb, ${activePreset.text} 10%, color-mix(in srgb, ${activePreset.background} 50%, transparent)) 0%, color-mix(in srgb, ${activePreset.text} 4%, color-mix(in srgb, ${activePreset.background} 45%, transparent)) 100%)`,
-                    border: `1px solid color-mix(in srgb, ${activePreset.text} 15%, transparent)`,
-                    boxShadow: `0 20px 48px rgba(0, 0, 0, 0.45), 0 0 40px color-mix(in srgb, ${activePreset.primary} 6%, transparent), inset 0 1px 0 0 color-mix(in srgb, ${activePreset.secondary} 24%, color-mix(in srgb, ${activePreset.text} 12%, transparent))`,
+                    background: "var(--sr-surface)",
+                    border: "var(--sr-surface-border)",
+                    boxShadow: "var(--sr-surface-shadow)",
                     color: activePreset.text,
                   }}
                 >
@@ -312,7 +319,7 @@ export default function BrandGuidelines(): React.JSX.Element {
                 {
                   name: "Secondary Accent",
                   hex: activePreset.secondary,
-                  role: "Secondary accent & highlights (--sr-accent)",
+                  role: "Secondary accent & highlights (--sr-secondary)",
                 },
               ].map((swatch) => (
                 <button
@@ -464,9 +471,9 @@ export default function BrandGuidelines(): React.JSX.Element {
                   Accent: {activePreset.secondary}
                 </div>
                 <span className={styles.derivationFormula}>
-                  var(--sr-accent) &rarr; {activePreset.secondary}
+                  var(--sr-secondary) &rarr; {activePreset.secondary}
                 </span>
-                <h4 className={styles.derivationName}>--sr-accent</h4>
+                <h4 className={styles.derivationName}>--sr-secondary</h4>
                 <p className={styles.derivationDesc}>
                   Secondary accent. Use for badges, status indicators, and divider rule accents.
                 </p>

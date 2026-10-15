@@ -413,10 +413,16 @@ test.describe("Backdrop surfaces", () => {
   });
 
   for (const variant of ["solid", "ghost"] as const) {
-    test(`Shape ${variant} fades content and borders and restores opacity`, async ({ stage }) => {
+    test(`Shape ${variant} fades the whole container including pseudo-elements`, async ({
+      stage,
+    }) => {
       await stage.page.evaluate((value) => sessionStorage.setItem("shape-variant", value), variant);
       await stage.mount((SR) => {
         const s = new SR.Stage({ channel: false });
+        const style = document.createElement("style");
+        style.textContent =
+          '#plain-shape::before { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: white; }';
+        document.head.appendChild(style);
         const shape = SR.Shape(SR.paths.box(), "Content", {
           id: "plain-shape",
           width: 50,
@@ -431,10 +437,12 @@ test.describe("Backdrop surfaces", () => {
       });
       const root = stage.locator("#plain-shape");
       await stage.next();
-      await expect(root).toHaveCSS("opacity", "1");
-      await expect(root.locator(".sr-shape-text")).toHaveCSS("opacity", "0.5");
-      await expect(root.locator(".sr-shape-stroke-svg")).toHaveCSS("opacity", "0.5");
+      // Ancestor opacity fades the pseudo-element together with fill, text, and stroke.
+      await expect(root).toHaveCSS("opacity", "0.5");
+      await expect(root.locator(".sr-shape-text")).toHaveCSS("opacity", "1");
+      await expect(root.locator(".sr-shape-stroke-svg")).toHaveCSS("opacity", "1");
       await stage.prev();
+      await expect(root).toHaveCSS("opacity", "1");
       await expect(root.locator(".sr-shape-text")).toHaveCSS("opacity", "1");
       await expect(root.locator(".sr-shape-stroke-svg")).toHaveCSS("opacity", "1");
     });

@@ -5,6 +5,7 @@
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-hero);
     font-weight: 700;
+    font-style: normal;
     line-height: 0.95;
     color: var(--sr-text);
     letter-spacing: -0.04em;
@@ -17,6 +18,7 @@
     font-family: var(--sr-font-sans);
     font-size: var(--sr-font-size-title);
     font-weight: 700;
+    font-style: normal;
     line-height: 1.05;
     color: var(--sr-text);
     letter-spacing: -0.035em;

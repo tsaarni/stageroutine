@@ -7,7 +7,9 @@
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
     font-weight: 500;
-    color: var(--sr-text-dim);
+    font-style: normal;
+    line-height: 1.25;
+    color: var(--sr-primary);
     text-transform: uppercase;
     letter-spacing: 0.18em;
   }

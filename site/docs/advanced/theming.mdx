@@ -4,240 +4,225 @@ sidebar_position: 4
 
 # Theming
 
-StageRoutine uses a three-tier styling model, moving from broad presentation-wide styles to fine-grained element overrides:
+A theme sets the presentation's colors, typography, and surfaces. Start with a preset, then override the values you need.
 
-![Styling & Theming Hierarchy](/img/style-layers.svg)
+## TypeScript or CSS?
 
-1. **Stage Theming**: Presentation-wide palette set via `stage.theme(...)` across all scenes.
-2. **Element Customization**: Local overrides applied directly to an element (`color`, `style`, or container-scoped `theme`).
-3. **Built-in Defaults**: Fallback appearance used when no theme or custom style is specified.
+Use TypeScript to choose values. Use CSS to define how components display them.
 
-## Stage Theming
+| Task | Where |
+| :--- | :--- |
+| Set shared colors, fonts, and surfaces | `new Stage({ theme })` or `stage.theme(...)` in TypeScript |
+| Override tokens for one element | The element's `theme` option in TypeScript |
+| Set content, position, size, or animated state | Component options and element properties in TypeScript |
+| Define a component's appearance | A CSS class that uses theme variables |
+| Adjust one instance's CSS details | `className` for reusable styles, or `style` for a small override |
 
-Call `stage.theme(...)` to apply a color palette across all scenes:
+Theme options become CSS variables. Component styles read those variables, so the same CSS works with different palettes.
 
-### Using Built-in Themes
+## Choose a theme
 
-StageRoutine includes ready-to-use themes matching popular developer palettes:
+The default is `themes.defaultDark`. Set a preset when creating the stage:
 
 ```typescript
 import { Stage, themes } from "stageroutine";
 
-const stage = new Stage();
-
-// Apply a theme preset:
-stage.theme(themes.tokyoNight);
+const stage = new Stage({ theme: themes.tokyoNight });
 ```
 
-Built-in presets include:
-- `themes.defaultDark` - Obsidian & cyan (default)
-- `themes.defaultLight` - Clean editorial light mode
-- `themes.tokyoNight` - Deep navy & neon blue
-- `themes.dracula` - Dark violet & pink
-- `themes.cyberpunk` - High-contrast black, cyan & yellow
+| Preset | Palette |
+| :--- | :--- |
+| `themes.defaultDark` | Dark canvas, cyan and indigo accents |
+| `themes.defaultLight` | Light canvas, blue and indigo accents |
+| `themes.tokyoNight` | Navy canvas, blue and cyan accents |
+| `themes.dracula` | Dark violet canvas, pink and purple accents |
+| `themes.cyberpunk` | Deep purple canvas, crimson and purple accents, cyan text |
 
-### Creating Custom Themes
+Preview these palettes on the [brand page](/brand).
 
-To create a custom theme, provide 3 colors (`background`, `text`, and `primary`). StageRoutine automatically derives the matching secondary shades:
+Use `stage.theme(...)` to change values for later steps. Omitted values keep their current settings. Going backward restores the theme saved for the earlier step.
+
+```typescript
+stage.theme(themes.dracula);
+```
+
+## Customize the palette
+
+Four colors control the main palette. All are optional.
+
+| Property | Default | Role |
+| :--- | :--- | :--- |
+| `background` | `#0c0d12` | Stage canvas |
+| `text` | `#ffffff` | Headings and source color for text tints |
+| `primary` | `#38bdf8` | Kickers, focus borders, connectors |
+| `secondary` | `#818cf8` | Decorative glow and surface highlights |
 
 ```typescript
 stage.theme({
   background: "#1e1e2e",
   text: "#cdd6f4",
   primary: "#cba6f7",
+  secondary: "#89b4fa",
 });
 ```
+
+Muted text, glass fills, borders, and shadows follow these colors automatically. `gradient()` uses the palette; `glow()` uses `secondary`. See [Visual Effects](../building/visual-effects.mdx) for effect options and backgrounds.
 
 ![Automatic Palette Derivation](/img/adaptive-theming.svg)
 
-You can also provide optional overrides for border radius and surfaces:
+### Adjust surfaces
+
+Override a derived value when you need a different appearance:
 
 ```typescript
 stage.theme({
-  background: "#0f172a",
-  text: "#f8fafc",
-  primary: "#38bdf8",
-  radius: "0.75rem",
   surface: "#1e293b",
+  surfaceBorderColor: "#475569",
+  surfaceBorderWidth: "2px",
+  radius: "0.75rem",
 });
 ```
 
-## Typography & Custom Fonts
+These defaults apply to the dark theme at `scale: 1`:
 
-StageRoutine bundles three font families by default using `@fontsource`:
+| Property | Default |
+| :--- | :--- |
+| `textMuted` | Text color at 72% opacity |
+| `textDim` | Text color at 50% opacity |
+| `surface` | Glass gradient mixed from text and canvas colors |
+| `surfaceBorderColor` | Text color at 15% opacity |
+| `surfaceBorderWidth` | `1px` |
+| `surfaceHighlight` | Text color at 25% opacity |
+| `surfaceShadow` | Dark drop shadow, primary outer glow, secondary inset highlight |
+| `surfaceBackdrop` | `blur(16px)` |
+| `surfaceSolid` | `#18181b` |
+| `surfaceSubtle` | `#1e293b` |
+| `radius` | `0.5rem` |
 
-- **Sans-serif (`fontSans`)**: `"Inter"` (weights 400, 500, 600, 700). Default for `Title`, `Text`, `BulletList`, and `Table`.
-- **Serif (`fontSerif`)**: `"Newsreader"` (weights 300, 400, italic). Default for `Title({ variant: "serif" })` and emphasized text (`<em>`, `<i>`) inside titles.
-- **Monospace (`fontMono`)**: `"JetBrains Mono"` (weights 400, 500, 600). Default for `CodeBlock`, `TerminalBlock`, `Kicker`, and connector labels.
+`surfaceBackdrop` is a CSS `backdrop-filter` value. Set it to `"none"` to remove blur.
 
-### Using Custom Fonts
+`surfaceSolid` and `surfaceSubtle` are fixed colors. The light preset overrides them with `#f4f4f5` and `#e2e8f0`. They are not derived from `background`.
 
-StageRoutine presentations are designed to run offline and export to self-contained single-file HTML. Install fonts as `@fontsource` packages so Vite bundles and inlines them directly into your build. Search and preview thousands of open-source fonts at [fontsource.org](https://fontsource.org).
+## Style one element
 
-#### 1. Install the font package
-
-```bash
-pnpm add @fontsource/plus-jakarta-sans @fontsource/fira-code
-```
-
-#### 2. Import the font weights
-
-Import the font weights in your entry file (`src/main.ts`):
-
-```typescript
-import "@fontsource/plus-jakarta-sans/400.css";
-import "@fontsource/plus-jakarta-sans/700.css";
-import "@fontsource/fira-code/400.css";
-import "@fontsource/fira-code/600.css";
-```
-
-#### 3. Assign the font family in your theme
+Use `color` for an element's foreground. Use `style` for CSS details such as letter spacing:
 
 ```typescript
-import { Stage } from "stageroutine";
+import { Title } from "stageroutine";
 
-const stage = new Stage({
-  theme: {
-    fontSans: '"Plus Jakarta Sans", sans-serif',
-    fontMono: '"Fira Code", monospace',
-  },
-});
-```
-
-StageRoutine waits for `document.fonts.ready` on startup. Fonts load before layout helpers calculate bounding boxes and connector paths, preventing layout shifts.
-
-### Typographic Scale
-
-These defaults use `scale: 1`. The stage `scale` option multiplies default font sizes, spacing, and radii. Explicit theme lengths keep their supplied values.
-
-| Token | CSS Variable | Default Value | Target Components |
-| :--- | :--- | :--- | :--- |
-| `fontSizeHero` | `--sr-font-size-hero` | `5.5rem` | `Title({ variant: "hero" })` |
-| `fontSizeTitle` | `--sr-font-size-title` | `3.25rem` | `Title()` |
-| `fontSizeLead` | `--sr-font-size-lead` | `2.1rem` | `Title({ variant: "serif" })` |
-| `fontSizeBody` | `--sr-font-size-body` | `1.55rem` | `Text()`, `BulletList()`, `Table()` |
-| `fontSizeCode` | `--sr-font-size-code` | `1.25rem` | `CodeBlock()`, `TerminalBlock()` body |
-| `fontSizeKicker` | `--sr-font-size-kicker` | `1rem` | `Kicker()`, `TerminalBlock()` header |
-
-Override scale tokens in your theme configuration:
-
-```typescript
-stage.theme({
-  fontSizeTitle: "3.2rem",
-  fontSizeBody: "1.6rem",
-  fontSizeCode: "1.3rem",
-});
-```
-
-## Element Customization
-
-Elements accept `color`, `style`, and `theme` options.
-
-### Typed Inline Styles
-
-Every element accepts a `style` option typed via `csstype`:
-
-```typescript
-import { Title, Text } from "stageroutine";
-
-const title = Title("Architecture Overview", {
-  position: [80, 36],
-  origin: "top",
+const title = Title("Architecture", {
   color: "#38bdf8",
-  style: {
-    letterSpacing: "-0.04em",
-    textTransform: "uppercase",
-  },
-});
-
-const body = Text("System design principles...", {
-  style: {
-    width: 96,
-    textAlign: "center",
-  },
+  style: { letterSpacing: "-0.04em" },
 });
 ```
 
-### Container-Scoped Themes
+Use element properties for position, dimensions, scale, rotation, and opacity. The runtime manages these values during transitions. The `style` option accepts CSS properties typed with `csstype`.
 
-You can scope theme tokens to a container or composite component. All child elements inherit the localized theme tokens automatically:
+### Set a local theme
+
+An element's `theme` overrides tokens for that element and its DOM children:
 
 ```typescript
 import { TerminalBlock } from "stageroutine";
 
-// A custom terminal with its own localized dark palette
 const terminal = TerminalBlock({
   title: "zsh",
   theme: {
     surface: "#11111b",
     primary: "#a6e3a1",
+    secondary: "#cba6f7",
   },
 });
 ```
 
-## How Styles Work Under the Hood
+Omitted tokens inherit from the surrounding theme. Local `primary` and `secondary` overrides are independent. Changing one preserves the other.
 
-### Cascade Layers
+Derived values recalculate where their source colors change. For example, local `text` changes recalculate text tints, borders, and the glass fill. Local accent changes recalculate the surface shadow. To keep a specific derived value, set it explicitly in the same local theme.
 
-StageRoutine wraps all internal component styles inside standard W3C cascade layers:
+## Change typography
 
-```css
-@layer sr-base, sr-components;
-```
+The bundled fonts are:
 
-1. **`sr-base`**: Declares default `:root` tokens, fonts, and reset styles.
-2. **`sr-components`**: Declares component layout and visual styles.
-
-According to the W3C Cascade Layers specification, **unlayered styles always take precedence over layered styles**. This design acts as a defensive sandbox:
-- Global CSS resets on a host webpage will not break StageRoutine presentations.
-- Custom utility classes applied via `className: "my-class"` always win over default component styles without needing `!important`.
-
-### Semantic Design Tokens
-
-When building custom components, bind colors and metrics to `--sr-*` CSS variables instead of hardcoded values:
-
-| CSS Variable | Default Meaning | Example Usage |
+| Property | Default | Used for |
 | :--- | :--- | :--- |
-| `--sr-background` | Canvas backdrop color | Stage background |
-| `--sr-text` | Primary foreground text | Headings, hero copy |
-| `--sr-text-muted` | 72% opacity text tint | Paragraphs, descriptions |
-| `--sr-text-dim` | 50% opacity text tint | Kickers, labels, bullet dots |
-| `--sr-primary` | Main accent / brand color | Focus borders, glow highlights |
-| `--sr-surface` | Container background fill | Terminal and Card backgrounds |
-| `--sr-surface-border`| Subtle outline | Container edges |
-| `--sr-radius` | Global border radius | Cards, buttons, terminals |
-| `--sr-font-sans` | Sans-serif typography | Titles, descriptions |
-| `--sr-font-serif` | Serif typography | Italic titles, editorial emphasis |
-| `--sr-font-mono` | Monospace typography | Code blocks, terminals, kickers |
+| `fontSans` | Inter | Titles, body text, lists, tables |
+| `fontSerif` | Newsreader | Serif titles and italic emphasis inside standard titles |
+| `fontMono` | JetBrains Mono | Code, terminals, kickers, connector labels |
 
-Referencing these variables ensures your custom elements automatically respond when `stage.theme(...)` is called:
+### Adjust text size {#typographic-scale}
+
+The stage `scale` option defaults to `1`. It multiplies default font sizes, spacing, and radii. Explicit theme lengths keep their supplied values.
+
+| Property | Default at `scale: 1` | Used for |
+| :--- | :--- | :--- |
+| `fontSizeHero` | `5.5rem` | `Title({ variant: "hero" })` |
+| `fontSizeTitle` | `3.25rem` | `Title()` |
+| `fontSizeLead` | `2.1rem` | `Title({ variant: "serif" })` |
+| `fontSizeBody` | `1.55rem` | Body text, lists, tables |
+| `fontSizeCode` | `1.25rem` | Code and terminal body text |
+| `fontSizeKicker` | `1rem` | Kickers and window labels |
+
+```typescript
+stage.theme({
+  fontSizeTitle: "3.2rem",
+  fontSizeBody: "1.6rem",
+});
+```
+
+### Add a custom font
+
+Install a font package so the build can bundle it for offline use:
+
+```bash
+pnpm add @fontsource/plus-jakarta-sans
+```
+
+Import the weights you use in your presentation entry file:
+
+```typescript
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+```
+
+Assign the family. Include a fallback font:
+
+```typescript
+stage.theme({
+  fontSans: '"Plus Jakarta Sans", sans-serif',
+});
+```
+
+## Use CSS overrides
+
+Add a `className` to an element and write a CSS rule:
+
+```typescript
+const title = Title("Architecture", { className: "section-title" });
+```
 
 ```css
-.my-custom-badge {
-  background: var(--sr-surface);
-  border: var(--sr-surface-border);
-  border-radius: var(--sr-radius);
-  color: var(--sr-text);
+.section-title {
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--sr-secondary);
 }
 ```
 
-## Stylesheet scope
+Import your stylesheet from the presentation entry file, for example `import "./presentation.css"`.
 
-Stage styles apply inside the mounted container. The host page owns its margins and scrolling.
-For a full-page presentation, add this to the page stylesheet:
+Normal CSS rules outside a cascade layer override the library's normal layered rules. Inline options such as `color` and runtime geometry take precedence over normal stylesheet rules. Host-page CSS can also affect stage content.
 
-```css
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-```
+Stage tokens are scoped to `.sr-stage`. Shared brand colors and font families are defined on `:root`. The stylesheet leaves host-page margins and scrolling to your application.
 
-Component defaults use cascade layers. Your unlayered CSS overrides normal framework rules.
-The runtime owns animated positions, dimensions, and opacity. Set those through element properties.
+When [building a custom component](./custom-components.mdx#component-styles), define its defaults in a companion stylesheet inside `@layer sr-components`. Keep content and behavior in TypeScript. Reference theme tokens in CSS instead of copying preset colors into component code. Common mappings are:
 
-Stage theme changes are saved with each step. Going backward restores earlier values and removes later overrides.
-Local `theme` options recalculate derived colors where you set them.
+| Theme property | CSS variable |
+| :--- | :--- |
+| `primary` | `--sr-primary` |
+| `secondary` | `--sr-secondary` |
+| `textMuted` | `--sr-text-muted` |
+| `surface` | `--sr-surface` |
+| `surfaceBorderColor` | `--sr-surface-border-color` |
+| `fontSans` | `--sr-font-sans` |
 
-Decorative CSS loops pause between stage transitions. Reduced-motion preferences disable CSS effects and background motion.
+Use `border: var(--sr-surface-border)` for the combined border width, style, and color. CSS-only appearance changes are not saved as step state; use theme and element properties for changes that must restore on backward navigation. See the [ThemeConfig API](../api/interfaces/ThemeConfig.md) for all configurable properties.

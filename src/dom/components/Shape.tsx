@@ -1,4 +1,4 @@
-import { enableLayerOpacity, refreshLayerOpacity } from "../../core/dom-opacity";
+import { refreshLayerOpacity } from "../../core/dom-opacity";
 import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
@@ -332,7 +332,6 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
       }
     }
 
-    enableLayerOpacity(el);
     super("Shape", el, opts);
     this.domElement.style.willChange = "auto";
 

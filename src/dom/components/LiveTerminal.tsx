@@ -36,7 +36,7 @@ export interface LiveTerminalOptions extends ElementOptions {
   autoFocus?: boolean;
   /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
   restartButton?: boolean;
-  /** Font size in screen pixels (visual size after stage scaling). Default: inherited from the theme (`--sr-font-size-code`). */
+  /** Font size in layout pixels before viewport scaling. Default: theme code size (1.25rem × stage scale). */
   fontSize?: number;
 }
 
@@ -171,6 +171,7 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
   private terminal: XTerm | null = null;
   private fitAddon: FitAddon | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private themeObserver: MutationObserver | null = null;
   private selection: RangeSelectionController | null = null;
   private phase: TerminalPhase = "idle";
   private exitCode = 0;
@@ -310,6 +311,9 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
   /** Creates the xterm.js viewport and connects the session. */
   private build(): void {
     this.built = true;
+    if (this.overrideFontSize !== undefined) {
+      this.frame.body.style.fontSize = `${this.overrideFontSize}px`;
+    }
 
     if (!terminalEndpoint()) {
       this.showTranscript("disabled");
@@ -328,7 +332,7 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
     const terminal = new XTerm({
       fontFamily: styles.fontFamily,
       fontSize,
-      lineHeight: 1.25,
+      lineHeight: Number.parseFloat(styles.lineHeight) / themeFontSize,
       letterSpacing: 0,
       cursorBlink: true,
       cursorStyle: "block",
@@ -358,6 +362,14 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
 
     this.terminal = terminal;
     this.fitAddon = fitAddon;
+
+    this.themeObserver = new MutationObserver(() => this.syncTypography());
+    for (let ancestor: HTMLElement | null = body; ancestor; ancestor = ancestor.parentElement) {
+      this.themeObserver.observe(ancestor, {
+        attributes: true,
+        attributeFilter: ["style", "class"],
+      });
+    }
 
     if (this.interactive) {
       terminal.onData((data) => this.session?.input(data));
@@ -465,6 +477,37 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
     this.syncStatus();
   }
 
+  private syncTypography(): void {
+    const terminal = this.terminal;
+    if (!terminal) return;
+    const body = this.frame.body;
+    const styles = getComputedStyle(body);
+    const size = Number.parseFloat(styles.fontSize);
+    const fontSize = this.overrideFontSize ?? size;
+    const lineHeight = Number.parseFloat(styles.lineHeight) / size;
+    if (terminal.options.fontSize !== fontSize) terminal.options.fontSize = fontSize;
+    if (terminal.options.fontFamily !== styles.fontFamily) {
+      terminal.options.fontFamily = styles.fontFamily;
+    }
+    if (terminal.options.lineHeight !== lineHeight) terminal.options.lineHeight = lineHeight;
+    const background = readToken(styles, "--sr-background", "#0c0d12");
+    const theme = {
+      background,
+      foreground: readToken(styles, "--sr-text", "#ffffff"),
+      cursor: readToken(styles, "--sr-primary", "#38bdf8"),
+      cursorAccent: background,
+      selectionBackground: resolveColor(
+        body,
+        "color-mix(in srgb, var(--sr-primary, #38bdf8) 40%, transparent)",
+        "#38bdf866",
+      ),
+    };
+    if (JSON.stringify(terminal.options.theme) !== JSON.stringify(theme)) {
+      terminal.options.theme = theme;
+    }
+    this.fit();
+  }
+
   /** Fits the grid to the element box. */
   private fit(): void {
     const fitAddon = this.fitAddon;
@@ -515,6 +558,8 @@ class LiveTerminalElementImpl extends DOMElementImpl implements LiveTerminalElem
 
   /** Drops the viewport and its session. */
   private release(): void {
+    this.themeObserver?.disconnect();
+    this.themeObserver = null;
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;

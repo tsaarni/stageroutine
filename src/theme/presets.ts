@@ -12,7 +12,7 @@ export const defaultDark: ThemeConfig = {
   background: "#0c0d12",
   text: "#ffffff",
   primary: "#38bdf8",
-  accent: "#818cf8",
+  secondary: "#818cf8",
 };
 
 /**
@@ -23,7 +23,7 @@ export const defaultLight: ThemeConfig = {
   background: "#fafafa",
   text: "#09090b",
   primary: "#0284c7",
-  accent: "#6366f1",
+  secondary: "#6366f1",
   surfaceSolid: "#f4f4f5",
   surfaceSubtle: "#e2e8f0",
 };
@@ -36,7 +36,7 @@ export const dracula: ThemeConfig = {
   background: "#282a36",
   text: "#f8f8f2",
   primary: "#ff79c6",
-  accent: "#bd93f9",
+  secondary: "#bd93f9",
 };
 
 /**
@@ -47,7 +47,7 @@ export const tokyoNight: ThemeConfig = {
   background: "#1a1b26",
   text: "#c0caf5",
   primary: "#7aa2f7",
-  accent: "#7dcfff",
+  secondary: "#7dcfff",
 };
 
 /**
@@ -58,7 +58,7 @@ export const cyberpunk: ThemeConfig = {
   background: "#0d0221",
   text: "#00f0ff",
   primary: "#ff003c",
-  accent: "#a855f7",
+  secondary: "#a855f7",
 };
 
 /**

@@ -55,27 +55,18 @@ export function Card({ title, content, ...options }) {
 }
 ```
 
-## Component Styling Best Practices
+## Component styles
 
-When creating custom components, follow these standards for maintainability and seamless theming:
+The component function creates content and exposes options. A companion stylesheet defines its default appearance. See [TypeScript or CSS?](./theming.mdx#typescript-or-css) for choosing where a setting belongs.
 
-### Colocate Component Styles
-Keep CSS in a companion file right next to your component and import it directly:
-
-```
-src/components/
-├── Badge.tsx
-└── Badge.css
-```
+Import the stylesheet from the component file:
 
 ```typescript
-// Badge.tsx
+// Badge.ts
 import "./Badge.css";
-import { Element, type DOMElement, type ElementOptions } from "stageroutine";
 ```
 
-### Wrap Styles in `@layer sr-components`
-Always declare styles inside the `sr-components` cascade layer so users can override your component's CSS without needing `!important`:
+Use theme variables in the stylesheet. The badge then follows both stage themes and its local `theme` option:
 
 ```css
 /* Badge.css */
@@ -85,14 +76,24 @@ Always declare styles inside the `sr-components` cascade layer so users can over
     border: var(--sr-surface-border);
     border-radius: var(--sr-radius);
     color: var(--sr-text);
-    padding: 0.35rem 0.85rem;
+    padding: var(--sr-space-3xs) var(--sr-space-xs);
     font-family: var(--sr-font-mono);
   }
 }
 ```
 
-### Use Semantic Tokens
-Always bind colors and geometry to `--sr-*` CSS variables instead of hardcoded hex values. This ensures your component automatically adapts when a user changes themes or calls `stage.theme(...)`.
+`sr-components` holds component defaults. A presentation's normal, unlayered CSS can override them.
+
+Choose palette values at the call site instead of hardcoding them in the component:
+
+```typescript
+const badge = Badge({
+  label: "Ready",
+  theme: { text: "#a6e3a1", surface: "#11111b" },
+});
+```
+
+The component does not need to read the active theme in TypeScript. CSS inherits the tokens. Use element properties for stage position, dimensions, and animation state; use `layout` to position separate stage elements.
 
 ### Extend `ElementOptions`
 When your options interface extends `ElementOptions`, your component automatically inherits:

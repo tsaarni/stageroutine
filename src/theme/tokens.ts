@@ -12,10 +12,10 @@ export interface ThemeConfig {
   background?: string;
   /** Primary text color. */
   text?: string;
-  /** Primary brand accent color. */
+  /** Primary accent color. Inherits from the surrounding theme. */
   primary?: string;
-  /** Secondary accent or highlight color. */
-  accent?: string;
+  /** Secondary accent color. Inherits from the surrounding theme. */
+  secondary?: string;
 
   /** Muted secondary text color. */
   textMuted?: string;
@@ -83,7 +83,7 @@ export const TOKEN_MAP: Record<keyof ThemeConfig, string> = {
   background: "--sr-background",
   text: "--sr-text",
   primary: "--sr-primary",
-  accent: "--sr-accent",
+  secondary: "--sr-secondary",
   textMuted: "--sr-text-muted",
   textDim: "--sr-text-dim",
   surface: "--sr-surface",

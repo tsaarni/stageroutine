@@ -38,7 +38,7 @@ export function spawnPingPacket(
   if (!pathD) return null;
 
   const duration = (options.duration ?? 0.6) * 1000;
-  const color = options.color ?? "#38bdf8";
+  const color = options.color ?? "var(--sr-primary)";
   const size = options.size ?? 12;
   const easing = options.easing ?? "cubic-bezier(0.4, 0, 0.2, 1)";
   const startVal = options.start ?? 0;

@@ -11,7 +11,6 @@
   .sr-terminal-live > .sr-terminal-body {
     overflow: auto;
     min-height: 0;
-    line-height: normal;
 
     & .sr-terminal-line {
       white-space: pre;
@@ -23,9 +22,6 @@
     flex: 1 1 auto;
 
     min-height: 0;
-
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-code);
 
     background: var(--sr-background);
 
@@ -40,8 +36,6 @@
   .sr-terminal-note {
     margin-bottom: var(--sr-space-xs);
 
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-kicker);
     color: var(--sr-text-dim);
     white-space: pre;
   }

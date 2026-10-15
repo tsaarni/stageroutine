@@ -2,25 +2,18 @@
   .sr-terminal-block {
     width: 100%;
     max-width: 44cqw;
+  }
 
-    & .sr-terminal-body {
-      padding: var(--sr-space-md);
+  .sr-terminal-body {
+    padding: var(--sr-space-md);
+  }
 
-      font-family: var(--sr-font-mono);
-      font-size: var(--sr-font-size-code);
-      line-height: 1.7;
-      color: var(--sr-text);
-    }
-
-    & .sr-terminal-line {
-      display: block;
-
-      min-height: 1.7em;
-      margin: 0 calc(-1 * var(--sr-space-2xs));
-      padding: 0 var(--sr-space-2xs);
-      border-radius: 0;
-
-      line-height: 1.7;
-    }
+  .sr-terminal-line {
+    display: block;
+    min-height: 1.5em;
+    margin: 0 calc(-1 * var(--sr-space-2xs));
+    padding: 0 var(--sr-space-2xs);
+    border-radius: 0;
+    white-space: pre;
   }
 }

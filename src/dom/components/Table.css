@@ -4,19 +4,18 @@
 
     width: 100%;
 
-    font-family: var(--sr-font-sans);
-    font-size: var(--sr-font-size-body);
-    color: inherit;
     text-align: left;
 
     & th {
+      font-style: normal;
+      line-height: 1.25;
       padding: var(--sr-space-xs) var(--sr-space-sm);
       border-bottom: var(--sr-surface-border);
 
       font-family: var(--sr-font-mono);
       font-size: var(--sr-font-size-kicker);
       font-weight: 500;
-      color: inherit;
+      color: var(--sr-text-muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
 

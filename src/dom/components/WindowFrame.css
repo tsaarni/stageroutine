@@ -32,9 +32,7 @@
     min-width: 0;
     margin-left: var(--sr-space-2xs);
 
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-kicker);
-    color: inherit;
+    color: var(--sr-text-muted);
     text-overflow: ellipsis;
     letter-spacing: 0.05em;
     white-space: nowrap;
@@ -48,8 +46,6 @@
 
     margin-left: auto;
 
-    font-family: var(--sr-font-mono);
-    font-size: var(--sr-font-size-kicker);
     color: var(--sr-text-dim);
     letter-spacing: 0.05em;
 

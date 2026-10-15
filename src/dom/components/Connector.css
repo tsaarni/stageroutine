@@ -16,6 +16,8 @@
       font-family: var(--sr-font-mono);
       font-size: var(--sr-font-size-kicker);
       font-weight: 600;
+      font-style: normal;
+      line-height: 1.25;
       text-transform: uppercase;
       letter-spacing: 0.1em;
 

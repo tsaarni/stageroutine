@@ -449,7 +449,7 @@ export interface ActivationOptions extends ElementOptions {
     y?: number;
     /** Explicit bar height in stage units (default: 18). */
     height?: number;
-    /** Fill color and glow highlight for the activation bar (default: "#38bdf8"). */
+    /** Fill color and glow highlight for the activation bar (default: "var(--sr-primary)"). */
     color?: string;
 }
 
@@ -789,7 +789,7 @@ export interface ConnectorOptions extends ElementOptions {
     fromAnchor?: AnchorMode | ElementAnchor;
     /** Attachment point on the destination target: an anchor mode, a named face, or an [x, y] percentage point (defaults to "auto"). */
     toAnchor?: AnchorMode | ElementAnchor;
-    /** Stroke color of the connector line (defaults to #38bdf8). */
+    /** Stroke color of the connector line (default: var(--sr-primary)). */
     color?: string;
     /** Stroke width in virtual pixels (defaults to 3). */
     strokeWidth?: number;
@@ -1330,7 +1330,7 @@ export interface LiveTerminalOptions extends ElementOptions {
     autoFocus?: boolean;
     /** Whether the window header offers a button that starts a fresh session. Default: `false`. */
     restartButton?: boolean;
-    /** Font size in screen pixels (visual size after stage scaling). Default: inherited from the theme (`--sr-font-size-code`). */
+    /** Font size in layout pixels before viewport scaling. Default: theme code size (1.25rem × stage scale). */
     fontSize?: number;
 }
 
@@ -2081,10 +2081,10 @@ export interface ThemeConfig {
     background?: string;
     /** Primary text color. */
     text?: string;
-    /** Primary brand accent color. */
+    /** Primary accent color. Inherits from the surrounding theme. */
     primary?: string;
-    /** Secondary accent or highlight color. */
-    accent?: string;
+    /** Secondary accent color. Inherits from the surrounding theme. */
+    secondary?: string;
     /** Muted secondary text color. */
     textMuted?: string;
     /** Dim tertiary text color. */

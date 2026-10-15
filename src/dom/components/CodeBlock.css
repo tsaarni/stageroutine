@@ -11,15 +11,21 @@
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-code);
     line-height: 1.5;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: 0;
     color: var(--sr-text);
     word-break: normal;
     white-space: pre;
+    text-align: left;
 
     background-color: transparent;
     box-shadow: none;
 
     & code {
       display: block;
+      font: inherit;
+      letter-spacing: inherit;
     }
   }
 

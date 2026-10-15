@@ -222,13 +222,17 @@ export { type DOMElement, Element, type ElementChild } from "./dom/element";
 export type { GroupElement } from "./dom/group";
 export { group } from "./dom/group";
 export type {
+  AlignmentOptions,
   CircleLayoutOptions,
   GridSlot,
   GroupLayoutOptions,
   LayoutAnimation,
   LayoutElement,
   LayoutOptions,
+  LayoutRegion,
   RelativeAlign,
+  RelativeLayoutOptions,
+  StackLayoutOptions,
   StackSlot,
 } from "./dom/layout";
 // Layout

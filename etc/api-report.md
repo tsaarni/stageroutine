@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 201 symbols |
+| `stageroutine` | 205 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -453,6 +453,19 @@ export interface ActivationOptions extends ElementOptions {
     color?: string;
 }
 
+/** Alignment of existing elements. @category Layout */
+export interface AlignmentOptions {
+    /** Axis to align; default: x. */
+    axis?: "x" | "y" | "both";
+    /** Edge or center; default: start. */
+    align?: RelativeAlign;
+    /** Reference rectangle; default: combined element bounds. */
+    region?: LayoutRegion;
+    animate?: LayoutAnimation;
+    /** Duration in seconds; default: 0.6. */
+    duration?: number;
+}
+
 /**
  * Controller interface for the annotation overlay.
  * @category Presenter
@@ -672,6 +685,8 @@ export interface CameraDevice {
  * @category Layout
  */
 export interface CircleLayoutOptions {
+    /** Available space for the default center. Default: full stage. */
+    region?: LayoutRegion;
     /** Center anchor point as [x, y] in stage units, or a center element (default: stage center). */
     center?: Point | LayoutElement;
     /** Orbit radius in stage units (default: 28). */
@@ -1086,7 +1101,7 @@ export interface GroupElement<T extends ReactiveElementBase = ReactiveElementBas
 export interface GroupLayoutOptions {
     /** Target center position as [x, y] in stage units. Default: current bounding center. */
     position?: Point;
-    /** Uniform scale factor applied around the origin. Default: 1. */
+    /** Relative scale multiplier applied to current positions and scales. Default: 1. */
     scale?: number;
     /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
     origin?: Point;
@@ -1228,20 +1243,19 @@ export interface LaserPointerOptions {
     active?: boolean;
 }
 
-/**
- * Options for grid, row, and column layout arrangements.
- * @category Layout
- */
+/** Shared stack and grid placement options. @category Layout */
 export interface LayoutOptions {
-    /** Horizontal start position in stage units, or `"center"` to center the arrangement. */
+    /** Available space. Default: full stage. Coordinates remain absolute stage units. */
+    region?: LayoutRegion;
+    /** Left edge in stage units, or `"center"`. Default: region left edge. */
     x?: number | "center";
-    /** Vertical start position in stage units, or `"center"` to center the arrangement. */
+    /** Top edge in stage units, or `"center"`. Default: region top edge. */
     y?: number | "center";
-    /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
+    /** Element width in stage units or CSS length; arrays select columns (hstack/grid) or rows (vstack). Overrides existing widths. */
     width?: Size | Size[];
-    /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
+    /** Element height in stage units or CSS length; arrays select columns (hstack) or rows (vstack/grid). Overrides existing heights. */
     height?: Size | Size[];
-    /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
+    /** Primary gap in stage units. Defaults: hstack 6, vstack 3, grid 4. */
     gap?: number;
     /** Horizontal gutter spacing in stage units. */
     gapX?: number;
@@ -1256,10 +1270,16 @@ export interface LayoutOptions {
     duration?: number;
     /** Optional divider rule(s) placed in gutters between elements or columns/rows. */
     rule?: boolean | RuleOptions;
-    /** Perpendicular alignment for relative placement: "start" (default), "center", or "end". */
+    /** Cross-axis or grid-cell alignment: "start" (default), "center", or "end". */
     align?: RelativeAlign;
-    /** Whether multiple relative elements stack sequentially (default: true). */
-    stack?: boolean;
+}
+
+/** Available rectangle in stage units. No DOM container is created. @category Layout */
+export interface LayoutRegion {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 /** Public controls for a sequence diagram lifeline. @category Components */
@@ -1623,6 +1643,22 @@ export interface ReactiveElementBase {
     onClick?(handler: (event: MouseEvent) => (() => void) | unknown): this;
 }
 
+/** Placement relative to an element. @category Layout */
+export interface RelativeLayoutOptions {
+    /** Element dimensions; arrays select each placed element. Default: existing size. */
+    width?: Size | Size[];
+    height?: Size | Size[];
+    /** Distance from the target in stage units; default: 3. */
+    gap?: number;
+    /** Perpendicular alignment; default: start. */
+    align?: RelativeAlign;
+    /** Chain elements in reading order; default: true. */
+    stack?: boolean;
+    animate?: LayoutAnimation;
+    /** Duration in seconds; default: 0.6. */
+    duration?: number;
+}
+
 /**
  * Configuration options for in-place element replacement transitions.
  * @category Motion
@@ -1824,6 +1860,12 @@ export interface SpeechBubblePathOptions {
 export interface SquirclePathOptions {
     /** Curvature tension between 0 (sharp) and 1 (round, default: 0.82). */
     curvature?: number;
+}
+
+/** Stack placement and distribution. @category Layout */
+export interface StackLayoutOptions extends LayoutOptions {
+    /** Main-axis placement within the region; overrides that axis's coordinate. Default: unset. */
+    justify?: RelativeAlign | "space-between";
 }
 
 /**
@@ -2624,7 +2666,7 @@ export type PositionUpdater = ((x: number, y: number) => readonly [
 export type ReactiveProp<T> = T | TransitionDescriptor<T> | (T extends number ? (current: number) => number : never);
 
 /**
- * Perpendicular alignment mode for relative placement.
+ * Edge alignment within layout space.
  * @category Layout
  */
 export type RelativeAlign = "start" | "center" | "end";
@@ -2707,8 +2749,8 @@ export const defaultLight: ThemeConfig;
 /** Dracula theme preset. */
 export const dracula: ThemeConfig;
 
-/** Layout helper providing procedural positioning engines (hstack, vstack, grid, circle, relational). */
-export const layout: { hstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: LayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: LayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; group(elements: LayoutElement[], options?: GroupLayoutOptions): void; };
+/** One-shot positioning without DOM containers. */
+export const layout: { hstack(elements: StackSlot[], options?: StackLayoutOptions): DOMElement[]; vstack(elements: StackSlot[], options?: StackLayoutOptions): DOMElement[]; grid(matrix: GridSlot[][], options?: LayoutOptions): DOMElement[]; align(elements: LayoutElement[], options?: AlignmentOptions): void; above(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: RelativeLayoutOptions): void; below(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: RelativeLayoutOptions): void; leftOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: RelativeLayoutOptions): void; rightOf(elements: LayoutElement | LayoutElement[], target: LayoutElement, options?: RelativeLayoutOptions): void; circle(elements: LayoutElement[], options?: CircleLayoutOptions): void; group(elements: LayoutElement[], options?: GroupLayoutOptions): void; };
 
 /** Logger control object for configuring logging behavior. */
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };

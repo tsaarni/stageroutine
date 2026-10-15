@@ -3,10 +3,10 @@
  */
 
 import {
-  cssLength,
-  getActiveStage,
+  type ElementAnchor,
   type Point,
   type ReactiveElementBase,
+  resolveAnchor,
   type Size,
   STAGE_UNIT_VAR,
   STAGE_UNITS_TALL,
@@ -57,20 +57,27 @@ export type LayoutAnimation =
  */
 export type StackSlot = LayoutElement | LayoutElement[];
 
-/**
- * Options for grid, row, and column layout arrangements.
- * @category Layout
- */
+/** Available rectangle in stage units. No DOM container is created. @category Layout */
+export interface LayoutRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Shared stack and grid placement options. @category Layout */
 export interface LayoutOptions {
-  /** Horizontal start position in stage units, or `"center"` to center the arrangement. */
+  /** Available space. Default: full stage. Coordinates remain absolute stage units. */
+  region?: LayoutRegion;
+  /** Left edge in stage units, or `"center"`. Default: region left edge. */
   x?: number | "center";
-  /** Vertical start position in stage units, or `"center"` to center the arrangement. */
+  /** Top edge in stage units, or `"center"`. Default: region top edge. */
   y?: number | "center";
-  /** Width constraint in stage units, a CSS length, or an array with one entry per column. */
+  /** Element width in stage units or CSS length; arrays select columns (hstack/grid) or rows (vstack). Overrides existing widths. */
   width?: Size | Size[];
-  /** Height constraint in stage units, a CSS length, or an array with one entry per row. */
+  /** Element height in stage units or CSS length; arrays select columns (hstack) or rows (vstack/grid). Overrides existing heights. */
   height?: Size | Size[];
-  /** Gutter spacing along the primary axis in stage units. Defaults to 6 for hstack, 3 for vstack, and 3 for relative layouts. */
+  /** Primary gap in stage units. Defaults: hstack 6, vstack 3, grid 4. */
   gap?: number;
   /** Horizontal gutter spacing in stage units. */
   gapX?: number;
@@ -85,10 +92,30 @@ export interface LayoutOptions {
   duration?: number;
   /** Optional divider rule(s) placed in gutters between elements or columns/rows. */
   rule?: boolean | RuleOptions;
-  /** Perpendicular alignment for relative placement: "start" (default), "center", or "end". */
+  /** Cross-axis or grid-cell alignment: "start" (default), "center", or "end". */
   align?: RelativeAlign;
-  /** Whether multiple relative elements stack sequentially (default: true). */
+}
+
+/** Stack placement and distribution. @category Layout */
+export interface StackLayoutOptions extends LayoutOptions {
+  /** Main-axis placement within the region; overrides that axis's coordinate. Default: unset. */
+  justify?: RelativeAlign | "space-between";
+}
+
+/** Placement relative to an element. @category Layout */
+export interface RelativeLayoutOptions {
+  /** Element dimensions; arrays select each placed element. Default: existing size. */
+  width?: Size | Size[];
+  height?: Size | Size[];
+  /** Distance from the target in stage units; default: 3. */
+  gap?: number;
+  /** Perpendicular alignment; default: start. */
+  align?: RelativeAlign;
+  /** Chain elements in reading order; default: true. */
   stack?: boolean;
+  animate?: LayoutAnimation;
+  /** Duration in seconds; default: 0.6. */
+  duration?: number;
 }
 
 /**
@@ -97,7 +124,7 @@ export interface LayoutOptions {
 type RelativePlacement = "top" | "bottom" | "left" | "right";
 
 /**
- * Perpendicular alignment mode for relative placement.
+ * Edge alignment within layout space.
  * @category Layout
  */
 export type RelativeAlign = "start" | "center" | "end";
@@ -107,6 +134,8 @@ export type RelativeAlign = "start" | "center" | "end";
  * @category Layout
  */
 export interface CircleLayoutOptions {
+  /** Available space for the default center. Default: full stage. */
+  region?: LayoutRegion;
   /** Center anchor point as [x, y] in stage units, or a center element (default: stage center). */
   center?: Point | LayoutElement;
   /** Orbit radius in stage units (default: 28). */
@@ -135,7 +164,7 @@ export interface CircleLayoutOptions {
 export interface GroupLayoutOptions {
   /** Target center position as [x, y] in stage units. Default: current bounding center. */
   position?: Point;
-  /** Uniform scale factor applied around the origin. Default: 1. */
+  /** Relative scale multiplier applied to current positions and scales. Default: 1. */
   scale?: number;
   /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
   origin?: Point;
@@ -181,10 +210,7 @@ function stageWidthUnits(): number {
   return tryGetActiveStage()?.unitsWide ?? stageUnitsWide(1920, 1080);
 }
 
-function measureElement(
-  el: LayoutElement,
-  explicitWidth?: Size,
-): { width: number; height: number } {
+function measureElement(el: LayoutElement): { width: number; height: number } {
   const dom = (el as { domElement?: HTMLElement }).domElement;
   if (!dom) return { width: 24, height: 7.2 };
 
@@ -192,197 +218,194 @@ function measureElement(
   const unitPx = stageUnitPx(stage?.height ?? 1080);
 
   const prevWidth = dom.style.width;
+  const prevHeight = dom.style.height;
+  const heightSource = record(el).height;
+  if (heightSource !== undefined)
+    dom.style.height =
+      typeof heightSource === "number" ? `${heightSource * unitPx}px` : String(heightSource);
   const prevUnit = dom.style.getPropertyValue(STAGE_UNIT_VAR);
   dom.style.setProperty(STAGE_UNIT_VAR, `${unitPx}px`);
 
-  // Measure against the constrained width when one is given
-  const widthSource = explicitWidth ?? (el as unknown as Record<string, unknown>).width;
+  const widthSource = record(el).width;
   if (widthSource !== undefined) {
     dom.style.width =
       typeof widthSource === "number" ? `${widthSource * unitPx}px` : String(widthSource);
   }
 
-  const { width: measuredW, height: measuredH } = measureOffscreen(dom);
-
-  // Restore the inline width and stage unit so the element keeps its reactive stage units
-  dom.style.width = prevWidth;
-  if (prevUnit) {
-    dom.style.setProperty(STAGE_UNIT_VAR, prevUnit);
-  } else {
-    dom.style.removeProperty(STAGE_UNIT_VAR);
+  try {
+    const measured = measureOffscreen(dom);
+    return { width: measured.width / unitPx, height: measured.height / unitPx };
+  } finally {
+    dom.style.width = prevWidth;
+    dom.style.height = prevHeight;
+    if (prevUnit) dom.style.setProperty(STAGE_UNIT_VAR, prevUnit);
+    else dom.style.removeProperty(STAGE_UNIT_VAR);
   }
-
-  const w = measuredW || 240;
-  const h = measuredH || 80;
-
-  return { width: w / unitPx, height: h / unitPx };
 }
 
-function applyPosition(
+/** Alignment of existing elements. @category Layout */
+export interface AlignmentOptions {
+  /** Axis to align; default: x. */
+  axis?: "x" | "y" | "both";
+  /** Edge or center; default: start. */
+  align?: RelativeAlign;
+  /** Reference rectangle; default: combined element bounds. */
+  region?: LayoutRegion;
+  animate?: LayoutAnimation;
+  /** Duration in seconds; default: 0.6. */
+  duration?: number;
+}
+
+interface Bounds extends LayoutRegion {}
+
+function record(el: LayoutElement): Record<string, unknown> {
+  return el as unknown as Record<string, unknown>;
+}
+
+function regionOf(options: { region?: LayoutRegion }): LayoutRegion {
+  const region = options.region ?? {
+    x: 0,
+    y: 0,
+    width: stageWidthUnits(),
+    height: STAGE_UNITS_TALL,
+  };
+  if (
+    ![region.x, region.y, region.width, region.height].every(Number.isFinite) ||
+    region.width < 0 ||
+    region.height < 0
+  ) {
+    throw new RangeError("Layout region must have finite coordinates and nonnegative dimensions.");
+  }
+  return region;
+}
+
+function numberProp(el: LayoutElement, key: string, fallback: number): number {
+  const value = record(el)[key];
+  return typeof value === "number" ? value : fallback;
+}
+
+/** Visual axis-aligned bounds relative to the element's origin coordinate. */
+function offsets(el: LayoutElement): Bounds {
+  const { width, height } = measureElement(el);
+  const [ax, ay] = resolveAnchor((record(el).origin ?? "top-left") as ElementAnchor);
+  const scale = numberProp(el, "scale", 1);
+  const angle = (numberProp(el, "rotation", 0) * Math.PI) / 180;
+  const corners = [
+    [0, 0],
+    [width, 0],
+    [0, height],
+    [width, height],
+  ].map(([x, y]) => {
+    const dx = (x - (width * ax) / 100) * scale;
+    const dy = (y - (height * ay) / 100) * scale;
+    return [
+      dx * Math.cos(angle) - dy * Math.sin(angle),
+      dx * Math.sin(angle) + dy * Math.cos(angle),
+    ];
+  });
+  const x = Math.min(...corners.map((p) => p[0]));
+  const y = Math.min(...corners.map((p) => p[1]));
+  return {
+    x,
+    y,
+    width: Math.max(...corners.map((p) => p[0])) - x,
+    height: Math.max(...corners.map((p) => p[1])) - y,
+  };
+}
+
+function bounds(el: LayoutElement): Bounds {
+  const box = offsets(el);
+  return { ...box, x: numberProp(el, "x", 0) + box.x, y: numberProp(el, "y", 0) + box.y };
+}
+
+function union(elements: LayoutElement[]): Bounds {
+  const boxes = elements.map(bounds);
+  const x = Math.min(...boxes.map((b) => b.x));
+  const y = Math.min(...boxes.map((b) => b.y));
+  return {
+    x,
+    y,
+    width: Math.max(...boxes.map((b) => b.x + b.width)) - x,
+    height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
+  };
+}
+
+function setValue(
   el: LayoutElement,
-  x: number | "center",
-  y: number | "center",
-  options: {
-    animate?: LayoutAnimation;
-    duration?: number;
-    width?: Size | Size[];
-    height?: Size | Size[];
-  } = {},
-  index = 0,
+  key: string,
+  value: number,
+  options: { animate?: LayoutAnimation; duration?: number },
+  index: number,
 ): void {
-  const stage = getActiveStage();
-  if (el && typeof el === "object" && "id" in el && "domElement" in el) {
-    const reactiveEl = el as ReactiveElementBase;
-    if (!stage._hasElement(reactiveEl.id)) {
-      mount(reactiveEl);
-    }
-  }
-
-  const target = el as unknown as Record<string, unknown>;
-  const optWidth = Array.isArray(options.width) ? options.width[0] : options.width;
-  const optHeight = Array.isArray(options.height) ? options.height[0] : options.height;
-  if (optWidth !== undefined) {
-    if (target.width === undefined) {
-      target.width = optWidth;
-    }
-    const dom = (el as { domElement?: HTMLElement }).domElement;
-    if (dom && !dom.style.width) {
-      dom.style.width = cssLength(optWidth) ?? "";
-    }
-  }
-  if (optHeight !== undefined) {
-    if (target.height === undefined) {
-      target.height = optHeight;
-    }
-    const dom = (el as { domElement?: HTMLElement }).domElement;
-    if (dom && !dom.style.height) {
-      dom.style.height = cssLength(optHeight) ?? "";
-    }
-  }
-  if (options.animate) {
-    if (typeof options.animate === "function") {
-      target.x = options.animate(x, el, index);
-      target.y = options.animate(y, el, index);
-    } else {
-      target.x = to(x).duration(options.duration ?? 0.6);
-      target.y = to(y).duration(options.duration ?? 0.6);
-    }
-  } else {
-    target.x = x;
-    target.y = y;
-  }
+  let target: unknown = value;
+  if (typeof options.animate === "function") target = options.animate(value, el, index);
+  else if (options.animate) target = to(value).duration(options.duration ?? 0.6);
+  record(el)[key] = target;
 }
 
-/**
- * Shared engine for directional placement: positions `elements` on the given side
- * of `target`, separated by `gap`, with perpendicular `align` (start/center/end)
- * and optional animated transitions.
- */
+function place(
+  el: LayoutElement,
+  x: number,
+  y: number,
+  options: { animate?: LayoutAnimation; duration?: number },
+  index: number,
+): void {
+  const box = offsets(el);
+  setValue(el, "x", x - box.x, options, index);
+  setValue(el, "y", y - box.y, options, index);
+}
+
+function dimension(value: Size | Size[] | undefined, index: number): Size | undefined {
+  return Array.isArray(value) ? value[index] : value;
+}
+
+function prepare(el: LayoutElement, width?: Size, height?: Size): Bounds {
+  // Constraints are applied before measurement, so measured wrapping matches rendered wrapping.
+  if (width !== undefined) record(el).width = width;
+  if (height !== undefined) record(el).height = height;
+  return offsets(el);
+}
+
+function aligned(extra: number, align: RelativeAlign = "start"): number {
+  if (align === "center") return extra / 2;
+  return align === "end" ? extra : 0;
+}
+
+function startAt(
+  value: number | "center" | undefined,
+  start: number,
+  available: number,
+  size: number,
+): number {
+  return value === "center" ? start + (available - size) / 2 : (value ?? start);
+}
+
 function positionRelative(
   elements: LayoutElement | LayoutElement[],
   target: LayoutElement,
   placement: RelativePlacement,
-  options: LayoutOptions = {},
+  options: RelativeLayoutOptions = {},
 ): void {
   const list = Array.isArray(elements) ? elements : [elements];
-  if (list.length === 0) return;
-
+  const horizontal = placement === "left" || placement === "right";
+  const reverse = placement === "left" || placement === "top";
+  const targetBox = bounds(target);
   const gap = options.gap ?? 3;
-  const align = options.align ?? "start";
-  const shouldStack = options.stack ?? true;
-
-  const targetM = measureElement(target);
-  const targetX = typeof target.x === "number" ? target.x : 0;
-  const targetY = typeof target.y === "number" ? target.y : 0;
-
-  if (placement === "bottom") {
-    let refY = targetY;
-    let refHeight = targetM.height;
-    list.forEach((el, index) => {
-      const elM = measureElement(el);
-      const computedY = refY + refHeight + gap;
-      let computedX = targetX;
-      if (!shouldStack && typeof el.x === "number") {
-        computedX = el.x;
-      } else if (align === "center") {
-        computedX = targetX + (targetM.width - elM.width) / 2;
-      } else if (align === "end") {
-        computedX = targetX + targetM.width - elM.width;
-      }
-      applyPosition(el, computedX, computedY, options, index);
-      if (shouldStack) {
-        refY = computedY;
-        refHeight = elM.height;
-      }
-    });
-  } else if (placement === "top") {
-    if (!shouldStack) {
-      list.forEach((el, index) => {
-        const elM = measureElement(el);
-        const computedY = targetY - elM.height - gap;
-        const computedX = typeof el.x === "number" ? el.x : targetX;
-        applyPosition(el, computedX, computedY, options, index);
-      });
-    } else {
-      let refY = targetY;
-      for (let i = list.length - 1; i >= 0; i--) {
-        const el = list[i];
-        const elM = measureElement(el);
-        const computedY = refY - elM.height - gap;
-        let computedX = targetX;
-        if (align === "center") {
-          computedX = targetX + (targetM.width - elM.width) / 2;
-        } else if (align === "end") {
-          computedX = targetX + targetM.width - elM.width;
-        }
-        applyPosition(el, computedX, computedY, options, i);
-        refY = computedY;
-      }
-    }
-  } else if (placement === "right") {
-    let refX = targetX;
-    let refWidth = targetM.width;
-    list.forEach((el, index) => {
-      const elM = measureElement(el);
-      const computedX = refX + refWidth + gap;
-      let computedY = targetY;
-      if (!shouldStack && typeof el.y === "number") {
-        computedY = el.y;
-      } else if (align === "center") {
-        computedY = targetY + (targetM.height - elM.height) / 2;
-      } else if (align === "end") {
-        computedY = targetY + targetM.height - elM.height;
-      }
-      applyPosition(el, computedX, computedY, options, index);
-      if (shouldStack) {
-        refX = computedX;
-        refWidth = elM.width;
-      }
-    });
-  } else if (placement === "left") {
-    if (!shouldStack) {
-      list.forEach((el, index) => {
-        const elM = measureElement(el);
-        const computedX = targetX - elM.width - gap;
-        const computedY = typeof el.y === "number" ? el.y : targetY;
-        applyPosition(el, computedX, computedY, options, index);
-      });
-    } else {
-      let refX = targetX;
-      for (let i = list.length - 1; i >= 0; i--) {
-        const el = list[i];
-        const elM = measureElement(el);
-        const computedX = refX - elM.width - gap;
-        let computedY = targetY;
-        if (align === "center") {
-          computedY = targetY + (targetM.height - elM.height) / 2;
-        } else if (align === "end") {
-          computedY = targetY + targetM.height - elM.height;
-        }
-        applyPosition(el, computedX, computedY, options, i);
-        refX = computedX;
-      }
-    }
+  let edge = horizontal
+    ? targetBox.x + (reverse ? 0 : targetBox.width)
+    : targetBox.y + (reverse ? 0 : targetBox.height);
+  const indices = list.map((_, i) => i);
+  if (reverse && options.stack !== false) indices.reverse();
+  for (const index of indices) {
+    const el = list[index];
+    const box = prepare(el, dimension(options.width, index), dimension(options.height, index));
+    const cross = horizontal
+      ? targetBox.y + aligned(targetBox.height - box.height, options.align)
+      : targetBox.x + aligned(targetBox.width - box.width, options.align);
+    const main = reverse ? edge - gap - (horizontal ? box.width : box.height) : edge + gap;
+    place(el, horizontal ? main : cross, horizontal ? cross : main, options, index);
+    if (options.stack !== false)
+      edge = reverse ? main : main + (horizontal ? box.width : box.height);
   }
 }
 
@@ -411,660 +434,270 @@ function createLayoutRule(
   return mount(el);
 }
 
-/**
- * Layout helper providing procedural positioning engines (hstack, vstack, grid, circle, relational).
- * @category Layout
- */
+interface SlotMeasurement {
+  items: { el: LayoutElement; box: Bounds }[];
+  width: number;
+  height: number;
+}
+
+function stackLayout(
+  elements: StackSlot[],
+  options: StackLayoutOptions,
+  horizontal: boolean,
+): DOMElement[] {
+  if (!elements.length) return [];
+  const region = regionOf(options);
+  const gapX = options.gapX ?? (horizontal ? options.gap : undefined) ?? 6;
+  const gapY = options.gapY ?? (!horizontal ? options.gap : undefined) ?? 3;
+  const primaryGap = horizontal ? gapX : gapY;
+  const slots: SlotMeasurement[] = elements.map((slot, index) => {
+    const items = (Array.isArray(slot) ? slot : [slot]).map((el) => ({
+      el,
+      box: prepare(el, dimension(options.width, index), dimension(options.height, index)),
+    }));
+    if (!items.length) return { items, width: 0, height: 0 };
+    let width = Math.max(...items.map((item) => item.box.width));
+    let height = Math.max(...items.map((item) => item.box.height));
+    if (Array.isArray(slot)) {
+      if (horizontal)
+        height = items.reduce((sum, item) => sum + item.box.height, 0) + (items.length - 1) * gapY;
+      else width = items.reduce((sum, item) => sum + item.box.width, 0) + (items.length - 1) * gapX;
+    }
+    return { items, width, height };
+  });
+  const mainSize =
+    slots.reduce((sum, slot) => sum + (horizontal ? slot.width : slot.height), 0) +
+    (slots.length - 1) * primaryGap;
+  const crossSize = Math.max(...slots.map((slot) => (horizontal ? slot.height : slot.width)));
+  const available = horizontal ? region.width : region.height;
+  const extra = available - mainSize;
+  const distributedGap =
+    options.justify === "space-between" && slots.length > 1
+      ? primaryGap + Math.max(0, extra) / (slots.length - 1)
+      : primaryGap;
+  const width = horizontal ? mainSize : crossSize;
+  const height = horizontal ? crossSize : mainSize;
+  const x = startAt(options.x, region.x, region.width, width);
+  const y = startAt(options.y, region.y, region.height, height);
+  let cursor = horizontal ? x : y;
+  if (options.justify) {
+    cursor =
+      (horizontal ? region.x : region.y) +
+      aligned(extra, options.justify === "space-between" ? "start" : options.justify);
+  }
+  const crossStart = horizontal ? y : x;
+  const rules: DOMElement[] = [];
+  let itemIndex = 0;
+  slots.forEach((slot, index) => {
+    const cross =
+      crossStart + aligned(crossSize - (horizontal ? slot.height : slot.width), options.align);
+    let inner = cross;
+    for (const { el, box } of slot.items) {
+      place(
+        el,
+        horizontal ? cursor + aligned(slot.width - box.width, options.align) : inner,
+        horizontal ? inner : cursor + aligned(slot.height - box.height, options.align),
+        options,
+        itemIndex++,
+      );
+      inner += horizontal ? box.height + gapY : box.width + gapX;
+    }
+    const size = horizontal ? slot.width : slot.height;
+    if (options.rule && index < slots.length - 1) {
+      rules.push(
+        divider(
+          horizontal,
+          cursor + size + distributedGap / 2,
+          crossStart,
+          crossSize,
+          options.rule,
+        ),
+      );
+    }
+    cursor += size + distributedGap;
+  });
+  return rules;
+}
+
+function divider(
+  vertical: boolean,
+  at: number,
+  cross: number,
+  length: number,
+  rule: boolean | RuleOptions,
+): DOMElement {
+  const cfg = typeof rule === "object" ? rule : {};
+  const inset = cfg.inset ?? 0;
+  let thickness = cfg.thickness ?? 2;
+  if (cfg.bracket) thickness = typeof cfg.bracket === "number" ? cfg.bracket : 10;
+  const thin = typeof thickness === "number" ? `${thickness}px` : thickness;
+  return createLayoutRule(
+    vertical ? at : cross + inset,
+    vertical ? cross + inset : at,
+    vertical ? thin : units(Math.max(0, length - 2 * inset)),
+    vertical ? units(Math.max(0, length - 2 * inset)) : thin,
+    { ...cfg, side: cfg.side ?? (vertical ? "left" : "top") },
+  );
+}
+
+/** One-shot positioning without DOM containers. @category Layout */
 export const layout = {
-  /**
-   * Arranges elements or columns horizontally (horizontal stack).
-   * Slots can be single elements or nested arrays of elements (columns stacked vertically).
-   * Returns any created divider rules if options.rule is enabled.
-   */
-  hstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
-    if (elements.length === 0) return [];
-
-    const gapX = options.gapX ?? options.gap ?? 6;
-    const gapY = options.gapY ?? 3;
-
-    const stageW = stageWidthUnits();
-    const slotCount = elements.length;
-    const defaultX = 16;
-    const startXVal = typeof options.x === "number" ? options.x : defaultX;
-    const totalGapsX = Math.max(0, slotCount - 1) * gapX;
-    const autoColWidth = Math.max(16, (stageW - startXVal * 2 - totalGapsX) / slotCount);
-
-    interface MeasuredSlot {
-      width: number;
-      height: number;
-      isColumn: boolean;
-      items: { el: LayoutElement; width: number; height: number }[];
-    }
-
-    const slotMeasurements: MeasuredSlot[] = [];
-
-    elements.forEach((slot, index) => {
-      const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
-
-      if (Array.isArray(slot)) {
-        const colElements = slot;
-        const totalGapsY = Math.max(0, colElements.length - 1) * gapY;
-        let colWidthVal = autoColWidth;
-        if (typeof explicitWidth === "number") {
-          colWidthVal = explicitWidth;
-        } else if (typeof explicitWidth === "string") {
-          colWidthVal = Number.parseFloat(explicitWidth) || autoColWidth;
-        }
-
-        for (const el of colElements) {
-          if ((el as unknown as Record<string, unknown>).width === undefined) {
-            const formatted = cssLength(colWidthVal) ?? "";
-            (el as unknown as Record<string, unknown>).width = colWidthVal;
-            const dom = (el as { domElement?: HTMLElement }).domElement;
-            if (dom && !dom.style.width) {
-              dom.style.width = formatted;
-            }
-          }
-        }
-
-        const items = colElements.map((el) => {
-          const m = measureElement(el, colWidthVal);
-          return { el, width: m.width, height: m.height };
-        });
-
-        const maxW = Math.max(...items.map((it) => it.width));
-        const totalH = items.reduce((sum, it) => sum + it.height, 0) + totalGapsY;
-
-        slotMeasurements.push({
-          width: maxW,
-          height: totalH,
-          isColumn: true,
-          items,
-        });
-      } else {
-        const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-        const elWidth = (slot as unknown as Record<string, unknown>).width;
-        const isEqual = options.width === "equal";
-        let m = measureElement(slot);
-        if (explicitW !== undefined && explicitW !== "equal") {
-          m = measureElement(slot, explicitW);
-        } else if (elWidth === undefined && isEqual) {
-          m = measureElement(slot, autoColWidth);
-        }
-        slotMeasurements.push({
-          width: m.width,
-          height: m.height,
-          isColumn: false,
-          items: [{ el: slot, width: m.width, height: m.height }],
-        });
-      }
-    });
-
-    let currentX: number;
-    if (options.x === "center") {
-      const totalWidth =
-        slotMeasurements.reduce((sum, sm) => sum + sm.width, 0) +
-        Math.max(0, slotMeasurements.length - 1) * gapX;
-      currentX = Math.max(0, (stageW - totalWidth) / 2);
-    } else if (typeof options.x === "number") {
-      currentX = options.x;
-    } else {
-      currentX = defaultX;
-    }
-
-    const y = options.y ?? 22;
-    const yNum = typeof y === "number" ? y : 22;
-    const align = options.align ?? "start";
-    const maxH = Math.max(...slotMeasurements.map((sm) => sm.height));
-    const rules: DOMElement[] = [];
-    let itemIdx = 0;
-
-    slotMeasurements.forEach((sm, index) => {
-      const explicitWidth = Array.isArray(options.width) ? options.width[index] : options.width;
-      let slotY = yNum;
-      if (align === "center") {
-        slotY = yNum + (maxH - sm.height) / 2;
-      } else if (align === "end") {
-        slotY = yNum + (maxH - sm.height);
-      }
-
-      if (sm.isColumn) {
-        let colY = slotY;
-        for (const { el, height } of sm.items) {
-          const elWidth = (el as unknown as Record<string, unknown>).width as
-            | number
-            | string
-            | undefined;
-          const appliedOptions = {
-            ...options,
-            width:
-              explicitWidth !== undefined && explicitWidth !== "equal"
-                ? explicitWidth
-                : (elWidth ?? sm.width),
-          };
-          applyPosition(el, currentX, colY, appliedOptions, itemIdx++);
-          colY += height + gapY;
-        }
-      } else {
-        const item = sm.items[0];
-        if (item) {
-          const appliedOptions = {
-            ...options,
-            width: explicitWidth === "equal" ? autoColWidth : explicitWidth,
-          };
-          applyPosition(item.el, currentX, slotY, appliedOptions, itemIdx++);
-        }
-      }
-
-      if (options.rule && index < slotMeasurements.length - 1) {
-        const ruleX = currentX + sm.width + gapX / 2;
-        const cfg = typeof options.rule === "object" ? options.rule : {};
-        const inset = cfg.inset ?? 0;
-        const thickness = cfg.thickness ?? 2;
-        const isBracketed = !!cfg.bracket;
-        const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
-
-        let ruleWidth = String(thickness);
-        if (isBracketed) {
-          ruleWidth = `${bracketLength}px`;
-        } else if (typeof thickness === "number") {
-          ruleWidth = `${thickness}px`;
-        }
-        const ruleHeight = units(maxH - 2 * inset);
-
-        const ruleEl = createLayoutRule(ruleX, yNum + inset, ruleWidth, ruleHeight, {
-          ...cfg,
-          side: cfg.side ?? "left",
-        });
-        rules.push(ruleEl);
-      }
-
-      currentX += sm.width + gapX;
-    });
-
-    return rules;
+  /** Arrange a row; nested arrays form columns. Default gaps: 6 horizontal, 3 vertical stage units. */
+  hstack(elements: StackSlot[], options: StackLayoutOptions = {}): DOMElement[] {
+    return stackLayout(elements, options, true);
   },
-
-  /**
-   * Arranges elements or rows vertically (vertical stack).
-   * Slots can be single elements or nested arrays of elements (rows laid out horizontally).
-   * Returns any created divider rules if options.rule is enabled.
-   */
-  vstack(elements: StackSlot[], options: LayoutOptions = {}): DOMElement[] {
-    if (elements.length === 0) return [];
-
-    const stageW = stageWidthUnits();
-    const x = options.x ?? 16;
-    const xNum = typeof x === "number" ? x : 16;
-    const effectiveWidth =
-      options.width ?? (x === "center" ? 128 : Math.max(32, stageW - xNum - (xNum > 48 ? 6 : 10)));
-
-    const gapY = options.gapY ?? options.gap ?? 3;
-    const gapX = options.gapX ?? 6;
-
-    interface MeasuredSlot {
-      width: number;
-      height: number;
-      isRow: boolean;
-      items: { el: LayoutElement; width: number; height: number }[];
-    }
-
-    const slotMeasurements: MeasuredSlot[] = [];
-
-    elements.forEach((slot, index) => {
-      const explicitHeight = Array.isArray(options.height) ? options.height[index] : options.height;
-
-      if (Array.isArray(slot)) {
-        const rowElements = slot;
-        const totalGapsX = Math.max(0, rowElements.length - 1) * gapX;
-        let widthVal = 128;
-        if (typeof effectiveWidth === "number") {
-          widthVal = effectiveWidth;
-        } else if (Array.isArray(effectiveWidth) && typeof effectiveWidth[0] === "number") {
-          widthVal = effectiveWidth[0];
-        }
-        const autoItemWidth = Math.max(16, (widthVal - totalGapsX) / rowElements.length);
-
-        for (const el of rowElements) {
-          if ((el as unknown as Record<string, unknown>).width === undefined) {
-            (el as unknown as Record<string, unknown>).width = autoItemWidth;
-          }
-        }
-
-        const items = rowElements.map((el) => {
-          const m = measureElement(el, autoItemWidth);
-          return { el, width: m.width, height: m.height };
-        });
-
-        const totalW = items.reduce((sum, it) => sum + it.width, 0) + totalGapsX;
-        const maxH =
-          typeof explicitHeight === "number"
-            ? explicitHeight
-            : Math.max(...items.map((it) => it.height));
-
-        slotMeasurements.push({
-          width: totalW,
-          height: maxH,
-          isRow: true,
-          items,
-        });
-      } else {
-        const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-        const elWidth = (slot as unknown as Record<string, unknown>).width;
-        let m = measureElement(slot);
-        if (explicitW !== undefined) {
-          m = measureElement(slot, explicitW);
-        } else if (elWidth === undefined) {
-          const fallbackWidth =
-            typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
-              ? effectiveWidth
-              : undefined;
-          m = measureElement(slot, fallbackWidth);
-        }
-        slotMeasurements.push({
-          width: m.width,
-          height: typeof explicitHeight === "number" ? explicitHeight : m.height,
-          isRow: false,
-          items: [{ el: slot, width: m.width, height: m.height }],
-        });
-      }
-    });
-
-    const totalHeight =
-      slotMeasurements.reduce((sum, sm) => sum + sm.height, 0) +
-      Math.max(0, slotMeasurements.length - 1) * gapY;
-
-    let currentY: number;
-    if (options.y === "center") {
-      currentY = Math.max(0, (STAGE_UNITS_TALL - totalHeight) / 2);
-    } else if (typeof options.y === "number") {
-      currentY = options.y;
-    } else {
-      currentY = 18;
-    }
-
-    const rules: DOMElement[] = [];
-    let itemIdx = 0;
-    let widthNum = 44;
-    if (typeof effectiveWidth === "number") {
-      widthNum = effectiveWidth;
-    } else if (typeof effectiveWidth === "string") {
-      widthNum = Number.parseFloat(effectiveWidth) || 44;
-    }
-
-    slotMeasurements.forEach((sm, index) => {
-      const explicitH = Array.isArray(options.height) ? options.height[index] : options.height;
-
-      if (sm.isRow) {
-        let rowX = xNum;
-        for (const { el, width } of sm.items) {
-          const appliedOptions = {
-            ...options,
-            height: explicitH,
-          };
-          applyPosition(el, rowX, currentY, appliedOptions, itemIdx++);
-          rowX += width + gapX;
-        }
-      } else {
-        const item = sm.items[0];
-        if (item) {
-          const explicitW = Array.isArray(options.width) ? options.width[index] : options.width;
-          const elWidth = (item.el as unknown as Record<string, unknown>).width as
-            | number
-            | string
-            | undefined;
-          const appliedOptions = {
-            ...options,
-            width:
-              explicitW ??
-              elWidth ??
-              (typeof effectiveWidth === "number" || typeof effectiveWidth === "string"
-                ? effectiveWidth
-                : undefined),
-            height: explicitH,
-          };
-          applyPosition(item.el, x, currentY, appliedOptions, itemIdx++);
-        }
-      }
-
-      if (options.rule && index < slotMeasurements.length - 1) {
-        const ruleY = currentY + sm.height + gapY / 2;
-        const cfg = typeof options.rule === "object" ? options.rule : {};
-        const inset = cfg.inset ?? 0;
-        const thickness = cfg.thickness ?? 2;
-        const isBracketed = !!cfg.bracket;
-        const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
-
-        let ruleHeight = String(thickness);
-        if (isBracketed) {
-          ruleHeight = `${bracketLength}px`;
-        } else if (typeof thickness === "number") {
-          ruleHeight = `${thickness}px`;
-        }
-        const ruleWidth = units(widthNum - 2 * inset);
-
-        const ruleEl = createLayoutRule(xNum + inset, ruleY, ruleWidth, ruleHeight, {
-          ...cfg,
-          side: cfg.side ?? "top",
-        });
-        rules.push(ruleEl);
-      }
-
-      currentY += sm.height + gapY;
-    });
-
-    return rules;
+  /** Arrange a column; nested arrays form rows. Default gaps: 6 horizontal, 3 vertical stage units. */
+  vstack(elements: StackSlot[], options: StackLayoutOptions = {}): DOMElement[] {
+    return stackLayout(elements, options, false);
   },
-
-  /**
-   * Arranges elements into a multi-column grid defined as a 2D matrix of rows and columns.
-   * Supports `null` or `undefined` for empty matrix slots.
-   * Returns divider rules placed in grid gutters if options.rule is enabled.
-   */
+  /** Arrange cells in rows. Default gaps: 4 stage units; alignment: start on both axes. */
   grid(matrix: GridSlot[][], options: LayoutOptions = {}): DOMElement[] {
-    if (matrix.length === 0) return [];
-
-    const cols = Math.max(...matrix.map((row) => (Array.isArray(row) ? row.length : 0)));
-    if (cols === 0) return [];
-
+    const cols = Math.max(0, ...matrix.map((row) => row.length));
+    if (!cols || !matrix.some((row) => row.some(Boolean))) return [];
+    const region = regionOf(options);
     const gapX = options.gapX ?? options.gap ?? 4;
     const gapY = options.gapY ?? options.gap ?? 4;
-
-    const flatNonNull: LayoutElement[] = [];
-    for (const row of matrix) {
-      if (Array.isArray(row)) {
-        for (const slot of row) {
-          if (slot) flatNonNull.push(slot);
-        }
-      }
-    }
-
-    if (flatNonNull.length === 0) return [];
-
-    const measurements = flatNonNull.map((el) => {
-      const size = measureElement(
-        el,
-        Array.isArray(options.width) ? options.width[0] : options.width,
-      );
-      const scale = "scale" in el && typeof el.scale === "number" ? Math.abs(el.scale) : 1;
-      return { width: size.width * scale, height: size.height * scale };
-    });
-    const maxColWidth = Math.max(...measurements.map((m) => m.width));
-    const maxRowHeight = Math.max(...measurements.map((m) => m.height));
-
-    const totalGridWidth = cols * maxColWidth + Math.max(0, cols - 1) * gapX;
-    const totalGridHeight = matrix.length * maxRowHeight + Math.max(0, matrix.length - 1) * gapY;
-
-    let startX: number;
-    if (options.x === "center") {
-      startX = Math.max(0, (stageWidthUnits() - totalGridWidth) / 2);
-    } else if (typeof options.x === "number") {
-      startX = options.x;
-    } else {
-      startX = 16;
-    }
-
-    let startY: number;
-    if (options.y === "center") {
-      startY = Math.max(0, (STAGE_UNITS_TALL - totalGridHeight) / 2);
-    } else if (typeof options.y === "number") {
-      startY = options.y;
-    } else {
-      startY = 18;
-    }
-
-    let itemIdx = 0;
-    matrix.forEach((row, rowIdx) => {
-      if (!Array.isArray(row)) return;
-      row.forEach((slot, colIdx) => {
-        if (!slot) return;
-        const targetX = startX + colIdx * (maxColWidth + gapX);
-        const targetY = startY + rowIdx * (maxRowHeight + gapY);
-        applyPosition(slot, targetX, targetY, options, itemIdx++);
-      });
-    });
-
+    const cells = matrix.map((row, r) =>
+      row.map((el, c) =>
+        el
+          ? { el, box: prepare(el, dimension(options.width, c), dimension(options.height, r)) }
+          : null,
+      ),
+    );
+    const widths = Array.from({ length: cols }, (_, c) =>
+      Math.max(0, ...cells.map((row) => row[c]?.box.width ?? 0)),
+    );
+    const heights = cells.map((row) => Math.max(0, ...row.map((cell) => cell?.box.height ?? 0)));
+    const width = widths.reduce((a, b) => a + b, 0) + (cols - 1) * gapX;
+    const height = heights.reduce((a, b) => a + b, 0) + (matrix.length - 1) * gapY;
+    const x = startAt(options.x, region.x, region.width, width);
+    let y = startAt(options.y, region.y, region.height, height);
+    const startY = y;
+    let index = 0;
     const rules: DOMElement[] = [];
-    if (options.rule) {
-      const cfg = typeof options.rule === "object" ? options.rule : {};
-      const inset = cfg.inset ?? 0;
-      const thickness = cfg.thickness ?? 2;
-      const isBracketed = !!cfg.bracket;
-      const bracketLength = typeof cfg.bracket === "number" ? cfg.bracket : 10;
-
-      let vertWidth = String(thickness);
-      if (isBracketed) {
-        vertWidth = `${bracketLength}px`;
-      } else if (typeof thickness === "number") {
-        vertWidth = `${thickness}px`;
+    cells.forEach((row, r) => {
+      let cursor = x;
+      for (let c = 0; c < cols; c++) {
+        const cell = row[c];
+        if (cell)
+          place(
+            cell.el,
+            cursor + aligned(widths[c] - cell.box.width, options.align),
+            y + aligned(heights[r] - cell.box.height, options.align),
+            options,
+            index++,
+          );
+        if (r === 0 && options.rule && c < cols - 1)
+          rules.push(divider(true, cursor + widths[c] + gapX / 2, startY, height, options.rule));
+        cursor += widths[c] + gapX;
       }
-      const vertHeight = units(totalGridHeight - 2 * inset);
-
-      // Vertical column dividers
-      for (let c = 0; c < cols - 1; c++) {
-        const ruleX = startX + (c + 1) * maxColWidth + c * gapX + gapX / 2;
-        rules.push(
-          createLayoutRule(ruleX, startY + inset, vertWidth, vertHeight, {
-            ...cfg,
-            side: cfg.side ?? "left",
-          }),
-        );
-      }
-
-      let horizHeight = String(thickness);
-      if (isBracketed) {
-        horizHeight = `${bracketLength}px`;
-      } else if (typeof thickness === "number") {
-        horizHeight = `${thickness}px`;
-      }
-      const horizWidth = units(totalGridWidth - 2 * inset);
-
-      // Horizontal row dividers
-      for (let r = 0; r < matrix.length - 1; r++) {
-        const ruleY = startY + (r + 1) * maxRowHeight + r * gapY + gapY / 2;
-        rules.push(
-          createLayoutRule(startX + inset, ruleY, horizWidth, horizHeight, {
-            ...cfg,
-            side: cfg.side ?? "top",
-          }),
-        );
-      }
-    }
-
+      if (options.rule && r < cells.length - 1)
+        rules.push(divider(false, y + heights[r] + gapY / 2, x, width, options.rule));
+      y += heights[r] + gapY;
+    });
     return rules;
   },
-
-  /**
-   * Positions one or more elements above a target element.
-   * Multiple elements chain sequentially upwards by default (reading order maintained).
-   * @param options Layout options for gap, alignment, and animated transitions.
-   */
+  /** Align existing elements within their combined bounds or a region. Default: left edges. */
+  align(elements: LayoutElement[], options: AlignmentOptions = {}): void {
+    if (!elements.length) return;
+    const region = options.region ?? union(elements);
+    regionOf({ region });
+    elements.forEach((el, index) => {
+      const box = bounds(el);
+      const axis = options.axis ?? "x";
+      const x = axis === "y" ? box.x : region.x + aligned(region.width - box.width, options.align);
+      const y =
+        axis === "x" ? box.y : region.y + aligned(region.height - box.height, options.align);
+      place(el, x, y, options, index);
+    });
+  },
+  /** Place above a target; gap defaults to 3 stage units. */
   above(
     elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    options: LayoutOptions = {},
+    options: RelativeLayoutOptions = {},
   ): void {
     positionRelative(elements, target, "top", options);
   },
-
-  /**
-   * Positions one or more elements below a target element.
-   * Multiple elements chain sequentially downwards by default.
-   * @param options Layout options for gap, alignment, and animated transitions.
-   */
+  /** Place below a target; gap defaults to 3 stage units. */
   below(
     elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    options: LayoutOptions = {},
+    options: RelativeLayoutOptions = {},
   ): void {
     positionRelative(elements, target, "bottom", options);
   },
-
-  /**
-   * Positions one or more elements to the right of a target element.
-   * Multiple elements chain sequentially rightwards by default.
-   * @param options Layout options for gap, alignment, and animated transitions.
-   */
-  rightOf(
-    elements: LayoutElement | LayoutElement[],
-    target: LayoutElement,
-    options: LayoutOptions = {},
-  ): void {
-    positionRelative(elements, target, "right", options);
-  },
-
-  /**
-   * Positions one or more elements to the left of a target element.
-   * Multiple elements chain sequentially leftwards by default (reading order maintained).
-   * @param options Layout options for gap, alignment, and animated transitions.
-   */
+  /** Place left of a target; gap defaults to 3 stage units. */
   leftOf(
     elements: LayoutElement | LayoutElement[],
     target: LayoutElement,
-    options: LayoutOptions = {},
+    options: RelativeLayoutOptions = {},
   ): void {
     positionRelative(elements, target, "left", options);
   },
-
-  /**
-   * Arranges elements in a circular orbit around a central point or anchor element.
-   */
+  /** Place right of a target; gap defaults to 3 stage units. */
+  rightOf(
+    elements: LayoutElement | LayoutElement[],
+    target: LayoutElement,
+    options: RelativeLayoutOptions = {},
+  ): void {
+    positionRelative(elements, target, "right", options);
+  },
+  /** Arrange around a center; radius defaults to 28 stage units. */
   circle(elements: LayoutElement[], options: CircleLayoutOptions = {}): void {
-    const count = elements.length;
-    if (count === 0) return;
-
-    let cx = stageWidthUnits() / 2;
-    let cy = STAGE_UNITS_TALL / 2;
-
+    const region = regionOf(options);
+    let center: Point = [region.x + region.width / 2, region.y + region.height / 2];
     if (options.center) {
-      if (Array.isArray(options.center)) {
-        cx = options.center[0];
-        cy = options.center[1];
-      } else {
-        // If anchor element, center on its midpoint
-        const centerEl = options.center as LayoutElement;
-        if ("domElement" in centerEl || "width" in centerEl) {
-          const m = measureElement(centerEl);
-          if (typeof centerEl.x === "number") cx = centerEl.x + m.width / 2;
-          if (typeof centerEl.y === "number") cy = centerEl.y + m.height / 2;
-        }
+      if (Array.isArray(options.center)) center = options.center as Point;
+      else {
+        const box = bounds(options.center as LayoutElement);
+        center = [box.x + box.width / 2, box.y + box.height / 2];
       }
     }
-
-    const radius = options.radius ?? 28;
-    // Units are isotropic, so the orbit is a true circle. flatten squashes it vertically.
-    const rx = radius;
-    const ry = radius * (1 - (options.flatten ?? 0));
-    const startAngleDeg = options.startAngle ?? -90; // Default 12 o'clock top
-    const spanDeg = options.span ?? 360;
-    const centerElements = options.centerElements ?? true;
-
+    const span = options.span ?? 360;
     elements.forEach((el, index) => {
-      let angleDeg = startAngleDeg;
-      if (count > 1) {
-        const stepDeg = spanDeg === 360 ? spanDeg / count : spanDeg / (count - 1);
-        angleDeg = startAngleDeg + index * stepDeg;
-      }
-
-      const rad = (angleDeg * Math.PI) / 180;
-      let targetX = cx + rx * Math.cos(rad);
-      let targetY = cy + ry * Math.sin(rad);
-
-      if (centerElements) {
-        const m = measureElement(el);
-        targetX -= m.width / 2;
-        targetY -= m.height / 2;
-      }
-
-      applyPosition(el, targetX, targetY, options);
+      const angle =
+        (((options.startAngle ?? -90) +
+          (elements.length > 1
+            ? (index * span) / (Math.abs(span) === 360 ? elements.length : elements.length - 1)
+            : 0)) *
+          Math.PI) /
+        180;
+      const box = offsets(el);
+      const x = center[0] + (options.radius ?? 28) * Math.cos(angle);
+      const y = center[1] + (options.radius ?? 28) * (1 - (options.flatten ?? 0)) * Math.sin(angle);
+      if (options.centerElements === false) {
+        setValue(el, "x", x, options, index);
+        setValue(el, "y", y, options, index);
+      } else place(el, x - box.width / 2, y - box.height / 2, options, index);
     });
   },
-
-  /**
-   * Transforms a group of elements as a rigid body: uniform scale and/or
-   * translate while preserving relative arrangement. Connectors in the group
-   * have their `labelScale` adjusted instead of `scale`.
-   *
-   * @param elements Elements (cards, connectors, etc.) to transform.
-   * @param options  Target position, scale, origin pin, and animation settings.
-   */
+  /** Move and scale current geometry together; scale is a relative multiplier (default: 1). */
   group(elements: LayoutElement[], options: GroupLayoutOptions = {}): void {
-    if (elements.length === 0) return;
-
+    const positioned = elements.filter((el) => record(el).kind !== "Connector");
+    if (!positioned.length) return;
+    const box = union(positioned);
+    const origin = options.origin ?? [box.x + box.width / 2, box.y + box.height / 2];
+    const target = options.position ?? origin;
     const scale = options.scale ?? 1;
-
-    // Determine the transform origin: explicit point, or bounding-box center
-    // of positioned elements (connectors have no x/y so they are skipped).
-    let ox: number;
-    let oy: number;
-    if (options.origin) {
-      [ox, oy] = options.origin;
-    } else {
-      let minX = Number.POSITIVE_INFINITY;
-      let maxX = Number.NEGATIVE_INFINITY;
-      let minY = Number.POSITIVE_INFINITY;
-      let maxY = Number.NEGATIVE_INFINITY;
-      for (const el of elements) {
-        const ex = typeof el.x === "number" ? el.x : undefined;
-        const ey = typeof el.y === "number" ? el.y : undefined;
-        if (ex !== undefined) {
-          minX = Math.min(minX, ex);
-          maxX = Math.max(maxX, ex);
-        }
-        if (ey !== undefined) {
-          minY = Math.min(minY, ey);
-          maxY = Math.max(maxY, ey);
-        }
+    if (!Number.isFinite(scale) || scale <= 0)
+      throw new RangeError("Group scale must be positive and finite.");
+    // Read every input before recording mutations, including connectors attached to these elements.
+    const states = elements.map((el) => ({
+      el,
+      x: numberProp(el, "x", 0),
+      y: numberProp(el, "y", 0),
+      scale: numberProp(el, "scale", 1),
+      labelScale: numberProp(el, "labelScale", 1),
+    }));
+    states.forEach((state, index) => {
+      if (record(state.el).kind === "Connector")
+        setValue(state.el, "labelScale", state.labelScale * scale, options, index);
+      else {
+        setValue(state.el, "x", target[0] + (state.x - origin[0]) * scale, options, index);
+        setValue(state.el, "y", target[1] + (state.y - origin[1]) * scale, options, index);
+        setValue(state.el, "scale", state.scale * scale, options, index);
       }
-      ox = Number.isFinite(minX) ? (minX + maxX) / 2 : 0;
-      oy = Number.isFinite(minY) ? (minY + maxY) / 2 : 0;
-    }
-
-    // Target center: explicit position, or keep the current origin.
-    const tx = options.position ? options.position[0] : ox;
-    const ty = options.position ? options.position[1] : oy;
-
-    for (const el of elements) {
-      const rec = el as unknown as Record<string, unknown>;
-      const isConnector = "kind" in el && (el as { kind: string }).kind === "Connector";
-
-      // Connectors don't have their own x/y; only scale their label.
-      if (isConnector) {
-        if (options.animate) {
-          if (typeof options.animate === "function") {
-            rec.labelScale = options.animate(scale, el, 0);
-          } else {
-            rec.labelScale = to(scale).duration(options.duration ?? 0.6);
-          }
-        } else {
-          rec.labelScale = scale;
-        }
-        // Also reset label offsets so they don't look misaligned at the new scale.
-        continue;
-      }
-
-      // Positioned elements: compute new coordinates.
-      const ex = typeof el.x === "number" ? el.x : ox;
-      const ey = typeof el.y === "number" ? el.y : oy;
-      const newX = tx + (ex - ox) * scale;
-      const newY = ty + (ey - oy) * scale;
-
-      if (options.animate) {
-        if (typeof options.animate === "function") {
-          rec.x = options.animate(newX, el, 0);
-          rec.y = options.animate(newY, el, 0);
-          rec.scale = options.animate(scale, el, 0);
-        } else {
-          const dur = options.duration ?? 0.6;
-          rec.x = to(newX).duration(dur);
-          rec.y = to(newY).duration(dur);
-          rec.scale = to(scale).duration(dur);
-        }
-      } else {
-        rec.x = newX;
-        rec.y = newY;
-        rec.scale = scale;
-      }
-    }
+    });
   },
 };

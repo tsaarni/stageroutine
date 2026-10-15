@@ -4,214 +4,211 @@ sidebar_position: 4
 
 # Layout
 
-The `layout` object calculates element coordinates and dimensions automatically.
-For details on stage units and screen coordinates, see [Coordinates](./coordinates).
+Use `layout` to position elements without adding DOM containers.
+Coordinates and numeric sizes use [stage units](./coordinates).
 
-![StageRoutine Layout Modes](/img/layout-modes.svg)
+## Place a row or column
 
-## Immediate vs Animated
-
-By default, layouts set positions immediately.
-To animate elements into place, pass `animate` in the options.
-
-Pass `true` for default timing:
+Use `hstack` for a row and `vstack` for a column:
 
 ```typescript
-layout.vstack([card1, card2, card3], {
-  y: 18,
-  animate: true,
-});
+import { Card, layout } from "stageroutine";
+
+const a = Card("Client", { width: 24, height: 10 });
+const b = Card("Service", { width: 30, height: 10 });
+
+layout.hstack([a, b], { x: "center", y: "center", gap: 6 });
 ```
 
-Pass a callback for custom easing, duration, or staggered delays:
+`x` and `y` place the top-left of the whole arrangement. Both default to `0`.
+Use `"center"` on either axis to center the arrangement in the available region.
+Element origins, scales, and rotations are preserved. Placement uses their visual bounding boxes.
+
+Horizontal stack gaps default to **6 stage units**. Vertical stack gaps default to **3 stage units**.
+Use `gapX` and `gapY` to set each direction separately.
+
+## Choose available space
+
+A `region` is a plain rectangle in stage units. It creates no container.
+The default region is the full stage.
 
 ```typescript
-layout.vstack([card1, card2, card3], {
-  animate: (coord, el, index) =>
-    to(coord).duration(0.8).ease("quartOut").delay(index * 0.1),
-});
-```
+const rightPanel = { x: 84, y: 18, width: 64, height: 60 };
 
-Callback parameters:
-- `coord`: Target coordinate (`x` or `y`) calculated by the layout.
-- `el`: Element being positioned.
-- `index`: Element index in the layout, useful for staggered delays.
-
-The `animate` option works with every layout method.
-
-## Vertical Stacks
-
-Use `layout.vstack` to arrange elements in a column from top to bottom.
-
-```typescript
-import { layout } from "stageroutine";
-
-layout.vstack([title, subtitle, description], {
-  x: "center", // Horizontal position in stage units or "center" (default: 16)
-  y: 18,       // Vertical start position (default: 18)
-  gap: 3,      // Space between elements (default: 3)
-});
-```
-
-## Horizontal Stacks
-
-Use `layout.hstack` to arrange elements in a row from left to right.
-
-```typescript
-layout.hstack([card1, card2, card3], {
-  x: 16,  // Horizontal start position (default: 16)
-  y: 32,  // Vertical position in stage units or "center" (default: 22)
-  gap: 6, // Space between elements (default: 6)
-});
-```
-
-## Nested Stacks
-
-You can nest arrays inside `layout.hstack` and `layout.vstack`.
-An inner array switches the layout direction for that slot.
-
-- In `layout.hstack`, an inner array stacks elements vertically into a column.
-- In `layout.vstack`, an inner array stacks elements horizontally into a row.
-
-![StageRoutine Nested Stacks](/img/nested-stacks.svg)
-
-```typescript
-// Two columns side by side
-layout.hstack([
-  [heading, body], // First column (stacked vertically)
-  codePanel,       // Second column
-], {
+layout.vstack([heading, body], {
+  region: rightPanel,
+  x: "center",
+  y: "center",
   gap: 4,
 });
+```
 
-// A row nested inside a vertical stack
-layout.vstack([
-  header,
-  [card1, card2],  // Nested row (arranged horizontally)
-  footer,
-], {
+Without `x` or `y`, placement starts at the region's top-left.
+Numeric coordinates remain absolute stage coordinates.
+Regions guide placement; they do not clip, stretch, or shrink content.
+
+## Size elements
+
+Set element widths to control text wrapping. A layout `width` or `height` overrides existing element dimensions **before measuring**.
+These values size elements, not the available region. Sizes default to each element's existing or intrinsic size.
+
+```typescript
+layout.vstack([heading, body], {
+  region: rightPanel,
+  width: 60,
   gap: 3,
 });
 ```
 
-Nested slots divide available space equally by default.
-To set custom sizes, pass an array to `width` or `height`:
+CSS lengths such as `"32rem"` are also supported.
+Array dimensions select each outer slot in stacks, or each column (`width`) and row (`height`) in grids.
+
+## Align and distribute
+
+Stack `align` positions slots perpendicular to the main direction:
+
+- `hstack`: align their top, center, or bottom edges.
+- `vstack`: align their left, center, or right edges.
+
+Values are `"start"` (default), `"center"`, and `"end"`.
+This layout alignment is separate from the element's own content `align`.
+
+Use `justify` to place the stack along its main axis within the region:
 
 ```typescript
-// 40% for column 1, 50% for column 2
-layout.hstack([[heading, body], codePanel], {
-  width: [40, 50],
+layout.hstack([a, b, c], {
+  region: { x: 12, y: 20, width: 136, height: 50 },
+  justify: "space-between",
+  align: "center",
 });
 ```
 
-## Grid Layouts
+`justify` accepts `"start"`, `"center"`, `"end"`, or `"space-between"`.
+It defaults to unset and overrides the main-axis `x` or `y` when supplied.
+`"space-between"` adds equal space between slots while preserving element sizes and the minimum gap.
+Content can overflow when it exceeds the available space.
 
-Use `layout.grid` to align elements in rows and columns at the same time.
-Pass a two-dimensional array of rows.
-Use `null` for empty cells.
+To align elements already positioned independently, use `layout.align`:
+
+```typescript
+layout.align([a, b, c], { axis: "x", align: "end" });
+```
+
+`axis` defaults to `"x"`; `"y"` and `"both"` are also supported.
+The reference defaults to their combined bounds. Supply `region` to use a fixed reference rectangle.
+
+## Combine rows and columns
+
+A nested array switches direction. Elements remain flat stage siblings:
+
+```typescript
+layout.hstack([[heading, body], diagram], {
+  x: 10,
+  y: 18,
+  width: [60, 70],
+  gap: 6,
+});
+```
+
+Here, `heading` and `body` form a column. Each gets a width of **60 stage units**.
+The diagram gets **70 stage units**. Widths are not percentages.
+Include gaps and margins when budgeting space.
+
+## Align a grid
+
+Pass rows to `layout.grid`. Use `null` for an empty cell:
 
 ```typescript
 layout.grid([
-  [clientApp,   apiGateway,   null],
-  [authService, dbService,    redisCache],
+  [client, gateway, null],
+  [null, service, database],
 ], {
-  x: "center", // Horizontal position in stage units or "center" (default: 16)
-  y: 22,       // Vertical start position (default: 18)
-  gapX: 6,     // Space between columns (default: 6)
-  gapY: 3,     // Space between rows (default: 3)
+  x: "center",
+  y: "center",
+  gapX: 8,
+  gapY: 6,
+  align: "center",
 });
 ```
 
-## Relative Positioning
+Each column uses its widest element; each row uses its tallest element.
+Grid gaps default to **4 stage units** on both axes.
+`align` places elements inside cells on both axes (default: `"start"`).
 
-Use relative helpers to position elements relative to a target element.
-You can pass a single element (`item`) or an array of elements (`[item1, item2]`), with optional configuration for gap, alignment, and animation.
-If omitted, `gap` defaults to `3` stage units.
+## Place relative to another element
 
 ```typescript
-// Place a single element below a target (default gap: 3)
-layout.below(caption, chart);
-
-// Place multiple elements below a target with custom gap and animation
-layout.below([item1, item2, item3], title, {
-  gap: 4,          // Space between elements (default: 3)
-  align: "start",  // "start" (default), "center", or "end"
-  animate: (coord, el, index) =>
-    to(coord).duration(0.6).delay(index * 0.1),
-});
-
-// Place details to the right of card
-layout.rightOf(details, card, { gap: 4, align: "center" });
+layout.below(caption, diagram, { gap: 4, align: "center" });
+layout.rightOf(details, diagram, { gap: 6 });
 ```
 
-Available helpers:
-- `layout.below(elements, target, options?)`: positions elements below the target.
-- `layout.above(elements, target, options?)`: positions elements above the target.
-- `layout.rightOf(elements, target, options?)`: positions elements to the right of the target.
-- `layout.leftOf(elements, target, options?)`: positions elements to the left of the target.
+Use `above`, `below`, `leftOf`, or `rightOf`.
+They measure both elements' visual bounds, including origin, scale, and rotation.
+The gap defaults to **3 stage units**; perpendicular alignment defaults to `"start"`.
 
-Options:
-- `gap`: Spacing between elements and the target in stage units (default: `3`).
-- `align`: Perpendicular alignment: `"start"` (default), `"center"`, or `"end"`.
-- `stack`: When passing multiple elements, whether they chain sequentially (default: `true`). Set `false` to move multiple elements without chaining.
-- `animate`: Position transition builder callback or `true`.
+Arrays preserve reading order and stack sequentially by default.
+Set `stack: false` to place each element relative to the same target, with the same perpendicular alignment.
 
-## Circular Layouts
-
-Use `layout.circle` to place elements in a circle around a center point.
+## Arrange a circle
 
 ```typescript
-layout.circle([node1, node2, node3, node4], {
-  center: [80, 45], // Center point [x, y] or element (default: stage center)
-  radius: 28,       // Distance from center in stage units (default: 28)
-});
+layout.circle([a, b, c], { center: [80, 45], radius: 28 });
 ```
 
-## Group Transform
+The center defaults to the region center; radius defaults to **28 stage units**.
+An element can supply the center; its visual midpoint is used.
+`startAngle` defaults to **−90 degrees**; `span` defaults to **360 degrees**.
+`flatten` defaults to **0** (a circle); **1** makes a horizontal line.
+Elements are centered on orbit points by default. With `centerElements: false`, each element's origin sits on its orbit point.
 
-Use `layout.group` to scale and reposition a set of elements as a rigid body.
-Relative arrangement is preserved — elements move and shrink together.
+## Animate a rearrangement
+
+Layouts calculate positions once. Reapply after content or geometry changes.
+Placement is immediate by default. Pass `animate: true` to record transitions with a default duration of **0.6 seconds**:
 
 ```typescript
-layout.group([card1, card2, connector], {
-  scale: 0.6,                // Uniform scale factor (default: 1)
-  position: [120, 20],       // Target center [x, y] in stage units
+layout.hstack([a, b], { x: "center", y: 30, animate: true });
+stage.pause();
+```
+
+For custom timing, use a callback receiving the target coordinate, element, and flattened element index:
+
+```typescript
+layout.vstack([a, b], {
+  animate: (coordinate, element, index) => to(coordinate).delay(index * 0.08),
 });
 ```
 
-Connectors in the group have their `labelScale` adjusted instead of `scale`,
-so label text stays readable.
+Sizing constraints apply immediately; `animate` controls placement. Use reactive size transitions explicitly when resizing should animate.
 
-Options:
-- `scale`: Uniform scale factor applied around the origin (default: `1`).
-- `position`: Target center `[x, y]` in stage units. Default: current bounding center.
-- `origin`: Transform origin `[x, y]` in stage units. Default: bounding-box center of the elements.
-- `animate`: Position transition builder callback or `true`.
-- `duration`: Duration in seconds when `animate: true` (default: `0.6`).
+## Move a diagram together
+
+`layout.group` transforms the current arrangement around its combined visual center:
 
 ```typescript
-// Animate the group to a corner and shrink it
-layout.group([diagram, label, conn], {
+layout.group([a, b, connector], {
+  position: [120, 25],
   scale: 0.5,
-  position: [130, 15],
   animate: true,
-  duration: 0.8,
 });
 ```
 
-## Divider Lines
+`scale` is a positive relative multiplier (default: **1**).
+It multiplies current element scales, distances, and connector label scales.
+A second call with `scale: 2` reverses a preceding `scale: 0.5`.
+An omitted `position` preserves the current center. An explicit `origin` selects the pivot in stage units; `position` then selects that pivot's destination.
 
-Add `rule: true` to draw divider lines in gutters between elements:
+Use `group(...elements).to(...)` to assign the same property targets to each element.
+Use `layout.group` when their spatial arrangement should transform together.
+
+## Add dividers
+
+Stacks and grids can create gutter dividers with `rule: true`.
+Add the returned elements to the scene:
 
 ```typescript
-const rules = layout.hstack([col1, col2], { rule: true });
-stage.scene("Overview").with(col1, col2, ...rules);
+const dividers = layout.hstack([a, b], { gap: 6, rule: true });
+stage.scene("Comparison").with(a, b, ...dividers);
 ```
 
-You can also pass an options object to customize `color`, `thickness`, `borderStyle`, or `bracket`:
-
-```typescript
-layout.hstack([col1, col2], {
-  rule: { borderStyle: "dashed", bracket: true },
-});
-```
+Pass a rule options object to customize its appearance.

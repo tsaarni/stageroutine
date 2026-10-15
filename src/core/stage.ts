@@ -8,6 +8,7 @@ import { PresenterHost } from "../presenter/host";
 import { registerStageStyleContext } from "../theme/context";
 import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
+import { applyDOMOpacity, usesLayerOpacity } from "./dom-opacity";
 import { computeTransform, resolveAnchor } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
@@ -2200,7 +2201,10 @@ export class Stage {
     for (const id of transitioningIds) {
       const el = this.elementRegistry.get(id);
       if (el?.domElement && el.kind !== "Shape" && el.kind !== "Frame") {
-        el.domElement.style.willChange = "transform, opacity";
+        // An opacity hint can isolate child backdrop filters even at opacity 1.
+        el.domElement.style.willChange = usesLayerOpacity(el.domElement)
+          ? "transform"
+          : "transform, opacity";
         this.promotedElements.add(el.domElement);
       }
     }
@@ -2310,7 +2314,7 @@ export class Stage {
   private _hideElement(element: ReactiveElementBase): void {
     const node = element.domElement;
     if (!node) return;
-    node.style.opacity = "0";
+    applyDOMOpacity(node, 0);
     node.style.visibility = "hidden";
     node.style.display = "none";
     node.style.willChange = "auto";
@@ -2357,7 +2361,7 @@ export class Stage {
       managed._defaultPointerEvents ??
       (node instanceof SVGElement || node.tagName.toLowerCase() === "svg" ? "none" : "auto");
     node.style.pointerEvents = opacity === 0 ? "none" : defaultPointerEvents;
-    node.style.opacity = `${opacity}`;
+    applyDOMOpacity(node, opacity);
     try {
       (element as unknown as { opacity: number }).opacity = opacity;
     } catch {

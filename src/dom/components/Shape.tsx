@@ -1,3 +1,4 @@
+import { enableLayerOpacity, refreshLayerOpacity } from "../../core/dom-opacity";
 import { isTransitionDescriptor } from "../../motion/transitions";
 /**
  * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
@@ -183,14 +184,13 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
     this._update();
   }
 
-  private frostDiv: HTMLDivElement;
+  private readonly frostDiv: HTMLDivElement;
   private readonly svgElement: SVGSVGElement;
   private readonly pathNode: SVGPathElement;
   private readonly innerPathNode: SVGPathElement;
 
   private _active = false;
   private _doubleBorder = false;
-  private lastFrostOpacity = 1;
   private lastW = 0;
   private lastH = 0;
 
@@ -322,6 +322,17 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
       }
     }
 
+    // Raw text nodes need a visual layer so they fade with the shape.
+    for (const node of Array.from(el.childNodes)) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const span = document.createElement("span");
+        span.className = "sr-shape-text";
+        node.replaceWith(span);
+        span.appendChild(node);
+      }
+    }
+
+    enableLayerOpacity(el);
     super("Shape", el, opts);
     this.domElement.style.willChange = "auto";
 
@@ -390,18 +401,7 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
   override _update(): void {
     if (!this.pathNode) return;
 
-    // Workaround for observed Chromium compositor behavior:
-    // When an element has both a CSS transform (e.g. translate3d) and opacity < 1,
-    // the parent establishes an isolated W3C "Backdrop Root", cutting off child backdrop blur.
-    // When opacity returns to 1, Chromium appears to retain the isolated backdrop root state
-    // on the existing composited transform layer, leaving the background sharp.
-    // Replacing frostDiv with a cloned node re-initializes its layer to re-bind to the root backdrop.
-    if (this.variant === "surface" && this.opacity === 1 && this.lastFrostOpacity < 1) {
-      const fresh = this.frostDiv.cloneNode(true) as HTMLDivElement;
-      this.frostDiv.replaceWith(fresh);
-      this.frostDiv = fresh;
-    }
-    this.lastFrostOpacity = this.opacity;
+    refreshLayerOpacity(this.domElement);
     this.updateVisualState();
     this.updateGeometry();
     this.updateFlowClasses();

@@ -3,6 +3,7 @@
  */
 
 import type { Properties as CSSProperties } from "csstype";
+import { applyDOMOpacity, discoverBackdropLayers } from "../core/dom-opacity";
 import { computeTransform } from "../core/interpolators";
 import { logger } from "../core/logger";
 import { splitPosition } from "../core/position";
@@ -452,7 +453,7 @@ export class DOMElementImpl implements DOMElement {
       this.domElement.style.transform = transform;
       this.domElement.style.transformOrigin = transformOrigin;
     }
-    this.domElement.style.opacity = `${this.opacity}`;
+    applyDOMOpacity(this.domElement, this.opacity);
 
     if (options.style) {
       const owned = [
@@ -552,6 +553,7 @@ export class DOMElementImpl implements DOMElement {
     for (const listener of this.mountListeners) {
       listener();
     }
+    discoverBackdropLayers(this.domElement);
   }
 
   /**
@@ -673,6 +675,7 @@ export class DOMElementImpl implements DOMElement {
    */
   decorate(decorator: ElementDecorator): this {
     decorator(this);
+    discoverBackdropLayers(this.domElement);
     return this;
   }
 }

@@ -36,7 +36,7 @@ test.describe("Stage Navigation & Restoration", () => {
 
     // Check initial state
     await expect(cardA).toHaveCSS("opacity", "1");
-    await expect(cardB).toHaveCSS("opacity", "0.5");
+    await expect(cardB.locator(".sr-shape-frost")).toHaveCSS("opacity", "0.5");
 
     const initialBoxA = await cardA.boundingBox();
     const initialBoxB = await cardB.boundingBox();
@@ -47,7 +47,7 @@ test.describe("Stage Navigation & Restoration", () => {
     // Advance to Step 1
     await stage.next();
 
-    await expect(cardA).toHaveCSS("opacity", "0.2");
+    await expect(cardA.locator(".sr-shape-frost")).toHaveCSS("opacity", "0.2");
     await expect(cardB).toHaveCSS("opacity", "1");
 
     const step1BoxA = await cardA.boundingBox();
@@ -58,7 +58,7 @@ test.describe("Stage Navigation & Restoration", () => {
     await stage.prev();
 
     await expect(cardA).toHaveCSS("opacity", "1");
-    await expect(cardB).toHaveCSS("opacity", "0.5");
+    await expect(cardB.locator(".sr-shape-frost")).toHaveCSS("opacity", "0.5");
 
     const restoredBoxA = await cardA.boundingBox();
     const restoredBoxB = await cardB.boundingBox();

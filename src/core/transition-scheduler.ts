@@ -1,10 +1,12 @@
 import { interpolateValue } from "./interpolators";
-import type { TransitionRecord } from "./types";
+import { createPositionSampler } from "./position-motion";
+import type { Point, TransitionRecord } from "./types";
 
 export interface ScheduledTransition extends TransitionRecord {
   startFrom: unknown;
   startOffsetMs: number;
   endOffsetMs: number;
+  positionSampler?: (progress: number) => Point;
 }
 
 /** Resolves timing for a batch of scene or interactive transitions. */
@@ -24,7 +26,12 @@ export function scheduleTransitions(
         (other) =>
           other !== t &&
           other.elementId === t.triggerElementId &&
-          (!t.triggerProperty || other.property === t.triggerProperty),
+          (!t.triggerProperty ||
+            other.property === t.triggerProperty ||
+            (other.property === "position" &&
+              (t.triggerProperty === "x" || t.triggerProperty === "y")) ||
+            (t.triggerProperty === "position" &&
+              (other.property === "x" || other.property === "y"))),
       );
       if (!t.triggerElementId || matching.length === 0) continue;
       const milestone = t.triggerMilestone ?? "end";
@@ -55,6 +62,21 @@ export function sampleTransition(
   if (elapsed < t.startOffsetMs) return { value: t.startFrom, progress: 0 };
   if (elapsed >= t.endOffsetMs) return { value: t.to, progress: 1 };
   const progress = (elapsed - t.startOffsetMs) / t.durationMs;
+  if (t.property === "position") {
+    const from = t.startFrom as Point;
+    const to = t.to as Point;
+    const eased = t.curve(progress);
+    const centerFrom = t.motion?.fromCenter ?? from;
+    const centerTo = t.motion?.toCenter ?? to;
+    t.positionSampler ??= createPositionSampler(t.motion?.path, centerFrom, centerTo);
+    const center = t.positionSampler(eased);
+    return {
+      progress,
+      value: center.map(
+        (v, i) => v + (from[i] - centerFrom[i]) * (1 - eased) + (to[i] - centerTo[i]) * eased,
+      ),
+    };
+  }
   return {
     progress,
     value: interpolateValue(t.startFrom, t.to, t.curve(progress), t.property, context),

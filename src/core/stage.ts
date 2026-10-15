@@ -28,6 +28,7 @@ import type {
   ElementAnchor,
   OverlayContext,
   OverlayPlugin,
+  PositionMotion,
   ReactiveElementBase,
   Size,
   StageEventMap,
@@ -314,7 +315,10 @@ export class Stage {
   /** Overlays that have received a mount context, in mount order. */
   private mountedOverlays: OverlayPlugin[] = [];
   private pendingLiveTransitions: TransitionRecord[] = [];
-  private activeLiveTransitions = new Map<string, ScheduledTransition & { startTime: number }>();
+  private activeLiveTransitions = new Map<
+    string,
+    ScheduledTransition & { startTime: number; started?: boolean }
+  >();
   private animationEpoch = 0;
   private sceneTransitionRunning = false;
   private restoringState = false;
@@ -1151,12 +1155,29 @@ export class Stage {
     triggerElementId?: string,
     triggerMilestone?: AnimationMilestone,
     triggerProperty?: string,
+    motion?: PositionMotion,
   ): void {
     from = copyPropertyValue(from);
     to = copyPropertyValue(to);
-    if (from === to) {
+    if (
+      from === to ||
+      (property === "position" &&
+        !motion?.fromCenter &&
+        motion?.path?.kind !== "bezier" &&
+        Array.isArray(from) &&
+        Array.isArray(to) &&
+        from[0] === to[0] &&
+        from[1] === to[1])
+    ) {
+      if (property === "position") this._cancelPositionTransition(elementId, property);
       return;
     }
+    if (motion)
+      motion = {
+        ...motion,
+        fromCenter: motion.fromCenter && [...motion.fromCenter],
+        toCenter: motion.toCenter && [...motion.toCenter],
+      };
 
     if (this.isMountedState) {
       if (
@@ -1176,6 +1197,7 @@ export class Stage {
         triggerMilestone,
         triggerProperty,
         curve,
+        motion,
       });
       return;
     }
@@ -1191,10 +1213,36 @@ export class Stage {
       triggerMilestone,
       triggerProperty,
       curve,
+      motion,
     });
   }
 
+  _cancelPositionTransition(elementId: string, property: string): void {
+    if (this.restoringState || this.sceneTransitionRunning) return;
+    const conflicts = (p: string) =>
+      p === "position" || p === property || (property === "position" && (p === "x" || p === "y"));
+    if (!this.isMountedState) {
+      // Authoring state contains destinations. Restore the canceled movement's start first.
+      const canceled = this.currentStepTransitions.filter(
+        (t) => t.elementId === elementId && conflicts(t.property),
+      );
+      this.currentStepTransitions = this.currentStepTransitions.filter(
+        (t) => !canceled.includes(t),
+      );
+      for (const t of canceled) this._setCurrentPropertyValue(elementId, t.property, t.from);
+      return;
+    }
+    for (const [key, t] of this.activeLiveTransitions)
+      if (t.elementId === elementId && conflicts(t.property))
+        this.activeLiveTransitions.delete(key);
+    this.pendingLiveTransitions = this.pendingLiveTransitions.filter(
+      (t) => t.elementId !== elementId || !conflicts(t.property),
+    );
+  }
+
   private _scheduleLiveTransition(record: TransitionRecord): void {
+    if (["position", "x", "y"].includes(record.property))
+      this._cancelPositionTransition(record.elementId, record.property);
     this.pendingLiveTransitions.push(record);
     if (!this.liveBatchQueued) {
       this.liveBatchQueued = true;
@@ -1228,6 +1276,11 @@ export class Stage {
       const progress = new Map<string, number>();
       for (const [key, t] of this.activeLiveTransitions) {
         const elapsed = frameTime - t.startTime;
+        if (elapsed < t.startOffsetMs) continue;
+        if (!t.started) {
+          t.startFrom = this._getCurrentPropertyValue(t.elementId, t.property) ?? t.startFrom;
+          t.started = true;
+        }
         const sample = sampleTransition(
           t,
           elapsed,
@@ -1272,10 +1325,16 @@ export class Stage {
 
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
     const props = this.propertyState.get(elementId);
+    if (property === "position") return props ? [props.x ?? 0, props.y ?? 0] : undefined;
     return props && Object.hasOwn(props, property) ? props[property] : undefined;
   }
 
   _setCurrentPropertyValue(elementId: string, property: string, value: unknown): void {
+    if (property === "position" && Array.isArray(value)) {
+      this._setCurrentPropertyValue(elementId, "x", value[0]);
+      this._setCurrentPropertyValue(elementId, "y", value[1]);
+      return;
+    }
     let elProps = this.propertyState.get(elementId);
     if (!elProps) {
       elProps = {};
@@ -2124,7 +2183,8 @@ export class Stage {
             const motionTransition = stepTransitions.find(
               (t) =>
                 t.elementId === id &&
-                (t.property === "x" ||
+                (t.property === "position" ||
+                  t.property === "x" ||
                   t.property === "y" ||
                   t.property === "scale" ||
                   t.property === "rotation"),
@@ -2163,7 +2223,11 @@ export class Stage {
 
     // For any property that has an explicit new value in targetSnap but NO transition scheduled in this step,
     // apply it immediately at the start of the step so discrete changes (like text, flow, etc.) are not delayed.
-    const transitioningKeys = new Set(stepTransitions.map((t) => `${t.elementId}:${t.property}`));
+    const transitioningKeys = new Set(
+      stepTransitions.flatMap((t) =>
+        (t.property === "position" ? ["x", "y"] : [t.property]).map((p) => `${t.elementId}:${p}`),
+      ),
+    );
     if (targetSnap) {
       for (const [id, targetProps] of targetSnap.properties.entries()) {
         const currentProps = this.propertyState.get(id);

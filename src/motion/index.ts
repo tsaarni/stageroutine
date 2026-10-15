@@ -4,6 +4,7 @@
  */
 
 export type { ElementTransition, ElementTransitionProps } from "./element-transition";
+export { motionPaths } from "./paths";
 export type { ReplaceOptions, ReplaceTransition } from "./replace";
 export { replace } from "./replace";
 export type { StaggerOptions, StaggerTransition } from "./stagger";

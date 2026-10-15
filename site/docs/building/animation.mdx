@@ -2,6 +2,8 @@
 sidebar_position: 3
 ---
 
+import { DemoFrame } from "@site/src/components/DemoFrame";
+
 # Animation
 
 StageRoutine makes animations declarative. You define target values with `to()` and link transitions with milestones.
@@ -44,6 +46,156 @@ Pass a callback taking current `(x, y)` coordinates to update the `position` tup
 // Move 5% right and 10% up
 card.position = to((x, y) => [x + 5, y - 10]).duration(0.5);
 ```
+
+## Circular movement
+
+Assign a complete position and add `.arc(degrees)`:
+
+```typescript
+card.position = to([100, 50]).arc(90).duration(1.2);
+```
+
+The sweep defaults to **0 degrees**, which moves straight.
+Use **-180 to 180 degrees**. Positive sweeps turn clockwise; negative sweeps turn counterclockwise.
+For a left-to-right move, a positive sweep bends above the straight route.
+Duration defaults to **0.6 seconds** and easing defaults to `"cubicOut"`.
+Easing controls speed along the circle. The element keeps its rotation.
+An unchanged position produces no movement.
+
+### Bézier curves
+
+Use two absolute control points to shape a swoop or an S-shaped flight.
+All points use stage units. The transition supplies the start and destination.
+
+```typescript
+import { motionPaths, to } from "stageroutine";
+
+card.position = to([120, 50])
+  .path(motionPaths.bezier({
+    control1: [45, 15],
+    control2: [95, 85],
+  }))
+  .duration(1.2);
+```
+
+The first control sets the departure direction. The second sets the approach direction.
+Controls are required. A curve can return to its starting position.
+
+### Spiral arrivals
+
+Wind around the destination while the radius decreases to zero:
+
+```typescript
+card.position = to([100, 50])
+  .path(motionPaths.spiral({ turns: 0.75 }))
+  .duration(1.5);
+```
+
+`turns` defaults to **1 clockwise revolution**. Negative values turn counterclockwise.
+The range is **-10 to 10 turns**; **0 turns** moves straight.
+An unchanged destination produces no spiral movement.
+
+Bézier and spiral routes use approximate distance-based progress.
+With `ease("linear")`, travel speed stays approximately constant.
+Other easing curves change speed along the route. Elements keep their rotation.
+
+You can reuse a path across transitions. Path values copy their options and are immutable.
+`motionPaths.arc(90)` is equivalent to the `.arc(90)` shortcut.
+
+### Fly into a layout
+
+The animation callback receives the complete destination in stage units, the element, and its index.
+Use a delay to send elements along separate arcs:
+
+```typescript
+layout.grid([[a, b], [c, d]], {
+  x: 80,
+  y: 30,
+  animate: (position, element, index) =>
+    to(position).arc(90).duration(1.2).delay(index * 0.08),
+});
+```
+
+### Move a formation
+
+`layout.group()` moves the group center along the selected path and preserves each element's offset.
+Its callback runs once, with the center destination, the first positioned element, and index `0`.
+A requested scale changes the offsets and element sizes together.
+
+Choose Arc, Bézier, or Spiral, then fly into a grid or move the formation together.
+The flight buttons reset the cards before starting.
+
+<DemoFrame src="/stageroutine/previews/circular-movement.html" title="Motion paths: arc, Bézier, and spiral flights" />
+
+```typescript preview="circular-movement.html"
+// hide-start
+import { Stage, Card, Text, layout, motionPaths, to } from "stageroutine";
+const stage = new Stage({ channel: false, width: 800, height: 450 });
+const heading = Text("Arc selected · choose a flight", { position: [10, 5], scale: 1.3 });
+let route = motionPaths.arc(90);
+const routes = [
+  motionPaths.arc(90),
+  motionPaths.bezier({ control1: [70, 28], control2: [95, 82] }),
+  motionPaths.spiral({ turns: 0.5 }),
+];
+const selectors = ["Arc", "Bézier", "Spiral"].map((label, index) => {
+  const button = Card(label, { position: [10 + index * 50, 18], width: 40, height: 10 });
+  button.onClick(() => {
+    route = routes[index];
+    heading.text = `${label} selected · choose a flight`;
+  });
+  return button;
+});
+const cards = ["A", "B", "C", "D"].map((label, i) => Card(label, {
+  position: [46 + (i % 2) * 16, 54 + Math.floor(i / 2) * 14],
+  width: 12, height: 10,
+}));
+const reset = () => {
+  cards.forEach((card, i) => {
+    card.position = [46 + (i % 2) * 16, 54 + Math.floor(i / 2) * 14];
+    card.scale = 1;
+  });
+};
+const individual = Card("Fly into grid", { position: [10, 80], width: 44, height: 10 });
+const together = Card("Move together", { position: [60, 80], width: 44, height: 10 });
+individual.onClick(() => {
+  reset();
+// hide-end
+layout.grid([[cards[0], cards[1]], [cards[2], cards[3]]], {
+  x: 108,
+  y: 50,
+  gap: 8,
+  animate: (position, element, index) =>
+    to(position).path(route).duration(1.5).delay(index * 0.08),
+});
+// hide-start
+});
+together.onClick(() => {
+  reset();
+// hide-end
+layout.group(cards, {
+  position: [126, 57],
+  animate: (position) => to(position).path(route).duration(1.5),
+});
+// hide-start
+});
+stage.scene("Circular movement").with(heading, ...selectors, ...cards, individual, together);
+stage.pause();
+stage.mount("#stage");
+// hide-end
+```
+
+### Interrupt movement
+
+A new position transition starts from the visible position.
+Assigning `x` or `y` cancels a position transition and keeps the other visible coordinate.
+Delayed transitions read their starting position when movement begins.
+Navigation cancels interaction animations and restores the destination snapshot.
+Going backward restores coordinates without replaying the path in reverse.
+Replacing movement preserves position, but can change direction and speed immediately.
+
+When defining a step, the last overlapping assignment wins.
+Replacing a position transition with `x` or `y` restores its starting coordinates before applying the new assignment.
 
 ## Milestone Synchronization
 

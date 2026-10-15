@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 205 symbols |
+| `stageroutine` | 210 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -230,7 +230,10 @@ export function Title(text: string, options?: TitleOptions): TextElement;
  * Creates a fluent transition modifier with a 2D coordinate delta updater.
  * e.g. `card.position = to((x, y) => [x, y - 10]).duration(0.4)`
  */
-export function to(updater: PositionUpdater): TransitionDescriptor<Position>;
+export function to(updater: PositionUpdater): PositionTransitionDescriptor;
+
+/** Creates a position transition. Default: 0.6 seconds, cubicOut easing. */
+export function to<T extends Position>(target: T): PositionTransitionDescriptor<T>;
 
 /**
  * Creates a fluent transition modifier with a relative delta updater.
@@ -560,6 +563,14 @@ export interface BackgroundOptions {
     opacity?: number;
 }
 
+/** Absolute cubic Bézier controls in stage units. @category Motion */
+export interface BezierMotionOptions {
+    /** First control point in stage units. Required. */
+    control1: Point;
+    /** Second control point in stage units. Required. */
+    control2: Point;
+}
+
 /**
  * Options for the box (rounded rectangle) path generator.
  * @category Shape & Frame
@@ -701,7 +712,7 @@ export interface CircleLayoutOptions {
     centerElements?: boolean;
     /**
      * Whether or how to animate elements into circular positions.
-     * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+     * Can be `true` or a builder callback `(position, el, index) => to(position).duration(0.8)`.
      */
     animate?: LayoutAnimation;
     /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
@@ -1105,7 +1116,7 @@ export interface GroupLayoutOptions {
     scale?: number;
     /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
     origin?: Point;
-    /** Animate the transform. `true` uses default duration; a callback customizes each transition. */
+    /** Animate the transform. Default: false. A callback configures the shared center transition once. */
     animate?: LayoutAnimation;
     /** Duration in seconds when `animate: true`. Default: 0.6s. */
     duration?: number;
@@ -1263,7 +1274,7 @@ export interface LayoutOptions {
     gapY?: number;
     /**
      * Whether or how to animate elements into target positions.
-     * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+     * Can be `true` or a builder callback `(position, el, index) => to(position).duration(0.8)`.
      */
     animate?: LayoutAnimation;
     /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
@@ -1527,6 +1538,14 @@ export interface PointerStateChangedEvent {
 export interface PolygonPathOptions {
     /** Number of sides (minimum: 3, default: 5). */
     sides?: number;
+}
+
+/** Circular position transition. Default sweep: 0 degrees (straight). @category Motion */
+export interface PositionTransitionDescriptor<T extends Position = Position> extends TransitionDescriptor<T> {
+    /** Circular sweep in degrees, from -180 to 180. Positive is clockwise. Default: 0. */
+    arc(degrees: number): this;
+    /** Travel along a motion path. Default: straight. */
+    path(path: MotionPath): this;
 }
 
 /**
@@ -1851,6 +1870,12 @@ export interface SpeechBubblePathOptions {
     tail?: BubbleTail;
     /** Width of the tail base where it joins the bubble body (default: 24). */
     tailWidth?: number;
+}
+
+/** Spiral arrival around the destination. @category Motion */
+export interface SpiralMotionOptions {
+    /** Revolutions, from -10 to 10. Positive is clockwise. Default: 1 turn. */
+    turns?: number;
 }
 
 /**
@@ -2584,10 +2609,10 @@ export type LabelPlacement = "start" | "center" | "end" | number;
  * Animation configuration for layout placement.
  * Can be:
  * - `boolean`: `true` to animate with default duration (0.6s).
- * - `Function`: A callback receiving `(coord, element, index)` returning a configured transition via `to(coord)`.
+ * - `Function`: A callback receiving `(position, element, index)` returning a configured transition via `to(position)`.
  * @category Layout
  */
-export type LayoutAnimation = boolean | ((coord: number | "center", element: LayoutElement, index: number) => TransitionDescriptor<unknown>);
+export type LayoutAnimation = boolean | ((position: Point, element: LayoutElement, index: number) => PositionTransitionDescriptor);
 
 /**
  * Any stage element that layout helpers can measure and position.
@@ -2611,6 +2636,19 @@ export type LayoutElement = ReactiveElementBase;
  * @category Core
  */
 export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
+
+/** A reusable, immutable travel route. Endpoints come from the position transition. @category Motion */
+export type MotionPath = Readonly<{
+    kind: "arc";
+    degrees: number;
+}> | Readonly<{
+    kind: "bezier";
+    control1: Point;
+    control2: Point;
+}> | Readonly<{
+    kind: "spiral";
+    turns: number;
+}>;
 
 /**
  * A function that calculates an SVG path string ('d' attribute) for given dimensions.
@@ -2754,6 +2792,9 @@ export const layout: { hstack(elements: StackSlot[], options?: StackLayoutOption
 
 /** Logger control object for configuring logging behavior. */
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };
+
+/** Travel routes for position transitions. */
+export const motionPaths: { arc(degrees?: number): MotionPath; bezier(options: BezierMotionOptions): MotionPath; spiral(options?: SpiralMotionOptions): MotionPath; };
 
 /** Geometric SVG path generators for shapes, cards, and clipping frames. */
 export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; speechBubble(options?: SpeechBubblePathOptions): PathFunction; thoughtBubble(options?: ThoughtBubblePathOptions): PathFunction; };

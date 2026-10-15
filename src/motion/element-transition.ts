@@ -2,6 +2,7 @@
  * Fluent builder for coordinating multi-property transitions across one or more elements.
  */
 
+import { copyPositionMotion } from "../core/position-motion";
 import { isReactiveProperty } from "../core/reactive";
 import { getActiveStage } from "../core/stage";
 import type {
@@ -191,6 +192,7 @@ export class ElementTransitionBuilder implements ElementTransition {
           builder.durationMs = descriptor.durationMs;
           builder.delayMs = descriptor.delayMs;
           builder.curve = descriptor.curve;
+          copyPositionMotion(descriptor, builder);
           builder.triggerTarget = descriptor.triggerTarget;
           builder.triggerMilestone = descriptor.triggerMilestone;
           builder.triggerProperty = descriptor.triggerProperty;

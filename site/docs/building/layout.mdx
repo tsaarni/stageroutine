@@ -171,11 +171,11 @@ layout.hstack([a, b], { x: "center", y: 30, animate: true });
 stage.pause();
 ```
 
-For custom timing, use a callback receiving the target coordinate, element, and flattened element index:
+For custom timing, use a callback receiving the complete target position, element, and flattened element index:
 
 ```typescript
 layout.vstack([a, b], {
-  animate: (coordinate, element, index) => to(coordinate).delay(index * 0.08),
+  animate: (position, element, index) => to(position).delay(index * 0.08),
 });
 ```
 
@@ -212,3 +212,5 @@ stage.scene("Comparison").with(a, b, ...dividers);
 ```
 
 Pass a rule options object to customize its appearance.
+
+For arc, Bézier, and spiral routes, see [Circular movement](./animation#circular-movement).

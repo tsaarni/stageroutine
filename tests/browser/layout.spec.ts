@@ -182,7 +182,8 @@ test("circle uses an origin-aware center and supplies callback indices", async (
       span: 180,
       animate: (coordinate, _element, index) => {
         indices.add(index);
-        if (coordinate < 0 || index > 1) throw new Error("Unexpected callback values");
+        if (coordinate.some((value) => value < 0) || index > 1)
+          throw new Error("Unexpected callback values");
         return SR.to(coordinate)
           .duration(0.05)
           .delay(index * 0.01);

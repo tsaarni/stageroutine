@@ -2,6 +2,7 @@
  * Staggered animation coordinator for sequential reveals across element collections.
  */
 
+import { copyPositionMotion } from "../core/position-motion";
 import { isReactiveProperty } from "../core/reactive";
 import { getActiveStage } from "../core/stage";
 import type {
@@ -12,7 +13,7 @@ import type {
 } from "../core/types";
 import type { DOMElement } from "../dom/element";
 import type { ElementTransitionProps } from "./element-transition";
-import { to } from "./transitions";
+import { isTransitionDescriptor, to } from "./transitions";
 
 /**
  * Configuration options for cascading stagger animations across multiple elements.
@@ -129,7 +130,11 @@ export class StaggerBuilder implements StaggerTransition {
       for (const [prop, targetVal] of Object.entries(this.targetProps)) {
         if (!isReactiveProperty(item, prop))
           throw new Error(`Unsupported transition property: ${prop}`);
-        const transition = to(targetVal).duration(this.durationSec).ease(this.easeCurve);
+        const descriptor = isTransitionDescriptor(targetVal) ? targetVal : undefined;
+        const transition = to(descriptor ? descriptor.target : targetVal)
+          .duration(this.durationSec)
+          .ease(this.easeCurve);
+        if (descriptor) copyPositionMotion(descriptor, transition);
 
         if (isFirst) {
           if (this.triggerTarget) {

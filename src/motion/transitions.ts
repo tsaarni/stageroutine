@@ -2,16 +2,21 @@
  * Fluent transition builder ('to') and cubic-Bézier easing curve calculations.
  */
 
+import { positionMotion } from "../core/position-motion";
 import type {
   AnimationMilestone,
   BuiltinEase,
   EaseCurve,
+  MotionPath,
   Position,
+  PositionMotion,
+  PositionTransitionDescriptor,
   PositionUpdater,
   ReactiveElementBase,
   TransitionDescriptor,
   UnwrapTransition,
 } from "../core/types";
+import { copyMotionPath, motionPaths } from "./paths";
 
 /**
  * Creates a cubic Bézier easing curve from control points (p1x, p1y) and (p2x, p2y).
@@ -100,6 +105,16 @@ export const builtinEasings: Record<BuiltinEase, EaseCurve> = {
 
 class TransitionBuilder<T> implements TransitionDescriptor<T> {
   readonly __isTransition = true;
+  [positionMotion]?: PositionMotion;
+
+  arc(degrees: number): this {
+    return this.path(motionPaths.arc(degrees));
+  }
+
+  path(path: MotionPath): this {
+    this[positionMotion] = { path: copyMotionPath(path) };
+    return this;
+  }
   target: T;
   durationMs = 600; // Default 0.6s
   delayMs = 0;
@@ -166,7 +181,9 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
  * e.g. `card.position = to((x, y) => [x, y - 10]).duration(0.4)`
  * @category Motion
  */
-export function to(updater: PositionUpdater): TransitionDescriptor<Position>;
+export function to(updater: PositionUpdater): PositionTransitionDescriptor;
+/** Creates a position transition. Default: 0.6 seconds, cubicOut easing. @category Motion */
+export function to<T extends Position>(target: T): PositionTransitionDescriptor<T>;
 /**
  * Creates a fluent transition modifier with a relative delta updater.
  * e.g. `card.y = to(y => y - 10).duration(0.4)`

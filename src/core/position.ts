@@ -1,8 +1,6 @@
 /**
- * Splits `position` assignments into separate x and y assignments.
+ * Position resolution and circular path geometry.
  */
-
-import { isTransitionDescriptor } from "../motion/transitions";
 
 /** An x and y pair, where either axis may be omitted. */
 export interface AxisPair {
@@ -13,7 +11,7 @@ export interface AxisPair {
 /** Reads the current coordinate, used to resolve updater functions. */
 export type CurrentPosition = () => [number, number];
 
-function resolveCoords(target: unknown, current: CurrentPosition): AxisPair {
+export function resolveCoords(target: unknown, current: CurrentPosition): AxisPair {
   let val = target;
 
   if (typeof val === "function") {
@@ -38,20 +36,23 @@ function resolveCoords(target: unknown, current: CurrentPosition): AxisPair {
   return {};
 }
 
-/**
- * Splits a `position` value into x and y assignments.
- * A transition is kept on both axes, so they animate together.
- */
-export function splitPosition(value: unknown, current: CurrentPosition): AxisPair {
-  if (value === undefined || value === null) return {};
-
-  if (isTransitionDescriptor(value)) {
-    const { x, y } = resolveCoords(value.target, current);
-    return {
-      x: x === undefined ? undefined : { ...value, target: x },
-      y: y === undefined ? undefined : { ...value, target: y },
-    };
-  }
-
-  return resolveCoords(value, current);
+/** Samples a circular arc in stage coordinates. */
+export function arcPosition(
+  from: readonly number[],
+  to: readonly number[],
+  progress: number,
+  degrees: number,
+): [number, number] {
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  if (degrees === 0 || (dx === 0 && dy === 0))
+    return [from[0] + dx * progress, from[1] + dy * progress];
+  const angle = (degrees * Math.PI) / 180;
+  const a = angle * progress;
+  // Chord coordinates avoid subtracting large circle centers for shallow arcs.
+  const halfSinSquared = Math.sin(a / 2) ** 2;
+  const factor = 1 / Math.tan(angle / 2);
+  const along = halfSinSquared + (factor * Math.sin(a)) / 2;
+  const across = factor * halfSinSquared - Math.sin(a) / 2;
+  return [from[0] + dx * along - dy * across, from[1] + dy * along + dx * across];
 }

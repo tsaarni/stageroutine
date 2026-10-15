@@ -3,10 +3,11 @@
  */
 
 import { isTransitionDescriptor } from "../motion/transitions";
-import { splitPosition } from "./position";
+import { resolveCoords } from "./position";
+import { getPositionMotion } from "./position-motion";
 import { copyPropertyValue, isReactiveProperty } from "./reactive";
 import { tryGetActiveStage } from "./stage";
-import type { AnimationMilestone, EaseCurve, ReactiveElementBase } from "./types";
+import type { AnimationMilestone, EaseCurve, PositionMotion, ReactiveElementBase } from "./types";
 import { STAGE_UNITS_TALL, stageUnitsWide } from "./units";
 
 /** Resolves "center" on an axis to its numeric stage unit coordinate. */
@@ -37,7 +38,9 @@ export interface ElementHost {
     triggerElementId?: string,
     triggerMilestone?: AnimationMilestone,
     triggerProperty?: string,
+    motion?: PositionMotion,
   ): void;
+  _cancelPositionTransition(elementId: string, property: string): void;
 }
 
 /**
@@ -78,15 +81,42 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       const propName = String(prop);
 
       if (propName === "position") {
-        const { x, y } = splitPosition(value, () => [
+        if (value === undefined || value === null) return true;
+        host._cancelPositionTransition(target.id, "position");
+        const current: [number, number] = [
           readCoord(target, host, "x"),
           readCoord(target, host, "y"),
-        ]);
-        if (x !== undefined) {
-          (receiver as Record<string, unknown>).x = x;
-        }
-        if (y !== undefined) {
-          (receiver as Record<string, unknown>).y = y;
+        ];
+        const descriptor = isTransitionDescriptor(value) ? value : undefined;
+        const coords = resolveCoords(descriptor ? descriptor.target : value, () => current);
+        const numeric = (axis: "x" | "y", fallback: number) => {
+          const coord = coords[axis] ?? fallback;
+          if (coord === "center") return resolveCenterCoord(axis);
+          if (typeof coord !== "number" || !Number.isFinite(coord))
+            throw new TypeError("Position coordinates must be finite stage units or center.");
+          return coord;
+        };
+        const destination = [numeric("x", current[0]), numeric("y", current[1])];
+        if (descriptor) {
+          if (!host.isMounted) host._setCurrentPropertyValue(target.id, "position", destination);
+          host._recordMutation(
+            target.id,
+            "position",
+            current,
+            destination,
+            descriptor.durationMs,
+            descriptor.delayMs,
+            descriptor.curve,
+            typeof descriptor.triggerTarget === "string"
+              ? descriptor.triggerTarget
+              : descriptor.triggerTarget?.id,
+            descriptor.triggerMilestone,
+            descriptor.triggerProperty,
+            getPositionMotion(descriptor),
+          );
+        } else {
+          if (coords.x !== undefined) (receiver as Record<string, unknown>).x = destination[0];
+          if (coords.y !== undefined) (receiver as Record<string, unknown>).y = destination[1];
         }
         return true;
       }
@@ -108,11 +138,15 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         }
         return true;
       }
+      if (isTransitionDescriptor(value) && getPositionMotion(value))
+        throw new TypeError("Motion paths require a position transition.");
       value = copyPropertyValue(value);
       // Only track declared reactive properties
       if (!isReactiveProperty(target, propName)) {
         return Reflect.set(target, prop, value, receiver);
       }
+
+      if (propName === "x" || propName === "y") host._cancelPositionTransition(target.id, propName);
 
       if (isTransitionDescriptor(value)) {
         let from: unknown =

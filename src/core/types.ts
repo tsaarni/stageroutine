@@ -79,6 +79,42 @@ export interface TransitionDescriptor<T = unknown> {
   ease(curve: BuiltinEase | EaseCurve): this;
 }
 
+/** Circular position transition. Default sweep: 0 degrees (straight). @category Motion */
+export interface PositionTransitionDescriptor<T extends Position = Position>
+  extends TransitionDescriptor<T> {
+  /** Circular sweep in degrees, from -180 to 180. Positive is clockwise. Default: 0. */
+  arc(degrees: number): this;
+  /** Travel along a motion path. Default: straight. */
+  path(path: MotionPath): this;
+}
+
+/** Absolute cubic Bézier controls in stage units. @category Motion */
+export interface BezierMotionOptions {
+  /** First control point in stage units. Required. */
+  control1: Point;
+  /** Second control point in stage units. Required. */
+  control2: Point;
+}
+
+/** Spiral arrival around the destination. @category Motion */
+export interface SpiralMotionOptions {
+  /** Revolutions, from -10 to 10. Positive is clockwise. Default: 1 turn. */
+  turns?: number;
+}
+
+/** A reusable, immutable travel route. Endpoints come from the position transition. @category Motion */
+export type MotionPath =
+  | Readonly<{ kind: "arc"; degrees: number }>
+  | Readonly<{ kind: "bezier"; control1: Point; control2: Point }>
+  | Readonly<{ kind: "spiral"; turns: number }>;
+
+/** @internal */
+export interface PositionMotion {
+  path?: MotionPath;
+  fromCenter?: Point;
+  toCenter?: Point;
+}
+
 /**
  * @internal
  */
@@ -93,6 +129,7 @@ export interface TransitionRecord {
   triggerMilestone?: AnimationMilestone;
   triggerProperty?: string;
   curve: EaseCurve;
+  motion?: PositionMotion;
 }
 
 /**

@@ -5,6 +5,7 @@
 import {
   type ElementAnchor,
   type Point,
+  type PositionTransitionDescriptor,
   type ReactiveElementBase,
   resolveAnchor,
   type Size,
@@ -12,10 +13,10 @@ import {
   STAGE_UNITS_TALL,
   stageUnitPx,
   stageUnitsWide,
-  type TransitionDescriptor,
   tryGetActiveStage,
   units,
 } from "../core/index";
+import { getPositionMotion, positionMotion } from "../core/position-motion";
 import { applyRuleStyles, type RuleOptions } from "../decorators/rule";
 import { to } from "../motion/transitions";
 import { getStageStyleContext } from "../theme/context";
@@ -40,16 +41,12 @@ export type GridSlot = LayoutElement | null | undefined;
  * Animation configuration for layout placement.
  * Can be:
  * - `boolean`: `true` to animate with default duration (0.6s).
- * - `Function`: A callback receiving `(coord, element, index)` returning a configured transition via `to(coord)`.
+ * - `Function`: A callback receiving `(position, element, index)` returning a configured transition via `to(position)`.
  * @category Layout
  */
 export type LayoutAnimation =
   | boolean
-  | ((
-      coord: number | "center",
-      element: LayoutElement,
-      index: number,
-    ) => TransitionDescriptor<unknown>);
+  | ((position: Point, element: LayoutElement, index: number) => PositionTransitionDescriptor);
 
 /**
  * A slot in a stack layout: either a single element or a nested array of elements (column/row).
@@ -85,7 +82,7 @@ export interface LayoutOptions {
   gapY?: number;
   /**
    * Whether or how to animate elements into target positions.
-   * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+   * Can be `true` or a builder callback `(position, el, index) => to(position).duration(0.8)`.
    */
   animate?: LayoutAnimation;
   /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
@@ -150,7 +147,7 @@ export interface CircleLayoutOptions {
   centerElements?: boolean;
   /**
    * Whether or how to animate elements into circular positions.
-   * Can be `true` or a builder callback `(coord, el, index) => to(coord).duration(0.8)`.
+   * Can be `true` or a builder callback `(position, el, index) => to(position).duration(0.8)`.
    */
   animate?: LayoutAnimation;
   /** Fallback duration in seconds if `animate: true` is used (default: 0.6s). */
@@ -168,7 +165,7 @@ export interface GroupLayoutOptions {
   scale?: number;
   /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
   origin?: Point;
-  /** Animate the transform. `true` uses default duration; a callback customizes each transition. */
+  /** Animate the transform. Default: false. A callback configures the shared center transition once. */
   animate?: LayoutAnimation;
   /** Duration in seconds when `animate: true`. Default: 0.6s. */
   duration?: number;
@@ -330,17 +327,24 @@ function union(elements: LayoutElement[]): Bounds {
   };
 }
 
-function setValue(
+function positionTransition(
+  position: Point,
   el: LayoutElement,
-  key: string,
-  value: number,
+  index: number,
+  options: { animate?: LayoutAnimation; duration?: number },
+): PositionTransitionDescriptor | undefined {
+  if (typeof options.animate === "function") return options.animate(position, el, index);
+  if (options.animate) return to(position).duration(options.duration ?? 0.6);
+  return undefined;
+}
+
+function setPosition(
+  el: LayoutElement,
+  position: Point,
   options: { animate?: LayoutAnimation; duration?: number },
   index: number,
 ): void {
-  let target: unknown = value;
-  if (typeof options.animate === "function") target = options.animate(value, el, index);
-  else if (options.animate) target = to(value).duration(options.duration ?? 0.6);
-  record(el)[key] = target;
+  record(el).position = positionTransition(position, el, index, options) ?? position;
 }
 
 function place(
@@ -351,8 +355,7 @@ function place(
   index: number,
 ): void {
   const box = offsets(el);
-  setValue(el, "x", x - box.x, options, index);
-  setValue(el, "y", y - box.y, options, index);
+  setPosition(el, [x - box.x, y - box.y], options, index);
 }
 
 function dimension(value: Size | Size[] | undefined, index: number): Size | undefined {
@@ -667,8 +670,7 @@ export const layout = {
       const x = center[0] + (options.radius ?? 28) * Math.cos(angle);
       const y = center[1] + (options.radius ?? 28) * (1 - (options.flatten ?? 0)) * Math.sin(angle);
       if (options.centerElements === false) {
-        setValue(el, "x", x, options, index);
-        setValue(el, "y", y, options, index);
+        setPosition(el, [x, y], options, index);
       } else place(el, x - box.width / 2, y - box.height / 2, options, index);
     });
   },
@@ -690,13 +692,34 @@ export const layout = {
       scale: numberProp(el, "scale", 1),
       labelScale: numberProp(el, "labelScale", 1),
     }));
-    states.forEach((state, index) => {
+    // One callback and timing descriptor describe the center's motion for the entire group.
+    const transition = positionTransition(target, positioned[0], 0, options);
+    const destination = transition?.target;
+    if (destination && (destination === "center" || destination.some((v) => typeof v !== "number")))
+      throw new TypeError("Group animation must target a numeric position.");
+    const center = (destination as Point | undefined) ?? target;
+    const withTiming = (value: number) =>
+      transition ? { ...transition, target: value, [positionMotion]: undefined } : value;
+    states.forEach((state) => {
       if (record(state.el).kind === "Connector")
-        setValue(state.el, "labelScale", state.labelScale * scale, options, index);
+        record(state.el).labelScale = withTiming(state.labelScale * scale);
       else {
-        setValue(state.el, "x", target[0] + (state.x - origin[0]) * scale, options, index);
-        setValue(state.el, "y", target[1] + (state.y - origin[1]) * scale, options, index);
-        setValue(state.el, "scale", state.scale * scale, options, index);
+        const position: Point = [
+          center[0] + (state.x - origin[0]) * scale,
+          center[1] + (state.y - origin[1]) * scale,
+        ];
+        record(state.el).position = transition
+          ? {
+              ...transition,
+              target: position,
+              [positionMotion]: {
+                path: getPositionMotion(transition)?.path,
+                fromCenter: origin,
+                toCenter: center,
+              },
+            }
+          : position;
+        record(state.el).scale = withTiming(state.scale * scale);
       }
     });
   },

@@ -6,7 +6,7 @@ import type { Properties as CSSProperties } from "csstype";
 import { applyDOMOpacity, discoverBackdropLayers } from "../core/dom-opacity";
 import { computeTransform } from "../core/interpolators";
 import { logger } from "../core/logger";
-import { splitPosition } from "../core/position";
+import { resolveCoords } from "../core/position";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
 import { getActiveStage, tryGetActiveStage } from "../core/stage";
 import type {
@@ -306,7 +306,10 @@ export class DOMElementImpl implements DOMElement {
     return [this._x, this._y];
   }
   set position(val: ReactiveProp<Position> | PositionUpdater | undefined) {
-    const { x, y } = splitPosition(val, () => [this._x, this._y]);
+    const { x, y } = resolveCoords(isTransitionDescriptor(val) ? val.target : val, () => [
+      this._x,
+      this._y,
+    ]);
     if (x !== undefined) {
       this.x = x as CoordProp;
     }

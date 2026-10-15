@@ -71,11 +71,13 @@ export type {
   AnimationMilestone,
   Background,
   BackgroundDecorator,
+  BezierMotionOptions,
   BuiltinEase,
   CoordProp,
   EaseCurve,
   ElementAnchor,
   FlowEffect,
+  MotionPath,
   NavGotoSceneEvent,
   NavGotoStepEvent,
   NavSceneChangedEvent,
@@ -87,10 +89,12 @@ export type {
   PointerStateChangedEvent,
   Position,
   PositionCoord,
+  PositionTransitionDescriptor,
   PositionUpdater,
   ReactiveElementBase,
   ReactiveProp,
   Size,
+  SpiralMotionOptions,
   StageContext,
   StageEventMap,
   StageOptions,
@@ -264,7 +268,7 @@ export type {
   StaggerTransition,
 } from "./motion/index";
 // Motion
-export { replace, stagger, to } from "./motion/index";
+export { motionPaths, replace, stagger, to } from "./motion/index";
 export type {
   AnnotationController,
   AnnotationOptions,

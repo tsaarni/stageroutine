@@ -183,13 +183,14 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
     this._update();
   }
 
-  private readonly frostDiv: HTMLDivElement;
+  private frostDiv: HTMLDivElement;
   private readonly svgElement: SVGSVGElement;
   private readonly pathNode: SVGPathElement;
   private readonly innerPathNode: SVGPathElement;
 
   private _active = false;
   private _doubleBorder = false;
+  private lastFrostOpacity = 1;
   private lastW = 0;
   private lastH = 0;
 
@@ -388,6 +389,19 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
 
   override _update(): void {
     if (!this.pathNode) return;
+
+    // Workaround for observed Chromium compositor behavior:
+    // When an element has both a CSS transform (e.g. translate3d) and opacity < 1,
+    // the parent establishes an isolated W3C "Backdrop Root", cutting off child backdrop blur.
+    // When opacity returns to 1, Chromium appears to retain the isolated backdrop root state
+    // on the existing composited transform layer, leaving the background sharp.
+    // Replacing frostDiv with a cloned node re-initializes its layer to re-bind to the root backdrop.
+    if (this.variant === "surface" && this.opacity === 1 && this.lastFrostOpacity < 1) {
+      const fresh = this.frostDiv.cloneNode(true) as HTMLDivElement;
+      this.frostDiv.replaceWith(fresh);
+      this.frostDiv = fresh;
+    }
+    this.lastFrostOpacity = this.opacity;
     this.updateVisualState();
     this.updateGeometry();
     this.updateFlowClasses();

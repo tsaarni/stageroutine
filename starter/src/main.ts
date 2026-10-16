@@ -5,66 +5,51 @@ import {
   layout,
   NavigationOverlay,
   Stage,
+  stagger,
   Text,
   Title,
   to,
 } from "stageroutine";
 
-// Initialize stage with a background
+// Create the stage before creating elements.
 const stage = new Stage().background(
   CSSBackground(
     "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(56, 189, 248, 0.35) 0%, rgba(9, 9, 11, 0) 70%), #09090b",
   ),
 );
 
-// 1. Scene: Welcome
-// Coordinates are in stage units. The stage is 90 units tall and 160 units wide.
+// The default 16:9 stage is 160 × 90 stage units.
 const title = Title("Hello, World!", {
   variant: "hero",
-  position: ["center", 40],
+  origin: "top-left",
+  width: 120,
   opacity: 0,
 });
-const subtitle = Title("My first StageRoutine presentation", {
-  variant: "serif",
-  position: ["center", 50],
+const subtitle = Text("My first StageRoutine presentation", {
+  width: 120,
   opacity: 0,
 });
+layout.vstack([title, subtitle], { x: "center", y: "center", gap: 3 });
 
-// Declare the scene and attach its active elements
 stage.scene("Welcome").with(title, subtitle);
-
-// Animate properties with to() and chain timing with .when()
 title.opacity = to(1);
 subtitle.opacity = to(1).when(title, "halfway");
 
-// Pause playback and wait for presenter input (Space / Arrow key)
+// Record this step; playback stops here for presenter input.
 stage.pause();
 
-// 2. Scene: Next Steps
-const step1 = Card([Title("01", { color: "#38bdf8" }), Text("Edit src/main.ts")], { opacity: 0 });
-const step2 = Card([Title("02", { color: "#a855f7" }), Text("Add your scenes")], { opacity: 0 });
-const step3 = Card([Title("03", { color: "#34d399" }), Text("Press Space to present")], {
-  opacity: 0,
-});
+const cards = [
+  Card([Title("01", { color: "#38bdf8" }), Text("Edit src/main.ts")], { opacity: 0 }),
+  Card([Title("02", { color: "#a855f7" }), Text("Add your scenes")], { opacity: 0 }),
+  Card([Title("03", { color: "#34d399" }), Text("Press Space to present")], { opacity: 0 }),
+];
+layout.hstack(cards, { x: "center", y: 45, gap: 5, width: 38, align: "center" });
 
-// Arrange cards in a horizontal row
-layout.hstack([step1, step2, step3], { x: "center", y: 45, gap: 5, width: 38, align: "center" });
-
-stage.scene("Next Steps").with(title, step1, step2, step3);
-
-// Existing elements smoothly transition to their new state
-subtitle.opacity = to(0);
-title.position = to([10, 6]);
-title.origin = to("top-left");
-title.scale = to(0.6);
-
-// Stagger step animations
-step1.opacity = to(1).when(title, "halfway");
-step2.opacity = to(1).when(step1, 0.15);
-step3.opacity = to(1).when(step2, 0.15);
+// Reuse the title. The omitted subtitle exits automatically.
+stage.scene("Next Steps").with(title, ...cards);
+title.to({ position: [10, 6], scale: 0.6 });
+stagger(cards).after(title);
 stage.pause();
 
-// 3. Mount
-// Add navigation controls and laser pointer ('P' key),
-// then render the presentation into the "#stage" element.
+// Mount after recording all scenes. Press P to toggle the laser pointer.
 stage.overlay(NavigationOverlay()).overlay(LaserPointer()).mount("#stage");

@@ -1163,7 +1163,7 @@ export class Stage {
       from === to ||
       (property === "position" &&
         !motion?.fromCenter &&
-        motion?.path?.kind !== "bezier" &&
+        !motion?.path &&
         Array.isArray(from) &&
         Array.isArray(to) &&
         from[0] === to[0] &&

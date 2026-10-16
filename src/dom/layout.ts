@@ -166,7 +166,7 @@ export interface GroupLayoutOptions {
   /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
   origin?: Point;
   /** Animate the transform. Default: false. A callback configures the shared center transition once. */
-  animate?: LayoutAnimation;
+  animate?: boolean | ((position: Point) => PositionTransitionDescriptor);
   /** Duration in seconds when `animate: true`. Default: 0.6s. */
   duration?: number;
 }
@@ -693,7 +693,9 @@ export const layout = {
       labelScale: numberProp(el, "labelScale", 1),
     }));
     // One callback and timing descriptor describe the center's motion for the entire group.
-    const transition = positionTransition(target, positioned[0], 0, options);
+    let transition: PositionTransitionDescriptor | undefined;
+    if (typeof options.animate === "function") transition = options.animate(target);
+    else if (options.animate) transition = to(target).duration(options.duration ?? 0.6);
     const destination = transition?.target;
     if (destination && (destination === "center" || destination.some((v) => typeof v !== "number")))
       throw new TypeError("Group animation must target a numeric position.");

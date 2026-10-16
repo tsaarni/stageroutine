@@ -1117,7 +1117,7 @@ export interface GroupLayoutOptions {
     /** Transform origin as [x, y] in stage units. Default: bounding-box center of the elements. */
     origin?: Point;
     /** Animate the transform. Default: false. A callback configures the shared center transition once. */
-    animate?: LayoutAnimation;
+    animate?: boolean | ((position: Point) => PositionTransitionDescriptor);
     /** Duration in seconds when `animate: true`. Default: 0.6s. */
     duration?: number;
 }
@@ -1540,10 +1540,8 @@ export interface PolygonPathOptions {
     sides?: number;
 }
 
-/** Circular position transition. Default sweep: 0 degrees (straight). @category Motion */
+/** Position transition. Default route: straight. @category Motion */
 export interface PositionTransitionDescriptor<T extends Position = Position> extends TransitionDescriptor<T> {
-    /** Circular sweep in degrees, from -180 to 180. Positive is clockwise. Default: 0. */
-    arc(degrees: number): this;
     /** Travel along a motion path. Default: straight. */
     path(path: MotionPath): this;
 }
@@ -2637,18 +2635,8 @@ export type LayoutElement = ReactiveElementBase;
  */
 export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 
-/** A reusable, immutable travel route. Endpoints come from the position transition. @category Motion */
-export type MotionPath = Readonly<{
-    kind: "arc";
-    degrees: number;
-}> | Readonly<{
-    kind: "bezier";
-    control1: Point;
-    control2: Point;
-}> | Readonly<{
-    kind: "spiral";
-    turns: number;
-}>;
+/** Pure route factory. Samples t from 0 (start) to 1 (destination), in stage units. @category Motion */
+export type MotionPath = (from: Point, to: Point) => (t: number) => Point;
 
 /**
  * A function that calculates an SVG path string ('d' attribute) for given dimensions.
@@ -2793,8 +2781,8 @@ export const layout: { hstack(elements: StackSlot[], options?: StackLayoutOption
 /** Logger control object for configuring logging behavior. */
 export const logger: { setLevel(level: LogLevel): void; getLevel(): LogLevel; debug(...args: unknown[]): void; info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void; };
 
-/** Travel routes for position transitions. */
-export const motionPaths: { arc(degrees?: number): MotionPath; bezier(options: BezierMotionOptions): MotionPath; spiral(options?: SpiralMotionOptions): MotionPath; };
+/** Reusable route factories for position transitions. */
+export const motion: { arc(degrees?: number): MotionPath; bezier(options: BezierMotionOptions | ((from: Point, to: Point) => BezierMotionOptions)): MotionPath; spiral(options?: SpiralMotionOptions): MotionPath; };
 
 /** Geometric SVG path generators for shapes, cards, and clipping frames. */
 export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; speechBubble(options?: SpeechBubblePathOptions): PathFunction; thoughtBubble(options?: ThoughtBubblePathOptions): PathFunction; };

@@ -2,16 +2,16 @@ import { readFileSync } from "node:fs";
 import { createPositionSampler } from "../../src/core/position-motion";
 import type { MotionPath, Point } from "../../src/core/types";
 import type * as StageRoutine from "../../src/index";
-import { motionPaths } from "../../src/motion/paths";
+import { motion } from "../../src/motion/paths";
 import { expect, test } from "../helpers/stage";
 
 test.describe("Geometry and validation", () => {
   test("Bézier and spiral paths map progress to travel distance", () => {
     const paths = [
-      motionPaths.bezier({ control1: [10, 90], control2: [15, -70] }),
-      motionPaths.spiral(),
-      motionPaths.spiral({ turns: -2 }),
-      motionPaths.spiral({ turns: 10 }),
+      motion.bezier({ control1: [10, 90], control2: [15, -70] }),
+      motion.spiral(),
+      motion.spiral({ turns: -2 }),
+      motion.spiral({ turns: 10 }),
     ];
     for (const path of paths) {
       const sample = createPositionSampler(path, [0, 0], [100, 0]);
@@ -32,22 +32,51 @@ test.describe("Geometry and validation", () => {
     }
   });
 
+  test("custom routes compile once and reuse endpoints with consistent overshoot", () => {
+    let calls = 0;
+    const route: MotionPath = (from, to) => {
+      calls++;
+      return (t) => [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+    };
+    const first = createPositionSampler(route, [0, 0], [100, 0]);
+    const second = createPositionSampler(route, [20, 30], [40, 50]);
+    expect(first(0.5)).toEqual([50, 0]);
+    expect(second(0.5)[0]).toBeCloseTo(30);
+    expect(second(0.5)[1]).toBeCloseTo(40);
+    expect(first(-0.1)[0]).toBeCloseTo(-10);
+    expect(first(1.1)[0]).toBeCloseTo(110);
+    expect(calls).toBe(2);
+    for (const path of [
+      motion.arc(90),
+      motion.bezier({ control1: [0, -50], control2: [100, -50] }),
+      motion.spiral(),
+    ]) {
+      const sample = createPositionSampler(path, [0, 0], [100, 0]);
+      expect(sample(-0.1)).not.toEqual([0, 0]);
+      expect(sample(1.1)).not.toEqual([100, 0]);
+    }
+    const relative = motion.bezier((from, to) => ({
+      control1: [from[0], from[1] - 20],
+      control2: [to[0], to[1] - 20],
+    }));
+    expect(relative([0, 0], [100, 0])(0.5)).toEqual([50, -15]);
+    expect(relative([20, 30], [120, 30])(0.5)).toEqual([70, 15]);
+  });
+
   test("paths copy control points, validate inputs, and handle closed curves", () => {
     const control1: [number, number] = [50, -20];
-    const path = motionPaths.bezier({ control1, control2: [50, 120] });
+    const path = motion.bezier({ control1, control2: [50, 120] });
     control1[0] = 999;
-    expect(path).toMatchObject({ control1: [50, -20] });
-    expect(Object.isFrozen(path)).toBe(true);
-    if (path.kind === "bezier") expect(Object.isFrozen(path.control1)).toBe(true);
-    expect(() => motionPaths.bezier({ control1: [NaN, 0], control2: [0, 0] })).toThrow(TypeError);
+    expect(path([0, 0], [100, 0])(0.5)).toEqual([50, 37.5]);
+    expect(() => motion.bezier({ control1: [NaN, 0], control2: [0, 0] })).toThrow(TypeError);
     for (const turns of [NaN, Infinity, -11, 11])
-      expect(() => motionPaths.spiral({ turns })).toThrow(RangeError);
+      expect(() => motion.spiral({ turns })).toThrow(RangeError);
     const closed = createPositionSampler(path, [20, 50], [20, 50]);
     expect(closed(0.5)).not.toEqual([20, 50]);
     expect(closed(1)).toEqual([20, 50]);
-    const stationary = createPositionSampler(motionPaths.spiral(), [20, 50], [20, 50]);
+    const stationary = createPositionSampler(motion.spiral(), [20, 50], [20, 50]);
     expect(stationary(0.5)).toEqual([20, 50]);
-    const straight = createPositionSampler(motionPaths.spiral({ turns: 0 }), [0, 0], [100, 0]);
+    const straight = createPositionSampler(motion.spiral({ turns: 0 }), [0, 0], [100, 0]);
     expect(straight(0.5)[0]).toBeCloseTo(50, 5);
   });
 
@@ -60,7 +89,7 @@ test.describe("Geometry and validation", () => {
       const card = SR.Card("A", { id: "arc" });
       let rejected = false;
       try {
-        card.x = SR.to([20, 50]).arc(90) as unknown as number;
+        card.x = SR.to([20, 50]).path(SR.motion.arc(90)) as unknown as number;
       } catch (error) {
         rejected = error instanceof TypeError;
       }
@@ -73,7 +102,7 @@ test.describe("Geometry and validation", () => {
       const SR = window.__SR__;
       return [NaN, Infinity, -181, 181].map((degrees) => {
         try {
-          SR.to([20, 50]).arc(degrees);
+          SR.to([20, 50]).path(SR.motion.arc(degrees));
           return false;
         } catch (error) {
           return error instanceof RangeError;
@@ -97,7 +126,7 @@ test.describe("Stage movement and choreography", () => {
       });
       s.scene("Arc").with(card);
       s.pause();
-      card.position = SR.to([100, 50]).arc(180).duration(0.25).ease("linear");
+      card.position = SR.to([100, 50]).path(SR.motion.arc(180)).duration(0.25).ease("linear");
       s.pause();
       return s;
     });
@@ -137,7 +166,10 @@ test.describe("Stage movement and choreography", () => {
         gap: 4,
         animate: (position, _element, index) => {
           calls++;
-          return SR.to(position).arc([-90, 0, 0.00000001][index]).duration(0.2).ease("linear");
+          return SR.to(position)
+            .path(SR.motion.arc([-90, 0, 0.00000001][index]))
+            .duration(0.2)
+            .ease("linear");
         },
       });
       if (calls !== 3) throw new Error("Expected one callback per element");
@@ -175,8 +207,11 @@ test.describe("Stage movement and choreography", () => {
       }
       s.scene("Builders").with(a, b);
       s.pause();
-      a.to({ position: SR.to([100, 50]).arc(-90) }).duration(0.2);
-      SR.stagger([b], { props: { position: SR.to([100, 70]).arc(90) }, duration: 0.2 });
+      a.to({ position: SR.to([100, 50]).path(SR.motion.arc(-90)) }).duration(0.2);
+      SR.stagger([b], {
+        props: { position: SR.to([100, 70]).path(SR.motion.arc(90)) },
+        duration: 0.2,
+      });
       s.pause();
       return s;
     });
@@ -209,10 +244,9 @@ test.describe("Group formations", () => {
       SR.layout.group([a, b], {
         position: [110, 55],
         scale: 1.5,
-        animate: (position, element, index) => {
-          if (element !== a || index !== 0) throw new Error("Unexpected group callback");
+        animate: (position) => {
           calls++;
-          return SR.to(position).arc(90).duration(0.25).ease("linear");
+          return SR.to(position).path(SR.motion.arc(90)).duration(0.25).ease("linear");
         },
       });
       if (calls !== 1) throw new Error("Group callback must run once");
@@ -233,7 +267,7 @@ test.describe("Group formations", () => {
     await stage.prev();
   });
 
-  for (const kind of ["bezier", "spiral"] as const) {
+  for (const kind of ["bezier", "spiral", "custom"] as const) {
     test(`${kind} paths work for formations, exact arrivals, and snapshot restoration`, async ({
       stage,
       page,
@@ -253,12 +287,19 @@ test.describe("Group formations", () => {
         s.pause();
         const path =
           sessionStorage.getItem("motion-path-kind") === "bezier"
-            ? SR.motionPaths.bezier({ control1: [50, 5], control2: [90, 95] })
-            : SR.motionPaths.spiral({ turns: 0.75 });
+            ? SR.motion.bezier({ control1: [50, 5], control2: [90, 95] })
+            : SR.motion.spiral({ turns: 0.75 });
+        const route: StageRoutine.MotionPath =
+          sessionStorage.getItem("motion-path-kind") === "custom"
+            ? (from, to) => (t) => [
+                from[0] + (to[0] - from[0]) * t,
+                from[1] + (to[1] - from[1]) * t - 80 * t * (1 - t),
+              ]
+            : path;
         SR.layout.group([a, b], {
           position: [110, 55],
           scale: 1.5,
-          animate: (position) => SR.to(position).path(path).duration(0.3).ease("linear"),
+          animate: (position) => SR.to(position).path(route).duration(0.3).ease("linear"),
         });
         s.pause();
         return s;
@@ -270,9 +311,16 @@ test.describe("Group formations", () => {
       expect(samples.length).toBeGreaterThan(2);
       const path: MotionPath =
         kind === "bezier"
-          ? motionPaths.bezier({ control1: [50, 5], control2: [90, 95] })
-          : motionPaths.spiral({ turns: 0.75 });
-      const sample = createPositionSampler(path, [35, 55], [110, 55]);
+          ? motion.bezier({ control1: [50, 5], control2: [90, 95] })
+          : motion.spiral({ turns: 0.75 });
+      const route: MotionPath =
+        kind === "custom"
+          ? (from, to) => (t) => [
+              from[0] + (to[0] - from[0]) * t,
+              from[1] + (to[1] - from[1]) * t - 80 * t * (1 - t),
+            ]
+          : path;
+      const sample = createPositionSampler(route, [35, 55], [110, 55]);
       for (const [a, b, scale] of samples) {
         expect(b[0] - a[0]).toBeCloseTo(20 * scale, 5);
         expect(b[1]).toBeCloseTo(a[1], 5);
@@ -304,14 +352,14 @@ test.describe("Replacement and interruption", () => {
       });
       s.scene("Overrides").with(...cards);
       s.pause();
-      cards[0].position = SR.to([100, 70]).arc(90);
+      cards[0].position = SR.to([100, 70]).path(SR.motion.arc(90));
       cards[0].x = SR.to(120).duration(0.2);
-      cards[1].position = SR.to([100, 70]).arc(90);
+      cards[1].position = SR.to([100, 70]).path(SR.motion.arc(90));
       cards[1].x = 120;
       cards[2].x = SR.to(120);
-      cards[2].position = SR.to([100, 70]).arc(-90).duration(0.2);
-      cards[3].position = SR.to([100, 70]).arc(90);
-      cards[3].position = SR.to([80, 40]).arc(-90).duration(0.2);
+      cards[2].position = SR.to([100, 70]).path(SR.motion.arc(-90)).duration(0.2);
+      cards[3].position = SR.to([100, 70]).path(SR.motion.arc(90));
+      cards[3].position = SR.to([80, 40]).path(SR.motion.arc(-90)).duration(0.2);
       const samples: unknown[] = [];
       cards[0].onUpdate((progress) => {
         if (progress > 0 && progress < 1) samples.push(cards[0].position);
@@ -349,18 +397,18 @@ test.describe("Replacement and interruption", () => {
         card.domElement.dataset.position = JSON.stringify(card.position);
       });
       card.domElement.addEventListener("fly", () => {
-        card.position = SR.to([100, 50]).arc(90).duration(0.4);
+        card.position = SR.to([100, 50]).path(SR.motion.arc(90)).duration(0.4);
       });
       card.domElement.addEventListener("replace", () => {
         card.domElement.dataset.before = JSON.stringify(card.position);
-        card.position = SR.to([80, 60]).arc(-90).delay(0.1).duration(0.15);
+        card.position = SR.to([80, 60]).path(SR.motion.arc(-90)).delay(0.1).duration(0.15);
       });
       card.domElement.addEventListener("cancel", () => {
         card.domElement.dataset.before = JSON.stringify(card.position);
         card.x = 30;
       });
       card.domElement.addEventListener("delayed", () => {
-        card.position = SR.to([100, 50]).arc(90).delay(0.15).duration(0.15);
+        card.position = SR.to([100, 50]).path(SR.motion.arc(90)).delay(0.15).duration(0.15);
         s._setCurrentPropertyValue(card.id, "position", [40, 60]);
       });
       s.scene("Interaction").with(card);
@@ -409,7 +457,7 @@ test.describe("Website preview", () => {
       .replace('stage.mount("#stage");', "return stage;");
     const setup = new Function(
       "SR",
-      `const { Stage, Card, Text, layout, motionPaths, to } = SR;\n${code}`,
+      `const { Stage, Card, Text, layout, motion, to } = SR;\n${code}`,
     ) as (sr: typeof StageRoutine) => StageRoutine.Stage;
     await stage.mount(setup);
     const a = page.getByText("A", { exact: true });

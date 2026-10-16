@@ -16,7 +16,6 @@ import type {
   TransitionDescriptor,
   UnwrapTransition,
 } from "../core/types";
-import { copyMotionPath, motionPaths } from "./paths";
 
 /**
  * Creates a cubic Bézier easing curve from control points (p1x, p1y) and (p2x, p2y).
@@ -107,12 +106,9 @@ class TransitionBuilder<T> implements TransitionDescriptor<T> {
   readonly __isTransition = true;
   [positionMotion]?: PositionMotion;
 
-  arc(degrees: number): this {
-    return this.path(motionPaths.arc(degrees));
-  }
-
   path(path: MotionPath): this {
-    this[positionMotion] = { path: copyMotionPath(path) };
+    if (typeof path !== "function") throw new TypeError("Motion paths must be functions.");
+    this[positionMotion] = { path };
     return this;
   }
   target: T;

@@ -13,9 +13,11 @@ npm run dev
 
 *(or use `pnpm` / `bun`)*
 
-Open `http://localhost:5173/` for the presentation, or `http://localhost:5173/presenter.html` for the presenter console. Navigate with the arrow keys or Space, and press `L` to toggle the laser pointer.
+Open `http://localhost:5173/` for the presentation, or `http://localhost:5173/presenter.html` for the presenter console. Navigate with the arrow keys or Space, and press `P` to toggle the laser pointer.
 
 Edit `src/main.ts` to build your scenes. The browser updates automatically as you save.
+
+For optional guidance when working with an LLM agent, ask it to read [PRESENTATION_GUIDE.md](PRESENTATION_GUIDE.md).
 
 To generate static files with presenter console for web hosting:
 

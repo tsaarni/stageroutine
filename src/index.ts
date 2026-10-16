@@ -268,7 +268,7 @@ export type {
   StaggerTransition,
 } from "./motion/index";
 // Motion
-export { motionPaths, replace, stagger, to } from "./motion/index";
+export { motion, replace, stagger, to } from "./motion/index";
 export type {
   AnnotationController,
   AnnotationOptions,

@@ -79,11 +79,9 @@ export interface TransitionDescriptor<T = unknown> {
   ease(curve: BuiltinEase | EaseCurve): this;
 }
 
-/** Circular position transition. Default sweep: 0 degrees (straight). @category Motion */
+/** Position transition. Default route: straight. @category Motion */
 export interface PositionTransitionDescriptor<T extends Position = Position>
   extends TransitionDescriptor<T> {
-  /** Circular sweep in degrees, from -180 to 180. Positive is clockwise. Default: 0. */
-  arc(degrees: number): this;
   /** Travel along a motion path. Default: straight. */
   path(path: MotionPath): this;
 }
@@ -102,11 +100,8 @@ export interface SpiralMotionOptions {
   turns?: number;
 }
 
-/** A reusable, immutable travel route. Endpoints come from the position transition. @category Motion */
-export type MotionPath =
-  | Readonly<{ kind: "arc"; degrees: number }>
-  | Readonly<{ kind: "bezier"; control1: Point; control2: Point }>
-  | Readonly<{ kind: "spiral"; turns: number }>;
+/** Pure route factory. Samples t from 0 (start) to 1 (destination), in stage units. @category Motion */
+export type MotionPath = (from: Point, to: Point) => (t: number) => Point;
 
 /** @internal */
 export interface PositionMotion {

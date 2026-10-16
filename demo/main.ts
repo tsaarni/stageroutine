@@ -161,6 +161,7 @@ const featureChecklist = BulletList(
 layout.vstack([rightHeading, rightBody, featureChecklist], {
   x: 83.2,
   y: 16.2,
+  width: 67.2,
   gap: 3.6,
 });
 
@@ -972,6 +973,7 @@ layout.grid(
   {
     x: 64,
     y: 23.4,
+    width: aiNodeOpts.width,
     gapX: 23.2,
     gapY: 8.55,
   },

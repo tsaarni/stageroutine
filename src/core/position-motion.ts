@@ -1,4 +1,3 @@
-import { arcPosition } from "./position";
 import type { MotionPath, Point, PositionMotion } from "./types";
 
 /** Private metadata survives descriptor spreading without expanding the public API. */
@@ -18,34 +17,11 @@ export function createPositionSampler(
   from: Point,
   to: Point,
 ): (progress: number) => Point {
-  if (!path || path.kind === "arc")
-    return (progress) => arcPosition(from, to, progress, path?.degrees ?? 0);
-
-  const raw = (t: number): Point => {
-    if (path.kind === "bezier") {
-      const u = 1 - t;
-      return [
-        u ** 3 * from[0] +
-          3 * u ** 2 * t * path.control1[0] +
-          3 * u * t ** 2 * path.control2[0] +
-          t ** 3 * to[0],
-        u ** 3 * from[1] +
-          3 * u ** 2 * t * path.control1[1] +
-          3 * u * t ** 2 * path.control2[1] +
-          t ** 3 * to[1],
-      ];
-    }
-    const angle = 2 * Math.PI * path.turns * t;
-    const dx = (from[0] - to[0]) * (1 - t);
-    const dy = (from[1] - to[1]) * (1 - t);
-    return [
-      to[0] + dx * Math.cos(angle) - dy * Math.sin(angle),
-      to[1] + dx * Math.sin(angle) + dy * Math.cos(angle),
-    ];
-  };
-  // More segments for additional turns keep tight spiral arrivals smooth.
-  const segments =
-    path.kind === "spiral" ? Math.max(512, Math.ceil(Math.abs(path.turns) * 256)) : 512;
+  from = Object.freeze([...from]) as Point;
+  to = Object.freeze([...to]) as Point;
+  if (!path) return (t) => [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+  const raw = path(from, to);
+  const segments = 4096;
   const lengths = [0];
   let previous = from;
   for (let i = 1; i <= segments; i++) {
@@ -55,8 +31,20 @@ export function createPositionSampler(
   }
   const total = lengths[segments];
   return (progress) => {
-    if (progress <= 0) return from;
-    if (progress >= 1) return to;
+    if (progress === 0) return from;
+    if (progress === 1) return to;
+    if (progress < 0 || progress > 1) {
+      const start = progress < 0;
+      const endpoint = start ? from : to;
+      const neighbor = raw(start ? 1 / segments : 1 - 1 / segments);
+      const dx = start ? neighbor[0] - from[0] : to[0] - neighbor[0];
+      const dy = start ? neighbor[1] - from[1] : to[1] - neighbor[1];
+      const length = Math.hypot(dx, dy);
+      const distance = (progress - (start ? 0 : 1)) * total;
+      return length === 0
+        ? endpoint
+        : [endpoint[0] + (dx / length) * distance, endpoint[1] + (dy / length) * distance];
+    }
     if (total === 0) return from;
     const distance = total * progress;
     let low = 0;

@@ -17,20 +17,20 @@
 
     /* Spatial Scale & Radius */
     --sr-radius: calc(0.5rem * var(--sr-scale, 1));
-    --sr-space-3xs: calc(0.35rem * var(--sr-scale, 1));
+    --sr-space-3xs: calc(0.25rem * var(--sr-scale, 1));
     --sr-space-2xs: calc(0.5rem * var(--sr-scale, 1));
-    --sr-space-xs: calc(0.75rem * var(--sr-scale, 1));
-    --sr-space-sm: calc(1.25rem * var(--sr-scale, 1));
-    --sr-space-md: calc(1.75rem * var(--sr-scale, 1));
-    --sr-space-lg: calc(2.5rem * var(--sr-scale, 1));
-    --sr-space-xl: calc(4rem * var(--sr-scale, 1));
+    --sr-space-xs: calc(0.625rem * var(--sr-scale, 1));
+    --sr-space-sm: calc(1rem * var(--sr-scale, 1));
+    --sr-space-md: calc(1.5rem * var(--sr-scale, 1));
+    --sr-space-lg: calc(2rem * var(--sr-scale, 1));
+    --sr-space-xl: calc(3.5rem * var(--sr-scale, 1));
 
     /* Typographic Scale (1080p Scale) */
-    --sr-font-size-hero: calc(5.5rem * var(--sr-scale, 1));
-    --sr-font-size-title: calc(3.25rem * var(--sr-scale, 1));
-    --sr-font-size-lead: calc(2.1rem * var(--sr-scale, 1));
-    --sr-font-size-body: calc(1.55rem * var(--sr-scale, 1));
-    --sr-font-size-code: calc(1.25rem * var(--sr-scale, 1));
+    --sr-font-size-hero: calc(5rem * var(--sr-scale, 1));
+    --sr-font-size-title: calc(2.75rem * var(--sr-scale, 1));
+    --sr-font-size-lead: calc(1.875rem * var(--sr-scale, 1));
+    --sr-font-size-body: calc(1.375rem * var(--sr-scale, 1));
+    --sr-font-size-code: calc(1.125rem * var(--sr-scale, 1));
     --sr-font-size-kicker: calc(1rem * var(--sr-scale, 1));
 
     /* Font Families */

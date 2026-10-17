@@ -2,7 +2,7 @@
   .sr-kicker {
     display: block;
 
-    margin-bottom: var(--sr-space-2xs);
+    margin: 0;
 
     font-family: var(--sr-font-mono);
     font-size: var(--sr-font-size-kicker);
@@ -12,5 +12,9 @@
     color: var(--sr-primary);
     text-transform: uppercase;
     letter-spacing: 0.18em;
+  }
+
+  :is(.sr-title, .sr-hero, .sr-serif-lead) > .sr-kicker {
+    margin-bottom: var(--sr-space-2xs);
   }
 }

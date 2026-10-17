@@ -24,10 +24,10 @@ test("stage scale and local themes resolve at their own boundary", async ({ stag
     s.pause();
     return s;
   });
-  await expect(stage.locator("#stage-text")).toHaveCSS("font-size", "49.6px");
+  await expect(stage.locator("#stage-text")).toHaveCSS("font-size", "44px");
   await expect(stage.locator("#stage-text")).toHaveCSS("color", "color(srgb 0 0 0 / 0.72)");
   await expect(stage.locator("#local-text")).toHaveCSS("color", "color(srgb 1 0 0 / 0.72)");
-  await expect(stage.locator("#local-card")).toHaveCSS("padding-left", "40px");
+  await expect(stage.locator("#local-card")).toHaveCSS("padding-left", "32px");
   await expect(stage.locator("#explicit")).toHaveCSS("font-size", "30px");
   const localTokens = await stage.locator("#local-card").evaluate((el) => {
     const css = getComputedStyle(el);
@@ -84,7 +84,7 @@ test("backward navigation removes later theme overrides", async ({ stage }) => {
   await stage.prev();
   expect(await read()).toEqual(initial);
   await expect(stroke).toHaveCSS("stroke", "rgb(56, 189, 248)");
-  await expect(stage.locator("#title")).toHaveCSS("font-size", "52px");
+  await expect(stage.locator("#title")).toHaveCSS("font-size", "44px");
 });
 
 test("framework selectors leave host content alone", async ({ stage, page }) => {
@@ -381,11 +381,11 @@ test("card strings and embedded Text preserve body typography", async ({ stage }
   const standalone = await readTypography("#standalone-body");
   const plain = await readTypography("#plain-body-card .sr-shape-text");
   const embedded = await readTypography("#embedded-body");
-  expect(standalone.size).toBeCloseTo(24.8);
+  expect(standalone.size).toBeCloseTo(22);
   expect(plain).toEqual(standalone);
   expect(embedded.size).toBe(standalone.size);
-  expect(standalone.lineHeight).toBeCloseTo(24.8 * 1.65);
-  expect(plain.lineHeight).toBeCloseTo(24.8 * 1.65);
+  expect(standalone.lineHeight).toBeCloseTo(22 * 1.5);
+  expect(plain.lineHeight).toBeCloseTo(22 * 1.5);
   expect(embedded).toEqual(standalone);
   expect(plain.weight).toBe("400");
   expect(embedded.weight).toBe("400");
@@ -452,12 +452,12 @@ test("text roles survive composition, scaling, and theme restoration", async ({ 
           const css = getComputedStyle(node);
           return Number.parseFloat(css.lineHeight) / Number.parseFloat(css.fontSize);
         });
-        expect(ratio).toBeCloseTo(1.65);
+        expect(ratio).toBeCloseTo(1.5);
       }
     }
   };
-  await checkBody("49.6px");
-  await expect(stage.locator("#role-title")).toHaveCSS("line-height", "84px");
+  await checkBody("44px");
+  await expect(stage.locator("#role-title")).toHaveCSS("line-height", "75px");
   await expect(stage.locator("#role-title .sr-kicker")).toHaveCSS("font-style", "normal");
   await expect(stage.locator("#role-title .sr-kicker")).toHaveCSS("line-height", "40px");
   await expect(stage.locator("#role-table table")).toHaveCSS("text-align", "left");
@@ -466,7 +466,7 @@ test("text roles survive composition, scaling, and theme restoration", async ({ 
   await expect(stage.locator("#role-title")).toHaveCSS("line-height", "50px");
   await expect(stage.locator("#role-changed .sr-shape-text")).toHaveText("Later");
   await stage.prev();
-  await checkBody("49.6px");
+  await checkBody("44px");
   await expect(stage.locator("#role-changed .sr-shape-text")).toHaveText("Initial");
   await stage.expectAtRest();
 });
@@ -505,11 +505,11 @@ test("code, terminal transcripts, and chrome keep their typography inside cards"
     }
     await expect(stage.locator("#type-terminal .sr-window-title")).toHaveCSS("font-size", label);
   };
-  await check("20px", "30px", "16px");
+  await check("18px", "27px", "16px");
   await stage.next();
   await check("24px", "36px", "14px");
   await stage.prev();
-  await check("20px", "30px", "16px");
+  await check("18px", "27px", "16px");
   await stage.expectAtRest();
 });
 
@@ -546,11 +546,11 @@ test("live terminal refreshes its renderer when theme sizes change", async ({ st
     return s;
   });
   const measure = stage.locator("#renderer-terminal .xterm-char-measure-element").first();
-  await expect(measure).toHaveCSS("font-size", "20px");
+  await expect(measure).toHaveCSS("font-size", "18px");
   await stage.next();
   await expect(measure).toHaveCSS("font-size", "28px");
   await stage.prev();
-  await expect(measure).toHaveCSS("font-size", "20px");
+  await expect(measure).toHaveCSS("font-size", "18px");
   await stage.expectAtRest();
 });
 

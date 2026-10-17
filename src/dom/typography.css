@@ -7,7 +7,7 @@
     font-size: var(--sr-font-size-body);
     font-weight: 400;
     font-style: normal;
-    line-height: 1.65;
+    line-height: 1.5;
     color: var(--sr-text-muted);
     letter-spacing: -0.01em;
   }

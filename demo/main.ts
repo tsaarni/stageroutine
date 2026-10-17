@@ -74,7 +74,7 @@ function pause(note: string) {
 
 function codeHint(code: string) {
   return Text(code, {
-    position: [150, 89],
+    position: [148, 86],
     origin: "bottom-right",
     color: "var(--sr-text-dim)",
     theme: { fontSans: "var(--sr-font-mono)", fontSizeBody: "var(--sr-font-size-kicker)" },
@@ -148,7 +148,7 @@ const intro = Text("A presentation written in TypeScript. Including this one.", 
   opacity: 0,
 });
 const controls = Kicker("Arrow keys to advance · Go back whenever you like", {
-  position: [10, 89],
+  position: [12, 86],
   origin: "bottom-left",
 });
 stage.scene("Stage presence").with(brand, promise, introCode, intro, controls);
@@ -169,12 +169,12 @@ const launch = [
 ].map(({ kicker, title, background }) =>
   Card([Kicker(kicker), Title(title, { variant: "serif" })], {
     background,
-    width: 42,
-    height: 19,
+    width: 20,
+    height: 8.5,
     opacity: 0,
   }),
 );
-layout.hstack(launch, { x: 10, y: 43, gap: 7 });
+layout.hstack(launch, { x: "center", y: 44, gap: 4 });
 const composition = heading(
   "01 / COMPOSITION",
   "Same cast. Different scene",
@@ -196,16 +196,17 @@ const focus = heading(
 );
 const focusCode = CodeBlock(
   [
-    "stage.scene('Build').with(plan, build, present);",
-    "build.to({ position: [65, 42], width: 85 });",
+    "stage.scene('Build')",
+    "  .with(plan, build, present);",
+    "build.to({ position: [69, 44], width: 48 });",
     "stage.pause();",
   ],
-  { position: [65, 65], width: 85, opacity: 0 },
+  { position: [69, 56.5], width: 48, opacity: 0 },
 ).decorate(rule());
 stage.scene("Give the next idea room").with(brand, ...focus, ...launch, focusCode);
-launch[0].to({ position: [10, 42], width: 42, opacity: 0.45 });
-launch[1].to({ position: [65, 42], width: 85 });
-launch[2].to({ position: [10, 65], width: 42, height: 13, opacity: 0.45 });
+launch[0].to({ position: [43, 44], width: 20, opacity: 0.45 });
+launch[1].to({ position: [69, 44], width: 48 });
+launch[2].to({ position: [43, 56.5], width: 20, opacity: 0.45 });
 focusCode.opacity = to(1).after(launch[1]);
 pause(
   "The Build card expands while the other two become context. The code shows the same operation. Scene membership keeps shared objects alive; a pause records the next stop.",
@@ -414,9 +415,9 @@ const tiles = [
   { label: "Celebrate", icon: Party },
 ].map(({ label, icon }, i) => {
   const tint = i % 2 === 0 ? "#91b8da" : "#b7a4d9";
-  return Card([icon({ size: 3.5, color: "#c5dded" }), Text(label)], {
-    width: 20,
-    height: 15,
+  return Card([icon({ size: 2.7, color: "#c5dded" }), Text(label)], {
+    width: 13.5,
+    height: 8,
     align: "center",
     origin: "center",
     opacity: 0,
@@ -425,7 +426,7 @@ const tiles = [
     background: `linear-gradient(135deg, color-mix(in srgb, ${tint} 24%, var(--sr-background)), color-mix(in srgb, ${tint} 8%, var(--sr-background)))`,
   });
 });
-layout.hstack(tiles, { x: 10, y: 68.5, gap: 4 });
+layout.hstack(tiles, { x: "center", y: 68.5, gap: 3.5 });
 const formationLabel = Kicker("01 / THE LINEUP", { position: [10, 36] });
 const orbitCamera = {
   position: [stage.unitsWide / 2, stage.unitsTall / 2, stage.perspective] as const,
@@ -462,7 +463,7 @@ stage
 layout.hstack(tiles, {
   x: "center",
   y: 52,
-  gap: 4,
+  gap: 3.5,
   animate: (position, _, i) =>
     to(position)
       .path(motion.arc(-25))
@@ -487,10 +488,10 @@ pause(
 
 formationLabel.text = "02 / THE PLAN";
 layout.grid([tiles.slice(0, 3), tiles.slice(3)], {
-  x: 30,
-  y: 42,
-  gapX: 20,
-  gapY: 8,
+  x: "center",
+  y: 44,
+  gapX: 12,
+  gapY: 5,
   animate: (position, _, i) =>
     to(position)
       .path(motion.arc(i < 3 ? 45 : -45))
@@ -535,17 +536,17 @@ const topology = heading(
   "routing: 'straight' | 'corner' | 'arc' | 'bezier'",
 );
 const actorCard = (icon: typeof Globe, label: string, position: Point, background?: string) =>
-  Card([icon({ size: 4 }), Text(label)], {
-    width: 24,
-    height: 13,
+  Card([icon({ size: 2.7 }), Text(label)], {
+    width: 16.5,
+    height: 8.5,
     align: "center",
     position,
     background,
   });
-const browser = actorCard(Globe, "Browser", [14, 46]);
-const api = actorCard(Cpu, "Publish API", [68, 46], surface(ink));
-const database = actorCard(Database, "Release store", [122, 46]);
-const liveSite = actorCard(Rocket, "Live site", [122, 10], surface("#a5cdbf"));
+const browser = actorCard(Globe, "Browser", [19, 46]);
+const api = actorCard(Cpu, "Publish API", [71, 46], surface(ink));
+const database = actorCard(Database, "Release store", [123, 46]);
+const liveSite = actorCard(Rocket, "Live site", [123, 10], surface("#a5cdbf"));
 const request = Connector(browser, api, {
   label: "publish",
   routing: "straight",
@@ -603,10 +604,10 @@ pause(
 );
 pulseSequence(topologyConnectors, { loop: false });
 liveSite
-  .to({ position: [95, 10] })
+  .to({ position: [97, 10] })
   .duration(0.65)
   .ease("cubicInOut");
-api.to({ position: [68, 62], width: 30 });
+api.to({ position: [69, 62], width: 22 });
 pause(
   "The live-site card moves left as the API moves and resizes. Its deployment arc follows the card. Next, the site exits and the sequence focuses on the browser, API, and release store.",
 );
@@ -614,15 +615,15 @@ pause(
 // Reuse the topology's actors as sequence participants.
 const exchange = heading(
   "06 / SEQUENCES",
-  "What happens after the click?",
+  "What happens after the click",
   "Follow a request out, then watch the replies return.",
   "SequenceDiagram() · message(a, b)",
 );
 const seq = SequenceDiagram({
   participants: [browser, api, database],
-  startY: 55,
-  gapY: 7,
-  lifelineLength: 32,
+  startY: 53,
+  gapY: 6.5,
+  lifelineLength: 30,
   lifelineOpacity: 0,
 });
 const publish = seq.message(browser, api, { label: "POST /releases", end: 0 });
@@ -640,7 +641,7 @@ const response = seq.message(api, browser, {
 });
 const activation = seq.activate(api, { from: publish, to: response, opacity: 0 });
 stage
-  .scene("What happens after the click?")
+  .scene("What happens after the click")
   .with(brand, ...exchange, browser, api, database, ...seq.elements);
 // The deployment card leaves as the same three actors reset for the sequence.
 deploy.opacity = to(0).duration(0.08);
@@ -651,7 +652,13 @@ liveSite
   .delay(0.18)
   .ease((t) => t * t);
 liveSite.opacity = to(0).duration(0.18).delay(0.42).ease("linear");
-layout.hstack([browser, api, database], { x: 14, y: 36, width: 24, gap: 30, animate: true });
+layout.hstack([browser, api, database], {
+  x: "center",
+  y: 36,
+  width: 16.5,
+  gap: 34,
+  animate: true,
+});
 group(seq.lifelines).to({ opacity: 1 }).after(api);
 publish.end = to(1).after(seq.lifelines[0]);
 activation.opacity = to(1).after(seq.lifelines[0]);
@@ -681,22 +688,22 @@ const [backstage, entrance, spotlight, bow] = (
     ["Backstage", [43, 47], "#91b8da"],
     ["Making an entrance", [82, 47], "#b7a4d9"],
     ["Stealing the scene", [121, 47], "#a5cdbf"],
-    ["Taking a bow", [121, 70], "#b7a4d9"],
+    ["Taking a bow", [121, 65], "#b7a4d9"],
   ] as const
 ).map(([label, position, tint]) =>
   Card(label, {
     position: [...position],
     origin: "center",
-    width: 25,
-    height: 11,
+    width: 23,
+    height: 8,
     align: "center",
     background: surface(tint),
   }),
 );
 const finalState = Shape(paths.circle(), {
-  position: [43, 80],
+  position: [43, 75],
   origin: "center",
-  size: 6,
+  size: 5,
   variant: "ghost",
   borderColor: "var(--sr-text)",
   doubleBorder: true,
@@ -809,7 +816,7 @@ const fixedCode = CodeBlock(
 const ready = Card("All checks passed. The demo gods are appeased.", {
   position: [10, 66],
   width: 66,
-  height: 9,
+  height: 7,
   background: surface(green),
   opacity: 0,
 });
@@ -826,32 +833,32 @@ const geometry = heading(
   "09 / SHAPES",
   "Room to grow",
   "One idea. From a Teams meeting to the main stage.",
-  "card.to({ width: 56, height: 38 })",
+  "card.to({ width: 44, height: 26 })",
 );
 const venueStep = Kicker("01 / THE TEAMS MEETING", { position: [10, 36] });
-const idea = Card([Rocket({ size: 4 }), Text("Your idea")], {
-  position: [25, 60],
+const idea = Card([Rocket({ size: 3.5 }), Text("Your idea")], {
+  position: [26, 56],
   origin: "center",
-  width: 24,
-  height: 17,
+  width: 20,
+  height: 14,
   align: "center",
 });
 const venueTitle = Title("Workshop", { variant: "serif" });
 const venueLabel = Kicker("ROOM FOR IDEAS");
 const venue = Card([venueTitle, venueLabel], {
-  position: [80, 60],
+  position: [80, 56],
   origin: "center",
-  width: 30,
-  height: 24,
+  width: 26,
+  height: 18,
   align: "center",
   background: surface("#a7bfe8"),
 });
 const audiences = ["Teams", "Conference", "Livestream"].map((name, i) =>
   Shape(paths.pill(), name, {
-    position: [134, 60],
+    position: [128, 56],
     origin: "center",
-    width: 25,
-    height: 11,
+    width: 20,
+    height: 6.5,
     opacity: i === 0 ? 1 : 0,
     background: surface("#a4c8c0"),
   }),
@@ -873,7 +880,7 @@ const audienceLinks = audiences.map((region, i) =>
   }),
 );
 const expansionNote = Text("Same idea. A bigger stage.", {
-  position: [80, 85],
+  position: [80, 75],
   origin: "center",
   opacity: 0,
 });
@@ -896,16 +903,16 @@ pause(
 );
 
 venueStep.text = "02 / THE MAIN STAGE";
-venue.to({ width: 56, height: 38 }).duration(1.4).ease("cubicInOut");
+venue.to({ width: 44, height: 26 }).duration(1.4).ease("cubicInOut");
 venueTitle.to({ text: "Keynote" }).duration(0.7);
-idea.to({ width: 27, height: 24, position: [23, 60] }).duration(1.2);
+idea.to({ width: 22, height: 16, position: [25, 56] }).duration(1.2);
 layout.vstack(audiences, {
-  x: 121.5,
-  y: 35.5,
-  gap: 8,
+  x: 122,
+  y: 43,
+  gap: 3.5,
   animate: (position, _, i) =>
     to(position)
-      .path(motion.arc((i - 1) * 45))
+      .path(motion.arc((i - 1) * 35))
       .duration(1.2)
       .delay(i * 0.12),
 });
@@ -933,27 +940,27 @@ const callouts = heading(
   "Move the people. Move the work. Keep the conversation attached.",
   "paths.speechBubble({ tail: { to: author } })",
 );
-const author = Card([Code({ size: 4, color: "#c4dcf1" }), Text("Speaker")], {
-  position: [25, 73],
+const author = Card([Code({ size: 3.5, color: "#c4dcf1" }), Text("Speaker")], {
+  position: [25, 68],
   origin: "center",
-  width: 22,
-  height: 15,
+  width: 17,
+  height: 11,
   align: "center",
   background: surface("#91b8da"),
 });
-const reviewer = Card([Flask({ size: 4, color: "#d5caeb" }), Text("Organizer")], {
-  position: [125, 73],
+const reviewer = Card([Flask({ size: 3.5, color: "#d5caeb" }), Text("Organizer")], {
+  position: [125, 68],
   origin: "center",
-  width: 22,
-  height: 15,
+  width: 18,
+  height: 11,
   align: "center",
   background: surface("#b7a4d9"),
 });
-const reviewDocument = Card([FileText({ size: 3.5 }), Kicker("DECK.TS")], {
-  position: [53, 73],
+const reviewDocument = Card([FileText({ size: 3 }), Kicker("DECK.TS")], {
+  position: [53, 68],
   origin: "center",
-  width: 18,
-  height: 13,
+  width: 14,
+  height: 9,
   align: "center",
   rotation: -5,
   background: surface("#b7c8dd"),
@@ -962,10 +969,10 @@ const speech = Shape(
   paths.speechBubble({ tail: { to: author, anchor: "top", padding: 6 }, radius: 16 }),
   "I swear the demo worked 5 minutes ago.",
   {
-    position: [38, 44],
+    position: [38, 46],
     origin: "center",
-    width: 47,
-    height: 16,
+    width: 34,
+    height: 8.5,
     opacity: 0,
     background: surface("#91b8da"),
   },
@@ -974,15 +981,16 @@ const thought = Shape(
   paths.thoughtBubble({ tail: { to: reviewer, anchor: "top", padding: 6 }, lobes: 10 }),
   "180 slides? In 15 minutes?",
   {
-    position: [115, 44],
+    position: [115, 46],
     origin: "center",
-    width: 49,
-    height: 17,
+    width: 32,
+    height: 11,
+    style: { paddingInline: "calc(4 * var(--sr-space-sm))" },
     opacity: 0,
     background: surface("#b7a4d9"),
   },
 );
-const reviewStatus = Kicker("01 / DRAFT ZERO", { position: [10, 85] });
+const reviewStatus = Kicker("01 / DRAFT ZERO", { position: [12, 86], origin: "bottom-left" });
 stage
   .scene("The comment stays with the work")
   .with(brand, ...callouts, reviewStatus, author, reviewer, reviewDocument, speech, thought);
@@ -995,7 +1003,7 @@ pause(
 reviewStatus.text = "02 / BACKSTAGE REVIEW";
 // The work leads; both people gather around it without changing sides.
 reviewDocument
-  .to({ position: to([80, 73]).path(motion.arc(-22)), rotation: 0 })
+  .to({ position: to([80, 68]).path(motion.arc(-22)), rotation: 0 })
   .duration(1.4)
   .ease("cubicInOut");
 [
@@ -1003,7 +1011,7 @@ reviewDocument
   [reviewer, 110],
 ].forEach(([person, x]) => {
   (person as typeof author)
-    .to({ position: to([x as number, 73]).path(motion.arc(12)) })
+    .to({ position: to([x as number, 68]).path(motion.arc(12)) })
     .duration(1.4)
     .delay(0.12)
     .ease("cubicInOut");
@@ -1031,9 +1039,9 @@ const polished = Title("Ready for the spotlight.", {
   .decorate(gradient())
   .decorate(glow());
 const typing = Text("", {
-  position: [10, 60],
+  position: [10, 58],
   width: 76,
-  theme: { fontSizeBody: "2rem" },
+  theme: { fontSizeBody: "1.5rem" },
 }).decorate(
   typewriter({
     delay: 3.5,
@@ -1053,8 +1061,8 @@ const dreamReveals = [
   { kicker: "03 / THE DELIVERY", title: "Unshakable stage presence", tint: "#a5cdbf" },
 ].map(({ kicker, title, tint }, i) =>
   Card([Kicker(kicker), Title(title, { variant: "serif" })], {
-    width: 54,
-    height: 13,
+    width: 44,
+    height: 10,
     background: surface(tint),
   }).decorate(
     dream({
@@ -1067,7 +1075,7 @@ const dreamReveals = [
     }),
   ),
 );
-layout.vstack(dreamReveals, { x: 96, y: 39, gap: 3 });
+layout.vstack(dreamReveals, { x: 96, y: 39, gap: 2.5 });
 stage
   .scene("A little polish goes a long way")
   .with(brand, ...finishHeading, polished, typing, ...dreamReveals);
@@ -1082,48 +1090,48 @@ const wardrobe = heading(
   "stage.theme(defaultDark)",
 );
 const releaseSurface = Card("", {
-  position: [10, 39],
+  position: [10, 38],
   width: 88,
-  height: 43,
+  height: 38,
   background: "var(--sr-surface)",
 });
 const dashboardKicker = Kicker("RELEASE / OVERVIEW", {
-  position: [15, 44],
+  position: [15, 43],
   color: "var(--sr-primary)",
 });
 const dashboardTitle = Title("Launch day, looking good", {
   variant: "serif",
-  position: [15, 50],
+  position: [15, 48],
   width: 75,
   color: "var(--sr-text)",
 });
 const dashboardDescription = Text("Everything is ready for your next big reveal.", {
-  position: [15, 57],
+  position: [15, 54],
   width: 75,
   color: "var(--sr-text-muted)",
 });
-const releaseIcon = Rocket({ position: [85, 44], size: 4, color: "var(--sr-text)" });
+const releaseIcon = Rocket({ position: [85, 43], size: 4, color: "var(--sr-text)" });
 const dashboardTags = ["3 regions", "Checks passed"].map((text) =>
   Shape(paths.pill(), text, {
-    width: 28,
-    height: 5,
+    width: 20,
+    height: 4.5,
     background: "color-mix(in srgb, var(--sr-secondary) 12%, transparent)",
     color: "var(--sr-secondary)",
   }),
 );
-layout.hstack(dashboardTags, { x: 15, y: 63, gap: 3 });
+layout.hstack(dashboardTags, { x: 15, y: 60, gap: 3 });
 const publishAction = Card("Publish release", {
-  position: [15, 72],
-  width: 31,
-  height: 7,
+  position: [15, 68],
+  width: 22,
+  height: 5.5,
   align: "center",
   background: "var(--sr-primary)",
   color: "var(--sr-background)",
 });
 const previewAction = Card("Preview", {
-  position: [50, 72],
-  width: 25,
-  height: 7,
+  position: [40, 68],
+  width: 16,
+  height: 5.5,
   align: "center",
   background: "color-mix(in srgb, var(--sr-secondary) 12%, transparent)",
   color: "var(--sr-secondary)",
@@ -1133,15 +1141,15 @@ const themeMetrics = [
   { label: "PIPELINE", value: "All checks passed", icon: Flask },
   { label: "UP NEXT", value: "Your big moment", icon: Party },
 ].flatMap(({ label, value, icon }, i) => {
-  const y = 39 + i * 15;
+  const y = 38 + i * 12.5;
   return [
-    Card("", { position: [106, y], width: 44, height: 13, background: "var(--sr-surface)" }),
-    icon({ position: [111, y + 4], size: 3.5, color: "var(--sr-primary)" }),
-    Kicker(label, { position: [118, y + 3], color: "var(--sr-text-dim)" }),
-    Text(value, { position: [118, y + 7], width: 29, color: "var(--sr-text)" }),
+    Card("", { position: [106, y], width: 42, height: 10.5, background: "var(--sr-surface)" }),
+    icon({ position: [111, y + 3.2], size: 3.5, color: "var(--sr-primary)" }),
+    Kicker(label, { position: [118, y + 2.2], color: "var(--sr-text-dim)" }),
+    Text(value, { position: [118, y + 5.6], width: 29, color: "var(--sr-text)" }),
   ];
 });
-const themeLabel = Kicker("DEFAULT DARK", { position: [10, 85] });
+const themeLabel = Kicker("DEFAULT DARK", { position: [12, 86], origin: "bottom-left" });
 const themeCode = wardrobe[3];
 stage
   .scene("Same content different mood")
@@ -1266,7 +1274,7 @@ const atmosphereDescriptions = atmosphereExamples.map(({ detail }, i) =>
   Text(detail, centeredOptions(62, i === 0 ? 1 : 0)),
 );
 const atmosphereLabels = atmosphereExamples.map(({ label }, i) =>
-  Kicker(label, { position: [10, 81], opacity: i === 0 ? 1 : 0 }),
+  Kicker(label, { position: [12, 86], origin: "bottom-left", opacity: i === 0 ? 1 : 0 }),
 );
 const atmosphereCode = backdropHeading[3];
 
@@ -1328,9 +1336,9 @@ const photoFrame = Frame(paths.box({ radius: 14 }), photo, {
   height: 36,
 }).decorate(kenBurns({ scale: 1.3, focus: "top-right", duration: 20 }));
 const camera = Frame(paths.circle(), Webcam({ mirror: true }), {
-  position: [150, 82],
+  position: [148, 80],
   origin: "bottom-right",
-  size: 12,
+  size: 11,
   borderColor: "#a8c9e4",
   strokeWidth: 2,
 });
@@ -1343,7 +1351,10 @@ const mediaEncore = Title("Two views. One story.", {
   width: 68,
   opacity: 0,
 }).decorate(gradient());
-const credit = Kicker("NASA imagery · Online media · Camera optional", { position: [10, 86] });
+const credit = Kicker("NASA imagery · Online media · Camera optional", {
+  position: [12, 86],
+  origin: "bottom-left",
+});
 stage
   .scene("Let the picture do the talking")
   .with(
@@ -1381,7 +1392,7 @@ earth
   .after(mediaHeading[1]);
 photoFrame
   .to({
-    position: to([47, 61]).path(motion.arc(65)),
+    position: to([47, 58]).path(motion.arc(65)),
     rotation: -2,
     rotationX: -16,
     rotationY: 28,
@@ -1451,7 +1462,7 @@ const presenterPreview = BrowserWindow({
   title: "Live presenter console",
   position: [10, 39],
   width: 92,
-  height: 43,
+  height: 39,
 });
 const tools = BulletList(
   [
@@ -1467,10 +1478,9 @@ const tools = BulletList(
 const pointerHelp = Text(
   "Click outside the browser first. Move the mouse to point; drag to draw.",
   {
-    position: [110, 75],
+    position: [110, 72],
     width: 39,
     color: "var(--sr-text-muted)",
-    theme: { fontSizeBody: "1.2rem" },
   },
 );
 stage

@@ -96,14 +96,14 @@ const asciiFragmentShader = `
     float glyphAlpha = texture2D(u_atlas, vec2(atlasU, 1.0 - glyphUv.y)).r;
 
     // Harmonious chromatic palette (sky cyan on deep void black)
-    vec3 deepTone   = mix(u_bgColor, u_charColor, 0.40);
-    vec3 brightTone = mix(u_charColor, vec3(0.60, 0.85, 0.98), 0.38);
-    vec3 activeColor = mix(deepTone, brightTone, smoothstep(0.12, 0.88, intensity));
+    vec3 deepTone   = mix(u_bgColor, u_charColor, 0.48);
+    vec3 brightTone = mix(u_charColor, vec3(0.65, 0.88, 1.0), 0.45);
+    vec3 activeColor = mix(deepTone, brightTone, smoothstep(0.10, 0.88, intensity));
 
     activeColor += vec3(0.04, 0.10, 0.15) * length(totalDisplacement) * 5.0;
 
-    float charBrightness = glyphAlpha * (0.35 + intensity * 0.60);
-    float cellGlow = smoothstep(0.7, 0.0, length(cellUv - 0.5)) * intensity * 0.10;
+    float charBrightness = glyphAlpha * (0.42 + intensity * 0.65);
+    float cellGlow = smoothstep(0.7, 0.0, length(cellUv - 0.5)) * intensity * 0.12;
 
     float totalAlpha = clamp((charBrightness + cellGlow) * u_opacity, 0.0, 1.0);
     vec3 color = mix(u_bgColor, activeColor, totalAlpha);

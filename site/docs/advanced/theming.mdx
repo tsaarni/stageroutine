@@ -155,11 +155,11 @@ The stage `scale` option defaults to `1`. It multiplies default font sizes, spac
 
 | Property | Default at `scale: 1` | Used for |
 | :--- | :--- | :--- |
-| `fontSizeHero` | `5.5rem` | `Title({ variant: "hero" })` |
-| `fontSizeTitle` | `3.25rem` | `Title()` |
-| `fontSizeLead` | `2.1rem` | `Title({ variant: "serif" })` |
-| `fontSizeBody` | `1.55rem` | Body text, lists, tables |
-| `fontSizeCode` | `1.25rem` | Code and terminal body text |
+| `fontSizeHero` | `5rem` | `Title({ variant: "hero" })` |
+| `fontSizeTitle` | `2.75rem` | `Title()` |
+| `fontSizeLead` | `1.875rem` | `Title({ variant: "serif" })` |
+| `fontSizeBody` | `1.375rem` | Body text, lists, tables |
+| `fontSizeCode` | `1.125rem` | Code and terminal body text |
 | `fontSizeKicker` | `1rem` | Kickers and window labels |
 
 ```typescript
@@ -168,6 +168,8 @@ stage.theme({
   fontSizeBody: "1.6rem",
 });
 ```
+
+Body text uses a line height of `1.5`. Code and terminal text also use `1.5`.
 
 ### Add a custom font
 

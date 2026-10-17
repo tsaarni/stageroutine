@@ -18,8 +18,8 @@ export interface NavigationOverlayOptions {
  * Creates a navigation overlay plugin with prev scene, prev step, next step, next scene,
  * and pointer toggle buttons.
  *
- * The overlay appears when the mouse cursor moves near the bottom of the screen and
- * hides immediately when the cursor moves away.
+ * Hover near the bottom to show controls with a mouse. Tap the bottom zone on touch.
+ * Swipe horizontally to navigate on touch.
  *
  * @example
  * ```ts
@@ -32,7 +32,7 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
   const triggerZone = options.triggerZone ?? 100;
 
   let bar: HTMLDivElement | null = null;
-  let boundOnPointerMove: ((e: PointerEvent) => void) | null = null;
+  let cleanupInput: (() => void) | null = null;
   let unsubPointerState: (() => void) | null = null;
   let isPointerActive = false;
   let isVisible = false;
@@ -100,19 +100,152 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
 
       ctx.container.appendChild(bar);
 
-      boundOnPointerMove = (e: PointerEvent) => {
-        if (isPointerActive) {
-          hideBar();
-          return;
-        }
-        const distFromBottom = window.innerHeight - e.clientY;
-        if (distFromBottom <= triggerZone) {
-          showBar();
-        } else {
-          hideBar();
-        }
+      const controller = new AbortController();
+      const { signal } = controller;
+      const mouse = matchMedia("(any-hover: hover) and (any-pointer: fine)");
+      const updatePointerButton = () => {
+        btnPointer.hidden = !mouse.matches;
       };
-      window.addEventListener("pointermove", boundOnPointerMove, { passive: true });
+      updatePointerButton();
+      mouse.addEventListener("change", updatePointerButton, { signal });
+
+      let gesture: {
+        id: number;
+        type: string;
+        x: number;
+        y: number;
+        distance: number;
+        time: number;
+      } | null = null;
+      const pointers = new Set<number>();
+      const inBottomZone = (y: number) => y >= window.innerHeight - triggerZone;
+      const excluded = (target: EventTarget | null) => {
+        if (!(target instanceof Element)) return true;
+        if (
+          target.closest(
+            "button, a, input, textarea, select, video, audio, iframe, [contenteditable]:not([contenteditable=false]), [role=button], .sr-clickable, .xterm, [data-prevent-swipe], .sr-nav-overlay",
+          )
+        )
+          return true;
+        for (
+          let node: Element | null = target;
+          node && node !== ctx.container;
+          node = node.parentElement
+        ) {
+          const style = getComputedStyle(node);
+          if (/(auto|scroll)/.test(style.overflowX + style.overflowY)) return true;
+        }
+        return false;
+      };
+      ctx.container.addEventListener(
+        "pointerdown",
+        (e) => {
+          pointers.add(e.pointerId);
+          if (pointers.size > 1) {
+            gesture = null;
+            return;
+          }
+          if (
+            e.pointerType !== "touch" ||
+            !e.isPrimary ||
+            e.button !== 0 ||
+            isPointerActive ||
+            excluded(e.target)
+          )
+            return;
+          gesture = {
+            id: e.pointerId,
+            type: e.pointerType,
+            x: e.clientX,
+            y: e.clientY,
+            distance: 0,
+            time: e.timeStamp,
+          };
+        },
+        { signal },
+      );
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          if (e.pointerType === "mouse") {
+            if (inBottomZone(e.clientY)) showBar();
+            else hideBar();
+          }
+          if (gesture?.id !== e.pointerId) return;
+          gesture.distance = Math.max(
+            gesture.distance,
+            Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y),
+          );
+        },
+        { signal, passive: true },
+      );
+      // Claim only horizontal navigation gestures. Native scrolling and zoom keep
+      // their defaults, including inside excluded content.
+      ctx.container.addEventListener(
+        "touchmove",
+        (e) => {
+          if (gesture?.type !== "touch" || e.touches.length !== 1) return;
+          const touch = e.touches[0];
+          if (!touch) return;
+          const dx = Math.abs(touch.clientX - gesture.x);
+          const dy = Math.abs(touch.clientY - gesture.y);
+          if (dx > 10 && dx > dy * 1.5 && e.cancelable) e.preventDefault();
+        },
+        { signal, passive: false },
+      );
+      window.addEventListener(
+        "pointerup",
+        (e) => {
+          pointers.delete(e.pointerId);
+          if (gesture?.id !== e.pointerId) return;
+          const start = gesture;
+          gesture = null;
+          if (isPointerActive || excluded(e.target) || !ctx.container.contains(e.target as Node))
+            return;
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
+          const distance = Math.max(start.distance, Math.hypot(dx, dy));
+          if (
+            start.type === "touch" &&
+            Math.abs(dx) >= 50 &&
+            Math.abs(dx) > Math.abs(dy) * 1.5 &&
+            e.timeStamp - start.time < 1000
+          ) {
+            hideBar();
+            ctx.emit(dx < 0 ? "req:nav:nextStep" : "req:nav:prevStep");
+          } else if (distance <= 10 && e.timeStamp - start.time < 500) {
+            if (isVisible) hideBar();
+            else if (inBottomZone(start.y) && inBottomZone(e.clientY)) showBar();
+          }
+        },
+        { signal },
+      );
+      window.addEventListener(
+        "pointercancel",
+        (e) => {
+          pointers.delete(e.pointerId);
+          gesture = null;
+        },
+        { signal },
+      );
+      window.addEventListener(
+        "blur",
+        () => {
+          pointers.clear();
+          gesture = null;
+        },
+        { signal },
+      );
+      window.addEventListener(
+        "keydown",
+        (e) => {
+          if (e.key === "Escape") hideBar();
+        },
+        { signal },
+      );
+      cleanupInput = () => {
+        controller.abort();
+      };
     },
 
     show() {
@@ -124,9 +257,10 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
     },
 
     destroy() {
-      if (boundOnPointerMove) {
-        window.removeEventListener("pointermove", boundOnPointerMove);
-      }
+      cleanupInput?.();
+      cleanupInput = null;
+      isVisible = false;
+      isPointerActive = false;
       if (unsubPointerState) {
         unsubPointerState();
         unsubPointerState = null;
@@ -139,6 +273,7 @@ export function NavigationOverlay(options: NavigationOverlayOptions = {}): Overl
 
 function createButton(label: string, title: string): HTMLButtonElement {
   const btn = document.createElement("button");
+  btn.type = "button";
   btn.className = "sr-nav-btn";
   btn.textContent = label;
   btn.title = title;
@@ -148,6 +283,7 @@ function createButton(label: string, title: string): HTMLButtonElement {
 
 function createPointerButton(): HTMLButtonElement {
   const btn = document.createElement("button");
+  btn.type = "button";
   btn.className = "sr-nav-btn sr-nav-btn-pointer";
   btn.title = "Pointer & annotate (P)";
   btn.setAttribute("aria-label", "Pointer and annotate");

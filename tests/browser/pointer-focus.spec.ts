@@ -83,7 +83,7 @@ test("LiveTerminal releases focus with laser pointer enabled", async ({ stage, p
   await expect(page.locator(".sr-pointer-mode")).toHaveCount(0);
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("Test requires a viewport");
-  await page.mouse.move(viewport.width / 2, viewport.height - 2);
+  await page.mouse.move(1, viewport.height - 2);
   await expect(stage.locator(".sr-nav-overlay")).toBeVisible();
 });
 
@@ -178,6 +178,6 @@ test("annotation outside clicks release an already focused terminal", async ({ s
   await expect(stage.locator(".sr-annotation-canvas")).toHaveCSS("pointer-events", "none");
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("Test requires a viewport");
-  await page.mouse.move(viewport.width / 2, viewport.height - 2);
+  await page.mouse.move(1, viewport.height - 2);
   await expect(stage.locator(".sr-nav-overlay")).toBeVisible();
 });

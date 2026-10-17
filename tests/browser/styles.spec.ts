@@ -259,7 +259,7 @@ test("navigation controls retain a visible keyboard focus ring", async ({ stage,
   });
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("Missing viewport");
-  await page.mouse.move(viewport.width / 2, viewport.height - 2);
+  await page.mouse.move(1, viewport.height - 2);
   await expect(stage.locator(".sr-nav-overlay")).toBeVisible();
   await page.keyboard.press("Tab");
   await expect(stage.locator(".sr-nav-btn:focus-visible")).toHaveCSS("outline-style", "solid");

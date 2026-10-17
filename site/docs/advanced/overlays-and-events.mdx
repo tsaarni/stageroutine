@@ -22,7 +22,9 @@ stage.overlay(NavigationOverlay());
 ### Built-in Overlays
 - **`LaserPointer()`**: WebGL glowing red laser pointer.
 - **`Annotation()`**: Smooth variable-width ink drawn over slides. The ink color follows the active theme `primary` color.
-- **`NavigationOverlay()`**: Next/Previous step buttons, scene jumpers, and pointer toggle that appear on hover near the screen bottom.
+- **`NavigationOverlay()`**: With a mouse, hover within the bottom 100 CSS pixels to show navigation controls. Move away to hide them. On touch, tap the bottom zone to show controls and tap outside the controls to dismiss them. Escape also dismisses them.
+
+With `NavigationOverlay()`, swipe left for the next step or right for the previous step. Interactive and scrollable content keeps its own gestures. Add `data-prevent-swipe` to custom interactive content to exclude it. Pointer controls are hidden on touch-only devices.
 
 ### The Presenter Pointer Tool
 `LaserPointer()` and `Annotation()` share one tool state. Toggle it with `P` or `Escape`. While the tool is active, moving shows the laser beam and press-and-drag draws ink. The tools are implemented separately but activate together, so there is no separate draw mode.

@@ -1,6 +1,58 @@
 import { expect, test } from "../helpers/stage";
 
 test.describe("Stage Navigation & Restoration", () => {
+  test("the opening reveal waits for advance and replays after stepping back", async ({
+    stage,
+  }) => {
+    await stage.mount((SR) => {
+      const s = new SR.Stage({ channel: false });
+      const title = SR.Title("StageRoutine", {
+        id: "opening-title",
+        position: [80, 40],
+        origin: "center",
+      });
+      const caption = SR.Text("This presentation is written in TypeScript.", {
+        id: "opening-caption",
+        position: [80, 67],
+        origin: "center",
+        opacity: 0,
+      });
+      const hint = SR.Text('stage.scene("Opening").with(Title("StageRoutine"));', {
+        id: "opening-code",
+        position: [150, 89],
+        origin: "bottom-right",
+        opacity: 0,
+      });
+      caption.onUpdate(() => {
+        if (caption.opacity > 0 && caption.opacity < 1)
+          caption.domElement.dataset.animated = "true";
+      });
+      s.scene("Opening").with(title, caption, hint);
+      s.pause();
+      caption.opacity = SR.to(1).duration(0.4);
+      hint.opacity = SR.to(1).duration(0.4).delay(0.2);
+      s.pause();
+      return s;
+    });
+    const title = stage.locator("#opening-title");
+    const caption = stage.locator("#opening-caption");
+    const hint = stage.locator("#opening-code");
+    const initial = await title.evaluate((node) => node.style.transform);
+    for (let pass = 0; pass < 2; pass++) {
+      await expect(caption).toHaveCSS("opacity", "0");
+      await expect(hint).toHaveCSS("opacity", "0");
+      await caption.evaluate((node) => {
+        node.dataset.animated = "false";
+      });
+      await stage.next();
+      await expect(caption).toHaveCSS("opacity", "1");
+      await expect(hint).toHaveCSS("opacity", "1");
+      await expect(caption).toHaveAttribute("data-animated", "true");
+      expect(await title.evaluate((node) => node.style.transform)).toBe(initial);
+      await stage.prev();
+    }
+  });
+
   test("restores positions and opacities when navigating backward", async ({ stage }) => {
     // 1. Instantiate stage, elements, and steps right here in the test case:
     await stage.mount((SR) => {

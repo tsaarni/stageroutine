@@ -79,6 +79,9 @@ const STYLE_RENDERED_KEYS: ReadonlySet<string> = new Set([
   "height",
   "scale",
   "rotation",
+  "rotationX",
+  "rotationY",
+  "z",
   "origin",
   "opacity",
   "blur",
@@ -260,10 +263,16 @@ export class Stage {
   private elementRegistry = new Map<string, ReactiveElementBase>();
   /** Ids of elements nested inside a parent container (items/rows); the parent owns their visibility. */
   private ownedByParent = new Set<string>();
+  /** Keep the projection path stable for elements authored with depth or tilt. */
+  private spatialElements = new Set<string>();
   private initialProperties = new Map<string, Record<string, unknown>>();
   private propertyState = new Map<string, Record<string, unknown>>();
+  private baseTheme: ThemeConfig = {};
   private currentTheme: ThemeConfig = {};
   private backgroundSource: string | Background | ReactiveElementBase | null = null;
+  private renderedBackground: string | Background | ReactiveElementBase | null = null;
+  private backgrounds = new Set<Background | ReactiveElementBase>();
+  private attachedBackgrounds = new Set<Background | ReactiveElementBase>();
 
   private steps: StepData[] = [];
   private snapshots: StepSnapshot[] = [];
@@ -440,6 +449,9 @@ export class Stage {
    * context will cause the latter instance to overwrite `activeStage`.
    */
   constructor(options: StageOptions = {}) {
+    if (!Number.isFinite(options.perspective ?? 120) || (options.perspective ?? 120) <= 0) {
+      throw new RangeError("Stage perspective must be a positive finite distance in stage units.");
+    }
     activeStage = this;
     (window as unknown as { __stage?: Stage }).__stage = this;
     const defaultWidth = resolveDefaultWidth();
@@ -455,10 +467,11 @@ export class Stage {
       channel: options.channel !== undefined ? options.channel : defaultChannel,
     };
 
-    this.currentTheme = {
+    this.baseTheme = {
       ...defaultDark,
       ...(this.options.theme || {}),
     };
+    this.currentTheme = { ...this.baseTheme };
 
     registerStageStyleContext(this, () => ({
       theme: this.currentTheme,
@@ -495,6 +508,11 @@ export class Stage {
   /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number {
     return this.options.height || 1080;
+  }
+
+  /** Shared perspective distance in stage units (default: 120). */
+  get perspective(): number {
+    return this.options.perspective ?? 120;
   }
 
   /** Stage width in stage units (160 on a 16:9 stage). */
@@ -655,11 +673,11 @@ export class Stage {
   }
 
   private _getBackgroundMetrics(): Record<string, unknown> | null {
-    if (!this.backgroundSource) return null;
-    if (typeof this.backgroundSource === "string") {
-      return { kind: "color", value: this.backgroundSource };
+    if (!this.renderedBackground) return null;
+    if (typeof this.renderedBackground === "string") {
+      return { kind: "color", value: this.renderedBackground };
     }
-    const bg = this.backgroundSource as {
+    const bg = this.renderedBackground as {
       _getMetrics?: () => Record<string, unknown>;
       kind?: string;
       isRunning?: boolean;
@@ -1157,6 +1175,7 @@ export class Stage {
     triggerProperty?: string,
     motion?: PositionMotion,
   ): void {
+    this._rememberSpatialProperty(elementId, property, to);
     from = copyPropertyValue(from);
     to = copyPropertyValue(to);
     if (
@@ -1323,6 +1342,16 @@ export class Stage {
     else managed?._update?.();
   }
 
+  private _rememberSpatialProperty(id: string, property: string, value: unknown): void {
+    if (
+      (property === "z" || property === "rotationX" || property === "rotationY") &&
+      typeof value === "number" &&
+      value !== 0
+    ) {
+      this.spatialElements.add(id);
+    }
+  }
+
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
     const props = this.propertyState.get(elementId);
     if (property === "position") return props ? [props.x ?? 0, props.y ?? 0] : undefined;
@@ -1341,6 +1370,7 @@ export class Stage {
       this.propertyState.set(elementId, elProps);
     }
     value = copyPropertyValue(value);
+    this._rememberSpatialProperty(elementId, property, value);
     elProps[property] = value;
 
     // Update baseline properties if this element has not yet been snapshotted in any step
@@ -1393,6 +1423,7 @@ export class Stage {
           val = element.domElement?.style.zIndex || "auto";
         }
         if (typeof val !== "function") {
+          this._rememberSpatialProperty(element.id, key, val);
           initialProps[key] = copyPropertyValue(val);
         }
       } catch {
@@ -1435,7 +1466,7 @@ export class Stage {
    * ```
    */
   theme(config: ThemeConfig): this {
-    this.currentTheme = { ...this.currentTheme, ...config };
+    this.currentTheme = { ...this.baseTheme, ...config };
     if (this.container) {
       this._applyTheme(this.currentTheme);
     }
@@ -1443,7 +1474,7 @@ export class Stage {
   }
 
   /**
-   * Sets the stage background (color string, gradient, or procedural element).
+   * Selects the background for subsequent steps. Default: theme canvas. Restored on navigation.
    *
    * @example
    * ```ts
@@ -1452,16 +1483,44 @@ export class Stage {
    * ```
    */
   background(bg: string | Background | ReactiveElementBase): this {
-    if (this.backgroundSource !== null) {
-      throw new Error(
-        "[StageRoutine] Stage background has already been configured. Setting multiple backgrounds is not supported.",
-      );
-    }
     this.backgroundSource = bg;
-    if (this.container) {
-      this._attachBackground(bg);
-    }
+    if (typeof bg !== "string") this.backgrounds.add(bg);
+    if (this.container) this._activateBackground(bg);
     return this;
+  }
+
+  private _activateBackground(bg: string | Background | ReactiveElementBase | null): void {
+    if (bg === this.renderedBackground) return;
+    const previous = this.renderedBackground;
+    if (previous && typeof previous !== "string") {
+      if (previous.domElement) previous.domElement.style.visibility = "hidden";
+      (previous as Background).pause?.();
+    }
+    this.renderedBackground = bg;
+    if (!this.container) return;
+    this.container.style.background = typeof bg === "string" ? bg : "";
+    if (!bg || typeof bg === "string") return;
+    if (bg.domElement) bg.domElement.style.visibility = "visible";
+    if (!this.attachedBackgrounds.has(bg)) {
+      this._attachBackground(bg);
+      this.attachedBackgrounds.add(bg);
+    } else {
+      (bg as Background).play?.();
+    }
+  }
+
+  private _restoreBackground(snap: StepSnapshot): void {
+    this._activateBackground(snap.backgroundSource);
+    if (
+      snap.backgroundProperties &&
+      snap.backgroundSource &&
+      typeof snap.backgroundSource !== "string"
+    ) {
+      for (const [key, value] of Object.entries(snap.backgroundProperties)) {
+        (snap.backgroundSource as unknown as Record<string, unknown>)[key] =
+          copyPropertyValue(value);
+      }
+    }
   }
 
   private _attachBackground(bg: string | Background | ReactiveElementBase): void {
@@ -1547,6 +1606,7 @@ export class Stage {
       sceneName: this.currentSceneName,
       stepIndex: stepIdx,
       properties: snapProps,
+      backgroundSource: this.backgroundSource,
       backgroundProperties:
         this.backgroundSource && typeof this.backgroundSource !== "string"
           ? Object.fromEntries(
@@ -1636,10 +1696,9 @@ export class Stage {
       }
     }
 
-    // Attach background if provided
-    if (this.backgroundSource) {
-      this._attachBackground(this.backgroundSource);
-    }
+    this._activateBackground(
+      this.snapshots.length ? this.snapshots[0].backgroundSource : this.backgroundSource,
+    );
 
     // Responsive scaling resize handler
     const updateScale = () => {
@@ -1795,9 +1854,10 @@ export class Stage {
     }
     this.mountedOverlays.length = 0;
 
-    if (this.backgroundSource && typeof this.backgroundSource !== "string") {
-      (this.backgroundSource as Background).dispose?.();
-    }
+    for (const background of this.backgrounds) (background as Background).dispose?.();
+    this.backgrounds.clear();
+    this.attachedBackgrounds.clear();
+    this.renderedBackground = null;
 
     for (const cleanup of this.mountCleanups) {
       cleanup();
@@ -1974,16 +2034,7 @@ export class Stage {
     this.sceneTransitionRunning = false;
     this._clearPromotedElements();
 
-    if (
-      snap.backgroundProperties &&
-      this.backgroundSource &&
-      typeof this.backgroundSource !== "string"
-    ) {
-      for (const [key, value] of Object.entries(snap.backgroundProperties)) {
-        (this.backgroundSource as unknown as Record<string, unknown>)[key] =
-          copyPropertyValue(value);
-      }
-    }
+    this._restoreBackground(snap);
     // 1. Restore propertyState map from immutable snapshot
     this.propertyState.clear();
     for (const [id, props] of snap.properties.entries()) {
@@ -2054,6 +2105,14 @@ export class Stage {
   private _startStepTransition(stepIdx: number): void {
     const step = this.steps[stepIdx];
     if (!step) return;
+    const backgroundSnapshot = this.snapshots[stepIdx];
+    if (backgroundSnapshot) {
+      this._restoreBackground(backgroundSnapshot);
+      if (backgroundSnapshot.theme) {
+        this.currentTheme = { ...backgroundSnapshot.theme };
+        this._applyTheme(this.currentTheme);
+      }
+    }
 
     this.emit("evt:nav:stepChanged", {
       index: stepIdx,
@@ -2187,7 +2246,10 @@ export class Stage {
                   t.property === "x" ||
                   t.property === "y" ||
                   t.property === "scale" ||
-                  t.property === "rotation"),
+                  t.property === "rotation" ||
+                  t.property === "rotationX" ||
+                  t.property === "rotationY" ||
+                  t.property === "z"),
             );
             if (motionTransition) {
               stepTransitions.push({
@@ -2279,10 +2341,16 @@ export class Stage {
       }
     }
 
-    const maxDuration = Math.max(
-      ...scheduledTransitions.map((t) => t.endOffsetMs),
-      (this.options.defaultDuration || 0.6) * 1000,
-    );
+    if (scheduledTransitions.length === 0) {
+      this.isAnimating = false;
+      this.animFrameId = null;
+      this.activeTransitionsSnapshot = [];
+      this._endTransitionMark(step.sceneName, stepIdx);
+      this._applySnapshot(stepIdx);
+      return;
+    }
+
+    const maxDuration = Math.max(...scheduledTransitions.map((t) => t.endOffsetMs));
 
     this.lastFrameTime = performance.now();
     this.maxFrameDurationMs = 0;
@@ -2410,7 +2478,31 @@ export class Stage {
     const brightness = (props.brightness as number) ?? 1;
     const color = props.color as string | undefined;
 
-    const { transform, transformOrigin } = computeTransform(x, y, scale, rotation, origin);
+    if (opacity > 0 && node.style.display === "none") node.style.display = "";
+    if (props.width !== undefined) {
+      const formattedWidth = cssLength(props.width as Size);
+      if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
+        node.style.width = formattedWidth;
+      }
+    } else if ("width" in props && node.style.width) {
+      node.style.removeProperty("width");
+    }
+    if (props.height !== undefined) {
+      const formattedHeight = cssLength(props.height as Size);
+      if (formattedHeight !== undefined && node.style.height !== formattedHeight) {
+        node.style.height = formattedHeight;
+      }
+    } else if ("height" in props && node.style.height) {
+      node.style.removeProperty("height");
+    }
+    const { transform, transformOrigin } = computeTransform(x, y, scale, rotation, origin, {
+      rotationX: props.rotationX as number | undefined,
+      rotationY: props.rotationY as number | undefined,
+      z: props.z as number | undefined,
+      perspective: this.perspective,
+      center: [this.unitsWide / 2, this.unitsTall / 2],
+      spatial: this.spatialElements.has(element.id),
+    });
 
     const managed = element as StageManagedElement;
     const isCustomPositioned =
@@ -2460,22 +2552,6 @@ export class Stage {
     if (props.zIndex !== undefined) {
       const zNum = Number(props.zIndex);
       node.style.zIndex = Number.isFinite(zNum) ? String(Math.round(zNum)) : String(props.zIndex);
-    }
-    if (props.width !== undefined) {
-      const formattedWidth = cssLength(props.width as Size);
-      if (formattedWidth !== undefined && node.style.width !== formattedWidth) {
-        node.style.width = formattedWidth;
-      }
-    } else if ("width" in props && node.style.width) {
-      node.style.removeProperty("width");
-    }
-    if (props.height !== undefined) {
-      const formattedHeight = cssLength(props.height as Size);
-      if (formattedHeight !== undefined && node.style.height !== formattedHeight) {
-        node.style.height = formattedHeight;
-      }
-    } else if ("height" in props && node.style.height) {
-      node.style.removeProperty("height");
     }
 
     this._syncElementFields(element, props, STYLE_RENDERED_KEYS);

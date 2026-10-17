@@ -82,7 +82,16 @@ class CSSBackgroundElementImpl implements CSSBackgroundElement {
     };
   }
 
+  play(): void {
+    this.domElement.style.animationPlayState = "running";
+  }
+
+  pause(): void {
+    this.domElement.style.animationPlayState = "paused";
+  }
+
   dispose(): void {
+    this.pause();
     this.domElement.remove();
   }
 }

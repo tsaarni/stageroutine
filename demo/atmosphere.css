@@ -1,0 +1,42 @@
+.demo-atmosphere-graphic {
+  animation: atmosphere-drift 40s linear infinite;
+}
+
+/* The oversized glow's center follows the edges, never crossing the text area. */
+@keyframes atmosphere-drift {
+  0%,
+  100% {
+    background-position:
+      center,
+      0% 0%,
+      0 0,
+      center;
+  }
+  25% {
+    background-position:
+      center,
+      100% 0%,
+      0 0,
+      center;
+  }
+  50% {
+    background-position:
+      center,
+      100% 100%,
+      0 0,
+      center;
+  }
+  75% {
+    background-position:
+      center,
+      0% 100%,
+      0 0,
+      center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-atmosphere-graphic {
+    animation: none;
+  }
+}

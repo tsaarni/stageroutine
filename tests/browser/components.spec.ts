@@ -113,6 +113,61 @@ test.describe("Core Components", () => {
     expect(restoredD).toEqual(initialD);
   });
 
+  test("corner connector arrow follows its final segment and restores its anchor", async ({
+    stage,
+  }) => {
+    await stage.mount((SR) => {
+      const s = new SR.Stage({ channel: false });
+      const source = SR.Card("Source", {
+        id: "corner-source",
+        position: [20, 20],
+        width: 20,
+        height: 10,
+      });
+      const target = SR.Card("Target", {
+        id: "corner-target",
+        position: [60, 20],
+        width: 20,
+        height: 10,
+      });
+      const connector = SR.Connector(source, target, {
+        id: "corner-connector",
+        routing: "corner",
+        fromAnchor: "right",
+        toAnchor: "left",
+        padding: 0,
+      });
+
+      s.scene("Aligned").with(source, target, connector);
+      s.pause();
+      s.scene("Target moves").with(source, target, connector);
+      target.to({ position: [60, 40] }).duration(0.1);
+      s.pause();
+      return s;
+    });
+
+    const arrow = stage.locator("#corner-connector > g").first();
+    const readTransform = async () => {
+      const transform = await arrow.getAttribute("transform");
+      if (!transform) throw new Error("Arrowhead transform is missing");
+      const match = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\) rotate\(([-\d.]+)\)/);
+      if (!match) throw new Error(`Unexpected arrowhead transform: ${transform}`);
+      return { x: Number(match[1]), y: Number(match[2]), angle: Number(match[3]) };
+    };
+
+    const initial = await readTransform();
+    await stage.next();
+
+    const moved = await readTransform();
+    // The target's left anchor is x=60, y=45 stage units (12 SVG units per stage unit).
+    expect(moved.x).toBeCloseTo(60 * 12, 1);
+    expect(moved.y).toBeCloseTo(45 * 12, 1);
+    expect(moved.angle).toBeCloseTo(0, 1);
+
+    await stage.prev();
+    expect(await readTransform()).toEqual(initial);
+  });
+
   test("Connector pulse spawns a packet and cleans up when finished", async ({ stage }) => {
     await stage.mount((SR) => {
       const s = new SR.Stage({ channel: false });

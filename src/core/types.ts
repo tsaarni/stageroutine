@@ -143,6 +143,7 @@ export interface StepSnapshot {
   sceneName: string;
   stepIndex: number;
   properties: Map<string, Record<string, unknown>>;
+  backgroundSource: string | Background | ReactiveElementBase | null;
   backgroundProperties?: Record<string, unknown>;
   activeElementIds: Set<string>;
   theme?: ThemeConfig;
@@ -411,6 +412,8 @@ export interface Background {
  * @inline
  */
 export interface StageOptions {
+  /** Shared perspective distance in stage units. Default: 120. */
+  perspective?: number;
   /** Target HTML container or CSS selector to mount into (default: `document.body`). */
   target?: string | HTMLElement;
   /** Virtual stage width in pixels (default: `1920` or environment config). */
@@ -564,6 +567,15 @@ export interface ReactiveElementBase {
   set scale(value: ReactiveProp<number>);
   get rotation(): number;
   set rotation(value: ReactiveProp<number>);
+  /** X-axis tilt in degrees. Default: 0. */
+  get rotationX(): number;
+  set rotationX(value: ReactiveProp<number>);
+  /** Y-axis tilt in degrees. Default: 0. */
+  get rotationY(): number;
+  set rotationY(value: ReactiveProp<number>);
+  /** Depth in stage units; positive moves toward the viewer. Default: 0. */
+  get z(): number;
+  set z(value: ReactiveProp<number>);
   get blur(): number;
   set blur(value: ReactiveProp<number>);
   get brightness(): number;

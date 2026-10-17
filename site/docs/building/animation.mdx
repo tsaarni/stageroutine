@@ -19,8 +19,68 @@ title.opacity = to(1).duration(0.5);
 ```
 
 ### Supported Animated Properties
-- **Spatial**: `x`, `y`, `scale`, `rotation`, `width`, `height`
+- **Spatial**: `x`, `y`, `z`, `scale`, `rotation`, `rotationX`, `rotationY`, `width`, `height`
 - **Visual**: `opacity`, `blur`, `brightness`, `color`
+
+## Depth and tilt
+
+Use `rotationX` and `rotationY` to tilt an element. Both default to **0 degrees**.
+`origin` selects the pivot, as it does for 2D rotation.
+
+```typescript
+photo.to({ rotationX: -6, rotationY: 12 }).duration(1.2);
+```
+
+Use `z` to move an element through depth. It defaults to **0 stage units**.
+Positive values move toward the viewer and make the element appear larger.
+Negative values move away. `position` remains **[x, y]**.
+
+```typescript
+photo.to({ position: [100, 55], z: 30, rotationY: -15 }).duration(1);
+```
+
+Depth animates with position and tilt. `scale` remains an independent size multiplier,
+with a default of **1**. Going backward restores these properties.
+
+All elements share perspective centered on the stage. Set its distance when creating the stage:
+
+```typescript
+const stage = new Stage({ perspective: 120 });
+```
+
+The default distance is **120 stage units**. Smaller positive distances exaggerate depth.
+Keep every rotated corner below this distance on the Z axis.
+At `z: 0`, elements without tilt keep their normal 2D appearance.
+`zIndex` still controls stacking; depth does not automatically reorder elements.
+
+### Project points and check bounds
+
+Use `space` for geometry calculations, such as drawing a path through 3D points.
+Element placement only needs `position` and `z`.
+
+```typescript
+import { space } from "stageroutine";
+
+const camera = {
+  position: [stage.unitsWide / 2, stage.unitsTall / 2, stage.perspective] as const,
+};
+const point = space.project([100, 55, 30], camera);
+
+const corners = space.corners({
+  position: [100, 55, 30],
+  size: [60, 33.75],
+  rotation: [18, -28, 2],
+  scale: 0.85,
+}, camera);
+const bounds = space.bounds(corners);
+```
+
+Coordinates use stage units. The default geometry camera is **[80, 45, 120]**,
+which matches a default 16:9 stage. Pass the stage camera for other stage sizes or distances.
+`space.corners()` uses a center pivot by default. Its `origin` accepts percentages,
+such as **[0, 0]** for top-left. Match this to the element's origin when checking its bounds.
+Rotations apply in **X, Y, Z** order. Returned corners retain their source order:
+top-left, top-right, bottom-right, bottom-left.
 
 ## Relative Transitions
 

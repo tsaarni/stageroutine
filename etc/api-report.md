@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 210 symbols |
+| `stageroutine` | 215 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -385,6 +385,8 @@ export class Stage {
   get width(): number;
   /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number;
+  /** Shared perspective distance in stage units (default: 120). */
+  get perspective(): number;
   /** Stage width in stage units (160 on a 16:9 stage). */
   get unitsWide(): number;
   /** Stage height in stage units (always 90). */
@@ -405,7 +407,7 @@ export class Stage {
    */
   theme(config: ThemeConfig): this;
   /**
-   * Sets the stage background (color string, gradient, or procedural element).
+   * Selects the background for subsequent steps. Default: theme canvas. Restored on navigation.
    * @example ```ts
    * stage.background("#0f172a");
    * stage.background(Starfield());
@@ -682,6 +684,12 @@ export interface BulletListOptions extends ElementOptions {
     interactive?: boolean;
 }
 
+/** Perspective camera looking down negative Z. @category Motion */
+export interface Camera3D {
+    /** Camera coordinate in stage units. Default: [80, 45, 120]. */
+    position?: Point3D;
+}
+
 /**
  * Camera device info descriptor.
  * @category Components
@@ -948,6 +956,12 @@ export interface ElementOptions {
     scale?: number;
     /** Rotation in degrees (default: 0). */
     rotation?: number;
+    /** X-axis tilt in degrees (default: 0). */
+    rotationX?: number;
+    /** Y-axis tilt in degrees (default: 0). */
+    rotationY?: number;
+    /** Depth in stage units; positive moves toward the viewer (default: 0). */
+    z?: number;
     /** Whole-element opacity from 0 to 1 (default: 1). */
     opacity?: number;
     /** Blur in virtual pixels (default: 0). */
@@ -1513,6 +1527,20 @@ export interface PeriodicPulseOptions extends PulseOptions {
     delay?: number;
 }
 
+/** A flat element placed in 3D. @category Motion */
+export interface Plane3D {
+    /** Pivot coordinate in stage units. No default. */
+    position: Point3D;
+    /** Unscaled width and height in stage units. No default. */
+    size: Point;
+    /** X, Y, then Z rotation in degrees. Default: [0, 0, 0]. */
+    rotation?: Point3D;
+    /** Pivot as percentages of width and height. Default: [50, 50]. */
+    origin?: Point;
+    /** Uniform 3D scale. Default: 1. */
+    scale?: number;
+}
+
 /**
  * Command payload to set the pointer active state.
  * @category Core
@@ -1634,6 +1662,15 @@ export interface ReactiveElementBase {
     set scale(value: ReactiveProp<number>);
     get rotation(): number;
     set rotation(value: ReactiveProp<number>);
+    /** X-axis tilt in degrees. Default: 0. */
+    get rotationX(): number;
+    set rotationX(value: ReactiveProp<number>);
+    /** Y-axis tilt in degrees. Default: 0. */
+    get rotationY(): number;
+    set rotationY(value: ReactiveProp<number>);
+    /** Depth in stage units; positive moves toward the viewer. Default: 0. */
+    get z(): number;
+    set z(value: ReactiveProp<number>);
     get blur(): number;
     set blur(value: ReactiveProp<number>);
     get brightness(): number;
@@ -1944,6 +1981,8 @@ export interface StageEventMap {
  * @inline
  */
 export interface StageOptions {
+    /** Shared perspective distance in stage units. Default: 120. */
+    perspective?: number;
     /** Target HTML container or CSS selector to mount into (default: `document.body`). */
     target?: string | HTMLElement;
     /** Virtual stage width in pixels (default: `1920` or environment config). */
@@ -2531,6 +2570,9 @@ export type ElementTransitionProps<T = ReactiveElementBase> = {
     size?: ReactiveProp<Size>;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
+    rotationX?: ReactiveProp<number>;
+    rotationY?: ReactiveProp<number>;
+    z?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
     blur?: ReactiveProp<number>;
     brightness?: ReactiveProp<number>;
@@ -2653,6 +2695,13 @@ export type Point = readonly [
     y: number
 ];
 
+/** A 3D coordinate in stage units; positive Z points toward the viewer. @category Motion */
+export type Point3D = readonly [
+    number,
+    number,
+    number
+];
+
 /**
  * Stage coordinate pair in stage units, or `"center"` to center on both axes.
  * @category Core
@@ -2683,6 +2732,14 @@ export type PositionUpdater = ((x: number, y: number) => readonly [
     PositionCoord,
     PositionCoord
 ]);
+
+/** Projected source corners: top-left, top-right, bottom-right, bottom-left. Coordinates use stage units. @category Motion */
+export type ProjectedQuad = readonly [
+    Point,
+    Point,
+    Point,
+    Point
+];
 
 /**
  * Represents a property that accepts a static value, a reactive transition descriptor,
@@ -2786,6 +2843,9 @@ export const motion: { arc(degrees?: number): MotionPath; bezier(options: Bezier
 
 /** Geometric SVG path generators for shapes, cards, and clipping frames. */
 export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; speechBubble(options?: SpeechBubblePathOptions): PathFunction; thoughtBubble(options?: ThoughtBubblePathOptions): PathFunction; };
+
+/** Pure 3D rotation, perspective projection, and bounds helpers. */
+export const space: { project: (point: Point3D, camera?: Camera3D) => Point; corners: (plane: Plane3D, camera?: Camera3D) => ProjectedQuad; bounds: (quad: ProjectedQuad) => { x: number; y: number; width: number; height: number; }; };
 
 /** Collection of all built-in theme presets. */
 export const themes: { readonly defaultDark: ThemeConfig; readonly defaultLight: ThemeConfig; readonly dracula: ThemeConfig; readonly tokyoNight: ThemeConfig; readonly cyberpunk: ThemeConfig; };

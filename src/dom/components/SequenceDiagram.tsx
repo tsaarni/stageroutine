@@ -243,12 +243,16 @@ class LifelineElementImpl extends DOMElementImpl implements LifelineElement {
 
     this.onMount(() => this._update());
     this.onUnmount(
-      actor.onUpdate(() => {
+      actor.onUpdate((progress) => {
+        const previousTop = this.domElement.style.top;
         this._update();
         for (const act of this.activations) {
           act._update();
         }
-        this.diagram?.updateLifelineLengths();
+        // Refresh settled snapshots and moved attachments without undoing an outgoing retraction.
+        if (progress === 1 || this.domElement.style.top !== previousTop) {
+          this.diagram?.updateLifelineLengths();
+        }
       }),
     );
   }

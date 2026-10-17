@@ -882,12 +882,12 @@ class ConnectorElementImpl extends DOMElementImpl implements ConnectorElement {
     const dFull = buildPath(startPt, endPt);
     this.pathNode.setAttribute("d", dFull);
 
-    // Measure end tangent from the path geometry.
+    // Straight paths use the chord tangent. Routed paths use their actual final segment.
     let endTx = chordNx;
     let endTy = chordNy;
     let startTx = -chordNx;
     let startTy = -chordNy;
-    if (this.routing === "arc" || this.routing === "bezier") {
+    if (this.routing !== "straight") {
       try {
         const len = this.pathNode.getTotalLength();
         if (len > 2) {

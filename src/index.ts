@@ -62,6 +62,8 @@ if (document.fonts) {
 // Core runtime
 export { logger, Stage } from "./core/index";
 export type { LogLevel } from "./core/logger";
+export type { Camera3D, Plane3D, Point3D, ProjectedQuad } from "./core/space";
+export { space } from "./core/space";
 export type { Scene } from "./core/stage";
 export type { TerminalStatus } from "./core/terminal-protocol";
 export type {
@@ -278,9 +280,7 @@ export type {
 } from "./overlays/index";
 // Overlays
 export { Annotation, LaserPointer, NavigationOverlay } from "./overlays/index";
-
 // Presenter
 export { PresenterClient, PresenterRecorder } from "./presenter/index";
-
 // Theming
 export { cyberpunk, defaultDark, defaultLight, dracula, themes, tokyoNight } from "./theme/index";

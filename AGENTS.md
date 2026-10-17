@@ -10,7 +10,7 @@ Execution Rules:
 - State must be snapshot-safe so going backward (`stage.prev()`) restores previous values cleanly.
 - Keep stage elements as flat siblings. Use `layout` to calculate coordinates; do not wrap elements in layout `<div>` containers.
 - Export creation functions (like `Title()`, `Card()`) from `src/index.ts`. Keep internal element classes and builders private.
-- All animation loops and background effects must stop completely when the stage is at rest (`active_raf_count` is 0).
+- Stop transition animation loops when transitions finish. Intentional ambient effects, such as animated backgrounds, gradients, and glow, may continue while visible, including during presenter pauses. Stop ambient effects when hidden or unmounted. Expect `active_raf_count` to be 0 only when no transitions or intentional ambient effects are active.
 - Never run `git commit` or `git push`. Leave all changes in the working tree for the user to review.
 
 

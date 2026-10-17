@@ -86,6 +86,12 @@ export interface ElementOptions {
   scale?: number;
   /** Rotation in degrees (default: 0). */
   rotation?: number;
+  /** X-axis tilt in degrees (default: 0). */
+  rotationX?: number;
+  /** Y-axis tilt in degrees (default: 0). */
+  rotationY?: number;
+  /** Depth in stage units; positive moves toward the viewer (default: 0). */
+  z?: number;
   /** Whole-element opacity from 0 to 1 (default: 1). */
   opacity?: number;
   /** Blur in virtual pixels (default: 0). */
@@ -228,6 +234,36 @@ export class DOMElementImpl implements DOMElement {
     else if (typeof value === "function") this._rotation = value(this._rotation);
     else this._rotation = value.target as number;
   }
+  private _rotationX = 0;
+  get rotationX(): number {
+    return this._rotationX;
+  }
+  set rotationX(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._rotationX = value;
+    else if (typeof value === "function") this._rotationX = value(this._rotationX);
+    else this._rotationX = value.target as number;
+  }
+
+  private _rotationY = 0;
+  get rotationY(): number {
+    return this._rotationY;
+  }
+  set rotationY(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._rotationY = value;
+    else if (typeof value === "function") this._rotationY = value(this._rotationY);
+    else this._rotationY = value.target as number;
+  }
+
+  private _z = 0;
+  get z(): number {
+    return this._z;
+  }
+  set z(value: ReactiveProp<number>) {
+    if (typeof value === "number") this._z = value;
+    else if (typeof value === "function") this._z = value(this._z);
+    else this._z = value.target as number;
+  }
+
   private _opacity = 1;
   get opacity(): number {
     return this._opacity;
@@ -414,6 +450,9 @@ export class DOMElementImpl implements DOMElement {
     this.height = options.height ?? options.size;
     this.scale = options.scale ?? 1;
     this.rotation = options.rotation ?? 0;
+    this.rotationX = options.rotationX ?? 0;
+    this.rotationY = options.rotationY ?? 0;
+    this.z = options.z ?? 0;
     this.opacity = options.opacity ?? 1;
     this.blur = options.blur ?? 0;
     this.brightness = options.brightness ?? 1;
@@ -452,6 +491,13 @@ export class DOMElementImpl implements DOMElement {
         this.scale as number,
         this.rotation as number,
         this.origin,
+        {
+          rotationX: this.rotationX,
+          rotationY: this.rotationY,
+          z: this.z,
+          perspective: getActiveStage().perspective,
+          center: [getActiveStage().unitsWide / 2, getActiveStage().unitsTall / 2],
+        },
       );
       this.domElement.style.transform = transform;
       this.domElement.style.transformOrigin = transformOrigin;

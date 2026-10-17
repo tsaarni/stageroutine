@@ -29,8 +29,8 @@ test.describe("Stage Navigation & Restoration", () => {
       });
       s.scene("Opening").with(title, caption, hint);
       s.pause();
-      caption.opacity = SR.to(1).duration(0.4);
-      hint.opacity = SR.to(1).duration(0.4).delay(0.2);
+      caption.opacity = SR.to(1).duration(0.15);
+      hint.opacity = SR.to(1).duration(0.15).delay(0.08);
       s.pause();
       return s;
     });

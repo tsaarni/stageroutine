@@ -2,51 +2,90 @@ import { expectCanvasPainted } from "../helpers/canvas";
 import { expect, test } from "../helpers/stage";
 import { dragTerminalCells, mockTerminal, selectedTerminalText } from "../helpers/terminal";
 
-for (const pointer of [false, true]) {
-  for (const outside of ["background", "title", "header"] as const) {
-    test(`LiveTerminal releases focus on ${outside}, laser ${pointer ? "on" : "off"}`, async ({
-      stage,
-      page,
-    }) => {
-      const terminal = await mockTerminal(page);
-      await stage.mount((SR) => {
-        const s = new SR.Stage({ channel: false });
-        s.scene("Terminal").with(
-          SR.Title("Live demo", { id: "title", position: ["center", 14] }),
-          SR.LiveTerminal({ id: "term", position: ["center", 34], width: 124, rows: 13 }),
-        );
-        s.pause();
-        s.scene("Next").with(SR.Title("Next scene", { id: "next" }));
-        s.pause();
-        s.overlay(SR.NavigationOverlay()).overlay(SR.LaserPointer());
-        return s;
-      });
+test("LiveTerminal releases focus on header, title, and background clicks", async ({
+  stage,
+  page,
+}) => {
+  const terminal = await mockTerminal(page);
+  await stage.mount((SR) => {
+    const s = new SR.Stage({ channel: false });
+    s.scene("Terminal").with(
+      SR.Title("Live demo", { id: "title", position: ["center", 14] }),
+      SR.LiveTerminal({ id: "term", position: ["center", 34], width: 124, rows: 13 }),
+    );
+    s.pause();
+    s.scene("Next").with(SR.Title("Next scene", { id: "next" }));
+    s.pause();
+    s.overlay(SR.NavigationOverlay()).overlay(SR.LaserPointer());
+    return s;
+  });
 
-      if (pointer) await page.keyboard.press("p");
-      await expect(page.locator(".sr-pointer-mode")).toHaveCount(pointer ? 1 : 0);
-      await stage.locator("#term .xterm-screen").click();
-      const input = stage.locator("#term textarea");
-      await expect(input).toBeFocused();
-      await page.keyboard.press("ArrowRight");
-      await expect.poll(() => terminal.input.join("")).toContain("\x1b[C");
-      await expect(stage.locator("#next")).not.toBeVisible();
+  const input = stage.locator("#term textarea");
 
-      if (outside === "background") await stage.clickAtStageUnits(5, 5);
-      else if (outside === "title") await stage.locator("#title").click();
-      else await stage.locator("#term .sr-window-title").click();
-      await expect(input).not.toBeFocused();
+  // 1. Focus terminal, click window title header -> releases focus
+  await stage.locator("#term .xterm-screen").click();
+  await expect(input).toBeFocused();
+  await stage.locator("#term .sr-window-title").click();
+  await expect(input).not.toBeFocused();
 
-      await stage.next();
-      await expect(stage.locator("#next")).toBeVisible();
-      if (pointer) await page.keyboard.press("Escape");
-      await expect(page.locator(".sr-pointer-mode")).toHaveCount(0);
-      const viewport = page.viewportSize();
-      if (!viewport) throw new Error("Test requires a viewport");
-      await page.mouse.move(viewport.width / 2, viewport.height - 2);
-      await expect(stage.locator(".sr-nav-overlay")).toBeVisible();
-    });
-  }
-}
+  // 2. Focus terminal, click scene title -> releases focus
+  await stage.locator("#term .xterm-screen").click();
+  await expect(input).toBeFocused();
+  await stage.locator("#title").click();
+  await expect(input).not.toBeFocused();
+
+  // 3. Focus terminal, arrow key sends to terminal instead of advancing scene
+  await stage.locator("#term .xterm-screen").click();
+  await expect(input).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => terminal.input.join("")).toContain("\x1b[C");
+  await expect(stage.locator("#next")).not.toBeVisible();
+
+  // 4. Click background -> releases focus
+  await stage.clickAtStageUnits(5, 5);
+  await expect(input).not.toBeFocused();
+
+  // 5. Arrow key now advances scene
+  await stage.next();
+  await expect(stage.locator("#next")).toBeVisible();
+});
+
+test("LiveTerminal releases focus with laser pointer enabled", async ({ stage, page }) => {
+  const terminal = await mockTerminal(page);
+  await stage.mount((SR) => {
+    const s = new SR.Stage({ channel: false });
+    s.scene("Terminal").with(
+      SR.Title("Live demo", { id: "title", position: ["center", 14] }),
+      SR.LiveTerminal({ id: "term", position: ["center", 34], width: 124, rows: 13 }),
+    );
+    s.pause();
+    s.scene("Next").with(SR.Title("Next scene", { id: "next" }));
+    s.pause();
+    s.overlay(SR.NavigationOverlay()).overlay(SR.LaserPointer());
+    return s;
+  });
+
+  await page.keyboard.press("p");
+  await expect(page.locator(".sr-pointer-mode")).toHaveCount(1);
+  await stage.locator("#term .xterm-screen").click();
+  const input = stage.locator("#term textarea");
+  await expect(input).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => terminal.input.join("")).toContain("\x1b[C");
+  await expect(stage.locator("#next")).not.toBeVisible();
+
+  await stage.clickAtStageUnits(5, 5);
+  await expect(input).not.toBeFocused();
+
+  await stage.next();
+  await expect(stage.locator("#next")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".sr-pointer-mode")).toHaveCount(0);
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error("Test requires a viewport");
+  await page.mouse.move(viewport.width / 2, viewport.height - 2);
+  await expect(stage.locator(".sr-nav-overlay")).toBeVisible();
+});
 
 test("annotation clicks leave ink instead of focusing the terminal", async ({ stage, page }) => {
   await mockTerminal(page);

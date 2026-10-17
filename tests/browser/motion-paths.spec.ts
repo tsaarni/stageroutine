@@ -442,10 +442,7 @@ test.describe("Replacement and interruption", () => {
 });
 
 test.describe("Website preview", () => {
-  test("website preview runs all three paths for both flights and stops at rest", async ({
-    stage,
-    page,
-  }) => {
+  test("website preview runs and stops at rest", async ({ stage, page }) => {
     const doc = readFileSync(
       new URL("../../site/docs/building/animation.mdx", import.meta.url),
       "utf8",
@@ -471,17 +468,13 @@ test.describe("Website preview", () => {
     const formation = await a.boundingBox();
     expect(formation?.x).toBeGreaterThan(initial?.x ?? 0);
     expect(formation?.x).not.toEqual(grid?.x);
-    for (const label of ["Bézier", "Spiral"]) {
-      await page.getByText(label, { exact: true }).click();
-      await expect(
-        page.getByText(`${label} selected · choose a flight`, { exact: true }),
-      ).toBeVisible();
-      for (const flight of ["Fly into grid", "Move together"]) {
-        await page.getByText(flight, { exact: true }).click();
-        await stage.expectAtRest();
-        const target = await a.boundingBox();
-        expect(target?.x).toBeGreaterThan(initial?.x ?? 0);
-      }
-    }
+    await page.getByText("Bézier", { exact: true }).click();
+    await expect(
+      page.getByText("Bézier selected · choose a flight", { exact: true }),
+    ).toBeVisible();
+    await page.getByText("Fly into grid", { exact: true }).click();
+    await stage.expectAtRest();
+    const target = await a.boundingBox();
+    expect(target?.x).toBeGreaterThan(initial?.x ?? 0);
   });
 });

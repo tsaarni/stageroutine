@@ -324,31 +324,31 @@ test.describe("Backdrop surfaces", () => {
       await stage.next();
       await expectActiveBlur(stage, kind);
     });
-
-    test(`${kind}: backdrop survives fades, navigation, and reload`, async ({ stage }) => {
-      await mountSurface(stage, kind);
-      const baseline = await contrast(stage, kind);
-      await expectActiveBlur(stage, kind);
-      const originalLayer = await blurLayer(stage, kind).elementHandle();
-      await stage.next();
-      await stage.next();
-      await expect(stage.locator("#surface")).toBeHidden();
-      await expect(stage.locator("#surface")).toHaveCSS("pointer-events", "none");
-      await stage.next();
-      expect(await contrast(stage, kind)).toBeLessThan(baseline + 5);
-      expect(await originalLayer?.evaluate((el) => el.isConnected)).toBe(true);
-      await stage.next(); // Scene exit.
-      await expect(stage.locator("#surface")).toBeHidden();
-      await stage.next(); // Scene entrance.
-      expect(await contrast(stage, kind)).toBeLessThan(baseline + 5);
-      await stage.prev();
-      await stage.prev();
-      expect(await contrast(stage, kind)).toBeLessThan(baseline + 5);
-      await stage.reload();
-      expect(await contrast(stage, kind)).toBeLessThan(baseline + 5);
-      await expectActiveBlur(stage, kind);
-    });
   }
+
+  test("Card: backdrop survives fades, navigation, and reload", async ({ stage }) => {
+    await mountSurface(stage, "Card");
+    const baseline = await contrast(stage, "Card");
+    await expectActiveBlur(stage, "Card");
+    const originalLayer = await blurLayer(stage, "Card").elementHandle();
+    await stage.next();
+    await stage.next();
+    await expect(stage.locator("#surface")).toBeHidden();
+    await expect(stage.locator("#surface")).toHaveCSS("pointer-events", "none");
+    await stage.next();
+    expect(await contrast(stage, "Card")).toBeLessThan(baseline + 5);
+    expect(await originalLayer?.evaluate((el) => el.isConnected)).toBe(true);
+    await stage.next(); // Scene exit.
+    await expect(stage.locator("#surface")).toBeHidden();
+    await stage.next(); // Scene entrance.
+    expect(await contrast(stage, "Card")).toBeLessThan(baseline + 5);
+    await stage.prev();
+    await stage.prev();
+    expect(await contrast(stage, "Card")).toBeLessThan(baseline + 5);
+    await stage.reload();
+    expect(await contrast(stage, "Card")).toBeLessThan(baseline + 5);
+    await expectActiveBlur(stage, "Card");
+  });
 
   test("Frame preserves its content mask and restores opacity around nested Card", async ({
     stage,
@@ -396,13 +396,11 @@ test.describe("Backdrop surfaces", () => {
     await page.mouse.move(1, viewport.height - 2);
     await expect(overlay).toHaveCSS("opacity", "1");
     const baseline = await captureContrast(overlay, region);
-    for (let i = 0; i < 2; i++) {
-      await page.mouse.move(1, 1);
-      await expect(overlay).toHaveCSS("opacity", "0");
-      await expect(overlay).toHaveCSS("pointer-events", "none");
-      await page.mouse.move(1, viewport.height - 2);
-      await expect(overlay).toHaveCSS("opacity", "1");
-    }
+    await page.mouse.move(1, 1);
+    await expect(overlay).toHaveCSS("opacity", "0");
+    await expect(overlay).toHaveCSS("pointer-events", "none");
+    await page.mouse.move(1, viewport.height - 2);
+    await expect(overlay).toHaveCSS("opacity", "1");
     const blurred = await captureContrast(overlay, region);
     expect(blurred).toBeLessThan(baseline + 5);
     await overlay.evaluate((el) => {

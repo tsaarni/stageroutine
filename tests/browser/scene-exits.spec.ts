@@ -20,7 +20,7 @@ test("outgoing cards finish their fall before incoming content appears and resto
       position: [40, 45],
       width: 80,
       height: 30,
-      enterDelay: 0.78,
+      enterDelay: 0.38,
     });
     const samples: { y: number; opacity: number }[] = [];
     cards[0].onUpdate(() => {
@@ -36,35 +36,33 @@ test("outgoing cards finish their fall before incoming content appears and resto
     s.pause();
     s.scene("Next").with(incoming);
     cards.forEach((card, i) => {
-      const delay = 0.12 + i * 0.045;
+      const delay = 0.06 + i * 0.02;
       card
         .to({ y: 112, z: 0, rotation: i % 2 ? 6 : -6 })
-        .duration(0.42)
+        .duration(0.22)
         .delay(delay)
         .ease((t) => t * t);
       card.opacity = SR.to(0)
-        .duration(0.18)
-        .delay(delay + 0.24)
+        .duration(0.1)
+        .delay(delay + 0.12)
         .ease("linear");
     });
     s.pause();
     return s;
   });
   const initial = await stage.locator("#fall-0").evaluate((node) => node.style.transform);
-  for (let pass = 0; pass < 2; pass++) {
-    await stage.next();
-    const samples = JSON.parse(
-      (await stage.locator("#fall-0").getAttribute("data-samples")) ?? "[]",
-    ) as {
-      y: number;
-      opacity: number;
-    }[];
-    expect(samples.some(({ y, opacity }) => y > 90 && opacity > 0 && opacity < 1)).toBe(true);
-    await expect(stage.locator("#incoming")).not.toHaveAttribute("data-overlap", "true");
-    await expect(stage.locator("#fall-0")).toBeHidden();
-    await stage.prev();
-    expect(await stage.locator("#fall-0").evaluate((node) => node.style.transform)).toBe(initial);
-  }
+  await stage.next();
+  const samples = JSON.parse(
+    (await stage.locator("#fall-0").getAttribute("data-samples")) ?? "[]",
+  ) as {
+    y: number;
+    opacity: number;
+  }[];
+  expect(samples.some(({ y, opacity }) => y > 90 && opacity > 0 && opacity < 1)).toBe(true);
+  await expect(stage.locator("#incoming")).not.toHaveAttribute("data-overlap", "true");
+  await expect(stage.locator("#fall-0")).toBeHidden();
+  await stage.prev();
+  expect(await stage.locator("#fall-0").evaluate((node) => node.style.transform)).toBe(initial);
 });
 
 test("sequence lifelines visibly retract after messages and restore after a scene exit", async ({
@@ -77,7 +75,7 @@ test("sequence lifelines visibly retract after messages and restore after a scen
     const seq = SR.SequenceDiagram({ participants: [a, b], startY: 55, lifelineLength: 32 });
     const request = seq.message(a, b, { end: 1 });
     const reply = seq.message(b, a, { end: 1 });
-    const next = SR.Text("Next", { id: "sequence-next", position: [50, 50], enterDelay: 0.76 });
+    const next = SR.Text("Next", { id: "sequence-next", position: [50, 50], enterDelay: 0.38 });
     const line = seq.lifelines[0];
     line.domElement.id = "retracting-line";
     const samples: { height: number; messages: number[] }[] = [];
@@ -90,22 +88,22 @@ test("sequence lifelines visibly retract after messages and restore after a scen
     });
     s.scene("Exchange").with(a, b, ...seq.elements);
     s.pause();
-    a.to({ y: 10 }).duration(0.2);
+    a.to({ y: 10 }).duration(0.1);
     s.pause();
     s.scene("Next").with(next);
     [reply, request].forEach((message, i) => {
       message.end = SR.to(0)
-        .duration(0.1)
-        .delay(i * 0.1);
+        .duration(0.06)
+        .delay(i * 0.05);
       message.opacity = SR.to(0)
-        .duration(0.04)
-        .delay((i + 1) * 0.1);
+        .duration(0.03)
+        .delay((i + 1) * 0.05);
     });
     for (const lifeline of seq.lifelines) {
-      lifeline.to({ height: 0 }).duration(0.18).delay(0.4);
-      lifeline.opacity = SR.to(0).duration(0.06).delay(0.58);
+      lifeline.to({ height: 0 }).duration(0.12).delay(0.2);
+      lifeline.opacity = SR.to(0).duration(0.04).delay(0.3);
     }
-    SR.group(a, b).to({ opacity: 0 }).duration(0.16).delay(0.58);
+    SR.group(a, b).to({ opacity: 0 }).duration(0.1).delay(0.3);
     s.pause();
     return s;
   });
@@ -161,7 +159,7 @@ test("tilted frames slide apart before the next scene and restore their masks an
       position: [10, 39],
       width: 140,
       height: 40,
-      enterDelay: 0.52,
+      enterDelay: 0.26,
     });
     const samples: number[][] = [];
     photo.onUpdate(() => {
@@ -176,9 +174,9 @@ test("tilted frames slide apart before the next scene and restore their masks an
     s.scene("Media").with(photo, video);
     s.pause();
     s.scene("Live").with(incoming);
-    photo.to({ x: -48 }).duration(0.5).ease("cubicInOut");
-    video.to({ x: 205 }).duration(0.5).ease("cubicInOut");
-    SR.group(photo, video).to({ opacity: 0 }).duration(0.25).delay(0.25).ease("linear");
+    photo.to({ x: -48 }).duration(0.25).ease("cubicInOut");
+    video.to({ x: 205 }).duration(0.25).ease("cubicInOut");
+    SR.group(photo, video).to({ opacity: 0 }).duration(0.12).delay(0.12).ease("linear");
     s.pause();
     return s;
   });

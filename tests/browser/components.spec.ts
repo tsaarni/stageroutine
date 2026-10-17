@@ -195,8 +195,8 @@ test.describe("Core Components", () => {
     // Advance to Scene 2 where pulse fires
     await stage.next();
 
-    // After completion, stage returns to clean rest:
-    expect(await stage.getMetric("animation_connector_pulses")).toBe(0);
+    // The finish event can remove the packet after the animation stops running.
+    await expect.poll(() => stage.getMetric("animation_connector_pulses")).toBe(0);
     await expect(connector.locator(".sr-pulse-packet")).toHaveCount(0);
     await stage.expectAtRest();
   });

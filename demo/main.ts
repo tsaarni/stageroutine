@@ -72,9 +72,11 @@ function pause(note: string) {
   stage.pause();
 }
 
+const page = { left: 12, right: 148, footer: 85 };
+
 function codeHint(code: string) {
   return Text(code, {
-    position: [148, 86],
+    position: [page.right, page.footer],
     origin: "bottom-right",
     color: "var(--sr-text-dim)",
     theme: { fontSans: "var(--sr-font-mono)", fontSizeBody: "var(--sr-font-size-kicker)" },
@@ -86,14 +88,15 @@ function heading(
   title: string,
   subtitle: string,
   code?: string,
-  options: { width?: number; subtitleY?: number } = {},
+  options: { width?: number; x?: number; y?: number } = {},
 ) {
-  const width = options.width ?? 140;
+  const width = options.width ?? 112;
   const elements = [
-    Kicker(section, { position: [10, 12] }),
-    Title(title, { position: [10, 18], width }),
-    Text(subtitle, { position: [10, options.subtitleY ?? 29], width }),
+    Kicker(section),
+    Title(title, { width }),
+    Text(subtitle, { width: Math.min(width, 96) }),
   ];
+  layout.vstack(elements, { x: options.x ?? page.left, y: options.y ?? 11, gap: 1.5 });
   if (code) elements.push(codeHint(code));
   return elements;
 }
@@ -137,18 +140,18 @@ const promise = Title("Code-driven presentations built for the stage.", {
 })
   .decorate(gradient())
   .decorate(glow());
-layout.vstack([brand, promise], { x: "center", y: "center", gap: 5, align: "center" });
+layout.vstack([brand, promise], { x: "center", y: "center", gap: 2.5, align: "center" });
 
 const introCode = codeHint('stage.scene("Stage presence").with(Title("StageRoutine"));');
 introCode.opacity = 0;
 const intro = Text("A presentation written in TypeScript. Including this one.", {
-  position: [80, 67],
+  position: [80, 59],
   origin: "center",
   color: "var(--sr-text-muted)",
   opacity: 0,
 });
 const controls = Kicker("Arrow keys to advance · Go back whenever you like", {
-  position: [12, 86],
+  position: [page.left, page.footer],
   origin: "bottom-left",
 });
 stage.scene("Stage presence").with(brand, promise, introCode, intro, controls);
@@ -158,7 +161,7 @@ pause(
 intro.opacity = to(1).duration(0.65).ease("smooth");
 introCode.opacity = to(1).duration(0.55).delay(0.2).ease("smooth");
 pause(
-  "A presentation written in TypeScript. Including this one. The bottom-right code hint shows a title being created and added to a scene. The centered title stays still. Go backward to hide the reveal, then advance to replay it.",
+  "A presentation written in TypeScript. Including this one. The footer code hint shows a title being created and added to a scene. The centered title stays still. Go backward to hide the reveal, then advance to replay it.",
 );
 
 // A persistent title becomes the masthead; the same cards anchor the next scenes.
@@ -174,15 +177,16 @@ const launch = [
     opacity: 0,
   }),
 );
-layout.hstack(launch, { x: "center", y: 44, gap: 4 });
+layout.hstack(launch, { x: "center", y: 47, gap: 6 });
 const composition = heading(
   "01 / COMPOSITION",
   "Same cast. Different scene",
-  "The same cards move and resize. No disappearing act.",
+  "Three ideas. One shared cast.",
   "stage.scene('Next').with(...cards) · stagger(cards)",
+  { x: 44, y: 27, width: 72 },
 );
 stage.scene("Same cast Different scene").with(brand, ...composition, ...launch);
-brand.to({ position: [10, 4], origin: "top-left", scale: 0.3 });
+brand.to({ position: [page.right, 9], origin: "top-right", scale: 0.24 });
 stagger(launch).after(brand);
 pause(
   "The opening title becomes our masthead. Cards arrive in a short cascade. These are independent elements positioned by a layout helper, and we will keep them for the next scene.",
@@ -191,22 +195,22 @@ pause(
 const focus = heading(
   "02 / CONTINUITY",
   "Give the next idea room",
-  "The Build card gets more space. The others step aside.",
+  "Make room for what matters.",
   "card.to({ position, width })",
 );
 const focusCode = CodeBlock(
   [
     "stage.scene('Build')",
     "  .with(plan, build, present);",
-    "build.to({ position: [69, 44], width: 48 });",
+    "build.to({ position: [66, 40], width: 66 });",
     "stage.pause();",
   ],
-  { position: [69, 56.5], width: 48, opacity: 0 },
+  { position: [66, 52], width: 66, opacity: 0 },
 ).decorate(rule());
 stage.scene("Give the next idea room").with(brand, ...focus, ...launch, focusCode);
-launch[0].to({ position: [43, 44], width: 20, opacity: 0.45 });
-launch[1].to({ position: [69, 44], width: 48 });
-launch[2].to({ position: [43, 56.5], width: 20, opacity: 0.45 });
+launch[0].to({ position: [28, 40], width: 26, opacity: 0.45 });
+launch[1].to({ position: [66, 40], width: 66 });
+launch[2].to({ position: [28, 52], width: 26, opacity: 0.45 });
 focusCode.opacity = to(1).after(launch[1]);
 pause(
   "The Build card expands while the other two become context. The code shows the same operation. Scene membership keeps shared objects alive; a pause records the next stop.",
@@ -216,7 +220,7 @@ pause(
 const routes = heading(
   "03 / MOTION",
   "The scenic route",
-  "Same start. Same finish. Four ways through.",
+  "Four routes between the same two points.",
   undefined,
   { width: 58 },
 );
@@ -233,7 +237,7 @@ const routeExamples: {
     detail: "A direct, steady handoff between endpoints.",
     code: ["runner.position = to(destination)", "  .duration(1.8)", "  .ease('cubicInOut');"],
     path: motion.arc(0),
-    laneY: 11,
+    laneY: 25,
     laneHeight: 12,
   },
   {
@@ -241,7 +245,7 @@ const routeExamples: {
     detail: "Curves smoothly around neighboring content.",
     code: ["runner.position = to(destination)", "  .path(motion.arc(80))", "  .duration(1.8);"],
     path: motion.arc(80),
-    laneY: 27,
+    laneY: 39,
     laneHeight: 12,
   },
   {
@@ -259,7 +263,7 @@ const routeExamples: {
         control2: [from[0] + dx * 0.68, from[1] + dx * 0.3],
       };
     }),
-    laneY: 43,
+    laneY: 53,
     laneHeight: 12,
   },
   {
@@ -271,13 +275,13 @@ const routeExamples: {
       "  .duration(1.8);",
     ],
     path: motion.spiral({ turns: 1.25 }),
-    laneY: 68,
-    laneHeight: 30,
+    laneY: 71,
+    laneHeight: 22,
   },
 ];
 const routeDetails = routeExamples.map((example, i) =>
   Text(example.detail, {
-    position: [10, 46],
+    position: [page.left, 40],
     width: 58,
     color: "var(--sr-text)",
     opacity: i === 0 ? 1 : 0,
@@ -285,7 +289,7 @@ const routeDetails = routeExamples.map((example, i) =>
 );
 const routeCodeBlocks = routeExamples.map((example, i) =>
   CodeBlock(example.code, {
-    position: [10, 56],
+    position: [page.left, 49],
     width: 58,
     opacity: i === 0 ? 1 : 0,
     interactive: false,
@@ -293,7 +297,7 @@ const routeCodeBlocks = routeExamples.map((example, i) =>
 );
 const routeFromX = 94;
 const routeToX = 128;
-const routeBox = { left: 90, width: 66 };
+const routeBox = { left: 90, width: 58 };
 
 function fitRouteToLane(
   path: MotionPath,
@@ -327,7 +331,7 @@ const fittedRoutes = routeExamples.map(({ path, laneY, laneHeight }) =>
   fitRouteToLane(path, laneFrom(laneY), laneTo(laneY), laneHeight),
 );
 const routeLabels = routeExamples.map(({ label, laneY }, i) =>
-  Kicker(label, { position: [76, laneY - 1.5], opacity: i === 0 ? 1 : 0.45 }),
+  Kicker(label, { position: [80, laneY - 4], opacity: i === 0 ? 1 : 0.45 }),
 );
 const routeGuides = routeExamples.map(({ laneY, laneHeight }, i) => {
   const top = laneY - laneHeight / 2;
@@ -403,7 +407,7 @@ routeExamples.forEach((example, i) => {
 const arrangement = heading(
   "04 / LAYOUT",
   "Everything in its place",
-  "Six cards rearrange themselves. Put the alignment ruler away.",
+  "One cast. Three formations.",
   "layout.hstack() → layout.grid() → .to({ z })",
 );
 const tiles = [
@@ -427,7 +431,10 @@ const tiles = [
   });
 });
 layout.hstack(tiles, { x: "center", y: 68.5, gap: 3.5 });
-const formationLabel = Kicker("01 / THE LINEUP", { position: [10, 36] });
+const formationLabel = Kicker("01 / THE LINEUP", {
+  position: [page.left, page.footer],
+  origin: "bottom-left",
+});
 const orbitCamera = {
   position: [stage.unitsWide / 2, stage.unitsTall / 2, stage.perspective] as const,
 };
@@ -532,7 +539,7 @@ pause(
 const topology = heading(
   "05 / CONNECTIONS",
   "Follow the publish button",
-  "Move the server. Its arrows come along for the ride.",
+  "A release moves from browser to live site.",
   "routing: 'straight' | 'corner' | 'arc' | 'bezier'",
 );
 const actorCard = (icon: typeof Globe, label: string, position: Point, background?: string) =>
@@ -543,10 +550,10 @@ const actorCard = (icon: typeof Globe, label: string, position: Point, backgroun
     position,
     background,
   });
-const browser = actorCard(Globe, "Browser", [19, 46]);
-const api = actorCard(Cpu, "Publish API", [71, 46], surface(ink));
-const database = actorCard(Database, "Release store", [123, 46]);
-const liveSite = actorCard(Rocket, "Live site", [123, 10], surface("#a5cdbf"));
+const browser = actorCard(Globe, "Browser", [24, 47]);
+const api = actorCard(Cpu, "Publish API", [72, 47], surface(ink));
+const database = actorCard(Database, "Release store", [120, 47]);
+const liveSite = actorCard(Rocket, "Live site", [120, 32], surface("#a5cdbf"));
 const request = Connector(browser, api, {
   label: "publish",
   routing: "straight",
@@ -604,10 +611,10 @@ pause(
 );
 pulseSequence(topologyConnectors, { loop: false });
 liveSite
-  .to({ position: [97, 10] })
+  .to({ position: [96, 32] })
   .duration(0.65)
   .ease("cubicInOut");
-api.to({ position: [69, 62], width: 22 });
+api.to({ position: [70, 63], width: 22 });
 pause(
   "The live-site card moves left as the API moves and resizes. Its deployment arc follows the card. Next, the site exits and the sequence focuses on the browser, API, and release store.",
 );
@@ -616,14 +623,14 @@ pause(
 const exchange = heading(
   "06 / SEQUENCES",
   "What happens after the click",
-  "Follow a request out, then watch the replies return.",
+  "One request. A complete round trip.",
   "SequenceDiagram() · message(a, b)",
 );
 const seq = SequenceDiagram({
   participants: [browser, api, database],
-  startY: 53,
+  startY: 49,
   gapY: 6.5,
-  lifelineLength: 30,
+  lifelineLength: 34,
   lifelineOpacity: 0,
 });
 const publish = seq.message(browser, api, { label: "POST /releases", end: 0 });
@@ -654,7 +661,7 @@ liveSite
 liveSite.opacity = to(0).duration(0.18).delay(0.42).ease("linear");
 layout.hstack([browser, api, database], {
   x: "center",
-  y: 36,
+  y: 33,
   width: 16.5,
   gap: 34,
   animate: true,
@@ -673,7 +680,7 @@ pause(
 const lifecycle = heading(
   "07 / STATE MACHINES",
   "A card's very short career",
-  "Backstage, entrance, spotlight, bow. Then encore?",
+  "Every entrance has an exit.",
   "Shape() + Card() + Connector() · state transitions",
 );
 const initialState = Shape(paths.circle(), {
@@ -688,7 +695,7 @@ const [backstage, entrance, spotlight, bow] = (
     ["Backstage", [43, 47], "#91b8da"],
     ["Making an entrance", [82, 47], "#b7a4d9"],
     ["Stealing the scene", [121, 47], "#a5cdbf"],
-    ["Taking a bow", [121, 65], "#b7a4d9"],
+    ["Taking a bow", [121, 67], "#b7a4d9"],
   ] as const
 ).map(([label, position, tint]) =>
   Card(label, {
@@ -701,7 +708,7 @@ const [backstage, entrance, spotlight, bow] = (
   }),
 );
 const finalState = Shape(paths.circle(), {
-  position: [43, 75],
+  position: [43, 72],
   origin: "center",
   size: 5,
   variant: "ghost",
@@ -765,7 +772,7 @@ pause(
 const checkHeading = heading(
   "08 / CODE & DATA",
   "One check away from the stage",
-  "The talk starts in two minutes. The pre-flight check has a small objection.",
+  "Two minutes to go. One thing to fix.",
   "Table().reveal() · CodeBlock() · replace(a, b)",
 );
 const checks = Table({
@@ -777,8 +784,8 @@ const checks = Table({
   ],
   rowsHidden: true,
   columnAlign: ["left", "center", "left"],
-  position: [10, 41],
-  width: 66,
+  position: [page.left, 37],
+  width: 62,
 });
 const code = CodeBlock(
   [
@@ -787,7 +794,7 @@ const code = CodeBlock(
     '  demoUrl: "http://localhost:30000",',
     "};",
   ],
-  { position: [84, 41], width: 66 },
+  { position: [82, 37], width: 66 },
 ).decorate(bracket());
 const transcript = TerminalBlock({
   title: "Recorded check output",
@@ -796,7 +803,7 @@ const transcript = TerminalBlock({
     "FAIL  Cannot reach port 30000",
     "1 extra zero. Very fixable.",
   ],
-  position: [84, 62],
+  position: [82, 51],
   width: 66,
 });
 stage.scene("One check away from the stage").with(brand, ...checkHeading, checks, code, transcript);
@@ -814,8 +821,8 @@ const fixedCode = CodeBlock(
   { width: 66, opacity: 0 },
 ).decorate(bracket());
 const ready = Card("All checks passed. The demo gods are appeased.", {
-  position: [10, 66],
-  width: 66,
+  position: [page.left, 58],
+  width: 62,
   height: 7,
   background: surface(green),
   opacity: 0,
@@ -832,12 +839,15 @@ pause(
 const geometry = heading(
   "09 / SHAPES",
   "Room to grow",
-  "One idea. From a Teams meeting to the main stage.",
+  "From a small meeting to the main stage.",
   "card.to({ width: 44, height: 26 })",
 );
-const venueStep = Kicker("01 / THE TEAMS MEETING", { position: [10, 36] });
+const venueStep = Kicker("01 / THE TEAMS MEETING", {
+  position: [page.left, page.footer],
+  origin: "bottom-left",
+});
 const idea = Card([Rocket({ size: 3.5 }), Text("Your idea")], {
-  position: [26, 56],
+  position: [28, 53],
   origin: "center",
   width: 20,
   height: 14,
@@ -846,7 +856,7 @@ const idea = Card([Rocket({ size: 3.5 }), Text("Your idea")], {
 const venueTitle = Title("Workshop", { variant: "serif" });
 const venueLabel = Kicker("ROOM FOR IDEAS");
 const venue = Card([venueTitle, venueLabel], {
-  position: [80, 56],
+  position: [80, 53],
   origin: "center",
   width: 26,
   height: 18,
@@ -855,7 +865,7 @@ const venue = Card([venueTitle, venueLabel], {
 });
 const audiences = ["Teams", "Conference", "Livestream"].map((name, i) =>
   Shape(paths.pill(), name, {
-    position: [128, 56],
+    position: [132, 53],
     origin: "center",
     width: 20,
     height: 6.5,
@@ -880,7 +890,7 @@ const audienceLinks = audiences.map((region, i) =>
   }),
 );
 const expansionNote = Text("Same idea. A bigger stage.", {
-  position: [80, 75],
+  position: [80, 71],
   origin: "center",
   opacity: 0,
 });
@@ -905,10 +915,10 @@ pause(
 venueStep.text = "02 / THE MAIN STAGE";
 venue.to({ width: 44, height: 26 }).duration(1.4).ease("cubicInOut");
 venueTitle.to({ text: "Keynote" }).duration(0.7);
-idea.to({ width: 22, height: 16, position: [25, 56] }).duration(1.2);
+idea.to({ width: 22, height: 16, position: [28, 53] }).duration(1.2);
 layout.vstack(audiences, {
   x: 122,
-  y: 43,
+  y: 39,
   gap: 3.5,
   animate: (position, _, i) =>
     to(position)
@@ -937,11 +947,11 @@ pause(
 const callouts = heading(
   "10 / CALLOUTS",
   "The comment stays with the work",
-  "Move the people. Move the work. Keep the conversation attached.",
+  "The conversation follows the work.",
   "paths.speechBubble({ tail: { to: author } })",
 );
 const author = Card([Code({ size: 3.5, color: "#c4dcf1" }), Text("Speaker")], {
-  position: [25, 68],
+  position: [37, 65],
   origin: "center",
   width: 17,
   height: 11,
@@ -949,7 +959,7 @@ const author = Card([Code({ size: 3.5, color: "#c4dcf1" }), Text("Speaker")], {
   background: surface("#91b8da"),
 });
 const reviewer = Card([Flask({ size: 3.5, color: "#d5caeb" }), Text("Organizer")], {
-  position: [125, 68],
+  position: [123, 65],
   origin: "center",
   width: 18,
   height: 11,
@@ -957,7 +967,7 @@ const reviewer = Card([Flask({ size: 3.5, color: "#d5caeb" }), Text("Organizer")
   background: surface("#b7a4d9"),
 });
 const reviewDocument = Card([FileText({ size: 3 }), Kicker("DECK.TS")], {
-  position: [53, 68],
+  position: [67, 65],
   origin: "center",
   width: 14,
   height: 9,
@@ -969,7 +979,7 @@ const speech = Shape(
   paths.speechBubble({ tail: { to: author, anchor: "top", padding: 6 }, radius: 16 }),
   "I swear the demo worked 5 minutes ago.",
   {
-    position: [38, 46],
+    position: [40, 45],
     origin: "center",
     width: 34,
     height: 8.5,
@@ -981,7 +991,7 @@ const thought = Shape(
   paths.thoughtBubble({ tail: { to: reviewer, anchor: "top", padding: 6 }, lobes: 10 }),
   "180 slides? In 15 minutes?",
   {
-    position: [115, 46],
+    position: [120, 45],
     origin: "center",
     width: 32,
     height: 11,
@@ -990,7 +1000,10 @@ const thought = Shape(
     background: surface("#b7a4d9"),
   },
 );
-const reviewStatus = Kicker("01 / DRAFT ZERO", { position: [12, 86], origin: "bottom-left" });
+const reviewStatus = Kicker("01 / DRAFT ZERO", {
+  position: [page.left, page.footer],
+  origin: "bottom-left",
+});
 stage
   .scene("The comment stays with the work")
   .with(brand, ...callouts, reviewStatus, author, reviewer, reviewDocument, speech, thought);
@@ -1003,15 +1016,15 @@ pause(
 reviewStatus.text = "02 / BACKSTAGE REVIEW";
 // The work leads; both people gather around it without changing sides.
 reviewDocument
-  .to({ position: to([80, 68]).path(motion.arc(-22)), rotation: 0 })
+  .to({ position: to([80, 65]).path(motion.arc(-22)), rotation: 0 })
   .duration(1.4)
   .ease("cubicInOut");
 [
-  [author, 50],
-  [reviewer, 110],
+  [author, 54],
+  [reviewer, 106],
 ].forEach(([person, x]) => {
   (person as typeof author)
-    .to({ position: to([x as number, 68]).path(motion.arc(12)) })
+    .to({ position: to([x as number, 65]).path(motion.arc(12)) })
     .duration(1.4)
     .delay(0.12)
     .ease("cubicInOut");
@@ -1025,23 +1038,17 @@ pause(
   "The deck moves to the center and both people gather around it. The speech and thought bubbles stay readable above them while their tails follow the people. Once everyone settles, the organizer offers practical advice. Go backward to restore the original positions and conversation.",
 );
 
-const finishHeading = heading(
-  "11 / FINISHING TOUCHES",
-  "A little polish goes a long way",
-  "Cards ripple into focus. The headline catches the light.",
-  ".decorate(dream()) · .decorate(typewriter())",
-);
+const finishHeading = [
+  Kicker("11 / FINISHING TOUCHES", { position: [page.left, 33] }),
+  codeHint(".decorate(dream()) · .decorate(typewriter())"),
+];
 const polished = Title("Ready for the spotlight.", {
-  variant: "serif",
-  position: [10, 44],
-  width: 73,
+  width: 68,
 })
   .decorate(gradient())
   .decorate(glow());
 const typing = Text("", {
-  position: [10, 58],
-  width: 76,
-  theme: { fontSizeBody: "1.5rem" },
+  width: 68,
 }).decorate(
   typewriter({
     delay: 3.5,
@@ -1061,8 +1068,9 @@ const dreamReveals = [
   { kicker: "03 / THE DELIVERY", title: "Unshakable stage presence", tint: "#a5cdbf" },
 ].map(({ kicker, title, tint }, i) =>
   Card([Kicker(kicker), Title(title, { variant: "serif" })], {
-    width: 44,
+    width: 48,
     height: 10,
+    align: "left",
     background: surface(tint),
   }).decorate(
     dream({
@@ -1075,7 +1083,8 @@ const dreamReveals = [
     }),
   ),
 );
-layout.vstack(dreamReveals, { x: 96, y: 39, gap: 2.5 });
+layout.vstack(dreamReveals, { x: 100, y: 30, gap: 3 });
+layout.vstack([polished, typing], { x: page.left, y: 39, gap: 2 });
 stage
   .scene("A little polish goes a long way")
   .with(brand, ...finishHeading, polished, typing, ...dreamReveals);
@@ -1086,31 +1095,31 @@ pause(
 const wardrobe = heading(
   "12 / THEMES",
   "Same content, different mood",
-  "Change one theme. The whole dashboard gets dressed.",
+  "One dashboard. Three personalities.",
   "stage.theme(defaultDark)",
 );
 const releaseSurface = Card("", {
-  position: [10, 38],
+  position: [page.left, 35],
   width: 88,
-  height: 38,
+  height: 39,
   background: "var(--sr-surface)",
 });
 const dashboardKicker = Kicker("RELEASE / OVERVIEW", {
-  position: [15, 43],
+  position: [17, 40],
   color: "var(--sr-primary)",
 });
 const dashboardTitle = Title("Launch day, looking good", {
   variant: "serif",
-  position: [15, 48],
+  position: [17, 45],
   width: 75,
   color: "var(--sr-text)",
 });
 const dashboardDescription = Text("Everything is ready for your next big reveal.", {
-  position: [15, 54],
+  position: [17, 51],
   width: 75,
   color: "var(--sr-text-muted)",
 });
-const releaseIcon = Rocket({ position: [85, 43], size: 4, color: "var(--sr-text)" });
+const releaseIcon = Rocket({ position: [88, 40], size: 4, color: "var(--sr-text)" });
 const dashboardTags = ["3 regions", "Checks passed"].map((text) =>
   Shape(paths.pill(), text, {
     width: 20,
@@ -1119,9 +1128,9 @@ const dashboardTags = ["3 regions", "Checks passed"].map((text) =>
     color: "var(--sr-secondary)",
   }),
 );
-layout.hstack(dashboardTags, { x: 15, y: 60, gap: 3 });
+layout.hstack(dashboardTags, { x: 17, y: 58, gap: 3 });
 const publishAction = Card("Publish release", {
-  position: [15, 68],
+  position: [17, 66],
   width: 22,
   height: 5.5,
   align: "center",
@@ -1129,7 +1138,7 @@ const publishAction = Card("Publish release", {
   color: "var(--sr-background)",
 });
 const previewAction = Card("Preview", {
-  position: [40, 68],
+  position: [42, 66],
   width: 16,
   height: 5.5,
   align: "center",
@@ -1141,15 +1150,18 @@ const themeMetrics = [
   { label: "PIPELINE", value: "All checks passed", icon: Flask },
   { label: "UP NEXT", value: "Your big moment", icon: Party },
 ].flatMap(({ label, value, icon }, i) => {
-  const y = 38 + i * 12.5;
+  const y = 35 + i * 14;
   return [
-    Card("", { position: [106, y], width: 42, height: 10.5, background: "var(--sr-surface)" }),
-    icon({ position: [111, y + 3.2], size: 3.5, color: "var(--sr-primary)" }),
-    Kicker(label, { position: [118, y + 2.2], color: "var(--sr-text-dim)" }),
-    Text(value, { position: [118, y + 5.6], width: 29, color: "var(--sr-text)" }),
+    Card("", { position: [108, y], width: 40, height: 11, background: "var(--sr-surface)" }),
+    icon({ position: [112, y + 3.75], size: 3.5, color: "var(--sr-primary)" }),
+    Kicker(label, { position: [119, y + 2.2], color: "var(--sr-text-dim)" }),
+    Text(value, { position: [119, y + 5.6], width: 26, color: "var(--sr-text)" }),
   ];
 });
-const themeLabel = Kicker("DEFAULT DARK", { position: [12, 86], origin: "bottom-left" });
+const themeLabel = Kicker("DEFAULT DARK", {
+  position: [page.left, page.footer],
+  origin: "bottom-left",
+});
 const themeCode = wardrobe[3];
 stage
   .scene("Same content different mood")
@@ -1205,12 +1217,8 @@ backdrop.opacity = 0;
   pause(note);
 });
 
-const backdropHeading = heading(
-  "13 / BACKGROUNDS",
-  "Set the atmosphere",
-  "Same stage. Four completely different worlds.",
-  "stage.background(AsciiFluid())",
-);
+const backdropSection = Kicker("13 / BACKGROUNDS", { position: [page.left, 11] });
+const atmosphereCode = codeHint("stage.background(AsciiFluid())");
 const chromaticBackdrop = GradientFluid({
   colors: ["#101222", "#3f4a92", "#8674b6", "#9acddd"],
   opacity: 0.85,
@@ -1263,26 +1271,30 @@ const atmosphereExamples = [
 const centeredOptions = (y: number, opacity: number) => ({
   position: [80, y] as Point,
   origin: "center" as const,
-  width: 130,
+  width: 112,
   align: "center" as const,
   opacity,
 });
 const atmosphereTitles = atmosphereExamples.map(({ title }, i) =>
-  Title(title, { variant: "serif", ...centeredOptions(49, i === 0 ? 1 : 0) }),
+  Title(title, { ...centeredOptions(44, i === 0 ? 1 : 0) }),
 );
 const atmosphereDescriptions = atmosphereExamples.map(({ detail }, i) =>
-  Text(detail, centeredOptions(62, i === 0 ? 1 : 0)),
+  Text(detail, centeredOptions(51, i === 0 ? 1 : 0)),
 );
 const atmosphereLabels = atmosphereExamples.map(({ label }, i) =>
-  Kicker(label, { position: [12, 86], origin: "bottom-left", opacity: i === 0 ? 1 : 0 }),
+  Kicker(label, {
+    position: [page.left, page.footer],
+    origin: "bottom-left",
+    opacity: i === 0 ? 1 : 0,
+  }),
 );
-const atmosphereCode = backdropHeading[3];
 
 stage
   .scene("Set the atmosphere")
   .with(
     brand,
-    ...backdropHeading,
+    backdropSection,
+    atmosphereCode,
     ...atmosphereTitles,
     ...atmosphereDescriptions,
     ...atmosphereLabels,
@@ -1307,15 +1319,15 @@ atmosphereExamples.forEach((example, i) => {
 const mediaHeading = heading(
   "14 / MEDIA",
   "Let the picture do the talking",
-  "Video plays. The photo pans. The presenter joins in.",
+  "Still images, moving pictures, and you.",
   undefined,
-  { width: 68, subtitleY: 32 },
+  { width: 60 },
 );
 const mediaCode = codeHint(".to({ rotationX, rotationY })");
 const earth = Video(
   "https://upload.wikimedia.org/wikipedia/commons/3/31/Earth-solar-array-timelapse.webm",
   {
-    position: [40, 62.875],
+    position: [42, 60.875],
     origin: "center",
     width: 60,
     height: 33.75,
@@ -1330,29 +1342,29 @@ const photo = Image(
   { fit: "cover", alt: "NASA nebula photograph" },
 );
 const photoFrame = Frame(paths.box({ radius: 14 }), photo, {
-  position: [118, 30],
+  position: [116, 31],
   origin: "center",
   width: 64,
   height: 36,
 }).decorate(kenBurns({ scale: 1.3, focus: "top-right", duration: 20 }));
 const camera = Frame(paths.circle(), Webcam({ mirror: true }), {
-  position: [148, 80],
+  position: [page.right, 77],
   origin: "bottom-right",
   size: 11,
   borderColor: "#a8c9e4",
   strokeWidth: 2,
 });
-const photoLabel = Kicker("01 / PHOTOGRAPH", { position: [86, 8] });
-const videoLabel = Kicker("02 / EARTH IN MOTION", { position: [10, 42] });
-const cameraLabel = Kicker("LIVE PRESENTER", { position: [96, 68] });
+const photoLabel = Kicker("01 / PHOTOGRAPH", { position: [84, 9] });
+const videoLabel = Kicker("02 / EARTH IN MOTION", { position: [page.left, 40] });
+const cameraLabel = Kicker("LIVE PRESENTER", { position: [132, 71.5], origin: "right" });
 const mediaEncore = Title("Two views. One story.", {
   variant: "serif",
-  position: [10, 20],
-  width: 68,
+  position: [page.left, 20],
+  width: 64,
   opacity: 0,
 }).decorate(gradient());
 const credit = Kicker("NASA imagery · Online media · Camera optional", {
-  position: [12, 86],
+  position: [page.left, page.footer],
   origin: "bottom-left",
 });
 stage
@@ -1392,7 +1404,7 @@ earth
   .after(mediaHeading[1]);
 photoFrame
   .to({
-    position: to([47, 58]).path(motion.arc(65)),
+    position: to([46, 57]).path(motion.arc(65)),
     rotation: -2,
     rotationX: -16,
     rotationY: 28,
@@ -1414,21 +1426,21 @@ pause(
 const liveHeading = heading(
   "15 / LIVE DEMOS",
   "The demo can be the real thing",
-  "A real website and a real shell. The demo has left the screenshot.",
+  "Bring the working tools onto the stage.",
   "BrowserWindow({ url }) · LiveTerminal()",
 );
 const web = BrowserWindow({
   url: "https://tsaarni.github.io/stageroutine/",
   title: "StageRoutine documentation",
-  position: [10, 39],
+  position: [page.left, 34],
   width: 78,
-  height: 40,
+  height: 43,
 });
 const shell = LiveTerminal({
   title: "Live shell · local dev server",
-  position: [94, 39],
-  width: 56,
-  height: 40,
+  position: [96, 34],
+  width: 52,
+  height: 43,
   transcript: [
     "xterm.js displays the terminal in your browser.",
     "WebSocket + node-pty connect it to a shell.",
@@ -1454,15 +1466,15 @@ pause(
 const presenterHeading = heading(
   "16 / PRESENTING",
   "You still run the show",
-  "The real presenter console. Your notes, cues, and controls.",
+  "Your notes and controls, within reach.",
   "BrowserWindow({ url }) · stage.note('Your cue')",
 );
 const presenterPreview = BrowserWindow({
   url: `${import.meta.env.BASE_URL}presenter.html`,
   title: "Live presenter console",
-  position: [10, 39],
-  width: 92,
-  height: 39,
+  position: [page.left, 34],
+  width: 88,
+  height: 43,
 });
 const tools = BulletList(
   [
@@ -1473,13 +1485,13 @@ const tools = BulletList(
     "C  Clear annotations",
     "Esc  Exit pointer",
   ],
-  { position: [110, 42], width: 39, itemsHidden: true, itemSpacing: 1 },
+  { position: [108, 37], width: 40, itemsHidden: true, itemSpacing: 1 },
 );
 const pointerHelp = Text(
   "Click outside the browser first. Move the mouse to point; drag to draw.",
   {
-    position: [110, 72],
-    width: 39,
+    position: [108, 64],
+    width: 40,
     color: "var(--sr-text-muted)",
   },
 );
@@ -1493,7 +1505,7 @@ pause(
 
 const closing = Title("Give your next idea the stage.", {
   variant: "serif",
-  position: [80, 48],
+  position: [80, 43],
   origin: "top",
 }).decorate(gradient());
 const closingCode = CodeBlock(
@@ -1503,11 +1515,12 @@ const closingCode = CodeBlock(
     "stage.pause();",
     "stage.mount('#stage');",
   ],
-  { position: [44, 62], width: 72 },
+  { width: 62 },
 );
 stage.scene("Your stage").with(brand, closing, closingCode);
 backdrop.opacity = 1;
-brand.to({ position: [80, 30], origin: "top", scale: 1 });
+brand.to({ position: [80, 29], origin: "top", scale: 1 });
+layout.vstack([closing, closingCode], { x: "center", y: 43, gap: 5, align: "center" });
 pause(
   "End where we started, with the same title. We have composed, rearranged, connected, inspected, styled, and presented ordinary elements with TypeScript. The next explanation is yours.",
 );

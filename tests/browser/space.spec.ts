@@ -25,12 +25,12 @@ test("3D projection preserves flat rectangles and rotates before projection", ()
 });
 
 test("the media exchange keeps every projected corner within the stage", () => {
-  const photoRoute = createPositionSampler(motion.arc(65), [118, 30], [47, 61]);
+  const photoRoute = createPositionSampler(motion.arc(65), [116, 31], [46, 57]);
   for (let frame = 0; frame <= 120; frame++) {
     const t = frame / 120;
     const cases = [
       {
-        position: [40 + 76 * t, 62.875 - 31.875 * t, 0] as const,
+        position: [42 + 74 * t, 60.875 - 29.875 * t, 0] as const,
         size: [60, 33.75] as const,
         scale: 1 - 0.15 * t,
         rotation: [18 * t, -28 * t, 2 * t] as const,
@@ -108,8 +108,8 @@ test("rendered corner projection matches the public geometry helpers", async ({ 
 test("the ring formation keeps cards inside the stage throughout their depth transition", () => {
   // The preceding grid measures the cards while their 2D rotation is still 4 degrees.
   const rotation = (4 * Math.PI) / 180;
-  const gridWidth = 20 * Math.cos(rotation) + 15 * Math.sin(rotation);
-  const gridHeight = 15 * Math.cos(rotation) + 20 * Math.sin(rotation);
+  const gridWidth = 13.5 * Math.cos(rotation) + 8 * Math.sin(rotation);
+  const gridHeight = 8 * Math.cos(rotation) + 13.5 * Math.sin(rotation);
   for (let i = 0; i < 6; i++) {
     const angle = ((-150 + i * 60) * Math.PI) / 180;
     const target = [
@@ -120,8 +120,8 @@ test("the ring formation keeps cards inside the stage throughout their depth tra
     const route = createPositionSampler(
       motion.arc(i % 2 === 0 ? 35 : -35),
       [
-        30 + gridWidth / 2 + (i % 3) * (gridWidth + 20),
-        42 + gridHeight / 2 + Math.floor(i / 3) * (gridHeight + 8),
+        80 - (3 * gridWidth + 24) / 2 + gridWidth / 2 + (i % 3) * (gridWidth + 12),
+        44 + gridHeight / 2 + Math.floor(i / 3) * (gridHeight + 5),
       ],
       [target[0], target[1]],
     );
@@ -131,7 +131,7 @@ test("the ring formation keeps cards inside the stage throughout their depth tra
       const bounds = space.bounds(
         space.corners({
           position: [x, y, target[2] * t],
-          size: [20, 15],
+          size: [13.5, 8],
         }),
       );
       expect(bounds.x).toBeGreaterThanOrEqual(4);

@@ -180,8 +180,8 @@ export function LiveTerminal(options?: LiveTerminalOptions): LiveTerminalElement
  * Creates a navigation overlay plugin with prev scene, prev step, next step, next scene,
  * and pointer toggle buttons.
  *
- * The overlay appears when the mouse cursor moves near the bottom of the screen and
- * hides immediately when the cursor moves away.
+ * Hover near the bottom to show controls with a mouse. Tap the bottom zone on touch.
+ * Swipe horizontally to navigate on touch.
  * @example ```ts
  * stage.overlay(NavigationOverlay());
  * ```

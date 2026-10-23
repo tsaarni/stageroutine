@@ -1,143 +1,249 @@
-import { createPositionSampler } from "../../src/core/position-motion";
-import { space } from "../../src/core/space";
-import { motion } from "../../src/motion/paths";
+import { space } from "../../src/dom/space";
 import { expect, test } from "../helpers/stage";
 
-test("3D projection preserves flat rectangles and rotates before projection", () => {
-  expect(space.project([100, 55, 60])).toEqual([120, 65]);
-  const flat = space.corners({ position: [80, 45, 0], size: [40, 20] });
+test("local geometry preserves the pivot and does not depend on stage position", () => {
+  const flat = space.corners({ position: [80, 45], size: [40, 20], origin: "center" });
   expect(flat).toEqual([
     [60, 35],
     [100, 35],
     [100, 55],
     [60, 55],
   ]);
-  expect(space.bounds(flat)).toEqual({ x: 60, y: 35, width: 40, height: 20 });
-  const turned = space.corners({ position: [80, 45, 0], size: [40, 20], rotation: [0, 0, 90] });
+  const turned = space.corners({
+    position: [80, 45],
+    size: [40, 20],
+    origin: "center",
+    transform: { rotation: 90 },
+  });
   for (let i = 0; i < 4; i++) {
     expect(turned[i][0]).toBeCloseTo([90, 90, 70, 70][i]);
     expect(turned[i][1]).toBeCloseTo([25, 65, 65, 25][i]);
   }
-  const close = space.bounds(space.corners({ position: [80, 45, 60], size: [40, 20] }));
-  expect(close.width).toBe(80);
-  expect(close.height).toBe(40);
-  expect(() => space.project([80, 45, 120])).toThrow(RangeError);
-});
-
-test("the media exchange keeps every projected corner within the stage", () => {
-  const photoRoute = createPositionSampler(motion.arc(65), [116, 31], [46, 57]);
-  for (let frame = 0; frame <= 120; frame++) {
-    const t = frame / 120;
-    const cases = [
-      {
-        position: [42 + 74 * t, 60.875 - 29.875 * t, 0] as const,
-        size: [60, 33.75] as const,
-        scale: 1 - 0.15 * t,
-        rotation: [18 * t, -28 * t, 2 * t] as const,
-      },
-      {
-        position: [...photoRoute(t), 0] as const,
-        size: [64, 36] as const,
-        scale: 1,
-        rotation: [-16 * t, 28 * t, -2 * t] as const,
-      },
-    ];
-    for (const plane of cases) {
-      const quad = space.corners(plane, {
-        position: [80, 45, 120],
-      });
-      for (const [x, y] of quad) {
-        expect(x).toBeGreaterThanOrEqual(4);
-        expect(x).toBeLessThanOrEqual(156);
-        expect(y).toBeGreaterThanOrEqual(4);
-        expect(y).toBeLessThanOrEqual(86);
-      }
-    }
+  const plane = {
+    position: [50, 45] as const,
+    size: [40, 20] as const,
+    origin: "center" as const,
+    transform: { rotationX: 18, rotationY: -28, z: 20 },
+  };
+  const original = space.corners(plane);
+  const moved = space.corners({ ...plane, position: [110, 30] });
+  for (let i = 0; i < 4; i++) {
+    expect(moved[i][0] - original[i][0]).toBeCloseTo(60);
+    expect(moved[i][1] - original[i][1]).toBeCloseTo(-15);
   }
+  const close = space.bounds(
+    space.corners({
+      position: [80, 45],
+      size: [40, 20],
+      origin: "center",
+      transform: { z: 50, perspective: 100 },
+    }),
+  );
+  expect(close).toEqual({ x: 40, y: 25, width: 80, height: 40 });
+  const orthographic = space.bounds(
+    space.corners({
+      position: [80, 45],
+      size: [40, 20],
+      origin: "center",
+      transform: { z: 50, perspective: "none" },
+    }),
+  );
+  expect(orthographic).toEqual({ x: 60, y: 35, width: 40, height: 20 });
+  expect(() => space.corners({ ...plane, transform: { z: 220 } })).toThrow(RangeError);
+  expect(() => space.corners({ ...plane, transform: { perspective: 0 } })).toThrow(RangeError);
 });
 
-test("rendered corner projection matches the public geometry helpers", async ({ stage }) => {
+test("rendered local transforms match geometry across fractional dimensions and pivots", async ({
+  stage,
+}) => {
   await stage.mount((SR) => {
-    const s = new SR.Stage({ channel: false, perspective: 90 });
-    const panel = SR.Card("Projection", {
-      id: "projection-panel",
-      width: 48,
-      height: 24,
-      position: [110, 60],
-      origin: "center",
-      rotationX: 18,
-      rotationY: -28,
-      rotation: 3,
-      z: 12,
-      scale: 0.85,
-    });
-    s.scene("Projection").with(panel);
-    s.pause();
-    panel.to({ rotationX: 0, rotationY: 90 }).duration(0.2);
+    const s = new SR.Stage({ channel: false, width: 1080, height: 1080 });
+    const panels = (
+      [
+        [0, 0],
+        [25, 75],
+        [100, 100],
+      ] as const
+    ).map((origin, i) =>
+      SR.Element(document.createElement("div"), {
+        id: `pivot-${i}`,
+        position: [55, 40],
+        origin,
+        width: 20.125,
+        height: 10.375,
+        rotation: 31,
+        scale: 0.83,
+      }).decorate(
+        SR.transform({
+          rotationX: 18,
+          rotationY: -28,
+          rotation: 12,
+          scale: 0.94,
+          z: 25,
+          perspective: 320,
+        }),
+      ),
+    );
+    s.scene("Pivots").with(...panels);
     s.pause();
     return s;
   });
-  const projected = await stage.locator("#projection-panel").evaluate((node) => {
-    const unit = (window.__STAGE_INSTANCE__?.height ?? 1080) / 90;
-    const matrix = new DOMMatrix(getComputedStyle(node).transform);
-    return [
+  for (const [i, origin] of (
+    [
       [0, 0],
-      [48 * unit, 0],
-      [48 * unit, 24 * unit],
-      [0, 24 * unit],
-    ].map(([x, y]) => {
-      const point = matrix.transformPoint(new DOMPoint(x, y));
-      return [point.x / point.w / unit, point.y / point.w / unit];
+      [25, 75],
+      [100, 100],
+    ] as const
+  ).entries()) {
+    const rendered = await stage.locator(`#pivot-${i}`).evaluate((node) => {
+      const matrix = new DOMMatrix(getComputedStyle(node).transform);
+      return [
+        [0, 0],
+        [20.125, 0],
+        [20.125, 10.375],
+        [0, 10.375],
+      ].map(([x, y]) => {
+        const point = matrix.transformPoint(new DOMPoint(x * 12, y * 12));
+        return [point.x / point.w / 12, point.y / point.w / 12];
+      });
     });
-  });
-  const expected = space.corners(
-    { position: [110, 60, 12], size: [48, 24], rotation: [18, -28, 3], scale: 0.85 },
-    { position: [80, 45, 90] },
-  );
-  for (let i = 0; i < 4; i++) {
-    // CSSOM rounds the matrix coefficients when serializing them.
-    expect(Math.abs(projected[i][0] - expected[i][0])).toBeLessThan(0.02);
-    expect(Math.abs(projected[i][1] - expected[i][1])).toBeLessThan(0.02);
-  }
-  await stage.next();
-  expect(
-    await stage.locator("#projection-panel").evaluate((node) => node.style.transform),
-  ).not.toMatch(/NaN|Infinity/);
-});
-
-test("the ring formation keeps cards inside the stage throughout their depth transition", () => {
-  // The preceding grid measures the cards while their 2D rotation is still 4 degrees.
-  const rotation = (4 * Math.PI) / 180;
-  const gridWidth = 13.5 * Math.cos(rotation) + 8 * Math.sin(rotation);
-  const gridHeight = 8 * Math.cos(rotation) + 13.5 * Math.sin(rotation);
-  for (let i = 0; i < 6; i++) {
-    const angle = ((-150 + i * 60) * Math.PI) / 180;
-    const target = [
-      80 + 46 * Math.cos(angle),
-      52 + 46 * Math.sin(angle) * Math.cos((78 * Math.PI) / 180),
-      46 * Math.sin(angle) * Math.sin((78 * Math.PI) / 180),
-    ] as const;
-    const route = createPositionSampler(
-      motion.arc(i % 2 === 0 ? 35 : -35),
-      [
-        80 - (3 * gridWidth + 24) / 2 + gridWidth / 2 + (i % 3) * (gridWidth + 12),
-        44 + gridHeight / 2 + Math.floor(i / 3) * (gridHeight + 5),
-      ],
-      [target[0], target[1]],
-    );
-    for (let frame = 0; frame <= 120; frame++) {
-      const t = frame / 120;
-      const [x, y] = route(t);
-      const bounds = space.bounds(
-        space.corners({
-          position: [x, y, target[2] * t],
-          size: [13.5, 8],
-        }),
-      );
-      expect(bounds.x).toBeGreaterThanOrEqual(4);
-      expect(bounds.x + bounds.width).toBeLessThanOrEqual(156);
-      expect(bounds.y).toBeGreaterThanOrEqual(4);
-      expect(bounds.y + bounds.height).toBeLessThanOrEqual(86);
+    const expected = space.corners({
+      position: [55, 40],
+      size: [20.125, 10.375],
+      origin,
+      rotation: 31,
+      scale: 0.83,
+      transform: {
+        rotationX: 18,
+        rotationY: -28,
+        rotation: 12,
+        scale: 0.94,
+        z: 25,
+        perspective: 320,
+      },
+    });
+    for (let corner = 0; corner < 4; corner++) {
+      expect(rendered[corner][0]).toBeCloseTo(expected[corner][0], 2);
+      expect(rendered[corner][1]).toBeCloseTo(expected[corner][1], 2);
     }
   }
+});
+
+test("connectors follow projected edge anchors throughout resize, tilt, and restoration", async ({
+  stage,
+}) => {
+  await stage.mount((SR) => {
+    const s = new SR.Stage({ channel: false });
+    const card = SR.Card("Tilt", {
+      id: "anchor-card",
+      position: [55, 40],
+      width: 30,
+      height: 20,
+      origin: [25, 75],
+    });
+    const effect = SR.transform();
+    card.decorate(effect);
+    const link = SR.Connector(card, [140, 50], {
+      id: "projected-link",
+      fromAnchor: "right",
+      padding: 0,
+      startHead: "none",
+      endHead: "none",
+    });
+    let maxError = 0;
+    link.onUpdate(() => {
+      const path = link.domElement.querySelector("path");
+      if (!path) throw new Error("Missing connector path");
+      const style = getComputedStyle(card.domElement);
+      const matrix = new DOMMatrix(style.transform);
+      const expected = matrix.transformPoint(
+        new DOMPoint(Number.parseFloat(style.width), Number.parseFloat(style.height) / 2),
+      );
+      const actual = path.getPointAtLength(0);
+      maxError = Math.max(
+        maxError,
+        Math.hypot(actual.x - expected.x / expected.w, actual.y - expected.y / expected.w),
+      );
+      link.domElement.dataset.maxError = String(maxError);
+    });
+    s.scene("Anchors").with(card, link);
+    s.pause();
+    effect.to({ rotationX: 18, rotationY: -35, z: 20 }).duration(0.4);
+    card.to({ rotation: 12, width: 42.125, height: 24.375 }).duration(0.4);
+    s.pause();
+    return s;
+  });
+  const link = stage.locator("#projected-link");
+  const initial = await link.locator("path").first().getAttribute("d");
+  await stage.next();
+  expect(Number(await link.getAttribute("data-max-error"))).toBeLessThan(0.1);
+  await stage.prev();
+  expect(Number(await link.getAttribute("data-max-error"))).toBeLessThan(0.1);
+  expect(await link.locator("path").first().getAttribute("d")).toBe(initial);
+});
+
+test("bubble tails map projected targets into a tilted source plane", async ({ stage }) => {
+  await stage.mount((SR) => {
+    const s = new SR.Stage({ channel: false });
+    const target = SR.Card("Speaker", {
+      id: "tail-target",
+      position: [100, 65],
+      origin: "center",
+      width: 24,
+      height: 12,
+    });
+    const targetEffect = SR.transform({ perspective: 320, rotationY: -20, z: 10 });
+    target.decorate(targetEffect);
+    const bubble = SR.Shape(
+      SR.paths.speechBubble({ tail: { to: target, anchor: "top", padding: 0 } }),
+      {
+        id: "tilted-bubble",
+        position: [45, 25],
+        origin: "center",
+        width: 32,
+        height: 18,
+      },
+    );
+    const bubbleEffect = SR.transform({ perspective: 320, rotationX: -5, rotationY: 8 });
+    bubble.decorate(bubbleEffect);
+    let maxError = 0;
+    bubble.onUpdate(() => {
+      const path = bubble.domElement.querySelector(".sr-shape-path-main");
+      const targetStyle = getComputedStyle(target.domElement);
+      const expected = new DOMMatrix(targetStyle.transform).transformPoint(
+        new DOMPoint(Number.parseFloat(targetStyle.width) / 2, 0),
+      );
+      const matrix = new DOMMatrix(getComputedStyle(bubble.domElement).transform);
+      const vertices = [
+        ...(path?.getAttribute("d") ?? "").matchAll(/L\s+([-\d.e+]+)\s+([-\d.e+]+)/g),
+      ];
+      const error = Math.min(
+        ...vertices.map((match) => {
+          const point = matrix.transformPoint(new DOMPoint(Number(match[1]), Number(match[2])));
+          return Math.hypot(
+            point.x / point.w - expected.x / expected.w,
+            point.y / point.w - expected.y / expected.w,
+          );
+        }),
+      );
+      maxError = Math.max(maxError, error);
+      bubble.domElement.dataset.maxError = String(maxError);
+    });
+    s.scene("Tail").with(target, bubble);
+    s.pause();
+    target.to({ position: [110, 60] }).duration(0.4);
+    targetEffect.to({ rotationY: 30, rotationX: 12, z: 25 }).duration(0.4);
+    bubble.to({ rotation: 5, width: 38 }).duration(0.4);
+    bubbleEffect.to({ rotationY: -12 }).duration(0.4);
+    s.pause();
+    return s;
+  });
+  const bubble = stage.locator("#tilted-bubble");
+  const initial = await bubble.locator(".sr-shape-path-main").getAttribute("d");
+  expect(Number(await bubble.getAttribute("data-max-error"))).toBeLessThan(0.1);
+  await stage.next();
+  expect(Number(await bubble.getAttribute("data-max-error"))).toBeLessThan(0.1);
+  await stage.prev();
+  expect(Number(await bubble.getAttribute("data-max-error"))).toBeLessThan(0.1);
+  expect(await bubble.locator(".sr-shape-path-main").getAttribute("d")).toBe(initial);
 });

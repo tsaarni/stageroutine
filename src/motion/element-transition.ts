@@ -36,9 +36,6 @@ export type ElementTransitionProps<T = ReactiveElementBase> = {
   size?: ReactiveProp<Size>;
   scale?: ReactiveProp<number>;
   rotation?: ReactiveProp<number>;
-  rotationX?: ReactiveProp<number>;
-  rotationY?: ReactiveProp<number>;
-  z?: ReactiveProp<number>;
   opacity?: ReactiveProp<number>;
   blur?: ReactiveProp<number>;
   brightness?: ReactiveProp<number>;
@@ -134,6 +131,7 @@ export class ElementTransitionBuilder implements ElementTransition {
         this.apply();
       });
     }
+    if (stage.isMounted) queueMicrotask(() => this.apply());
   }
 
   /** Sets transition duration in seconds. */

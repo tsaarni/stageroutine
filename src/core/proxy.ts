@@ -40,7 +40,7 @@ export interface ElementHost {
     triggerProperty?: string,
     motion?: PositionMotion,
   ): void;
-  _cancelPositionTransition(elementId: string, property: string): void;
+  _cancelPropertyTransition(elementId: string, property: string): void;
 }
 
 /**
@@ -82,7 +82,7 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
 
       if (propName === "position") {
         if (value === undefined || value === null) return true;
-        host._cancelPositionTransition(target.id, "position");
+        host._cancelPropertyTransition(target.id, "position");
         const current: [number, number] = [
           readCoord(target, host, "x"),
           readCoord(target, host, "y"),
@@ -146,7 +146,7 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
         return Reflect.set(target, prop, value, receiver);
       }
 
-      if (propName === "x" || propName === "y") host._cancelPositionTransition(target.id, propName);
+      if (propName === "x" || propName === "y") host._cancelPropertyTransition(target.id, propName);
 
       if (isTransitionDescriptor(value)) {
         let from: unknown =
@@ -229,6 +229,8 @@ export function createReactiveProxy<T extends ReactiveElementBase>(
       if (targetVal === "center" && (propName === "x" || propName === "y")) {
         targetVal = resolveCenterCoord(propName);
       }
+
+      host._cancelPropertyTransition(target.id, propName);
 
       // Let setters reject invalid values before recording them in stage state.
       if (!Reflect.set(target, prop, targetVal, receiver)) return false;

@@ -5,7 +5,7 @@
  */
 
 import type { ElementAnchor, Point } from "./types";
-import { cssLength, stageUnitPx } from "./units";
+import { stageUnitPx } from "./units";
 
 export interface RGBA {
   r: number;
@@ -150,53 +150,6 @@ export function unitsToPx(val: number | undefined, canvasHeight: number): number
   return val * stageUnitPx(canvasHeight);
 }
 
-/**
- * Builds the element transform.
- *
- * `origin` picks which point of the element sits on the coordinate.
- * `scale` and `rotation` pivot around that same point.
- */
-export function computeTransform(
-  xVal: number | undefined,
-  yVal: number | undefined,
-  scaleVal: number | undefined,
-  rotationVal: number | undefined,
-  originVal?: ElementAnchor | undefined,
-  tilt: {
-    z?: number;
-    center?: Point;
-    rotationX?: number;
-    rotationY?: number;
-    perspective?: number;
-    spatial?: boolean;
-  } = {},
-): { transform: string; transformOrigin: string } {
-  const x = cssLength(xVal ?? 0);
-  const y = cssLength(yVal ?? 0);
-  const scale = scaleVal ?? 1;
-  const rotation = rotationVal ?? 0;
-  const [ox, oy] = resolveAnchor(originVal);
-
-  const rotationX = tilt.rotationX ?? 0;
-  const rotationY = tilt.rotationY ?? 0;
-  const z = tilt.z ?? 0;
-  if (!Number.isFinite(z) || z >= (tilt.perspective ?? 120)) {
-    throw new RangeError("Element depth must be finite and below the stage perspective distance.");
-  }
-  const [cx, cy] = tilt.center ?? [80, 45];
-  if (tilt.spatial || z || rotationX || rotationY) {
-    return {
-      transform: `translate(${cssLength(cx)}, ${cssLength(cy)}) perspective(${cssLength(tilt.perspective ?? 120)}) translate3d(${cssLength((xVal ?? 0) - cx)}, ${cssLength((yVal ?? 0) - cy)}, ${cssLength(z)}) rotateZ(${rotation}deg) rotateY(${rotationY}deg) rotateX(${rotationX}deg) scale(${scale}) translate(${-ox}%, ${-oy}%)`,
-      transformOrigin: "0px 0px",
-    };
-  }
-
-  return {
-    transform: `translate3d(${x}, ${y}, 0) translate(${-ox}%, ${-oy}%) scale(${scale}) rotate(${rotation}deg)`,
-    transformOrigin: `${ox}% ${oy}%`,
-  };
-}
-
 export function interpolateValue(
   from: unknown,
   to: unknown,
@@ -226,9 +179,6 @@ export function interpolateValue(
     "y",
     "scale",
     "rotation",
-    "rotationX",
-    "rotationY",
-    "z",
     "opacity",
     "blur",
     "brightness",
@@ -248,12 +198,12 @@ export function interpolateValue(
     "playbackRate",
     "currentTime",
   ].includes(property ?? "");
-  if (property !== undefined && !anchors && !colors && !lengths && !numeric)
-    return t >= 1 ? to : from;
   // Stage coordinates, dimensions, and scalars are plain numbers
   if (typeof from === "number" && typeof to === "number") {
     return lerpNumber(from, to, t);
   }
+  if (property !== undefined && !anchors && !colors && !lengths && !numeric)
+    return t >= 1 ? to : from;
 
   // Origin / anchor points: named keywords and [x, y] percentage pairs
   const isAnchorKeyword = (v: unknown) =>

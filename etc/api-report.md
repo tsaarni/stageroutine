@@ -15,7 +15,7 @@ Signatures define type constraints and parameters. JSDoc comments explain runtim
 
 | Entry Point | Exports |
 | :--- | :--- |
-| `stageroutine` | 215 symbols |
+| `stageroutine` | 225 symbols |
 | `stageroutine/jsx-runtime` | 8 symbols |
 | `stageroutine/jsx-dev-runtime` | 8 symbols |
 | `stageroutine/vite` | 3 symbols |
@@ -99,6 +99,9 @@ export function defineIcons(def: IconDefinition): void;
  */
 export function dream(options?: DreamOptions): ElementDecorator;
 
+/** Wraps custom drawing with snapshot-safe numeric properties. */
+export function Element<Props extends Record<string, number>>(node: HTMLElement, options: CustomElementOptions<Props>): CustomElement<Props>;
+
 /** Wraps a DOM node as a reactive stage element. */
 export function Element(node: HTMLElement, options?: ElementOptions): DOMElement;
 
@@ -107,8 +110,8 @@ export function Frame(path: PathFunction, options?: FrameOptions): FrameElement;
 
 export function Frame(path: PathFunction, children: ElementChild, options?: FrameOptions): FrameElement;
 
-/** Decorates an element with a glowing neon aura and optional pulse animation. */
-export function glow(options?: GlowOptions): ElementDecorator;
+/** Creates a theme-coloured glow with snapshot-safe intensity. */
+export function glow(options?: GlowOptions): GlowEffect;
 
 /** Decorates an element with a linear gradient text effect and optional flowing animation. */
 export function gradient(options?: GradientOptions): ElementDecorator;
@@ -208,6 +211,9 @@ export function Shape(path: PathFunction, options?: ShapeOptions): ShapeElement;
 
 export function Shape(path: PathFunction, children: ElementChild, options?: ShapeOptions): ShapeElement;
 
+/** Creates one reflection shared by all elements decorated with it. */
+export function shine(options?: ShineOptions): ShineEffect;
+
 /** Creates a fluent stagger coordinator to cascade animations across a list of elements. */
 export function stagger(elements: readonly (DOMElement | ReactiveElementBase)[], options?: StaggerOptions): StaggerTransition;
 
@@ -246,6 +252,9 @@ export function to(updater: (current: number) => number | string): TransitionDes
  * e.g. `card.x = to(200).duration(1.5).ease("quartOut")`
  */
 export function to<T>(target: T): TransitionDescriptor<UnwrapTransition<T>>;
+
+/** Creates an independent local transform. No animation loop. */
+export function transform(options?: TransformOptions): TransformEffect;
 
 /**
  * Decorates an element with simulated typing cadence, backspacing, and a blinking cursor.
@@ -340,20 +349,21 @@ export class PresenterClient {
   close(): void;
 }
 
-/** In-browser screen recorder using MediaRecorder to capture and download presentation video. */
+/** Records a presentation at 1440p, up to 60 fps and 24 Mbps. */
 export class PresenterRecorder {
   constructor();
-  onUpdate(callback: (state: { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; }) => void): void;
-  /** Toggles microphone audio track capture on or off. */
+  /** Subscribes to state, immediately delivers it, and returns an unsubscribe function. */
+  onUpdate(callback: (state: PresenterRecorderState) => void): () => void;
+  /** Returns an immutable state snapshot. */
+  getState(): PresenterRecorderState;
+  /** Toggles the microphone; initially enabled. */
   toggleMic(): void;
-  /** Prompts for display capture and starts screen recording. */
-  start(): Promise<void>;
-  /** Stops recording and downloads the captured video. */
-  stop(): void;
-  /** Starts recording if currently stopped, or stops if currently recording. */
-  toggle(): void;
-  /** Returns the current recording state snapshot. */
-  getRecordingState(): { isRecording: boolean; isMicEnabled: boolean; seconds: number; formattedTime: string; };
+  /** Starts capture; returns false if declined or cancelled. Other failures reject. */
+  start(): Promise<boolean>;
+  /** Finalizes and downloads the video before resolving. Idle calls do nothing. */
+  stop(): Promise<void>;
+  /** Discards the current recording and releases resources. This instance cannot restart. */
+  dispose(): Promise<void>;
 }
 
 /** Presentation director managing scenes, step transitions, snapshots, and the virtual viewport. */
@@ -383,10 +393,12 @@ export class Stage {
   emit<K extends keyof StageEventMap>(event: K, ...args: StageEventMap[K] extends undefined ? [] : [data: StageEventMap[K]]): void;
   /** Virtual stage canvas width in pixels (default: 1920). */
   get width(): number;
+  /** Animation update limit in fps; "auto" follows display refresh. Default: "auto". */
+  get frameRate(): number | "auto";
+  /** Animation update limit in fps; "auto" follows display refresh. Default: "auto". */
+  set frameRate(value: number | "auto");
   /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number;
-  /** Shared perspective distance in stage units (default: 120). */
-  get perspective(): number;
   /** Stage width in stage units (160 on a 16:9 stage). */
   get unitsWide(): number;
   /** Stage height in stage units (always 90). */
@@ -684,12 +696,6 @@ export interface BulletListOptions extends ElementOptions {
     interactive?: boolean;
 }
 
-/** Perspective camera looking down negative Z. @category Motion */
-export interface Camera3D {
-    /** Camera coordinate in stage units. Default: [80, 45, 120]. */
-    position?: Point3D;
-}
-
 /**
  * Camera device info descriptor.
  * @category Components
@@ -875,6 +881,18 @@ export interface CSSBackgroundOptions extends BackgroundOptions {
     background?: string;
 }
 
+/** Custom drawing options. Properties use author-defined units. @category Core */
+export interface CustomElementOptions<Props extends Record<string, number>> extends ElementOptions {
+    /** Initial numeric values. Required; no defaults. */
+    props: Props & {
+        [K in keyof Props as K extends keyof DOMElement | `_${string}` ? K : never]: never;
+    };
+    /** Draws initial values, transition frames, and restored snapshots. No independent loop. */
+    onDraw: (props: Readonly<{
+        [K in keyof Props]: number;
+    }>, node: HTMLElement) => void;
+}
+
 /**
  * Options for the diamond path generator.
  * @category Shape & Frame
@@ -956,12 +974,6 @@ export interface ElementOptions {
     scale?: number;
     /** Rotation in degrees (default: 0). */
     rotation?: number;
-    /** X-axis tilt in degrees (default: 0). */
-    rotationX?: number;
-    /** Y-axis tilt in degrees (default: 0). */
-    rotationY?: number;
-    /** Depth in stage units; positive moves toward the viewer (default: 0). */
-    z?: number;
     /** Whole-element opacity from 0 to 1 (default: 1). */
     opacity?: number;
     /** Blur in virtual pixels (default: 0). */
@@ -987,6 +999,22 @@ export interface ElementOptions {
     onUnmount?: () => void;
     onActivate?: () => void;
     onDeactivate?: () => void;
+}
+
+/** Authored element geometry with an optional local transform. @category Motion */
+export interface ElementPlane {
+    /** Pivot position in stage units. Required; no default. */
+    position: Point;
+    /** Unscaled width and height in stage units. Required; no default. */
+    size: Point;
+    /** Element pivot. Default: "top-left". */
+    origin?: ElementAnchor;
+    /** Element rotation in degrees. Default: 0. */
+    rotation?: number;
+    /** Element scale multiplier. Default: 1. */
+    scale?: number;
+    /** Local transform effect. Default: none. */
+    transform?: TransformOptions;
 }
 
 /**
@@ -1031,16 +1059,29 @@ export interface FrameOptions extends ElementOptions {
     children?: ElementChild;
 }
 
-/**
- * Configuration options for the glow decorator.
- * @category Decorators
- * @inline
- */
+/** Glow controller attached to one element. @category Decorators */
+export interface GlowEffect extends ElementDecorator {
+    /** Current strength multiplier; 0 disables the glow. Default: 1. */
+    readonly values: Readonly<{
+        intensity: number;
+    }>;
+    /** Animates strength on the stage clock. */
+    to(props: GlowTransitionProps): ElementTransition;
+}
+
+/** Glow appearance and initial strength. @category Decorators @inline */
 export interface GlowOptions {
-    /** Whether the glow pulses continuously (default: true). */
+    /** Strength multiplier; 0 disables the glow. Default: 1. */
+    intensity?: number;
+    /** Ambient pulse while visible and intensity is positive. Default: true. */
     pulse?: boolean;
-    /** Animation cycle duration in seconds if pulse is enabled (default: 4). */
+    /** Pulse cycle duration in seconds. Default: 4. */
     duration?: number;
+}
+
+/** Animated glow targets. @category Decorators */
+export interface GlowTransitionProps {
+    intensity?: ReactiveProp<number>;
 }
 
 /**
@@ -1527,20 +1568,6 @@ export interface PeriodicPulseOptions extends PulseOptions {
     delay?: number;
 }
 
-/** A flat element placed in 3D. @category Motion */
-export interface Plane3D {
-    /** Pivot coordinate in stage units. No default. */
-    position: Point3D;
-    /** Unscaled width and height in stage units. No default. */
-    size: Point;
-    /** X, Y, then Z rotation in degrees. Default: [0, 0, 0]. */
-    rotation?: Point3D;
-    /** Pivot as percentages of width and height. Default: [50, 50]. */
-    origin?: Point;
-    /** Uniform 3D scale. Default: 1. */
-    scale?: number;
-}
-
 /**
  * Command payload to set the pointer active state.
  * @category Core
@@ -1572,6 +1599,18 @@ export interface PolygonPathOptions {
 export interface PositionTransitionDescriptor<T extends Position = Position> extends TransitionDescriptor<T> {
     /** Travel along a motion path. Default: straight. */
     path(path: MotionPath): this;
+}
+
+/** Recorder lifecycle and microphone state. @category Presenter */
+export interface PresenterRecorderState {
+    /** Lifecycle phase. Default: "idle". */
+    readonly status: "idle" | "starting" | "recording" | "stopping" | "disposed";
+    /** Whether microphone capture is enabled. Default: true. */
+    readonly isMicEnabled: boolean;
+    /** Elapsed recording time in whole seconds. Default: 0. */
+    readonly seconds: number;
+    /** Most recent failure; cleared on the next start. Default: null. */
+    readonly error: Error | null;
 }
 
 /**
@@ -1662,15 +1701,6 @@ export interface ReactiveElementBase {
     set scale(value: ReactiveProp<number>);
     get rotation(): number;
     set rotation(value: ReactiveProp<number>);
-    /** X-axis tilt in degrees. Default: 0. */
-    get rotationX(): number;
-    set rotationX(value: ReactiveProp<number>);
-    /** Y-axis tilt in degrees. Default: 0. */
-    get rotationY(): number;
-    set rotationY(value: ReactiveProp<number>);
-    /** Depth in stage units; positive moves toward the viewer. Default: 0. */
-    get z(): number;
-    set z(value: ReactiveProp<number>);
     get blur(): number;
     set blur(value: ReactiveProp<number>);
     get brightness(): number;
@@ -1889,6 +1919,36 @@ export interface ShapeOptions extends ElementOptions {
     children?: ElementChild;
 }
 
+/** One shared light, attached to one or more elements on the same stage. @category Decorators */
+export interface ShineEffect extends ElementDecorator {
+    /** Current sweep fraction. Default: 0. */
+    readonly values: Readonly<{
+        progress: number;
+    }>;
+    /** Animates the light on the stage clock. */
+    to(props: {
+        progress?: ReactiveProp<number>;
+    }): ElementTransition;
+}
+
+/** A shared reflection's appearance and initial position. @category Decorators @inline */
+export interface ShineOptions {
+    /** Sweep fraction from 0 to 1. Both endpoints are clear. Default: 0. */
+    progress?: number;
+    /** CSS shoulder colour. Default: the stage theme's secondary colour. */
+    color?: string;
+    /** CSS core colour. Default: a lighter version of color. */
+    highlight?: string;
+    /** Nonnegative strength multiplier. Default: 1. */
+    intensity?: number;
+    /** Travel direction in degrees; 0 goes right, positive goes clockwise. Default: -20. */
+    angle?: number;
+    /** Band width as a fraction of the receivers' projected span. Default: 0.22. */
+    width?: number;
+    /** Receiving surface. Auto uses outlines for ghost shapes and fills otherwise. Default: "auto". */
+    surface?: "auto" | "outline" | "fill";
+}
+
 /**
  * Options for the speech bubble path generator.
  * @category Shape & Frame
@@ -1981,8 +2041,6 @@ export interface StageEventMap {
  * @inline
  */
 export interface StageOptions {
-    /** Shared perspective distance in stage units. Default: 120. */
-    perspective?: number;
     /** Target HTML container or CSS selector to mount into (default: `document.body`). */
     target?: string | HTMLElement;
     /** Virtual stage width in pixels (default: `1920` or environment config). */
@@ -1991,6 +2049,8 @@ export interface StageOptions {
     height?: number;
     /** Default transition duration in seconds (default: `0.6`). */
     defaultDuration?: number;
+    /** Animation update limit in frames per second; "auto" follows display refresh. Default: "auto". */
+    frameRate?: number | "auto";
     /** Initial theme color overrides (default: `defaultDark`). */
     theme?: ThemeConfig;
     /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
@@ -2273,6 +2333,30 @@ export interface TitleOptions extends ElementOptions {
     kicker?: string;
 }
 
+/** A transform controller attached to one element. @category Decorators */
+export interface TransformEffect extends ElementDecorator {
+    /** Current values; rotations use degrees, depth and perspective use stage units. */
+    readonly values: Readonly<Required<TransformOptions>>;
+    /** Animates the attached element's local transform on the stage clock. */
+    to(props: TransformTransitionProps): ElementTransition;
+}
+
+/** Local transformation of any stage element. @category Decorators */
+export interface TransformOptions {
+    /** X-axis rotation in degrees. Default: 0. */
+    rotationX?: number;
+    /** Y-axis rotation in degrees. Default: 0. */
+    rotationY?: number;
+    /** Z-axis rotation in degrees. Default: 0. */
+    rotation?: number;
+    /** Local scale multiplier. Default: 1. */
+    scale?: number;
+    /** Local depth in stage units; positive enlarges the element. Default: 0. */
+    z?: number;
+    /** Perspective distance in stage units, or orthographic projection. Default: 220. */
+    perspective?: number | "none";
+}
+
 /**
  * Fluent builder descriptor returned by `to(value)` for scheduling transitions.
  * @category Motion
@@ -2531,6 +2615,11 @@ export type ConnectorTarget = DOMElement | readonly [
  */
 export type CoordProp = ReactiveProp<PositionCoord>;
 
+/** Custom numeric properties, animated with `.to()`. @category Core */
+export type CustomElement<Props extends Record<string, number>> = DOMElement & {
+    [K in keyof Props]: number;
+};
+
 /**
  * Type definitions for stage options, easing curves, transition descriptors, and snapshots.
  */
@@ -2570,9 +2659,6 @@ export type ElementTransitionProps<T = ReactiveElementBase> = {
     size?: ReactiveProp<Size>;
     scale?: ReactiveProp<number>;
     rotation?: ReactiveProp<number>;
-    rotationX?: ReactiveProp<number>;
-    rotationY?: ReactiveProp<number>;
-    z?: ReactiveProp<number>;
     opacity?: ReactiveProp<number>;
     blur?: ReactiveProp<number>;
     brightness?: ReactiveProp<number>;
@@ -2695,13 +2781,6 @@ export type Point = readonly [
     y: number
 ];
 
-/** A 3D coordinate in stage units; positive Z points toward the viewer. @category Motion */
-export type Point3D = readonly [
-    number,
-    number,
-    number
-];
-
 /**
  * Stage coordinate pair in stage units, or `"center"` to center on both axes.
  * @category Core
@@ -2733,7 +2812,7 @@ export type PositionUpdater = ((x: number, y: number) => readonly [
     PositionCoord
 ]);
 
-/** Projected source corners: top-left, top-right, bottom-right, bottom-left. Coordinates use stage units. @category Motion */
+/** Source corners in stage units: top-left, top-right, bottom-right, bottom-left. @category Motion */
 export type ProjectedQuad = readonly [
     Point,
     Point,
@@ -2787,6 +2866,11 @@ export type TextOptions = ElementOptions;
  * @category Components
  */
 export type TitleVariant = "title" | "hero" | "serif";
+
+/** Animation targets for a local transform. @category Decorators */
+export type TransformTransitionProps = {
+    [K in keyof TransformOptions]?: ReactiveProp<Required<TransformOptions>[K]>;
+};
 
 /**
  * Represents an individual action in a structured typewriter script:
@@ -2844,8 +2928,8 @@ export const motion: { arc(degrees?: number): MotionPath; bezier(options: Bezier
 /** Geometric SVG path generators for shapes, cards, and clipping frames. */
 export const paths: { box(options?: BoxPathOptions): PathFunction; circle(options?: CirclePathOptions): PathFunction; pill(): PathFunction; diamond(options?: DiamondPathOptions): PathFunction; triangle(options?: TrianglePathOptions): PathFunction; hexagon(options?: HexagonPathOptions): PathFunction; star(options?: StarPathOptions): PathFunction; squircle(options?: SquirclePathOptions): PathFunction; heart(): PathFunction; polygon(options?: PolygonPathOptions): PathFunction; speechBubble(options?: SpeechBubblePathOptions): PathFunction; thoughtBubble(options?: ThoughtBubblePathOptions): PathFunction; };
 
-/** Pure 3D rotation, perspective projection, and bounds helpers. */
-export const space: { project: (point: Point3D, camera?: Camera3D) => Point; corners: (plane: Plane3D, camera?: Camera3D) => ProjectedQuad; bounds: (quad: ProjectedQuad) => { x: number; y: number; width: number; height: number; }; };
+/** Measures independently transformed elements in stage units. */
+export const space: { corners: (plane: ElementPlane) => ProjectedQuad; bounds: (quad: ProjectedQuad) => { x: number; y: number; width: number; height: number; }; };
 
 /** Collection of all built-in theme presets. */
 export const themes: { readonly defaultDark: ThemeConfig; readonly defaultLight: ThemeConfig; readonly dracula: ThemeConfig; readonly tokyoNight: ThemeConfig; readonly cyberpunk: ThemeConfig; };

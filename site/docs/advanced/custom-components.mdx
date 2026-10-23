@@ -35,6 +35,62 @@ export function Badge(options: BadgeOptions): DOMElement {
 }
 ```
 
+## Animate custom drawing
+
+Give `Element()` numeric `props` and an `onDraw` callback. Set every initial value explicitly. Custom values have no defaults; you choose their units.
+
+```typescript
+const meter = Element(document.createElement("div"), {
+  props: { progress: 0 }, // Fraction from 0 to 1.
+  onDraw({ progress }, node) {
+    node.textContent = `${Math.round(progress * 100)}%`;
+  },
+});
+
+stage.scene("Progress").with(meter);
+stage.pause();
+meter.to({ progress: 1 }).duration(1); // Seconds.
+stage.pause();
+```
+
+`onDraw` receives a read-only copy of the custom values at creation, on stage updates, and when restoring a snapshot. Each animation frame resolves all properties before drawing. Going backward restores both the values and the drawing. The stage stops its animation loop when transitions finish.
+
+Use `onDraw` to update SVG attributes, draw a canvas, or update a third-party visualization. Build the chart once, then update its geometry from these values. Keep timers and animation loops out of the callback.
+
+Property names must differ from built-in element properties. Values must be finite numbers. Use [transitions](../building/animation.mdx) to control their timing.
+
+Keep the drawing callback inside your component function. Expose initial values as component options:
+
+```typescript
+import { Element, type ElementOptions, transform } from "stageroutine";
+
+interface MeterOptions extends ElementOptions {
+  progress?: number; // Fraction from 0 to 1. Default: 0.
+}
+
+export function Meter({ progress = 0, ...options }: MeterOptions = {}) {
+  const node = document.createElement("div");
+  return Element(node, {
+    ...options,
+    props: { progress },
+    onDraw({ progress }, node) {
+      node.textContent = `${Math.round(progress * 100)}%`;
+    },
+  });
+}
+
+const turn = transform();
+const meter = Meter({ position: [80, 45], origin: "center" }).decorate(turn);
+stage.scene("Progress").with(meter);
+stage.pause();
+meter.to({ progress: 1 }).duration(1); // Seconds.
+turn.to({ rotationY: -20 }).duration(1); // Degrees over one second.
+stage.pause();
+```
+
+The component maps progress to its drawing. The presentation sets timing and pauses. Standard element properties handle placement and opacity. Reusable [transform effects](../building/animation.mdx#local-transforms) handle tilt and perspective.
+Keep drawing deterministic: the same property values must produce the same content. Start transitions from the presentation; mount and activate hooks can run again during navigation.
+
 ## Using JSX
 
 StageRoutine includes a lightweight JSX runtime for declaring markup without React overhead:

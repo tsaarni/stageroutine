@@ -5,6 +5,7 @@ test("outgoing cards finish their fall before incoming content appears and resto
 }) => {
   await stage.mount((SR) => {
     const s = new SR.Stage({ channel: false });
+    const effects = [0, 1, 2].map(() => SR.transform({ z: 20 }));
     const cards = [40, 80, 120].map((x, i) =>
       SR.Card(`Card ${i}`, {
         id: `fall-${i}`,
@@ -12,8 +13,7 @@ test("outgoing cards finish their fall before incoming content appears and resto
         origin: "center",
         width: 20,
         height: 15,
-        z: 20,
-      }),
+      }).decorate(effects[i]),
     );
     const incoming = SR.Card("Next scene", {
       id: "incoming",
@@ -37,8 +37,13 @@ test("outgoing cards finish their fall before incoming content appears and resto
     s.scene("Next").with(incoming);
     cards.forEach((card, i) => {
       const delay = 0.06 + i * 0.02;
+      effects[i]
+        .to({ z: 0 })
+        .duration(0.22)
+        .delay(delay)
+        .ease((t) => t * t);
       card
-        .to({ y: 112, z: 0, rotation: i % 2 ? 6 : -6 })
+        .to({ y: 112, rotation: i % 2 ? 6 : -6 })
         .duration(0.22)
         .delay(delay)
         .ease((t) => t * t);
@@ -140,9 +145,7 @@ test("tilted frames slide apart before the next scene and restore their masks an
       width: 64,
       height: 36,
       rotation: -2,
-      rotationX: -16,
-      rotationY: 28,
-    });
+    }).decorate(SR.transform({ rotationX: -16, rotationY: 28 }));
     const video = SR.Frame(SR.paths.box(), SR.Text("Video"), {
       id: "exit-video",
       position: [116, 31],
@@ -151,9 +154,7 @@ test("tilted frames slide apart before the next scene and restore their masks an
       height: 33.75,
       scale: 0.85,
       rotation: 2,
-      rotationX: 18,
-      rotationY: -28,
-    });
+    }).decorate(SR.transform({ rotationX: 18, rotationY: -28 }));
     const incoming = SR.Card("Live tools", {
       id: "media-next",
       position: [10, 39],

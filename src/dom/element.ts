@@ -1,10 +1,10 @@
+import { renderElementFilters } from "./filters";
 /**
  * Represents an animated HTML element on the stage, wrapping a real DOM node with reactive transform properties.
  */
 
 import type { Properties as CSSProperties } from "csstype";
 import { applyDOMOpacity, discoverBackdropLayers } from "../core/dom-opacity";
-import { computeTransform } from "../core/interpolators";
 import { logger } from "../core/logger";
 import { resolveCoords } from "../core/position";
 import { CORE_REACTIVE_KEYS } from "../core/reactive";
@@ -28,6 +28,7 @@ import {
 } from "../motion/element-transition";
 import { isTransitionDescriptor } from "../motion/transitions";
 import { applyThemeTokens, type ThemeConfig } from "../theme/tokens";
+import { renderElementTransform } from "./transform";
 
 let nextId = 1;
 
@@ -86,12 +87,6 @@ export interface ElementOptions {
   scale?: number;
   /** Rotation in degrees (default: 0). */
   rotation?: number;
-  /** X-axis tilt in degrees (default: 0). */
-  rotationX?: number;
-  /** Y-axis tilt in degrees (default: 0). */
-  rotationY?: number;
-  /** Depth in stage units; positive moves toward the viewer (default: 0). */
-  z?: number;
   /** Whole-element opacity from 0 to 1 (default: 1). */
   opacity?: number;
   /** Blur in virtual pixels (default: 0). */
@@ -153,8 +148,74 @@ export class DOMElementImpl implements DOMElement {
   protected static _reactiveKeys: ReadonlySet<string> = CORE_REACTIVE_KEYS;
 
   /** @internal */
+  private _registeredKeys?: ReadonlySet<string>;
+  private readonly _propertyValidators = new Map<string, (key: string, value: unknown) => void>();
+
   protected get _reactiveKeys(): ReadonlySet<string> {
-    return (this.constructor as typeof DOMElementImpl)._reactiveKeys;
+    return this._registeredKeys ?? (this.constructor as typeof DOMElementImpl)._reactiveKeys;
+  }
+
+  /** @internal */
+  _definePresentationProperties(
+    initial: Record<string, unknown>,
+    validate: (key: string, value: unknown) => void,
+  ): Record<string, unknown> {
+    const values = { ...initial };
+    for (const [key, value] of Object.entries(values)) {
+      if (key in this)
+        throw new TypeError(`Presentation property '${key}' conflicts with an element property.`);
+      validate(key, value);
+    }
+    for (const key of Object.keys(values)) {
+      this._propertyValidators.set(key, validate);
+      Object.defineProperty(this, key, {
+        enumerable: true,
+        get: () => values[key],
+        set: (value: unknown) => {
+          validate(key, value);
+          values[key] = value;
+        },
+      });
+    }
+    this._registeredKeys = new Set([...this._reactiveKeys, ...Object.keys(values)]);
+    return values;
+  }
+
+  /** @internal */
+  _validateProperty(property: string, value: unknown): void {
+    this._propertyValidators.get(property)?.(property, value);
+  }
+
+  /** @internal */
+  private readonly _propertyRenderers = new Map<
+    string,
+    { render(from: unknown, to: unknown, progress: number): void; clear(): void }
+  >();
+
+  protected _registerPropertyRenderer(
+    property: string,
+    renderer: { render(from: unknown, to: unknown, progress: number): void; clear(): void },
+  ): void {
+    this._propertyRenderers.set(property, renderer);
+  }
+
+  _renderPropertyTransition(property: string, from: unknown, to: unknown, progress: number): void {
+    this._propertyRenderers.get(property)?.render(from, to, progress);
+  }
+
+  _clearPropertyTransitions(property?: string): void {
+    if (property !== undefined) this._propertyRenderers.get(property)?.clear();
+    else for (const renderer of this._propertyRenderers.values()) renderer.clear();
+  }
+
+  _renderFilters(props: Readonly<Record<string, unknown>>): void {
+    renderElementFilters(this.domElement, props);
+  }
+
+  _renderTransform(props: Readonly<Record<string, unknown>>): void {
+    if (!this._isCustomPositioned && !(this.domElement instanceof SVGElement)) {
+      renderElementTransform(this.domElement, props);
+    }
   }
 
   readonly id: string;
@@ -234,36 +295,6 @@ export class DOMElementImpl implements DOMElement {
     else if (typeof value === "function") this._rotation = value(this._rotation);
     else this._rotation = value.target as number;
   }
-  private _rotationX = 0;
-  get rotationX(): number {
-    return this._rotationX;
-  }
-  set rotationX(value: ReactiveProp<number>) {
-    if (typeof value === "number") this._rotationX = value;
-    else if (typeof value === "function") this._rotationX = value(this._rotationX);
-    else this._rotationX = value.target as number;
-  }
-
-  private _rotationY = 0;
-  get rotationY(): number {
-    return this._rotationY;
-  }
-  set rotationY(value: ReactiveProp<number>) {
-    if (typeof value === "number") this._rotationY = value;
-    else if (typeof value === "function") this._rotationY = value(this._rotationY);
-    else this._rotationY = value.target as number;
-  }
-
-  private _z = 0;
-  get z(): number {
-    return this._z;
-  }
-  set z(value: ReactiveProp<number>) {
-    if (typeof value === "number") this._z = value;
-    else if (typeof value === "function") this._z = value(this._z);
-    else this._z = value.target as number;
-  }
-
   private _opacity = 1;
   get opacity(): number {
     return this._opacity;
@@ -450,9 +481,6 @@ export class DOMElementImpl implements DOMElement {
     this.height = options.height ?? options.size;
     this.scale = options.scale ?? 1;
     this.rotation = options.rotation ?? 0;
-    this.rotationX = options.rotationX ?? 0;
-    this.rotationY = options.rotationY ?? 0;
-    this.z = options.z ?? 0;
     this.opacity = options.opacity ?? 1;
     this.blur = options.blur ?? 0;
     this.brightness = options.brightness ?? 1;
@@ -485,22 +513,13 @@ export class DOMElementImpl implements DOMElement {
       this.domElement.style.left = "0px";
       this.domElement.style.top = "0px";
 
-      const { transform, transformOrigin } = computeTransform(
-        this._x,
-        this._y,
-        this.scale as number,
-        this.rotation as number,
-        this.origin,
-        {
-          rotationX: this.rotationX,
-          rotationY: this.rotationY,
-          z: this.z,
-          perspective: getActiveStage().perspective,
-          center: [getActiveStage().unitsWide / 2, getActiveStage().unitsTall / 2],
-        },
-      );
-      this.domElement.style.transform = transform;
-      this.domElement.style.transformOrigin = transformOrigin;
+      this._renderTransform({
+        x: this.x,
+        y: this.y,
+        scale: this.scale,
+        rotation: this.rotation,
+        origin: this.origin,
+      });
     }
     applyDOMOpacity(this.domElement, this.opacity);
 
@@ -609,6 +628,7 @@ export class DOMElementImpl implements DOMElement {
    * @internal Unmounts the element from the DOM and releases resources.
    */
   _unmount(): void {
+    this._clearPropertyTransitions();
     if (!this.isMounted) return;
     this._deactivate();
     this.isMounted = false;
@@ -630,7 +650,7 @@ export class DOMElementImpl implements DOMElement {
       for (const anim of this.domElement.getAnimations({ subtree: true })) {
         if (
           anim instanceof CSSAnimation &&
-          ["sr-neon-bloom", "sr-neon-sweep"].includes(anim.animationName)
+          ["sr-glow-pulse", "sr-neon-sweep"].includes(anim.animationName)
         )
           continue;
         anim.play();
@@ -651,7 +671,7 @@ export class DOMElementImpl implements DOMElement {
       for (const anim of this.domElement.getAnimations({ subtree: true })) {
         if (
           anim instanceof CSSAnimation &&
-          ["sr-neon-bloom", "sr-neon-sweep", "sr-flow-traveling-kf", "sr-flow-chase-kf"].includes(
+          ["sr-glow-pulse", "sr-neon-sweep", "sr-flow-traveling-kf", "sr-flow-chase-kf"].includes(
             anim.animationName,
           )
         )
@@ -738,7 +758,70 @@ export function mount<T extends ReactiveElementBase>(element: T): T {
   return getActiveStage()._registerElement(element);
 }
 
+/** Custom numeric properties, animated with `.to()`. @category Core */
+export type CustomElement<Props extends Record<string, number>> = DOMElement & {
+  [K in keyof Props]: number;
+};
+
+/** Custom drawing options. Properties use author-defined units. @category Core */
+export interface CustomElementOptions<Props extends Record<string, number>> extends ElementOptions {
+  /** Initial numeric values. Required; no defaults. */
+  props: Props & {
+    [K in keyof Props as K extends keyof DOMElement | `_${string}` ? K : never]: never;
+  };
+  /** Draws initial values, transition frames, and restored snapshots. No independent loop. */
+  onDraw: (props: Readonly<{ [K in keyof Props]: number }>, node: HTMLElement) => void;
+}
+
+class CustomDOMElementImpl<Props extends Record<string, number>> extends DOMElementImpl {
+  private readonly _customValues: { [K in keyof Props]: number };
+  private readonly _drawCustom: CustomElementOptions<Props>["onDraw"];
+
+  constructor(node: HTMLElement, options: CustomElementOptions<Props>) {
+    super("Element", node, options);
+    for (const key of Object.keys(options.props)) {
+      if (key.startsWith("_"))
+        throw new TypeError(`Custom property '${key}' conflicts with an element property.`);
+    }
+    this._customValues = this._definePresentationProperties(options.props, (key, value) => {
+      if (!Number.isFinite(value)) throw new TypeError(`Custom property '${key}' must be finite.`);
+    }) as { [K in keyof Props]: number };
+    this._drawCustom = options.onDraw;
+    this._update();
+  }
+
+  override _update(): void {
+    this._drawCustom(Object.freeze({ ...this._customValues }), this.domElement);
+  }
+}
+
+/** Registers effect properties with the attached element's animation and snapshots. @internal */
+export function registerPresentationProperties(
+  element: DOMElement,
+  initial: Record<string, unknown>,
+  validate: (key: string, value: unknown) => void,
+): void {
+  const stage = getActiveStage();
+  if (!stage._hasElement(element.id))
+    throw new Error("Attach effects on the element's active stage.");
+  (element as DOMElementImpl)._definePresentationProperties(initial, validate);
+  stage._registerElementProperties(element.id, initial);
+}
+
+/** Wraps custom drawing with snapshot-safe numeric properties. @category Core */
+export function Element<Props extends Record<string, number>>(
+  node: HTMLElement,
+  options: CustomElementOptions<Props>,
+): CustomElement<Props>;
 /** Wraps a DOM node as a reactive stage element. @category Core */
-export function Element(node: HTMLElement, options: ElementOptions = {}): DOMElement {
-  return mount(new DOMElementImpl("Element", node, options));
+export function Element(node: HTMLElement, options?: ElementOptions): DOMElement;
+export function Element<Props extends Record<string, number>>(
+  node: HTMLElement,
+  options: ElementOptions | CustomElementOptions<Props> = {},
+): DOMElement {
+  return mount(
+    "props" in options && "onDraw" in options
+      ? new CustomDOMElementImpl(node, options)
+      : new DOMElementImpl("Element", node, options),
+  );
 }

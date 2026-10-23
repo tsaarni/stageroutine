@@ -1,4 +1,5 @@
 import { type DOMElement, DOMElementImpl, type ElementOptions } from "../element";
+import { createTextContent } from "../text-content";
 
 /** Mutable text content. @category Components */
 export interface TextElement extends DOMElement {
@@ -11,18 +12,20 @@ export class TextContentElement extends DOMElementImpl implements TextElement {
     ...DOMElementImpl._reactiveKeys,
     "text",
   ]);
-  private readonly textNode: Text;
+  private readonly content: ReturnType<typeof createTextContent>;
 
   constructor(kind: string, root: HTMLElement, text: string, options: ElementOptions) {
     super(kind, root, options);
-    this.textNode = document.createTextNode(text);
-    root.appendChild(this.textNode);
+    const node = document.createTextNode(text);
+    root.appendChild(node);
+    this.content = createTextContent(node);
+    this._registerPropertyRenderer("text", this.content);
   }
 
   get text(): string {
-    return this.textNode.data;
+    return this.content.value;
   }
   set text(value: string) {
-    this.textNode.data = value;
+    this.content.value = value;
   }
 }

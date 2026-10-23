@@ -125,3 +125,43 @@ test("CSS background keyframes pause while hidden and resume on return", async (
   await expect(background).toBeVisible();
   await expect(background).toHaveCSS("animation-play-state", "running");
 });
+
+test("starfield turns on reveal without restarting on every visible step", async ({
+  stage,
+  page,
+}) => {
+  await stage.mount((SR) => {
+    const s = new SR.Stage({ channel: false, defaultDuration: 0.01 });
+    const stars = SR.Starfield({ className: "turning-stars", count: 100, speed: 0.8 });
+    stars.onUpdate(() => {
+      const metrics = (stars as unknown as { _getMetrics(): Record<string, number> })._getMetrics();
+      stars.domElement.dataset.turn = String(Math.hypot(metrics.rotation_x, metrics.rotation_y));
+    });
+    s.background(SR.CSSBackground("#101421"));
+    s.scene("Atmosphere").with(SR.Title("Atmosphere"));
+    s.pause();
+    s.background(stars);
+    s.pause();
+    s.pause();
+    s.background(SR.CSSBackground("#101421"));
+    s.pause();
+    return s;
+  });
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => stage.getMetric("background_speed")).toBeGreaterThan(1.8);
+  const stars = page.locator(".turning-stars");
+  await expect
+    .poll(async () => Number(await stars.getAttribute("data-turn")))
+    .toBeGreaterThan(0.02);
+  await expect.poll(() => stage.getMetric("background_speed")).toBeLessThan(1.1);
+  await page.keyboard.press("ArrowRight");
+  expect(await stage.getMetric("background_speed")).toBeLessThan(1.1);
+  await page.keyboard.press("ArrowRight");
+  await stage.expectAtRest();
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => stage.getMetric("background_speed")).toBeGreaterThan(1.8);
+  await expect(stars.locator("canvas")).toHaveCount(1);
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
+  await stage.expectAtRest();
+});

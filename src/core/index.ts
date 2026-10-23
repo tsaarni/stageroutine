@@ -3,7 +3,6 @@
  */
 
 export {
-  computeTransform,
   interpolateValue,
   lerpColor,
   lerpNumber,

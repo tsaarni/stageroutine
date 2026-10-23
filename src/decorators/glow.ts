@@ -1,33 +1,55 @@
-/**
- * Adds a soft glowing light effect behind an element, with an optional pulsing animation.
- */
+import type { ReactiveProp } from "../core/types";
+import type { ElementDecorator } from "../dom/element";
+import { addFilterContribution, renderElementFilters } from "../dom/filters";
+import type { ElementTransition } from "../motion/element-transition";
+import { createEffectController } from "./controller";
 
-import type { DOMElement, ElementDecorator } from "../dom/element";
-
-/**
- * Configuration options for the glow decorator.
- * @category Decorators
- * @inline
- */
+/** Glow appearance and initial strength. @category Decorators @inline */
 export interface GlowOptions {
-  /** Whether the glow pulses continuously (default: true). */
+  /** Strength multiplier; 0 disables the glow. Default: 1. */
+  intensity?: number;
+  /** Ambient pulse while visible and intensity is positive. Default: true. */
   pulse?: boolean;
-  /** Animation cycle duration in seconds if pulse is enabled (default: 4). */
+  /** Pulse cycle duration in seconds. Default: 4. */
   duration?: number;
 }
 
-/**
- * Decorates an element with a glowing neon aura and optional pulse animation.
- * @category Decorators
- */
-export function glow(options: GlowOptions = {}): ElementDecorator {
-  const { pulse = true, duration = 4 } = options;
+/** Animated glow targets. @category Decorators */
+export interface GlowTransitionProps {
+  intensity?: ReactiveProp<number>;
+}
 
-  return (element: DOMElement) => {
-    const el = element.domElement;
+/** Glow controller attached to one element. @category Decorators */
+export interface GlowEffect extends ElementDecorator {
+  /** Current strength multiplier; 0 disables the glow. Default: 1. */
+  readonly values: Readonly<{ intensity: number }>;
+  /** Animates strength on the stage clock. */
+  to(props: GlowTransitionProps): ElementTransition;
+}
 
-    el.classList.add("sr-glow");
-    el.classList.toggle("sr-glow-pulse", pulse);
-    el.style.setProperty("--sr-glow-duration", `${duration}s`);
-  };
+/** Creates a theme-coloured glow with snapshot-safe intensity. @category Decorators */
+export function glow(options: GlowOptions = {}): GlowEffect {
+  const { intensity = 1, pulse = true, duration = 4 } = options;
+  if (!Number.isFinite(duration) || duration <= 0)
+    throw new RangeError("Glow duration must be positive seconds.");
+  return createEffectController(
+    "glow",
+    { intensity },
+    (_key, value) => {
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
+        throw new RangeError("Glow intensity must be a finite nonnegative multiplier.");
+    },
+    (element, read) => {
+      const node = element.domElement;
+      node.classList.add("sr-glow");
+      node.style.setProperty("--sr-glow-duration", `${duration}s`);
+      addFilterContribution(node, (props) => {
+        const { intensity } = read(props);
+        node.style.setProperty("--sr-glow-intensity", String(intensity));
+        node.classList.toggle("sr-glow-pulse", pulse && intensity > 0);
+        return intensity > 0 ? "var(--sr-glow-filter)" : "";
+      });
+      renderElementFilters(node, element as unknown as Record<string, unknown>);
+    },
+  );
 }

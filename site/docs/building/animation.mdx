@@ -19,68 +19,86 @@ title.opacity = to(1).duration(0.5);
 ```
 
 ### Supported Animated Properties
-- **Spatial**: `x`, `y`, `z`, `scale`, `rotation`, `rotationX`, `rotationY`, `width`, `height`
+- **Spatial**: `x`, `y`, `scale`, `rotation`, `width`, `height`
 - **Visual**: `opacity`, `blur`, `brightness`, `color`
 
-## Depth and tilt
+## Local transforms
 
-Use `rotationX` and `rotationY` to tilt an element. Both default to **0 degrees**.
-`origin` selects the pivot, as it does for 2D rotation.
-
-```typescript
-photo.to({ rotationX: -6, rotationY: 12 }).duration(1.2);
-```
-
-Use `z` to move an element through depth. It defaults to **0 stage units**.
-Positive values move toward the viewer and make the element appear larger.
-Negative values move away. `position` remains **[x, y]**.
+Use `transform()` to tilt any element. Create one controller for each element:
 
 ```typescript
-photo.to({ position: [100, 55], z: 30, rotationY: -15 }).duration(1);
+import { transform } from "stageroutine";
+
+const turn = transform({ perspective: 220 });
+photo.decorate(turn);
+
+turn.to({ rotationX: -6, rotationY: 12 }).duration(1.2);
 ```
 
-Depth animates with position and tilt. `scale` remains an independent size multiplier,
-with a default of **1**. Going backward restores these properties.
+`rotationX`, `rotationY`, and `rotation` use **degrees** and default to **0**.
+The effect's `scale` is a multiplier with a default of **1**.
+The element's `origin` selects the pivot. Its default is **"top-left"**; use **"center"** for a centered turn.
 
-All elements share perspective centered on the stage. Set its distance when creating the stage:
+### Perspective and depth
+
+Each controller has its own perspective distance. The default is **220 stage units**.
+Smaller positive distances exaggerate distortion. Larger distances produce a gentler effect.
+Use **"none"** for orthographic projection: rotation still foreshortens the element, without depth enlargement.
 
 ```typescript
-const stage = new Stage({ perspective: 120 });
+const chartTurn = transform({ perspective: 220 });
+const frameTurn = transform({ perspective: 600 });
+chart.decorate(chartTurn);
+frame.decorate(frameTurn);
 ```
 
-The default distance is **120 stage units**. Smaller positive distances exaggerate depth.
-Keep every rotated corner below this distance on the Z axis.
-At `z: 0`, elements without tilt keep their normal 2D appearance.
-`zIndex` still controls stacking; depth does not automatically reorder elements.
+`z` controls local depth. It defaults to **0 stage units**.
+Positive depth enlarges the element; negative depth shrinks it. Its pivot stays at its stage position.
+Keep depth and every rotated corner below the perspective distance.
 
-### Project points and check bounds
+```typescript
+chartTurn.to({ z: 30, rotationY: -15 }).duration(1);
+```
 
-Use `space` for geometry calculations, such as drawing a path through 3D points.
-Element placement only needs `position` and `z`.
+### Coordinate movement and effects
+
+Move the element with its normal properties. Animate the effect with its controller.
+Moving an element across the stage preserves its local perspective.
+
+```typescript
+photo.to({ position: [100, 55] }).duration(1);
+turn.to({ rotationY: -25 }).duration(0.8).after(photo, "position");
+```
+
+Both use the stage clock and snapshots. Going backward restores movement and effect values together.
+Controllers stop with their transitions. They create no animation loop or layout container.
+`zIndex` controls stacking; local depth does not reorder elements.
+
+Apply a transform to a media frame to turn the entire object. A [Ken Burns effect](./visual-effects.mdx) can continue to pan and zoom the content inside that frame.
+
+### Measure transformed geometry
+
+Use `space.corners()` when you need the projected outline. Pass the same authored geometry and effect values:
 
 ```typescript
 import { space } from "stageroutine";
 
-const camera = {
-  position: [stage.unitsWide / 2, stage.unitsTall / 2, stage.perspective] as const,
-};
-const point = space.project([100, 55, 30], camera);
-
 const corners = space.corners({
-  position: [100, 55, 30],
+  position: [100, 55],
   size: [60, 33.75],
-  rotation: [18, -28, 2],
-  scale: 0.85,
-}, camera);
+  origin: "center",
+  transform: turn.values,
+});
 const bounds = space.bounds(corners);
 ```
 
-Coordinates use stage units. The default geometry camera is **[80, 45, 120]**,
-which matches a default 16:9 stage. Pass the stage camera for other stage sizes or distances.
-`space.corners()` uses a center pivot by default. Its `origin` accepts percentages,
-such as **[0, 0]** for top-left. Match this to the element's origin when checking its bounds.
-Rotations apply in **X, Y, Z** order. Returned corners retain their source order:
-top-left, top-right, bottom-right, bottom-left.
+Positions, sizes, and returned bounds use **stage units**. The default origin is **"top-left"**.
+`turn.values` is a read-only copy of the current effect values.
+Local rotations apply in **X, Y, Z** order, before the element's own scale, 2D rotation, and stage placement.
+Corners retain their source order: top-left, top-right, bottom-right, bottom-left.
+
+Layout arranges authored rectangles. Connectors and bubble tails follow the rendered attachment points.
+CSS clips parts that cross the eye plane; `space.corners()` throws when a corner cannot be projected.
 
 ## Relative Transitions
 
@@ -327,6 +345,20 @@ codePanel.to({
 }).duration(0.4).ease("cubicInOut");
 ```
 
+## Changing Text
+
+Use `.to({ text })` to crossfade a title, text, kicker, or shape label.
+The component keeps its background, children, and identity.
+Timing uses the same duration, delay, and easing controls as other properties.
+
+```typescript
+heading.to({ text: "Then reality joins the rehearsal" }).duration(0.4);
+```
+
+Duration is in seconds. The default is `0.6` seconds.
+Assign `heading.text = "Ready"` for an immediate change.
+Use [`replace()`](#in-place-replacement) to swap complete components, including their child DOM.
+
 ## Scene Choreography
 
 StageRoutine provides high-level helpers to choreograph elements across scenes:
@@ -408,3 +440,21 @@ Animated assignments during scene transitions are ignored.
 Assignments made together share delays and milestone dependencies.
 Use `.duration(0)` to apply a target without interpolation.
 Animation work stops when the targets are reached.
+
+## Animation frame rate
+
+Scene and interactive transitions follow the display refresh rate by default (`"auto"`).
+Set a positive frame rate in frames per second to limit their updates:
+
+```typescript
+const stage = new Stage({ frameRate: 30 });
+
+// Change the limit during playback.
+stage.frameRate = 60;
+stage.frameRate = "auto";
+```
+
+Durations stay the same. Transitions always apply their final values when they finish.
+The setting stays in effect when navigating backward or forward.
+Backgrounds keep their own frame-rate limits. CSS animations and video playback keep their own timing.
+This setting does not synchronize the presentation with recording or screen sharing.

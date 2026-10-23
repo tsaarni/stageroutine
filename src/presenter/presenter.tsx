@@ -67,7 +67,8 @@ const progressBar = document.getElementById("progress-bar");
 const headerRight = document.getElementById("header-right");
 
 const recordPill = document.getElementById("record-pill");
-const btnRecord = document.getElementById("btn-record");
+const btnRecord = document.getElementById("btn-record") as HTMLButtonElement | null;
+const recordLabel = document.getElementById("rec-label");
 const btnMic = document.getElementById("btn-mic");
 const micIcon = document.getElementById("mic-icon");
 
@@ -88,20 +89,32 @@ if (headerRight) {
 // 0. GPU Screen Recorder Integration
 // ============================================================================
 recorder.onUpdate((state) => {
+  const isRecording = state.status === "recording";
   if (recordPill) {
-    recordPill.classList.toggle("recording", state.isRecording);
+    recordPill.classList.toggle("recording", isRecording);
   }
   if (btnRecord) {
-    btnRecord.title = state.isRecording ? "Stop Recording" : "Record Presentation directly via GPU";
+    btnRecord.disabled =
+      state.status === "starting" || state.status === "stopping" || state.status === "disposed";
+    btnRecord.title =
+      state.error?.message ?? (isRecording ? "Stop recording" : "Record presentation");
+  }
+  if (recordLabel) {
+    const minutes = String(Math.floor(state.seconds / 60)).padStart(2, "0");
+    const seconds = String(state.seconds % 60).padStart(2, "0");
+    if (state.status === "starting") recordLabel.textContent = "Starting…";
+    else if (state.status === "stopping") recordLabel.textContent = "Saving…";
+    else if (isRecording) recordLabel.textContent = `Stop ${minutes}:${seconds}`;
+    else recordLabel.textContent = state.error ? "Retry recording" : "Record";
   }
 
   if (btnMic && micIcon) {
     micIcon.textContent = state.isMicEnabled ? "mic" : "mic_off";
-    const isLive = state.isRecording && state.isMicEnabled;
+    const isLive = isRecording && state.isMicEnabled;
     btnMic.classList.toggle("active", isLive);
     if (!state.isMicEnabled) {
       btnMic.title = "Microphone muted (Click to unmute)";
-    } else if (state.isRecording) {
+    } else if (isRecording) {
       btnMic.title = "Microphone recording live (Click to mute)";
     } else {
       btnMic.title = "Microphone enabled (Click to mute)";
@@ -109,12 +122,21 @@ recorder.onUpdate((state) => {
   }
 });
 
-btnRecord?.addEventListener("click", () => {
-  recorder.toggle();
+btnRecord?.addEventListener("click", async () => {
+  try {
+    if (recorder.getState().status === "recording") await recorder.stop();
+    else await recorder.start();
+  } catch (error) {
+    console.error("Recording failed:", error);
+  }
 });
 
 btnMic?.addEventListener("click", () => {
   recorder.toggleMic();
+});
+
+window.addEventListener("pagehide", () => {
+  void recorder.dispose().catch((error) => console.error("Recording cleanup failed:", error));
 });
 
 // ============================================================================

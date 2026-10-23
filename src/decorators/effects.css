@@ -1,18 +1,41 @@
+@property --sr-glow-pulse-factor {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
 @layer sr-components {
   .sr-glow {
-    --sr-glow-base: drop-shadow(0 0 6px color-mix(in srgb, var(--sr-secondary) 65%, transparent))
-      drop-shadow(0 0 22px color-mix(in srgb, var(--sr-secondary) 45%, transparent))
-      drop-shadow(0 0 48px color-mix(in srgb, var(--sr-secondary) 25%, transparent));
-    --sr-glow-peak: drop-shadow(0 0 10px color-mix(in srgb, var(--sr-secondary) 85%, transparent))
-      drop-shadow(0 0 32px color-mix(in srgb, var(--sr-secondary) 60%, transparent))
-      drop-shadow(0 0 65px color-mix(in srgb, var(--sr-secondary) 35%, transparent));
-
+    --sr-glow-strength: calc(var(--sr-glow-intensity, 1) * var(--sr-glow-pulse-factor, 1));
+    --sr-glow-filter: drop-shadow(
+        0 0 calc(6px * var(--sr-glow-strength))
+          color-mix(
+            in srgb,
+            var(--sr-secondary) clamp(0%, calc(65% * var(--sr-glow-strength)), 100%),
+            transparent
+          )
+      )
+      drop-shadow(
+        0 0 calc(22px * var(--sr-glow-strength))
+          color-mix(
+            in srgb,
+            var(--sr-secondary) clamp(0%, calc(45% * var(--sr-glow-strength)), 100%),
+            transparent
+          )
+      )
+      drop-shadow(
+        0 0 calc(48px * var(--sr-glow-strength))
+          color-mix(
+            in srgb,
+            var(--sr-secondary) clamp(0%, calc(25% * var(--sr-glow-strength)), 100%),
+            transparent
+          )
+      );
     display: inline-block;
-    filter: var(--sr-glow-base);
   }
 
   .sr-glow-pulse {
-    animation: sr-neon-bloom var(--sr-glow-duration, 4s) ease-in-out infinite;
+    animation: sr-glow-pulse var(--sr-glow-duration, 4s) ease-in-out infinite;
     animation-play-state: var(--sr-element-play-state, running);
   }
 
@@ -47,14 +70,13 @@
     animation-play-state: var(--sr-element-play-state, running);
   }
 
-  @keyframes sr-neon-bloom {
+  @keyframes sr-glow-pulse {
     0%,
     100% {
-      filter: var(--sr-glow-base);
+      --sr-glow-pulse-factor: 1;
     }
-
     50% {
-      filter: var(--sr-glow-peak);
+      --sr-glow-pulse-factor: 1.4;
     }
   }
 

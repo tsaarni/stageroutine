@@ -62,8 +62,6 @@ if (document.fonts) {
 // Core runtime
 export { logger, Stage } from "./core/index";
 export type { LogLevel } from "./core/logger";
-export type { Camera3D, Plane3D, Point3D, ProjectedQuad } from "./core/space";
-export { space } from "./core/space";
 export type { Scene } from "./core/stage";
 export type { TerminalStatus } from "./core/terminal-protocol";
 export type {
@@ -110,7 +108,9 @@ export type {
   BracketOptions,
   BracketStyle,
   DreamOptions,
+  GlowEffect,
   GlowOptions,
+  GlowTransitionProps,
   GradientOptions,
   GrainOptions,
   KenBurnsFocus,
@@ -118,6 +118,11 @@ export type {
   KenBurnsOptions,
   RuleOptions,
   ScrimOptions,
+  ShineEffect,
+  ShineOptions,
+  TransformEffect,
+  TransformOptions,
+  TransformTransitionProps,
   TypewriterOptions,
   TypewriterStep,
   VignetteOptions,
@@ -132,6 +137,8 @@ export {
   kenBurns,
   rule,
   scrim,
+  shine,
+  transform,
   typewriter,
   vignette,
 } from "./decorators/index";
@@ -222,7 +229,12 @@ export {
   Video,
   Webcam,
 } from "./dom/components/index";
-export type { ElementDecorator, ElementOptions } from "./dom/element";
+export type {
+  CustomElement,
+  CustomElementOptions,
+  ElementDecorator,
+  ElementOptions,
+} from "./dom/element";
 // DOM wrapping factory and public element type
 export { type DOMElement, Element, type ElementChild } from "./dom/element";
 export type { GroupElement } from "./dom/group";
@@ -261,6 +273,8 @@ export type {
 } from "./dom/paths";
 // Geometry
 export { paths } from "./dom/paths";
+export type { ElementPlane, ProjectedQuad } from "./dom/space";
+export { space } from "./dom/space";
 export type {
   ElementTransition,
   ElementTransitionProps,
@@ -281,6 +295,7 @@ export type {
 // Overlays
 export { Annotation, LaserPointer, NavigationOverlay } from "./overlays/index";
 // Presenter
+export type { PresenterRecorderState } from "./presenter/index";
 export { PresenterClient, PresenterRecorder } from "./presenter/index";
 // Theming
 export { cyberpunk, defaultDark, defaultLight, dracula, themes, tokyoNight } from "./theme/index";

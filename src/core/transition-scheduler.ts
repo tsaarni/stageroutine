@@ -58,20 +58,23 @@ export function sampleTransition(
 ): {
   value: unknown;
   progress: number;
+  easedProgress: number;
 } {
-  if (elapsed < t.startOffsetMs) return { value: t.startFrom, progress: 0 };
-  if (elapsed >= t.endOffsetMs) return { value: t.to, progress: 1 };
+  if (elapsed < t.startOffsetMs) return { value: t.startFrom, progress: 0, easedProgress: 0 };
+  if (elapsed >= t.endOffsetMs) return { value: t.to, progress: 1, easedProgress: 1 };
   const progress = (elapsed - t.startOffsetMs) / t.durationMs;
+  const easedProgress = t.curve(progress);
   if (t.property === "position") {
     const from = t.startFrom as Point;
     const to = t.to as Point;
-    const eased = t.curve(progress);
+    const eased = easedProgress;
     const centerFrom = t.motion?.fromCenter ?? from;
     const centerTo = t.motion?.toCenter ?? to;
     t.positionSampler ??= createPositionSampler(t.motion?.path, centerFrom, centerTo);
     const center = t.positionSampler(eased);
     return {
       progress,
+      easedProgress,
       value: center.map(
         (v, i) => v + (from[i] - centerFrom[i]) * (1 - eased) + (to[i] - centerTo[i]) * eased,
       ),
@@ -79,6 +82,7 @@ export function sampleTransition(
   }
   return {
     progress,
-    value: interpolateValue(t.startFrom, t.to, t.curve(progress), t.property, context),
+    easedProgress,
+    value: interpolateValue(t.startFrom, t.to, easedProgress, t.property, context),
   };
 }

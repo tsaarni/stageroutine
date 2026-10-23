@@ -9,7 +9,7 @@ import { registerStageStyleContext } from "../theme/context";
 import { defaultDark } from "../theme/presets";
 import { applyThemeTokens } from "../theme/tokens";
 import { applyDOMOpacity, usesLayerOpacity } from "./dom-opacity";
-import { computeTransform, resolveAnchor } from "./interpolators";
+import { resolveAnchor } from "./interpolators";
 import { logger } from "./logger";
 import { MetricRegistry } from "./metrics";
 import { createPerfProbe, type PerfProbe } from "./perf";
@@ -68,6 +68,12 @@ function resolveDefaultHeight(): number {
   );
 }
 
+function validateFrameRate(value: number | "auto"): void {
+  if (value !== "auto" && (typeof value !== "number" || !Number.isFinite(value) || value <= 0)) {
+    throw new RangeError('Frame rate must be a positive finite number in fps or "auto".');
+  }
+}
+
 const VALID_CLASS_IDENTIFIER = /^[a-zA-Z_-][\w-]*$/;
 const TRANSITION_START_MARK = "sr/start";
 const TRANSITION_END_MARK = "sr/end";
@@ -79,9 +85,6 @@ const STYLE_RENDERED_KEYS: ReadonlySet<string> = new Set([
   "height",
   "scale",
   "rotation",
-  "rotationX",
-  "rotationY",
-  "z",
   "origin",
   "opacity",
   "blur",
@@ -263,8 +266,7 @@ export class Stage {
   private elementRegistry = new Map<string, ReactiveElementBase>();
   /** Ids of elements nested inside a parent container (items/rows); the parent owns their visibility. */
   private ownedByParent = new Set<string>();
-  /** Keep the projection path stable for elements authored with depth or tilt. */
-  private spatialElements = new Set<string>();
+  private effectStateIds = new Set<string>();
   private initialProperties = new Map<string, Record<string, unknown>>();
   private propertyState = new Map<string, Record<string, unknown>>();
   private baseTheme: ThemeConfig = {};
@@ -315,6 +317,7 @@ export class Stage {
     return this.animationActive;
   }
   private animFrameId: number | null = null;
+  private nextAnimationFrameTime: number | null = null;
   private presenterHost: PresenterHost | null = null;
   private activeSceneName = "";
   private promotedElements = new Set<HTMLElement>();
@@ -449,9 +452,7 @@ export class Stage {
    * context will cause the latter instance to overwrite `activeStage`.
    */
   constructor(options: StageOptions = {}) {
-    if (!Number.isFinite(options.perspective ?? 120) || (options.perspective ?? 120) <= 0) {
-      throw new RangeError("Stage perspective must be a positive finite distance in stage units.");
-    }
+    validateFrameRate(options.frameRate ?? "auto");
     activeStage = this;
     (window as unknown as { __stage?: Stage }).__stage = this;
     const defaultWidth = resolveDefaultWidth();
@@ -505,14 +506,20 @@ export class Stage {
     return this.options.width || 1920;
   }
 
+  /** Animation update limit in fps; "auto" follows display refresh. Default: "auto". */
+  get frameRate(): number | "auto" {
+    return this.options.frameRate ?? "auto";
+  }
+
+  set frameRate(value: number | "auto") {
+    validateFrameRate(value);
+    this.options.frameRate = value;
+    this.nextAnimationFrameTime = null;
+  }
+
   /** Virtual stage canvas height in pixels (default: 1080). */
   get height(): number {
     return this.options.height || 1080;
-  }
-
-  /** Shared perspective distance in stage units (default: 120). */
-  get perspective(): number {
-    return this.options.perspective ?? 120;
   }
 
   /** Stage width in stage units (160 on a 16:9 stage). */
@@ -640,7 +647,7 @@ export class Stage {
         animName === "sr-flow-traveling-kf" ||
         animName === "sr-flow-chase-kf" ||
         animName === "sr-neon-sweep" ||
-        animName === "sr-neon-bloom";
+        animName === "sr-glow-pulse";
       if (!isHidden && isAmbientFlow) {
         continue;
       }
@@ -1175,7 +1182,10 @@ export class Stage {
     triggerProperty?: string,
     motion?: PositionMotion,
   ): void {
-    this._rememberSpatialProperty(elementId, property, to);
+    (this.elementRegistry.get(elementId) as StageManagedElement | undefined)?._validateProperty?.(
+      property,
+      to,
+    );
     from = copyPropertyValue(from);
     to = copyPropertyValue(to);
     if (
@@ -1188,7 +1198,7 @@ export class Stage {
         from[0] === to[0] &&
         from[1] === to[1])
     ) {
-      if (property === "position") this._cancelPositionTransition(elementId, property);
+      if (property === "position") this._cancelPropertyTransition(elementId, property);
       return;
     }
     if (motion)
@@ -1236,10 +1246,15 @@ export class Stage {
     });
   }
 
-  _cancelPositionTransition(elementId: string, property: string): void {
+  _cancelPropertyTransition(elementId: string, property: string): void {
     if (this.restoringState || this.sceneTransitionRunning) return;
+    (
+      this.elementRegistry.get(elementId) as StageManagedElement | undefined
+    )?._clearPropertyTransitions?.(property);
     const conflicts = (p: string) =>
-      p === "position" || p === property || (property === "position" && (p === "x" || p === "y"));
+      p === property ||
+      (["position", "x", "y"].includes(property) &&
+        (p === "position" || (property === "position" && (p === "x" || p === "y"))));
     if (!this.isMountedState) {
       // Authoring state contains destinations. Restore the canceled movement's start first.
       const canceled = this.currentStepTransitions.filter(
@@ -1260,8 +1275,7 @@ export class Stage {
   }
 
   private _scheduleLiveTransition(record: TransitionRecord): void {
-    if (["position", "x", "y"].includes(record.property))
-      this._cancelPositionTransition(record.elementId, record.property);
+    this._cancelPropertyTransition(record.elementId, record.property);
     this.pendingLiveTransitions.push(record);
     if (!this.liveBatchQueued) {
       this.liveBatchQueued = true;
@@ -1288,10 +1302,18 @@ export class Stage {
       this.activeLiveTransitions.set(`${t.elementId}:${t.property}`, { ...t, startTime: now });
     }
     if (this.animFrameId !== null) return;
+    this.nextAnimationFrameTime = null;
     this.isAnimating = true;
     const epoch = this.animationEpoch;
     const frame = (frameTime: number) => {
       if (epoch !== this.animationEpoch) return;
+      const complete = [...this.activeLiveTransitions.values()].every(
+        (t) => frameTime - t.startTime >= t.endOffsetMs,
+      );
+      if (!complete && !this._shouldRenderAnimationFrame(frameTime)) {
+        this.animFrameId = requestAnimationFrame(frame);
+        return;
+      }
       const progress = new Map<string, number>();
       for (const [key, t] of this.activeLiveTransitions) {
         const elapsed = frameTime - t.startTime;
@@ -1306,6 +1328,9 @@ export class Stage {
           this.elementRegistry.get(t.elementId)?.domElement,
         );
         this._setCurrentPropertyValue(t.elementId, t.property, sample.value);
+        (
+          this.elementRegistry.get(t.elementId) as StageManagedElement | undefined
+        )?._renderPropertyTransition?.(t.property, t.startFrom, t.to, sample.easedProgress);
         progress.set(t.elementId, sample.progress);
         if (elapsed >= t.endOffsetMs) this.activeLiveTransitions.delete(key);
       }
@@ -1342,14 +1367,16 @@ export class Stage {
     else managed?._update?.();
   }
 
-  private _rememberSpatialProperty(id: string, property: string, value: unknown): void {
-    if (
-      (property === "z" || property === "rotationX" || property === "rotationY") &&
-      typeof value === "number" &&
-      value !== 0
-    ) {
-      this.spatialElements.add(id);
-    }
+  private _shouldRenderAnimationFrame(now: number): boolean {
+    if (this.frameRate === "auto") return true;
+    const interval = 1000 / this.frameRate;
+    this.nextAnimationFrameTime ??= now;
+    // Allow sub-millisecond RAF rounding without drifting the target cadence.
+    const roundedNow = now + 0.5;
+    if (roundedNow < this.nextAnimationFrameTime) return false;
+    this.nextAnimationFrameTime +=
+      Math.max(1, Math.floor((roundedNow - this.nextAnimationFrameTime) / interval) + 1) * interval;
+    return true;
   }
 
   _getCurrentPropertyValue(elementId: string, property: string): unknown {
@@ -1364,13 +1391,16 @@ export class Stage {
       this._setCurrentPropertyValue(elementId, "y", value[1]);
       return;
     }
+    (this.elementRegistry.get(elementId) as StageManagedElement | undefined)?._validateProperty?.(
+      property,
+      value,
+    );
     let elProps = this.propertyState.get(elementId);
     if (!elProps) {
       elProps = {};
       this.propertyState.set(elementId, elProps);
     }
     value = copyPropertyValue(value);
-    this._rememberSpatialProperty(elementId, property, value);
     elProps[property] = value;
 
     // Update baseline properties if this element has not yet been snapshotted in any step
@@ -1385,7 +1415,8 @@ export class Stage {
     const el = this.elementRegistry.get(elementId);
     if (el) {
       try {
-        (el as unknown as Record<string, unknown>)[property] = value;
+        const fields = el as unknown as Record<string, unknown>;
+        if (fields[property] !== value) fields[property] = value;
       } catch {
         // ignore read-only
       }
@@ -1395,9 +1426,47 @@ export class Stage {
     }
   }
 
+  /** @internal Registers additional presentation values with existing snapshots. */
+  _registerElementProperties(id: string, initial: Record<string, unknown>): void {
+    const baseline = this.initialProperties.get(id);
+    const current = this.propertyState.get(id);
+    if (!baseline || !current) throw new Error(`Unknown element '${id}'.`);
+    for (const [key, value] of Object.entries(initial)) {
+      baseline[key] = copyPropertyValue(value);
+      current[key] = copyPropertyValue(value);
+      for (const snapshot of this.snapshots) {
+        const props = snapshot.properties.get(id);
+        if (props) props[key] = copyPropertyValue(value);
+      }
+    }
+  }
+
   /** @internal Checks whether an element is already registered with the stage. */
   _hasElement(id: string): boolean {
     return this.elementRegistry.has(id);
+  }
+
+  /** @internal Releases effect resources even when disposed before mounting. */
+  _registerDisposeCleanup(cleanup: () => void): void {
+    this.mountCleanups.push(cleanup);
+  }
+
+  /** @internal Keeps shared effect state independent of scene membership. */
+  _retainEffectState(id: string): void {
+    const props = this.initialProperties.get(id);
+    if (!props) throw new Error(`Unknown effect state '${id}'.`);
+    this.effectStateIds.add(id);
+    this.activeElementIds.add(id);
+    for (const step of this.steps) step.activeElementIds.add(id);
+    for (const snapshot of this.snapshots) {
+      snapshot.activeElementIds.add(id);
+      snapshot.properties.set(id, copyPropertyRecord(props));
+    }
+  }
+
+  /** @internal Checks identity as well as the user-supplied element id. */
+  _ownsElement(element: ReactiveElementBase): boolean {
+    return this.elementRegistry.get(element.id)?.domElement === element.domElement;
   }
 
   /** @internal Marks an element as owned by a parent container (its visibility is managed by the parent). */
@@ -1423,7 +1492,6 @@ export class Stage {
           val = element.domElement?.style.zIndex || "auto";
         }
         if (typeof val !== "function") {
-          this._rememberSpatialProperty(element.id, key, val);
           initialProps[key] = copyPropertyValue(val);
         }
       } catch {
@@ -1560,6 +1628,7 @@ export class Stage {
       }
     };
     collect(elements);
+    for (const id of this.effectStateIds) ids.add(id);
     this.activeElementIds = ids;
   }
 
@@ -2006,6 +2075,8 @@ export class Stage {
   }
 
   private _restoreSnapshot(stepIdx: number, backward: boolean): void {
+    for (const el of this.elementRegistry.values())
+      (el as StageManagedElement)._clearPropertyTransitions?.();
     const snap = this.snapshots[stepIdx];
     if (!snap) return;
 
@@ -2103,6 +2174,8 @@ export class Stage {
   }
 
   private _startStepTransition(stepIdx: number): void {
+    for (const el of this.elementRegistry.values())
+      (el as StageManagedElement)._clearPropertyTransitions?.();
     const step = this.steps[stepIdx];
     if (!step) return;
     const backgroundSnapshot = this.snapshots[stepIdx];
@@ -2246,10 +2319,7 @@ export class Stage {
                   t.property === "x" ||
                   t.property === "y" ||
                   t.property === "scale" ||
-                  t.property === "rotation" ||
-                  t.property === "rotationX" ||
-                  t.property === "rotationY" ||
-                  t.property === "z"),
+                  t.property === "rotation"),
             );
             if (motionTransition) {
               stepTransitions.push({
@@ -2352,6 +2422,7 @@ export class Stage {
 
     const maxDuration = Math.max(...scheduledTransitions.map((t) => t.endOffsetMs));
 
+    this.nextAnimationFrameTime = null;
     this.lastFrameTime = performance.now();
     this.maxFrameDurationMs = 0;
 
@@ -2359,6 +2430,10 @@ export class Stage {
     const frame = (now: number) => {
       if (epoch !== this.animationEpoch) return;
       const elapsed = now - startTime;
+      if (elapsed < maxDuration && !this._shouldRenderAnimationFrame(now)) {
+        this.animFrameId = requestAnimationFrame(frame);
+        return;
+      }
       const frameDelta = now - this.lastFrameTime;
       this.lastFrameTime = now;
       this.lastFrameDurationMs = frameDelta;
@@ -2397,18 +2472,32 @@ export class Stage {
         const el = this.elementRegistry.get(t.elementId);
         if (!el) continue;
 
-        const currentVal = sampleTransition(
+        const sample = sampleTransition(
           t,
           elapsed,
           this.elementRegistry.get(t.elementId)?.domElement,
-        ).value;
+        );
 
         // Update local property state
-        this._setCurrentPropertyValue(t.elementId, t.property, currentVal);
+        this._setCurrentPropertyValue(t.elementId, t.property, sample.value);
+        (el as StageManagedElement)._renderPropertyTransition?.(
+          t.property,
+          t.startFrom,
+          t.to,
+          sample.easedProgress,
+        );
+      }
 
-        // Render to DOM without dispatching intermediate updates per property
-        const props = this.propertyState.get(t.elementId) || {};
-        this._applyStyles(el, props, step.activeElementIds.has(t.elementId), false);
+      // Apply each element's complete frame before invoking lifecycle or drawing hooks.
+      for (const id of transitioningIds) {
+        const el = this.elementRegistry.get(id);
+        if (!el) continue;
+        this._applyStyles(
+          el,
+          this.propertyState.get(id) ?? {},
+          step.activeElementIds.has(id),
+          false,
+        );
         if (epoch !== this.animationEpoch) return;
       }
 
@@ -2444,6 +2533,7 @@ export class Stage {
   }
 
   private _hideElement(element: ReactiveElementBase): void {
+    (element as StageManagedElement)._clearPropertyTransitions?.();
     const node = element.domElement;
     if (!node) return;
     applyDOMOpacity(node, 0);
@@ -2464,18 +2554,7 @@ export class Stage {
     const node = element.domElement;
     if (!node) return;
 
-    const x = props.x as number | undefined;
-    const y = props.y as number | undefined;
-    const scale = (props.scale as number) ?? 1;
-    const rotation = (props.rotation as number) ?? 0;
-    const rawOrigin = props.origin ?? element.origin;
-    const origin: ElementAnchor =
-      typeof rawOrigin === "string" || Array.isArray(rawOrigin)
-        ? (rawOrigin as ElementAnchor)
-        : "top-left";
     const opacity = (props.opacity as number) ?? 1;
-    const blur = (props.blur as number) ?? 0;
-    const brightness = (props.brightness as number) ?? 1;
     const color = props.color as string | undefined;
 
     if (opacity > 0 && node.style.display === "none") node.style.display = "";
@@ -2495,24 +2574,8 @@ export class Stage {
     } else if ("height" in props && node.style.height) {
       node.style.removeProperty("height");
     }
-    const { transform, transformOrigin } = computeTransform(x, y, scale, rotation, origin, {
-      rotationX: props.rotationX as number | undefined,
-      rotationY: props.rotationY as number | undefined,
-      z: props.z as number | undefined,
-      perspective: this.perspective,
-      center: [this.unitsWide / 2, this.unitsTall / 2],
-      spatial: this.spatialElements.has(element.id),
-    });
-
     const managed = element as StageManagedElement;
-    const isCustomPositioned =
-      Boolean(managed._isCustomPositioned) ||
-      node instanceof SVGElement ||
-      node.tagName.toLowerCase() === "svg";
-    if (!isCustomPositioned) {
-      node.style.transform = transform;
-      node.style.transformOrigin = transformOrigin;
-    }
+    managed._renderTransform?.(props);
     const defaultPointerEvents =
       managed._defaultPointerEvents ??
       (node instanceof SVGElement || node.tagName.toLowerCase() === "svg" ? "none" : "auto");
@@ -2534,14 +2597,7 @@ export class Stage {
         managed._deactivate?.();
       }
     }
-    if (blur > 0 || brightness !== 1) {
-      const filters: string[] = [];
-      if (blur > 0) filters.push(`blur(${blur}px)`);
-      if (brightness !== 1) filters.push(`brightness(${brightness})`);
-      node.style.filter = filters.join(" ");
-    } else if (node.style.filter) {
-      node.style.removeProperty("filter");
-    }
+    managed._renderFilters?.(props);
     // Key present but unset: clear the inline style. Absent key: leave it.
     if (color && color !== "inherit") {
       node.style.color = color;

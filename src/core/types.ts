@@ -412,8 +412,6 @@ export interface Background {
  * @inline
  */
 export interface StageOptions {
-  /** Shared perspective distance in stage units. Default: 120. */
-  perspective?: number;
   /** Target HTML container or CSS selector to mount into (default: `document.body`). */
   target?: string | HTMLElement;
   /** Virtual stage width in pixels (default: `1920` or environment config). */
@@ -422,6 +420,8 @@ export interface StageOptions {
   height?: number;
   /** Default transition duration in seconds (default: `0.6`). */
   defaultDuration?: number;
+  /** Animation update limit in frames per second; "auto" follows display refresh. Default: "auto". */
+  frameRate?: number | "auto";
   /** Initial theme color overrides (default: `defaultDark`). */
   theme?: ThemeConfig;
   /** Minimum log level (default: `"warn"`). Set to `"debug"` for verbose output or `"silent"` to suppress all. */
@@ -567,15 +567,6 @@ export interface ReactiveElementBase {
   set scale(value: ReactiveProp<number>);
   get rotation(): number;
   set rotation(value: ReactiveProp<number>);
-  /** X-axis tilt in degrees. Default: 0. */
-  get rotationX(): number;
-  set rotationX(value: ReactiveProp<number>);
-  /** Y-axis tilt in degrees. Default: 0. */
-  get rotationY(): number;
-  set rotationY(value: ReactiveProp<number>);
-  /** Depth in stage units; positive moves toward the viewer. Default: 0. */
-  get z(): number;
-  set z(value: ReactiveProp<number>);
   get blur(): number;
   set blur(value: ReactiveProp<number>);
   get brightness(): number;
@@ -607,6 +598,11 @@ export interface ReactiveElementBase {
  * @internal
  */
 export interface StageManagedElement extends ReactiveElementBase {
+  _renderPropertyTransition?(property: string, from: unknown, to: unknown, progress: number): void;
+  _clearPropertyTransitions?(property?: string): void;
+  _renderFilters?(props: Readonly<Record<string, unknown>>): void;
+  _renderTransform?(props: Readonly<Record<string, unknown>>): void;
+  _validateProperty?(property: string, value: unknown): void;
   _isCustomPositioned?: boolean;
   _defaultPointerEvents?: string;
   _update?(): void;

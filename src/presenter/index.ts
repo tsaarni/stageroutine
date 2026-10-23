@@ -69,4 +69,5 @@ export class PresenterClient {
 }
 
 export type { StageStateChangedEvent } from "../core/types";
+export type { PresenterRecorderState } from "./recorder";
 export { PresenterRecorder } from "./recorder";

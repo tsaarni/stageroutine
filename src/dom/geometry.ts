@@ -4,6 +4,7 @@
 
 import { resolveAnchor, unitsToPx } from "../core/interpolators";
 import type { AnchorMode, ElementAnchor, Point } from "../core/types";
+import { hasTransformContribution } from "./transform";
 
 export type { AnchorMode, Point };
 
@@ -14,6 +15,10 @@ export interface Box {
   height: number;
   scale?: number;
   rotation?: number;
+  projection?: {
+    toWorld(point: Point): Point;
+    toLocal(point: Point): Point;
+  };
 }
 
 export type CardinalSide = "top" | "bottom" | "left" | "right" | "center";
@@ -80,6 +85,7 @@ function normalize(vector: Point): Point {
 
 /** Maps a world-space point into the box's local, unrotated and unscaled space. */
 export function toLocalPoint(box: Box, target: Point): Point {
+  if (box.projection) return box.projection.toLocal(target);
   const scale = boxScale(box);
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
@@ -92,6 +98,7 @@ export function toLocalPoint(box: Box, target: Point): Point {
 
 /** Maps a local-space point of the box back to world space, applying box scale and rotation. */
 function toWorldPoint(box: Box, local: Point): Point {
+  if (box.projection) return box.projection.toWorld(local);
   const scale = boxScale(box);
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
@@ -630,6 +637,7 @@ export function resolveTargetBox(target: unknown, stageH = 1080): ResolvedTarget
       domElement: HTMLElement;
       scale?: number | string;
       rotation?: number | string;
+      _isCustomPositioned?: boolean;
       x?: number;
       y?: number;
     };
@@ -650,6 +658,60 @@ export function resolveTargetBox(target: unknown, stageH = 1080): ResolvedTarget
       let height = dom.offsetHeight;
       if (width <= 0) width = Number.parseFloat(dom.style.width) || dRect.width / scale;
       if (height <= 0) height = Number.parseFloat(dom.style.height) || dRect.height / scale;
+
+      // The stage's CSS transform is the rendered local-plane projection. Using it
+      // also avoids reading authored end values while a transition is playing.
+      if (!el._isCustomPositioned && hasTransformContribution(dom)) {
+        const style = getComputedStyle(dom);
+        const borderSize = (axis: "width" | "height") => {
+          const value = Number.parseFloat(style[axis]);
+          if (style.boxSizing === "border-box") return value;
+          const sides =
+            axis === "width" ? (["Left", "Right"] as const) : (["Top", "Bottom"] as const);
+          return (
+            value +
+            sides.reduce(
+              (sum, side) =>
+                sum +
+                Number.parseFloat(style[`padding${side}`]) +
+                Number.parseFloat(style[`border${side}Width`]),
+              0,
+            )
+          );
+        };
+        width = borderSize("width") || width;
+        height = borderSize("height") || height;
+        const matrix = new DOMMatrix(style.transform);
+        const toWorld = ([x, y]: Point): Point => {
+          const p = matrix.transformPoint(new DOMPoint(x, y));
+          return [p.x / p.w, p.y / p.w];
+        };
+        const center = toWorld([width / 2, height / 2]);
+        const toLocal = ([x, y]: Point): Point => {
+          // Invert the plane's homography, rather than a 3D point at screen Z=0.
+          const a = matrix.m11 - x * matrix.m14;
+          const b = matrix.m21 - x * matrix.m24;
+          const c = matrix.m12 - y * matrix.m14;
+          const d = matrix.m22 - y * matrix.m24;
+          const u = x * matrix.m44 - matrix.m41;
+          const v = y * matrix.m44 - matrix.m42;
+          const det = a * d - b * c;
+          // A plane viewed exactly edge-on has no unique inverse.
+          return Math.abs(det) < 1e-10
+            ? [width / 2, height / 2]
+            : [(u * d - b * v) / det, (a * v - u * c) / det];
+        };
+        return {
+          point: center,
+          box: {
+            x: center[0] - width / 2,
+            y: center[1] - height / 2,
+            width,
+            height,
+            projection: { toWorld, toLocal },
+          },
+        };
+      }
 
       return {
         point: [cx, cy],
@@ -696,6 +758,29 @@ export function resolveTargetAnchor(
   anchor: AnchorMode | ElementAnchor,
   padding = 6,
 ): AnchorPoint {
+  if (box.projection) {
+    const localBox: Box = { x: 0, y: 0, width: box.width, height: box.height };
+    const local = resolveTargetAnchor(
+      target,
+      localBox,
+      box.projection.toLocal(targetPt),
+      anchor,
+      0,
+    );
+    const point = box.projection.toWorld(local.point);
+    if (!local.normal) return { point, side: "center" };
+    const [nx, ny] = local.normal;
+    const tangent = box.projection.toWorld([local.point[0] - ny, local.point[1] + nx]);
+    let normal = normalize([tangent[1] - point[1], point[0] - tangent[0]]);
+    const outward = box.projection.toWorld([local.point[0] + nx, local.point[1] + ny]);
+    if (normal[0] * (outward[0] - point[0]) + normal[1] * (outward[1] - point[1]) < 0)
+      normal = [-normal[0], -normal[1]];
+    return {
+      point: [point[0] + normal[0] * padding, point[1] + normal[1] * padding],
+      normal,
+      side: dominantSide(normal),
+    };
+  }
   if (isAnchorMode(anchor)) {
     if (isPerimeterProvider(target)) {
       return target.getPerimeterPoint(box, targetPt, padding, anchor);

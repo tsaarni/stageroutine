@@ -24,5 +24,5 @@
       "stageroutine/vite": ["./src/vite-plugin.ts"]
     }
   },
-  "include": ["src", "demo", "scripts"]
+  "include": ["src", "demo", "scripts", "tests/types"]
 }

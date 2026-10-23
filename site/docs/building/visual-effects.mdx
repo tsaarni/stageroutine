@@ -105,7 +105,85 @@ stage.mount("#stage");
 // hide-end
 ```
 
+Keep a glow controller when you want to animate its strength:
+
+```typescript
+const light = glow({ intensity: 0, pulse: false });
+const star = Shape(paths.star(), { size: 16 }).decorate(light);
+
+stage.scene("A little light").with(star);
+stage.pause();
+light.to({ intensity: 1 }).duration(0.5); // Seconds.
+stage.pause();
+```
+
+Intensity is a multiplier: `0` hides the glow, `1` is normal, and larger values make it stronger.
+The default is `1`. Strength restores when you go backward.
+Each controller attaches to one element. Create a new controller for each element.
+
+The optional pulse modulates the strength. It pauses while hidden and stops at zero intensity.
+Its default cycle is `4` seconds. Use `pulse: false` for a steady glow.
+Glow uses the theme's `secondary` colour and composes with element blur and brightness.
+Blur and brightness apply first, followed by effect filters in attachment order.
+
 For configuration options, see the [`gradient`](../api/functions/gradient.md) and [`glow`](../api/functions/glow.md) API references.
+
+## Shine
+
+`shine()` creates a moving reflection. Attach it to a shape or card, then animate its progress.
+Progress is a fraction from `0` to `1`. Both endpoints leave the surface clear. The default is `0`.
+
+```typescript
+import { Card, shine } from "stageroutine";
+
+const light = shine();
+const card = Card("Ready to present", { width: 30, height: 12 }).decorate(light);
+stage.scene("Catch the light").with(card);
+stage.pause();
+light.to({ progress: 1 }).duration(0.9); // Seconds.
+stage.pause();
+```
+
+Reuse the same instance to share one light across several elements:
+
+```typescript
+const light = shine();
+diamond.decorate(light);
+hexagon.decorate(light);
+star.decorate(light);
+
+light.to({ progress: 1 }).duration(2.4);
+```
+
+The band crosses the receivers' combined visible bounds. It reaches each receiver according to its position.
+Separate `shine()` instances produce independent lights. All receivers of one light must belong to the same stage.
+
+Ghost shapes catch light on their outlines. Other shapes and cards catch it on their filled surfaces, beneath their content.
+Use `surface: "outline"` or `surface: "fill"` to choose explicitly. The default is `"auto"`.
+Text, icons, images, and arbitrary HTML do not yet expose receiving surfaces.
+
+```typescript
+const light = shine({
+  color: "#fbbf24",
+  highlight: "#fff4ce",
+  angle: -20,     // Travel direction in degrees. Default: -20.
+  width: 0.22,    // Fraction of the combined span along that direction. Default: 0.22.
+  intensity: 1,  // Nonnegative strength multiplier. Default: 1.
+});
+```
+
+Angle `0` travels right. Positive angles turn clockwise.
+By default, colour comes from the stage theme's `secondary` token, even when receivers have local themes.
+The core uses a lighter version of that colour. Theme changes update the light.
+
+The field stays aligned to the stage while receivers move, rotate, or resize.
+Hidden receivers do not enlarge its bounds. Going backward restores progress.
+The sweep uses the stage clock and stops when its transition finishes.
+Reduced-motion preferences suppress the travelling reflection.
+
+Keep reactions such as glow, rotation, or a lasting highlight in your presentation's choreography.
+See the [`shine`](../api/functions/shine.md) API reference for all options.
+
 
 ### Framing Brackets
 

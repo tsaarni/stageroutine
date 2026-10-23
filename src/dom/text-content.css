@@ -1,0 +1,12 @@
+@layer sr-components {
+  .sr-text-transition {
+    display: inline-grid;
+    max-width: 100%;
+    vertical-align: baseline;
+  }
+  .sr-text-transition > span {
+    grid-area: 1 / 1;
+    align-self: start;
+    min-width: 0;
+  }
+}

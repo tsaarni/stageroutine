@@ -99,9 +99,41 @@ Notes stay synchronized with slide playback:
 
 ### Screen Recording
 
-The console includes built-in GPU recording:
+The console includes built-in recording:
 
 1. Click the **Record** button in the header.
-2. Select your presentation screen or window in the browser picker.
+2. Select the presentation tab in the browser picker.
 3. Toggle the microphone button to include audio narration.
-4. Click **Stop** to download the recorded `.webm` video.
+4. Click **Stop** to download the recorded video.
+
+Recording uses a fixed 2560 × 1440 frame at up to 60 frames per second, with a 24 Mbps video bitrate target.
+It crops the centered 16:9 stage area as the tab resizes.
+The browser selects WebM or MP4 based on codec support.
+
+#### Custom recording controls
+
+Use `PresenterRecorder` in a custom presenter view:
+
+```ts
+import { PresenterRecorder } from "stageroutine";
+
+const recorder = new PresenterRecorder();
+const unsubscribe = recorder.onUpdate(({ status, seconds, error }) => {
+  // Update your controls from the current state.
+});
+
+// Call from a button click. False means capture was declined or cancelled.
+const started = await recorder.start();
+
+// Wait for finalization, download, and resource cleanup.
+await recorder.stop();
+
+unsubscribe();
+await recorder.dispose();
+```
+
+Startup and finalization failures reject their promises and appear in `getState().error`.
+Wait for `stop()` before restarting.
+`dispose()` discards an active recording and permanently releases the recorder.
+If a capture picker is open, cleanup waits for it to close and releases any resulting stream.
+See the [recorder API](../api/classes/PresenterRecorder.md) for all methods.

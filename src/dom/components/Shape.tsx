@@ -1,5 +1,6 @@
 import { refreshLayerOpacity } from "../../core/dom-opacity";
 import { isTransitionDescriptor } from "../../motion/transitions";
+import { createTextContent } from "../text-content";
 /**
  * Universal geometric shape container supporting surface materials, trim paths, and dynamic borders.
  */
@@ -145,6 +146,23 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
     this._update();
   }
 
+  private textContent?: ReturnType<typeof createTextContent>;
+  private ensureTextContent() {
+    if (!this.textSpan) {
+      this.textSpan = document.createElement("span");
+      this.textSpan.className = "sr-shape-text";
+      this.domElement.appendChild(this.textSpan);
+    }
+    if (!this.textContent) {
+      let node = this.textSpan.firstChild;
+      if (!(node instanceof Text)) {
+        node = document.createTextNode("");
+        this.textSpan.appendChild(node);
+      }
+      this.textContent = createTextContent(node as Text);
+    }
+    return this.textContent;
+  }
   private _text?: string;
   private _borderColor?: string;
   private _background?: string;
@@ -155,17 +173,7 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
   }
   set text(val: string | undefined) {
     this._text = val;
-    if (val !== undefined) {
-      if (!this.textSpan) {
-        const span = document.createElement("span");
-        span.className = "sr-shape-text";
-        this.domElement.appendChild(span);
-        this.textSpan = span;
-      }
-      this.textSpan.textContent = String(val);
-    } else if (this.textSpan) {
-      this.textSpan.textContent = "";
-    }
+    if (val !== undefined || this.textSpan) this.ensureTextContent().value = val ?? "";
   }
 
   get borderColor(): string | undefined {
@@ -342,6 +350,10 @@ class ShapeElementImpl extends DOMElementImpl implements ShapeElement {
 
     this.textSpan = initialTextSpan;
     this._text = initialText;
+    this._registerPropertyRenderer("text", {
+      render: (from, to, progress) => this.ensureTextContent().render(from, to, progress),
+      clear: () => this.textContent?.clear(),
+    });
     this.items = childItems;
     this._path = pathFn;
     this.variant = variant;

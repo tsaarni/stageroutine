@@ -42,6 +42,7 @@ export class StarfieldElement extends BackgroundElement {
   private baseSpeed: number;
   private spread: number;
   private targetSpeed: number;
+  private sceneName = "Starfield";
   private targetRotX = 0;
   private targetRotY = 0;
 
@@ -106,18 +107,21 @@ export class StarfieldElement extends BackgroundElement {
   override attach(stage: StageContext): void {
     super.attach(stage);
 
-    // Smooth tilt and warp burst on scene changes
     this.unbindScene = stage.on("evt:nav:sceneChanged", ({ to }) => {
-      this.targetSpeed = this.baseSpeed * 3.5;
-
-      let hash = 0;
-      const name = to || "";
-      for (let i = 0; i < name.length; i++) {
-        hash = (hash << 5) - hash + name.charCodeAt(i);
-      }
-      this.targetRotX = ((hash % 100) / 100) * 0.4 - 0.2;
-      this.targetRotY = (((hash >> 2) % 100) / 100) * 0.4 - 0.2;
+      this.sceneName = to || "Starfield";
+      if (this.isRunning) this.turn();
     });
+  }
+
+  private turn(): void {
+    this.targetSpeed = this.baseSpeed * 3.5;
+    let hash = 0;
+    for (const character of this.sceneName)
+      hash = ((hash << 5) - hash + character.charCodeAt(0)) | 0;
+    // Keep both angles bounded, including for names with a negative signed hash.
+    const seed = hash >>> 0;
+    this.targetRotX = ((seed % 100) / 99 - 0.5) * 0.4;
+    this.targetRotY = (((seed >>> 8) % 100) / 99 - 0.5) * 0.4;
   }
 
   onResize(width: number, height: number): void {
@@ -131,6 +135,9 @@ export class StarfieldElement extends BackgroundElement {
   resume(): void {
     if (this.isRunning || !this.canAnimate) return;
     this.isRunning = true;
+    // Replay the entrance turn when a background step reveals this renderer again.
+    this.camera?.rotation.set(0, 0, 0);
+    this.turn();
 
     let lastFrameTime = 0;
 
@@ -184,6 +191,8 @@ export class StarfieldElement extends BackgroundElement {
       ),
       star_count: this.count,
       speed: this.targetSpeed,
+      rotation_x: this.camera?.rotation.x ?? 0,
+      rotation_y: this.camera?.rotation.y ?? 0,
     };
   }
 
